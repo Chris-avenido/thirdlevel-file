@@ -1,0 +1,304 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { 
+    FiMail, 
+    FiLock, 
+    FiEye, 
+    FiEyeOff, 
+    FiArrowRight, 
+    FiArrowLeft,
+    FiAlertCircle,
+    FiSmartphone,
+    FiKey,
+    FiX
+} from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import logo from '../assets/InsightEd1.png';
+import PageTransition from '../components/PageTransition';
+import LoadingScreen from '../components/LoadingScreen';
+import PinLogin from '../components/PinLogin';
+
+const Login = () => {
+    const [loginId, setLoginId] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [focusedInput, setFocusedInput] = useState(null);
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [showForgotPasscodeModal, setShowForgotPasscodeModal] = useState(false);
+    const [loginMode, setLoginMode] = useState('password'); // 'password' | 'passcode'
+    const [isSchoolHead, setIsSchoolHead] = useState(false); // Standalone is usually for Officials/Applicants
+    const [isPortalEnforced, setIsPortalEnforced] = useState(true);
+    const [showBackPrompt, setShowBackPrompt] = useState(false);
+    const [showDialpadModal, setShowDialpadModal] = useState(false);
+    
+    // UI flows
+    const [rememberedUser, setRememberedUser] = useState(() => {
+        const stored = localStorage.getItem('remembered_user');
+        return stored ? JSON.parse(stored) : null;
+    });
+    const [usePassword, setUsePassword] = useState(!localStorage.getItem('remembered_user'));
+    
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { login, loginWithCredentials, verifyPin } = useAuth();
+
+    useEffect(() => {
+        // Standalone app defaults
+        setIsSchoolHead(false);
+        setIsPortalEnforced(true);
+    }, []);
+
+    const handleLogin = async (e) => {
+        if (e) e.preventDefault();
+        setLoading(true);
+
+        try {
+            const data = await loginWithCredentials(loginId, password);
+            if (data.success) {
+                // Store for "PinLogin" feature
+                localStorage.setItem('remembered_user', JSON.stringify(data.user));
+                
+                // Role-based redirection
+                if (data.user.role === 'Central Office' || data.user.role === 'Admin' || data.user.role === 'Super User') {
+                    navigate('/officials-registry');
+                } else {
+                    navigate('/official-profiling');
+                }
+            } else {
+                alert(data.error || 'Invalid credentials');
+            }
+        } catch (err) {
+            alert('Login failed. Please check your connection.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePinVerify = async (completedPin) => {
+        setLoading(true);
+        try {
+            const data = await verifyPin(loginId, completedPin);
+            if (data.success) {
+                // Role-based redirection
+                if (data.user.role === 'Central Office' || data.user.role === 'Admin' || data.user.role === 'Super User') {
+                    navigate('/officials-registry');
+                } else {
+                    navigate('/official-profiling');
+                }
+            } else {
+                alert(data.error || 'Invalid passcode');
+            }
+        } catch (err) {
+            alert('Verification failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading && !showDialpadModal) {
+        return <LoadingScreen />;
+    }
+
+    return (
+        <PageTransition>
+            <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-900 via-blue-700 to-slate-200 animate-gradient-xy">
+                {/* RICH DYNAMIC BACKGROUND */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-100 animate-gradient-xy"></div>
+
+                {/* DECORATIVE SHAPES */}
+                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-purple-300/20 rounded-full blur-[100px] animate-blob"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
+                <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-indigo-300/20 rounded-full blur-[80px] animate-blob animation-delay-4000"></div>
+
+                <div className="relative z-10 w-[90%] max-w-md">
+                    <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-8 transform transition-all hover:scale-[1.01] duration-500 relative">
+                        
+                        {/* BACK BUTTON */}
+                        <button 
+                            onClick={() => navigate('/')}
+                            className="absolute top-6 left-6 p-2 rounded-xl bg-white/50 text-slate-400 hover:text-[#004A99] hover:bg-white transition-all shadow-sm border border-slate-100 group z-20"
+                        >
+                            <FiArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+                        </button>
+
+                        {/* HEADER */}
+                        <div className="text-center mb-8">
+                            <div className="relative w-24 h-24 mx-auto mb-4 bg-white/50 rounded-2xl shadow-inner flex items-center justify-center p-2">
+                                <img src={logo} alt="InsightED Logo" className="w-full h-full object-contain drop-shadow-sm" />
+                            </div>
+                            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">InsightED</h1>
+                            <p className="text-slate-500 text-sm mt-2 font-medium italic">Recruitment Hub</p>
+                        </div>
+
+                        {rememberedUser && !usePassword ? (
+                            <PinLogin 
+                                rememberedUser={rememberedUser} 
+                                onSwitchAccount={() => {
+                                    localStorage.removeItem('remembered_user');
+                                    setRememberedUser(null);
+                                    setUsePassword(true);
+                                }} 
+                                onUsePassword={() => setUsePassword(true)} 
+                            />
+                        ) : (
+                            <form onSubmit={handleLogin} className="space-y-6">
+                                <div className="space-y-4">
+                                    {/* IDENTIFIER */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Identity</label>
+                                        <div className={`relative group transition-all duration-300 ${focusedInput === 'id' ? 'scale-[1.02]' : ''}`}>
+                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'id' ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                <FiMail className="w-5 h-5" />
+                                            </div>
+                                            <input 
+                                                type="text"
+                                                value={loginId}
+                                                onChange={(e) => setLoginId(e.target.value)}
+                                                onFocus={() => setFocusedInput('id')}
+                                                onBlur={() => setFocusedInput(null)}
+                                                placeholder="Registered Email"
+                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* AUTH MODE TOGGLE */}
+                                    <div className="flex bg-slate-100 p-1 rounded-2xl">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setLoginMode('password')}
+                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'password' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                            Password
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setLoginMode('passcode')}
+                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'passcode' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                            Passcode
+                                        </button>
+                                    </div>
+
+                                    {/* SECRET INPUT */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                            {loginMode === 'password' ? 'Security Password' : '6-Digit Passcode'}
+                                        </label>
+                                        <div className={`relative group transition-all duration-300 ${focusedInput === 'secret' ? 'scale-[1.02]' : ''}`}>
+                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'secret' ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                <FiLock className="w-5 h-5" />
+                                            </div>
+                                            <input 
+                                                type={showPassword || loginMode === 'passcode' ? 'text' : 'password'}
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                onFocus={() => {
+                                                    setFocusedInput('secret');
+                                                    if (loginMode === 'passcode') setShowDialpadModal(true);
+                                                }}
+                                                onBlur={() => setFocusedInput(null)}
+                                                placeholder={loginMode === 'password' ? '••••••••' : '0 0 0 0 0 0'}
+                                                readOnly={loginMode === 'passcode'}
+                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
+                                                required
+                                            />
+                                            {loginMode === 'password' && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors p-1"
+                                                >
+                                                    {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between px-1">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => loginMode === 'password' ? setShowForgotModal(true) : setShowForgotPasscodeModal(true)}
+                                        className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors"
+                                    >
+                                        Forgot {loginMode}?
+                                    </button>
+                                </div>
+
+                                <button 
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 transform transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
+                                >
+                                    {loading ? 'Authenticating...' : 'Sign In to Portal'}
+                                    <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </button>
+                            </form>
+                        )}
+
+                        {/* FOOTER */}
+                        <div className="mt-10 pt-8 border-t border-slate-100 text-center">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                Don't have an account? <Link to="/register" className="text-blue-600 hover:text-blue-800 ml-1">Register Now</Link>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* MODALS (Dialpad, Forgot etc) */}
+                <AnimatePresence>
+                    {showDialpadModal && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative border border-white/20"
+                            >
+                                <div className="text-center mb-6">
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2 uppercase italic">Enter Passcode</h2>
+                                    <div className="flex justify-center gap-3 mb-8 mt-6">
+                                        {[...Array(6)].map((_, i) => (
+                                            <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${password.length > i ? 'bg-blue-600 border-blue-600 scale-110' : 'bg-slate-200 border-transparent'}`} />
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-6 w-full max-w-[260px] mx-auto">
+                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                            <button key={num} type="button" onClick={() => password.length < 6 && setPassword(password + num)} className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-200 active:scale-95 text-2xl font-black text-slate-700 shadow-sm transition-all">{num}</button>
+                                        ))}
+                                        <div className="col-start-2"><button type="button" onClick={() => password.length < 6 && setPassword(password + '0')} className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-200 active:scale-95 text-2xl font-black text-slate-700 shadow-sm transition-all">0</button></div>
+                                        <button type="button" onClick={() => setPassword(password.slice(0, -1))} className="w-16 h-16 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"><FiX className="w-8 h-8" /></button>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowDialpadModal(false)} className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs">Done</button>
+                            </motion.div>
+                        </div>
+                    )}
+
+                    {showForgotModal && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                                className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl text-center"
+                            >
+                                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner"><FiKey className="w-10 h-10" /></div>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic mb-4">Forgot Password?</h2>
+                                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">Try logging in with your <span className="font-bold text-blue-600">6-digit Passcode</span> instead. It's the faster alternative for secure access.</p>
+                                <div className="space-y-3">
+                                    <button onClick={() => { setLoginMode('passcode'); setShowForgotModal(false); }} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-[10px] uppercase tracking-widest">Switch to Passcode</button>
+                                    <button onClick={() => setShowForgotModal(false)} className="w-full bg-slate-50 text-slate-400 font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest">Cancel</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </PageTransition>
+    );
+};
+
+export default Login;

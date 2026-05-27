@@ -1,0 +1,43 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# User uploads/temp
+uploads/
+temp/
+
+# Deployment & Infrastructure (Sensitive)
+deploy-third-level.cjs
+patch-nginx*.cjs
+diagnose-nginx.cjs
+ecosystem.third-level.config.cjs
+*.tar.gz
+stride.conf.tmp
+stride.conf.patch
+
+# Data and Scripts
+*.csv
+*.xlsx
+*.py
+__pycache__/
+.claude/
+desktop.ini
