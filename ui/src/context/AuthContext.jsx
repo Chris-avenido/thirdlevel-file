@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { normalizeRole } from '../utils/roleUtils';
+import { apiUrl } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const loginWithCredentials = async (email, password) => {
-        const targetUrl = '/insighted-third-level-officials/api/auth/login';
+        const targetUrl = apiUrl('/api/auth/login');
         console.log(`🚀 Attempting login at: ${targetUrl}`);
         
         try {
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }) => {
 
     const verifyPin = async (email, passcode) => {
         try {
-            const response = await fetch('/insighted-third-level-officials/api/auth/pin-login', {
+            const response = await fetch(apiUrl('/api/auth/pin-login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, passcode })

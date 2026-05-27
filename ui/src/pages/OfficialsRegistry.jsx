@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
+import { apiUrl } from '../utils/api';
 
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
@@ -126,7 +127,7 @@ const OfficialsRegistry = () => {
                 queryParams.append('category', activeTab);
                 queryParams.append('status', 'Active');
             }
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/officials?${queryParams.toString()}`, {
+            const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -175,7 +176,7 @@ const OfficialsRegistry = () => {
     const fetchStrands = async () => {
         try {
             // Simplified fetch for strands - we can also hardcode or fetch distinct from masterlist
-            const res = await fetch('/insighted-third-level-officials/api/third-level/officials?status=All', {
+            const res = await fetch(apiUrl('/api/third-level/officials?status=All'), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -202,7 +203,7 @@ const OfficialsRegistry = () => {
             if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
 
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/officials?${queryParams.toString()}`, {
+            const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
                 headers: {
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 }
@@ -222,7 +223,7 @@ const OfficialsRegistry = () => {
         setIncumbentsLoading(true);
         setIncumbents([]);
         try {
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/position-incumbents?position_title=${encodeURIComponent(position)}&office=${encodeURIComponent(office || '')}`, {
+            const res = await fetch(apiUrl(`/api/third-level/position-incumbents?position_title=${encodeURIComponent(position)}&office=${encodeURIComponent(office || '')}`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -268,7 +269,7 @@ const OfficialsRegistry = () => {
             if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
 
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/applications?${queryParams.toString()}`, {
+            const res = await fetch(apiUrl(`/api/third-level/applications?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -286,7 +287,7 @@ const OfficialsRegistry = () => {
 
         setActionLoading(true);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/third-level/admin-action', {
+            const res = await fetch(apiUrl('/api/third-level/admin-action'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -324,7 +325,7 @@ const OfficialsRegistry = () => {
         setShowActionModal(true);
         if (action === 'reassign') {
             try {
-                const res = await fetch('/insighted-third-level-officials/api/third-level/officials?status=Vacant', {
+                const res = await fetch(apiUrl('/api/third-level/officials?status=Vacant'), {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -335,7 +336,7 @@ const OfficialsRegistry = () => {
         }
         if (action === 'succeed') {
             try {
-                const res = await fetch(`/insighted-third-level-officials/api/third-level/active-officials?exclude_TLOid=${official.TLOid}`, {
+                const res = await fetch(apiUrl(`/api/third-level/active-officials?exclude_TLOid=${official.TLOid}`), {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -351,7 +352,7 @@ const OfficialsRegistry = () => {
         
         setProcessingId(app_TLOid);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/third-level/process-application', {
+            const res = await fetch(apiUrl('/api/third-level/process-application'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -526,7 +527,7 @@ const OfficialsRegistry = () => {
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-lg border border-white shadow-sm overflow-hidden">
                                                                 {item.photo_binary_id ? (
-                                                                    <img src={`/insighted-third-level-officials/api/binary/${item.photo_binary_id}`} alt="" className="w-full h-full object-cover" />
+                                                                    <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
                                                                 ) : <FiUser size={20} />}
                                                             </div>
                                                             <div>
@@ -641,7 +642,7 @@ const OfficialsRegistry = () => {
                                             <div className="flex justify-between items-start mb-6 relative z-10">
                                                 <div className="w-20 h-20 rounded-[1.8rem] bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-300 font-black text-3xl border-2 border-white shadow-xl overflow-hidden">
                                                     {item.photo_binary_id ? (
-                                                        <img src={`/insighted-third-level-officials/api/binary/${item.photo_binary_id}`} alt="" className="w-full h-full object-cover" />
+                                                        <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
                                                     ) : <FiUser size={32} />}
                                                 </div>
                                                 {activeTab === 'Applications' ? (

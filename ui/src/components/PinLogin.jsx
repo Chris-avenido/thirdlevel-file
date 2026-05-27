@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiUrl } from '../utils/api';
 
 const PinLogin = ({ rememberedUser, onSwitchAccount, onUsePassword }) => {
   const [pin, setPin] = useState('');
@@ -44,7 +45,7 @@ const PinLogin = ({ rememberedUser, onSwitchAccount, onUsePassword }) => {
     const useSchoolIdField = (rememberedUser?.role?.toLowerCase()?.includes('school head') || isNumericId);
 
     try {
-      const response = await fetch('/insighted-third-level-officials/api/auth/pin-login', {
+      const response = await fetch(apiUrl('/api/auth/pin-login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

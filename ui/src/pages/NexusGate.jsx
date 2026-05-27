@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiBriefcase, FiArrowRight, FiX, FiLogIn, FiUserPlus, FiShield, FiLock, FiLoader, FiCheckCircle } from 'react-icons/fi';
 import logo from '../assets/InsightEd1.png';
 import PageTransition from '../components/PageTransition';
+import { apiUrl } from '../utils/api';
 
 const NexusGate = () => {
     const navigate = useNavigate();
@@ -29,7 +30,7 @@ const NexusGate = () => {
         setCoLoading(true);
         setCoError('');
         try {
-            const res  = await fetch(`/insighted-third-level-officials/api/auth/check-auth-code?code=${encodeURIComponent(coCode.trim())}`);
+            const res  = await fetch(apiUrl(`/api/auth/check-auth-code?code=${encodeURIComponent(coCode.trim())}`));
             const data = await res.json();
             if (!data.valid) {
                 setCoError('Invalid or expired authorization code. Please contact your administrator.');

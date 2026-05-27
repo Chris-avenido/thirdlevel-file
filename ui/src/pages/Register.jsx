@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../assets/InsightEd1.png';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
+import { apiUrl } from '../utils/api';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -60,7 +61,7 @@ const Register = () => {
         if (!formData.email) return alert("Please enter email first");
         
         try {
-            const checkRes = await fetch(`/insighted-third-level-officials/api/auth/check-email?email=${formData.email}`);
+            const checkRes = await fetch(apiUrl(`/api/auth/check-email?email=${formData.email}`));
             const checkData = await checkRes.json();
             if (checkData.exists) {
                 return alert("This email is already registered in InsightEd. Please use 'I have an account' to login.");
@@ -71,7 +72,7 @@ const Register = () => {
 
         setOtpLoading(true);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/auth/send-otp', {
+            const res = await fetch(apiUrl('/api/auth/send-otp'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: formData.email })
@@ -88,7 +89,7 @@ const Register = () => {
     const handleVerifyOtp = async () => {
         setOtpLoading(true);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/auth/verify-otp', {
+            const res = await fetch(apiUrl('/api/auth/verify-otp'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: formData.email, code: otpCode })
@@ -112,7 +113,7 @@ const Register = () => {
         
         setLoading(true);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/auth/register-user', {
+            const res = await fetch(apiUrl('/api/auth/register-user'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

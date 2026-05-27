@@ -38,7 +38,6 @@ stride.conf.patch
 # Data and Scripts
 *.csv
 *.xlsx
-*.html
 *.py
 __pycache__/
 .claude/

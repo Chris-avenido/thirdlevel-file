@@ -13,6 +13,7 @@ import PageTransition from '../components/PageTransition';
 import html2pdf from 'html2pdf.js';
 import PptxGenJS from 'pptxgenjs';
 import newLogo from '../assets/new_logo.png';
+import { apiUrl } from '../utils/api';
 
 const TABS = [
     { id: 'personal', label: 'Personal Info', icon: FiUser },
@@ -309,7 +310,7 @@ const OfficialProfiling = () => {
     const fetchHistory = async (id) => {
         setHistoryLoading(true);
         try {
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/${id}/career-path`, {
+            const res = await fetch(apiUrl(`/api/third-level/${id}/career-path`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -363,7 +364,7 @@ const OfficialProfiling = () => {
     const lookupByEmail = async (email) => {
         if (!email) { setStatus('not-found'); return; }
         try {
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/by-email?email=${encodeURIComponent(email)}`, {
+            const res = await fetch(apiUrl(`/api/third-level/by-email?email=${encodeURIComponent(email)}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -431,7 +432,7 @@ const OfficialProfiling = () => {
         if (!user?.email) return;
         setSaving(true);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/third-level/initialize', {
+            const res = await fetch(apiUrl('/api/third-level/initialize'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -486,7 +487,7 @@ const OfficialProfiling = () => {
             };
             delete payload.age;
 
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/${TLOid}/profile`, {
+            const res = await fetch(apiUrl(`/api/third-level/${TLOid}/profile`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -512,7 +513,7 @@ const OfficialProfiling = () => {
         if (!TLOid) return;
         setCertifying(true);
         try {
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/${TLOid}/profile`, {
+            const res = await fetch(apiUrl(`/api/third-level/${TLOid}/profile`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -537,7 +538,7 @@ const OfficialProfiling = () => {
     const fetchVacancies = async () => {
         setVacanciesLoading(true);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/third-level/vacancies', {
+            const res = await fetch(apiUrl('/api/third-level/vacancies'), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -553,7 +554,7 @@ const OfficialProfiling = () => {
         if (!TLOid || !targetVacancyId) return;
         setSaving(true);
         try {
-            const res = await fetch('/insighted-third-level-officials/api/third-level/submit-application', {
+            const res = await fetch(apiUrl('/api/third-level/submit-application'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -585,7 +586,7 @@ const OfficialProfiling = () => {
         if (!applicationId) return;
         setSaving(true);
         try {
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/applications/${applicationId}/resubmit`, {
+            const res = await fetch(apiUrl(`/api/third-level/applications/${applicationId}/resubmit`), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
@@ -610,7 +611,7 @@ const OfficialProfiling = () => {
             const formData = new FormData();
             formData.append('file', file);
 
-            const res = await fetch(`/insighted-third-level-officials/api/third-level/${TLOid}/upload/${docType}`, {
+            const res = await fetch(apiUrl(`/api/third-level/${TLOid}/upload/${docType}`), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` },
                 body: formData
