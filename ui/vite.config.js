@@ -5,9 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiTarget = env.VITE_API_URL || 'https://thirdlevel-file-api.onrender.com'
+  const base = env.VITE_BASE_PATH || '/'
 
   return {
     plugins: [react()],
+    base,
     server: {
       port: 5173,
       strictPort: true,
@@ -22,7 +24,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         }
       }
-    },
-    base: '/insighted-third-level-officials/'
+    }
   }
 })
