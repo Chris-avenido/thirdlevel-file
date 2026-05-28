@@ -1,0 +1,18 @@
+import pool from '../config/db.js';
+
+export const checkAuthCode = async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.status(400).json({ error: 'code required' });
+
+  try {
+    const result = await pool.query(
+      'SELECT role FROM authorization_codes WHERE code = $1 AND is_active = TRUE',
+      [code.toUpperCase().trim()]
+    );
+
+    if (result.rows.length === 0) return res.json({ valid: false });
+    res.json({ valid: true, role: result.rows[0].role });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
