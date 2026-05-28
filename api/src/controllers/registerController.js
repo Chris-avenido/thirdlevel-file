@@ -158,6 +158,7 @@ export const registerUser = async (req, res) => {
     });
   } catch (err) {
     if (client) await client.query('ROLLBACK');
+    console.error('[Register] Registration failed:', err.message);
     res.status(500).json({ error: 'Registration failed: ' + err.message });
   } finally {
     if (client) client.release();

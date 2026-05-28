@@ -13,6 +13,7 @@ export const checkAuthCode = async (req, res) => {
     if (result.rows.length === 0) return res.json({ valid: false });
     res.json({ valid: true, role: result.rows[0].role });
   } catch (err) {
+    console.error('[NexusGate] Failed to check authorization code:', err.message);
     res.status(500).json({ error: err.message });
   }
 };

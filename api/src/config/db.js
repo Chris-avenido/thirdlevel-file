@@ -19,19 +19,40 @@ const pool = new pg.Pool(process.env.DATABASE_URL ? {
 });
 
 pool.on('connect', () => {
-  console.log('🔗 [Verbose Logging] Database connection established successfully.');
+  console.log('[Database] Connection established successfully.');
 });
 
 pool.on('error', (err) => {
-  console.error('🔥 [Verbose Logging] Database connection error:', err);
+  console.error('[Database] Connection error:', err);
 });
 
 export const initDB = async () => {
   try {
-    await pool.query(`ALTER TABLE third_level_officials_updates ADD COLUMN IF NOT EXISTS remarks TEXT;`);
-    console.log('✅ Database schema verified.');
+    await pool.query('ALTER TABLE third_level_officials_updates ADD COLUMN IF NOT EXISTS remarks TEXT;');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS authorization_codes (
+        id SERIAL PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        role TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      INSERT INTO authorization_codes (code, role, is_active)
+      VALUES ($1, $2, TRUE)
+      ON CONFLICT (code) DO UPDATE
+      SET role = EXCLUDED.role,
+          is_active = TRUE,
+          updated_at = NOW();
+    `, [
+      (process.env.CO_AUTH_CODE || 'INSIGHTED-CO-ADMIN').toUpperCase().trim(),
+      'Central Office'
+    ]);
+    console.log('[Database] Schema verified.');
   } catch (err) {
-    console.warn('⚠️ Database initialization warning:', err.message);
+    console.warn('[Database] Initialization warning:', err.message);
   }
 };
 
