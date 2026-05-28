@@ -69,7 +69,7 @@ const NexusGate = () => {
                 >
                     <div className="space-y-1">
                         <h1 className="text-4xl font-black text-slate-900 tracking-tighter text-left leading-tight">
-                            Welcome to the <br />
+                            Welcome to the hell haha <br />
                             <span className="text-[#004A99] italic uppercase">InsightED Nexus</span>
                         </h1>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2 ml-1">Specialized Portals Gateway</p>
