@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
+import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 
 const OfficialsRegistry = () => {
@@ -282,8 +283,8 @@ const OfficialsRegistry = () => {
     };
 
     const handleAdminAction = async () => {
-        if (!justification) return alert('Please provide a justification.');
-        if (adminAction === 'reassign' && !targetSlot) return alert('Please select a target vacant slot.');
+        if (!justification) return Swal.fire('Notice', 'Please provide a justification.', 'info');
+        if (adminAction === 'reassign' && !targetSlot) return Swal.fire('Notice', 'Please select a target vacant slot.', 'info');
 
         setActionLoading(true);
         try {
@@ -303,14 +304,14 @@ const OfficialsRegistry = () => {
             });
             const data = await res.json();
             if (data.success) {
-                alert(`Official ${adminAction}ed successfully.`);
+                Swal.fire('Notice', `Official ${adminAction}ed successfully.`, 'info');
                 setShowActionModal(false);
                 fetchOfficials();
             } else {
-                alert(data.error || 'Action failed.');
+                Swal.fire('Notice', data.error || 'Action failed.', 'info');
             }
         } catch (err) {
-            alert('Action failed: ' + err.message);
+            Swal.fire('Notice', 'Action failed: ' + err.message, 'info');
         } finally {
             setActionLoading(false);
         }
@@ -363,12 +364,12 @@ const OfficialsRegistry = () => {
             const data = await res.json();
             if (data.success) {
                 fetchApplications();
-                alert(`Application ${action}d successfully.`);
+                Swal.fire('Notice', `Application ${action}d successfully.`, 'info');
             } else {
-                alert(data.error || 'Processing failed.');
+                Swal.fire('Notice', data.error || 'Processing failed.', 'info');
             }
         } catch (err) {
-            alert('Processing failed: ' + err.message);
+            Swal.fire('Notice', 'Processing failed: ' + err.message, 'info');
         } finally {
             setProcessingId(null);
         }

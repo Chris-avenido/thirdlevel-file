@@ -51,22 +51,76 @@ export const sendOtp = async (req, res) => {
   }
 };
 
+// export const verifyOtp = async (req, res) => {
+//   const { email, code } = req.body;
+//   try {
+//     const result = await pool.query(
+//       'SELECT * FROM verification_codes WHERE email = $1 AND code = $2',
+//       [email.toLowerCase().trim(), code]
+//     );
+
+//     if (result.rows.length === 0) {
+//       return res.status(400).json({ error: 'Invalid or expired code' });
+//     }
+
+//     await pool.query('DELETE FROM verification_codes WHERE email = $1', [email.toLowerCase().trim()]);
+//     res.json({ success: true });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 export const verifyOtp = async (req, res) => {
   const { email, code } = req.body;
+
+  const cleanEmail = email.toLowerCase().trim();
+
+  console.log(cleanEmail, code);
+
   try {
+    // Check if OTP exists and is not expired
     const result = await pool.query(
-      'SELECT * FROM verification_codes WHERE email = $1 AND code = $2 AND expires_at > NOW()',
-      [email.toLowerCase().trim(), code]
+      `
+      SELECT *
+      FROM verification_codes
+      WHERE email = $1
+      AND code = $2
+      AND expires_at > NOW()
+      `,
+      [cleanEmail, code]
     );
 
+    console.log(result.rows);
+
+    // Invalid or expired OTP
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired code' });
+      return res.status(400).json({
+        error: 'Invalid or expired code',
+      });
     }
 
-    await pool.query('DELETE FROM verification_codes WHERE email = $1', [email.toLowerCase().trim()]);
-    res.json({ success: true });
+    // OPTIONAL:
+    // Your database currently blocks DELETE
+    // Uncomment this only if DELETE is allowed
+
+    /*
+    await pool.query(
+      'DELETE FROM verification_codes WHERE email = $1',
+      [cleanEmail]
+    );
+    */
+
+    return res.json({
+      success: true,
+      message: 'OTP verified successfully',
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+
+    return res.status(500).json({
+      error: err.message,
+    });
   }
 };
 
@@ -96,15 +150,18 @@ export const registerUser = async (req, res) => {
       'SELECT role FROM authorization_codes WHERE code = $1 AND is_active = TRUE',
       [authCode.toUpperCase().trim()]
     );
+    console.log(authCheck.rows);
 
     if (authCheck.rows.length === 0) {
       client.release();
       return res.status(403).json({ error: 'Invalid Authorization Code. Please contact your administrator.' });
     }
 
-    const assignedRole = authCheck.rows[0].role;
+    let assignedRole = authCheck.rows[0].role;
+    if (assignedRole === 'Third Level Applicant') assignedRole = 'TLO Applicant';
+    if (assignedRole === 'Central Office') assignedRole = 'Personnel Admin';
 
-    if (assignedRole === 'Central Office' && !normalizedEmail.endsWith('@deped.gov.ph')) {
+    if (assignedRole === 'Personnel Admin' && !normalizedEmail.endsWith('@deped.gov.ph')) {
       client.release();
       return res.status(400).json({ error: 'Central Office Admin accounts must use an official @deped.gov.ph email' });
     }
@@ -133,7 +190,7 @@ export const registerUser = async (req, res) => {
       [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole]
     );
 
-    if (assignedRole !== 'Central Office') {
+    if (assignedRole !== 'Personnel Admin') {
       await client.query(
         `INSERT INTO third_level_officials_profiling_application (
           application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, created_at, updated_at

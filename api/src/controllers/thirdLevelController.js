@@ -270,7 +270,7 @@ export const getVacancies = async (req, res) => {
 };
 
 export const getApplications = async (req, res) => {
-  if (req.user.role !== 'Central Office' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
     return res.status(403).json({ error: 'Access denied' });
   }
 
@@ -320,7 +320,7 @@ export const getApplications = async (req, res) => {
 };
 
 export const processApplication = async (req, res) => {
-  if (req.user.role !== 'Central Office' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
     return res.status(403).json({ error: 'Access denied' });
   }
 
@@ -396,7 +396,7 @@ export const processApplication = async (req, res) => {
 };
 
 export const getOfficials = async (req, res) => {
-  if (req.user.role !== 'Central Office' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
     return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
   }
 
@@ -566,7 +566,7 @@ export const getActiveOfficials = async (req, res) => {
 };
 
 export const adminAction = async (req, res) => {
-  if (req.user.role !== 'Central Office' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
     return res.status(403).json({ error: 'Access denied' });
   }
 

@@ -18,6 +18,7 @@ import logo from '../assets/InsightEd1.png';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
 import PinLogin from '../components/PinLogin';
+import Swal from 'sweetalert2';
 
 const Login = () => {
     const [loginId, setLoginId] = useState('');
@@ -36,12 +37,31 @@ const Login = () => {
     // UI flows
     const [rememberedUser, setRememberedUser] = useState(() => {
         const stored = localStorage.getItem('remembered_user');
-        return stored ? JSON.parse(stored) : null;
+        if (stored) {
+            try {
+                const user = JSON.parse(stored);
+                const isCOPortal = location.state?.isCO || false;
+                
+                // Check if user role matches the portal constraint
+                const isAllowed = isCOPortal 
+                    ? (user.role === 'Personnel Admin' || user.role === 'Super User')
+                    : (user.role === 'TLO Applicant');
+                    
+                if (isAllowed) return user;
+                
+                // If it doesn't match, silently clear it so they see normal login
+                localStorage.removeItem('remembered_user');
+            } catch (e) {
+                localStorage.removeItem('remembered_user');
+            }
+        }
+        return null;
     });
     const [usePassword, setUsePassword] = useState(!localStorage.getItem('remembered_user'));
     
     const navigate = useNavigate();
     const location = useLocation();
+    const isCO = location.state?.isCO || false;
     const { login, loginWithCredentials, verifyPin } = useAuth();
 
     useEffect(() => {
@@ -57,20 +77,33 @@ const Login = () => {
         try {
             const data = await loginWithCredentials(loginId, password);
             if (data.success) {
+                // Role enforcement
+                if (isCO) {
+                    if (data.user.role !== 'Personnel Admin' && data.user.role !== 'Super User') {
+                        setLoading(false);
+                        return Swal.fire('Access Denied', 'This portal is restricted to Central Office Personnel Administrators.', 'error');
+                    }
+                } else {
+                    if (data.user.role !== 'TLO Applicant') {
+                        setLoading(false);
+                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Applicants.', 'error');
+                    }
+                }
+
                 // Store for "PinLogin" feature
                 localStorage.setItem('remembered_user', JSON.stringify(data.user));
                 
                 // Role-based redirection
-                if (data.user.role === 'Central Office' || data.user.role === 'Admin' || data.user.role === 'Super User') {
+                if (data.user.role === 'Personnel Admin' || data.user.role === 'Super User') {
                     navigate('/officials-registry');
                 } else {
                     navigate('/official-profiling');
                 }
             } else {
-                alert(data.error || 'Invalid credentials');
+                Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
             }
         } catch (err) {
-            alert('Login failed. Please check your connection.');
+            Swal.fire('Error', 'Login failed. Please check your connection.', 'error');
         } finally {
             setLoading(false);
         }
@@ -81,17 +114,30 @@ const Login = () => {
         try {
             const data = await verifyPin(loginId, completedPin);
             if (data.success) {
+                // Role enforcement
+                if (isCO) {
+                    if (data.user.role !== 'Personnel Admin' && data.user.role !== 'Super User') {
+                        setLoading(false);
+                        return Swal.fire('Access Denied', 'This portal is restricted to Central Office Personnel Administrators.', 'error');
+                    }
+                } else {
+                    if (data.user.role !== 'TLO Applicant') {
+                        setLoading(false);
+                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Applicants.', 'error');
+                    }
+                }
+
                 // Role-based redirection
-                if (data.user.role === 'Central Office' || data.user.role === 'Admin' || data.user.role === 'Super User') {
+                if (data.user.role === 'Personnel Admin' || data.user.role === 'Super User') {
                     navigate('/officials-registry');
                 } else {
                     navigate('/official-profiling');
                 }
             } else {
-                alert(data.error || 'Invalid passcode');
+                Swal.fire('Failed', data.error || 'Invalid passcode', 'error');
             }
         } catch (err) {
-            alert('Verification failed');
+            Swal.fire('Error', 'Verification failed', 'error');
         } finally {
             setLoading(false);
         }

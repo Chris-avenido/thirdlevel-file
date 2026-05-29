@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-    FiUser, 
-    FiMail, 
-    FiLock, 
-    FiPhone, 
-    FiCheckCircle, 
-    FiArrowRight, 
+import {
+    FiUser,
+    FiMail,
+    FiLock,
+    FiPhone,
+    FiCheckCircle,
+    FiArrowRight,
     FiArrowLeft,
     FiShield,
     FiSmartphone
@@ -17,15 +17,16 @@ import logo from '../assets/InsightEd1.png';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
 import { apiUrl } from '../utils/api';
+import Swal from 'sweetalert2';
 
 const Register = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
-    
+
     // Detect if arriving from Central Office auth gate
-    const isCO          = location.state?.isCO    || false;
-    const coAuthCode    = location.state?.authCode || '';
+    const isCO = location.state?.isCO || false;
+    const coAuthCode = location.state?.authCode || '';
 
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -36,7 +37,7 @@ const Register = () => {
         password: '',
         confirmPassword: '',
         authCode: isCO ? coAuthCode : '',
-        role: isCO ? 'Central Office' : 'Third Level Applicant'
+        role: isCO ? 'Personnel Admin' : 'TLO Applicant'
     });
 
     const [otpCode, setOtpCode] = useState('');
@@ -48,7 +49,7 @@ const Register = () => {
     const [success, setSuccess] = useState(false);
     useEffect(() => {
         if (!isCO) {
-            setFormData(prev => ({ ...prev, role: 'Third Level Applicant' }));
+            setFormData(prev => ({ ...prev, role: 'TLO Applicant' }));
         }
     }, []);
 
@@ -58,13 +59,13 @@ const Register = () => {
     };
 
     const handleSendOtp = async () => {
-        if (!formData.email) return alert("Please enter email first");
-        
+        if (!formData.email) return Swal.fire('Notice', "Please enter email first", 'info');
+
         try {
             const checkRes = await fetch(apiUrl(`/api/auth/check-email?email=${formData.email}`));
             const checkData = await checkRes.json();
             if (checkData.exists) {
-                return alert("This email is already registered in InsightEd. Please use 'I have an account' to login.");
+                return Swal.fire('Notice', "This email is already registered in InsightEd. Please use 'I have an account' to login.", 'info');
             }
         } catch (err) {
             console.error("Check email failed", err);
@@ -78,9 +79,9 @@ const Register = () => {
                 body: JSON.stringify({ email: formData.email })
             });
             if (res.ok) setOtpSent(true);
-            else alert("Failed to send OTP");
+            else Swal.fire('Notice', "Failed to send OTP", 'error');
         } catch (err) {
-            alert("Network error");
+            Swal.fire('Error', "Network error", 'error');
         } finally {
             setOtpLoading(false);
         }
@@ -88,6 +89,7 @@ const Register = () => {
 
     const handleVerifyOtp = async () => {
         setOtpLoading(true);
+        console.log(formData.email, otpCode);
         try {
             const res = await fetch(apiUrl('/api/auth/verify-otp'), {
                 method: 'POST',
@@ -98,10 +100,10 @@ const Register = () => {
                 setIsOtpVerified(true);
                 setOtpSent(false);
             } else {
-                alert("Invalid OTP code");
+                Swal.fire('Error', "Invalid OTP codedfdsfdfdf", 'error');
             }
         } catch (err) {
-            alert("Verification error");
+            Swal.fire('Error', "Verification error", 'error');
         } finally {
             setOtpLoading(false);
         }
@@ -109,8 +111,8 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
-        if (formData.password !== formData.confirmPassword) return alert("Passwords do not match");
-        
+        if (formData.password !== formData.confirmPassword) return Swal.fire('Error', "Passwords do not match", 'error');
+
         setLoading(true);
         try {
             const res = await fetch(apiUrl('/api/auth/register-user'), {
@@ -129,11 +131,11 @@ const Register = () => {
             if (data.success) {
                 login(data.user, data.token);
                 setSuccess(true);
-                
-                const redirectPath = (data.user.role === 'Central Office' || data.user.role === 'Admin' || data.user.role === 'Super User') 
-                    ? '/officials-registry' 
+
+                const redirectPath = (data.user.role === 'Personnel Admin' || data.user.role === 'Admin' || data.user.role === 'Super User')
+                    ? '/officials-registry'
                     : '/official-profiling';
-                    
+
                 setTimeout(() => navigate(redirectPath), 2000);
             } else {
                 setError(data.error || "Registration failed");
@@ -166,10 +168,10 @@ const Register = () => {
         <PageTransition>
             <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-900 via-blue-700 to-slate-200 animate-gradient-xy">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-100 animate-gradient-xy"></div>
-                
+
                 <div className="relative z-10 w-[95%] max-w-xl">
                     <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl rounded-[3rem] p-8 md:p-12">
-                        
+
                         {/* HEADER */}
                         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                             <div>
@@ -200,25 +202,25 @@ const Register = () => {
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
                                         <div className="relative group">
                                             <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                                            <input type="text" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} placeholder="Juan" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 transition-all shadow-sm" />
+                                            <input type="text" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} placeholder="Juan" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 transition-all shadow-sm" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
                                         <div className="relative group">
                                             <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                                            <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} placeholder="Dela Cruz" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 transition-all shadow-sm" />
+                                            <input type="text" value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value })} placeholder="Dela Cruz" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 transition-all shadow-sm" />
                                         </div>
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={() => { 
+                                <button
+                                    onClick={() => {
                                         if (formData.first_name && formData.last_name) {
-                                            setCurrentStep(2); 
+                                            setCurrentStep(2);
                                         } else {
-                                            alert("Please complete all fields.");
+                                            Swal.fire('Notice', "Please complete all fields.", 'info');
                                         }
-                                    }} 
+                                    }}
                                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 group uppercase tracking-widest text-xs italic"
                                 >
                                     Continue to Contact Info
@@ -244,7 +246,7 @@ const Register = () => {
                                     <div className="flex gap-3">
                                         <div className="relative group flex-1">
                                             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <input type="email" disabled={isOtpVerified || otpSent} value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="example@gmail.com" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 disabled:opacity-50" />
+                                            <input type="email" disabled={isOtpVerified || otpSent} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 disabled:opacity-50" />
                                         </div>
                                         {!otpSent && !isOtpVerified && <button onClick={handleSendOtp} disabled={otpLoading || !formData.email} className="bg-blue-600 text-white font-black px-6 rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg text-[10px] uppercase">{otpLoading ? '...' : 'Send OTP'}</button>}
                                     </div>
@@ -265,7 +267,7 @@ const Register = () => {
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Portal Auth Code</label>
                                             <div className="relative group">
                                                 <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                                                <input type="text" value={formData.authCode} onChange={(e) => setFormData({...formData, authCode: e.target.value})} placeholder="Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-blue-600 transition-all shadow-sm" />
+                                                <input type="text" value={formData.authCode} onChange={(e) => setFormData({ ...formData, authCode: e.target.value })} placeholder="Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-blue-600 transition-all shadow-sm" />
                                             </div>
                                         </div>
                                     )}
@@ -276,18 +278,18 @@ const Register = () => {
                                         <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 text-center">
                                             <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Verification Code Sent</p>
                                             <div className="relative group">
-                                                <input 
-                                                    type="text" 
-                                                    maxLength="6" 
-                                                    value={otpCode} 
-                                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))} 
-                                                    placeholder="000000" 
-                                                    className="w-full text-center text-4xl font-black tracking-[0.5em] py-4 bg-white border-2 border-blue-200 rounded-2xl focus:border-blue-600 focus:outline-none shadow-inner text-slate-900" 
+                                                <input
+                                                    type="text"
+                                                    maxLength="6"
+                                                    value={otpCode}
+                                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                                    placeholder="000000"
+                                                    className="w-full text-center text-4xl font-black tracking-[0.5em] py-4 bg-white border-2 border-blue-200 rounded-2xl focus:border-blue-600 focus:outline-none shadow-inner text-slate-900"
                                                     style={{ WebkitTextFillColor: '#1e293b' }}
                                                 />
                                             </div>
-                                            <button 
-                                                onClick={handleVerifyOtp} 
+                                            <button
+                                                onClick={handleVerifyOtp}
                                                 className="mt-6 w-full py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg text-[10px] uppercase tracking-widest"
                                             >
                                                 Verify OTP
@@ -319,14 +321,14 @@ const Register = () => {
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
                                         <div className="relative group">
                                             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                                            <input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 shadow-sm" />
+                                            <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 shadow-sm" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
                                         <div className="relative group">
                                             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                                            <input type="password" value={formData.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 shadow-sm" />
+                                            <input type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-blue-600 shadow-sm" />
                                         </div>
                                     </div>
                                 </div>

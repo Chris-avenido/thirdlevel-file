@@ -163,7 +163,7 @@ const OfficialProfiling = () => {
             document.body.removeChild(link);
         } catch (err) {
             console.error(err);
-            alert("Failed to generate CSV");
+            Swal.fire('Notice', "Failed to generate CSV", 'info');
         } finally {
             setExporting(false);
         }
@@ -187,7 +187,7 @@ const OfficialProfiling = () => {
             html2pdf().set(opt).from(element).save().then(() => setExporting(false));
         } catch (err) {
             console.error(err);
-            alert("Failed to generate PDF");
+            Swal.fire('Notice', "Failed to generate PDF", 'info');
             setExporting(false);
         }
     };
@@ -269,7 +269,7 @@ const OfficialProfiling = () => {
             pres.writeFile({ fileName: `profile_${profile.last_name || 'export'}.pptx` }).then(() => setExporting(false));
         } catch (err) {
             console.error(err);
-            alert("Failed to generate PPT");
+            Swal.fire('Notice', "Failed to generate PPT", 'info');
             setExporting(false);
         }
     };
@@ -463,7 +463,7 @@ const OfficialProfiling = () => {
             }
         } catch (err) {
             console.error("Initialization Error:", err);
-            alert('Initialization failed: ' + err.message);
+            Swal.fire('Notice', 'Initialization failed: ' + err.message, 'info');
         } finally {
             setSaving(false);
         }
@@ -500,10 +500,10 @@ const OfficialProfiling = () => {
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 5000);
             } else {
-                alert(data.error || 'Save failed.');
+                Swal.fire('Notice', data.error || 'Save failed.', 'info');
             }
         } catch (err) {
-            alert('Save failed: ' + err.message);
+            Swal.fire('Notice', 'Save failed: ' + err.message, 'info');
         } finally {
             setSaving(false);
         }
@@ -526,10 +526,10 @@ const OfficialProfiling = () => {
                 setCertified(true);
                 if (thenNavigate) setTab('application');
             } else {
-                alert(data.error || 'Certification failed.');
+                Swal.fire('Notice', data.error || 'Certification failed.', 'info');
             }
         } catch (err) {
-            alert('Certification failed: ' + err.message);
+            Swal.fire('Notice', 'Certification failed: ' + err.message, 'info');
         } finally {
             setCertifying(false);
         }
@@ -567,10 +567,10 @@ const OfficialProfiling = () => {
                 setApplicationStatus('under_review');
                 setTab('summary');
             } else {
-                alert(data.error || 'Submission failed.');
+                Swal.fire('Notice', data.error || 'Submission failed.', 'info');
             }
         } catch (err) {
-            alert('Submission failed: ' + err.message);
+            Swal.fire('Notice', 'Submission failed: ' + err.message, 'info');
         } finally {
             setSaving(false);
         }
@@ -595,10 +595,10 @@ const OfficialProfiling = () => {
                 setApplicationStatus('under_review');
                 setDenialReason('');
             } else {
-                alert(data.error || 'Resubmit failed.');
+                Swal.fire('Notice', data.error || 'Resubmit failed.', 'info');
             }
         } catch (err) {
-            alert('Resubmit failed: ' + err.message);
+            Swal.fire('Notice', 'Resubmit failed: ' + err.message, 'info');
         } finally {
             setSaving(false);
         }
@@ -629,10 +629,10 @@ const OfficialProfiling = () => {
                 setSaved(true);
                 setTimeout(() => setSaved(false), 3000);
             } else {
-                alert(data.error || 'Upload failed.');
+                Swal.fire('Notice', data.error || 'Upload failed.', 'info');
             }
         } catch (err) {
-            alert('Upload failed: ' + err.message);
+            Swal.fire('Notice', 'Upload failed: ' + err.message, 'info');
         } finally {
             setSaving(false);
         }
@@ -760,7 +760,7 @@ const OfficialProfiling = () => {
                 {/* Tab Bar */}
                 <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
                     <div className={`mx-auto px-6 lg:px-8 flex overflow-x-auto scrollbar-none transition-all duration-300 ${tab === 'experience' ? 'max-w-6xl' : 'max-w-4xl'}`}>
-                        {TABS.map(t => {
+                        {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
                             const isLocked = t.id === 'application' && completeness < 100;
                             return (
                                 <button

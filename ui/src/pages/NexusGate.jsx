@@ -34,7 +34,7 @@ const NexusGate = () => {
             const data = await res.json();
             if (!data.valid) {
                 setCoError('Invalid or expired authorization code. Please contact your administrator.');
-            } else if (data.role !== 'Central Office') {
+            } else if (data.role !== 'Personnel Admin') {
                 setCoError('This code is not authorized for Central Office access.');
             } else {
                 setCoVerified(true);
@@ -274,7 +274,7 @@ const NexusGate = () => {
 
                                                 <div className="grid grid-cols-1 gap-4">
                                                     <button
-                                                        onClick={() => navigate('/login')}
+                                                        onClick={() => navigate('/login', { state: { isCO: true } })}
                                                         className="group p-6 bg-blue-50 hover:bg-[#0038A8] rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
                                                     >
                                                         <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#0038A8] shrink-0 group-hover:scale-110 transition-transform shadow-sm">
