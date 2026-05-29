@@ -21,6 +21,10 @@ import PinLogin from '../components/PinLogin';
 import Swal from 'sweetalert2';
 
 const Login = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const isCO = location.state?.isCO || false;
+
     const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -60,9 +64,8 @@ const Login = () => {
     });
     const [usePassword, setUsePassword] = useState(!localStorage.getItem('remembered_user'));
 
-    const navigate = useNavigate();
-    const location = useLocation();
-    const isCO = location.state?.isCO || false;
+    // ... hooks already declared above ...
+
     const { login, loginWithCredentials, verifyPin } = useAuth();
 
     useEffect(() => {
