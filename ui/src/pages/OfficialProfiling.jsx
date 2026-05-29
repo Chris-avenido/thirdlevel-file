@@ -837,7 +837,29 @@ const OfficialProfiling = () => {
                                             <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
                                                 <SectionLabel color="#0038A8">Designation & Appointment</SectionLabel>
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                    <Field label="Position Title (As per Appointment / Designation)"><input type="text" value={profile.position_title} onChange={e => setP('position_title', e.target.value)} placeholder="e.g. Chief Education Supervisor / OIC-ASDS" className={inp} /></Field>
+                                                    <Field label="Position Title (As per Appointment / Designation)">
+                                                        <select value={profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                            <option value="">Select Position Title</option>
+                                                            {[
+                                                                'Undersecretary',
+                                                                'Assistant Secretary',
+                                                                'OIC Assistant Secretary',
+                                                                'Director IV',
+                                                                'Director III',
+                                                                'Chief Administrative Officer'
+                                                            ].map(o => <option key={o} value={o}>{o}</option>)}
+                                                            {profile.position_title && ![
+                                                                'Undersecretary',
+                                                                'Assistant Secretary',
+                                                                'OIC Assistant Secretary',
+                                                                'Director IV',
+                                                                'Director III',
+                                                                'Chief Administrative Officer'
+                                                            ].includes(profile.position_title) && (
+                                                                <option value={profile.position_title}>{profile.position_title}</option>
+                                                            )}
+                                                        </select>
+                                                    </Field>
                                                     <Field label="Date of Present Position (Appointment Date)">
                                                         <div className="relative">
                                                             <input type="date" value={profile.date_of_assignment} onChange={e => setP('date_of_assignment', e.target.value)} className={`${inp} pr-10`} />
@@ -1039,7 +1061,7 @@ const OfficialProfiling = () => {
                                                         <p className="text-[10px] font-black text-[#0038A8] uppercase tracking-widest">Latest Rating (1st)</p>
                                                         <div className="space-y-3">
                                                             <Field label="Rating (Max 5.000)">
-                                                                <input type="number" step="0.001" min="0" max="5" value={profile.performance_rating_1} onChange={e => setP('performance_rating_1', e.target.value)} placeholder="4.850" className={inp} />
+                                                                <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if(v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if(v !== '') { let n = Number(v); if(n > 5) n = 5; if(n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" className={inp} />
                                                             </Field>
                                                             <Field label="Rating Period">
                                                                 <div className="relative">
@@ -1059,7 +1081,7 @@ const OfficialProfiling = () => {
                                                         <p className="text-[10px] font-black text-[#0038A8] uppercase tracking-widest">Previous Rating (2nd)</p>
                                                         <div className="space-y-3">
                                                             <Field label="Rating (Max 5.000)">
-                                                                <input type="number" step="0.001" min="0" max="5" value={profile.performance_rating_2} onChange={e => setP('performance_rating_2', e.target.value)} placeholder="4.750" className={inp} />
+                                                                <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_2} onChange={e => { let v = e.target.value; if(v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_2', v); }} onBlur={e => { let v = e.target.value; if(v !== '') { let n = Number(v); if(n > 5) n = 5; if(n < 1) n = 1; setP('performance_rating_2', n.toString()); } }} placeholder="4.750" className={inp} />
                                                             </Field>
                                                             <Field label="Rating Period">
                                                                 <div className="relative">
@@ -1086,14 +1108,17 @@ const OfficialProfiling = () => {
                                                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">1st Semester</p>
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                             <Field label="CESPES Rating (1st)">
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    value={profile.cespes_1_rating}
-                                                                    onChange={e => setP('cespes_1_rating', e.target.value)}
-                                                                    placeholder="0.00"
-                                                                    className={inp}
-                                                                />
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        min="1.0"
+                                                                        max="5.0"
+                                                                        value={profile.cespes_1_rating}
+                                                                        onChange={e => { let v = e.target.value; if(v !== '' && Number(v) > 5) v = '5.0'; setP('cespes_1_rating', v); }}
+                                                                        onBlur={e => { let v = e.target.value; if(v !== '') { let n = Number(v); if(n > 5) n = 5; if(n < 1) n = 1; setP('cespes_1_rating', n.toString()); } }}
+                                                                        placeholder="0.00"
+                                                                        className={inp}
+                                                                    />
                                                             </Field>
                                                             <Field label="Period (1st)">
                                                                 <div className="relative">
@@ -1118,14 +1143,17 @@ const OfficialProfiling = () => {
                                                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">2nd Semester</p>
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                             <Field label="CESPES Rating (2nd)">
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    value={profile.cespes_2_rating}
-                                                                    onChange={e => setP('cespes_2_rating', e.target.value)}
-                                                                    placeholder="0.00"
-                                                                    className={inp}
-                                                                />
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        min="1.0"
+                                                                        max="5.0"
+                                                                        value={profile.cespes_2_rating}
+                                                                        onChange={e => { let v = e.target.value; if(v !== '' && Number(v) > 5) v = '5.0'; setP('cespes_2_rating', v); }}
+                                                                        onBlur={e => { let v = e.target.value; if(v !== '') { let n = Number(v); if(n > 5) n = 5; if(n < 1) n = 1; setP('cespes_2_rating', n.toString()); } }}
+                                                                        placeholder="0.00"
+                                                                        className={inp}
+                                                                    />
                                                             </Field>
                                                             <Field label="Period (2nd)">
                                                                 <div className="relative">
@@ -1199,7 +1227,7 @@ const OfficialProfiling = () => {
                                                                     onClick={(e) => e.currentTarget.previousSibling.showPicker()}
                                                                 />
                                                             </div>
-                                                            <input type="number" min="0" step="0.5" value={tr.hours || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: e.target.value } : x))} placeholder="Hours" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
+                                                            <input type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if(v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Hours" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
                                                             <button onClick={() => handleRemoveTraining(tr)} className="w-10 h-10 flex items-center justify-center bg-[#CE1126]/10 text-[#CE1126] rounded-xl hover:bg-[#CE1126] hover:text-white transition-all"><FiTrash2 size={14} /></button>
                                                         </motion.div>
                                                     ))}
@@ -1890,18 +1918,18 @@ const OfficialProfiling = () => {
                                 )}
                             </AnimatePresence>
 
-                            {/* Conditional Save Buttons based on user request (Summary and Application tabs only) */}
-                            {['summary', 'application'].includes(tab) && applicationStatus !== 'applied' && (
+                            {/* Conditional Save Buttons based on user request (Show on all tabs) */}
+                            {applicationStatus !== 'applied' && (
                                 <div className="mt-10 flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="w-full h-px bg-slate-200"></div>
                                     <button
                                         onClick={handleSave}
                                         disabled={saving}
-                                        className="group relative px-16 py-5 bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl hover:bg-black transition-all active:scale-95 disabled:opacity-50 flex items-center gap-4 overflow-hidden"
+                                        className="group relative px-16 py-5 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-4 overflow-hidden"
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                                         {saving ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
-                                        {saving ? 'Processing...' : 'Save Profile Progress'}
+                                        {saving ? 'Processing...' : 'Confirm Changes'}
                                     </button>
                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                         <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database

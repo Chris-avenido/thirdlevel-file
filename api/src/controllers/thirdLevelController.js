@@ -89,7 +89,7 @@ export const uploadDocument = async (req, res) => {
   const { TLOid, docType } = req.params;
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-  const isMasterlist = TLOid.startsWith('TL-');
+  const isMasterlist = !TLOid.startsWith('APP-');
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -139,7 +139,7 @@ export const uploadDocument = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   const { TLOid } = req.params;
-  const isMasterlist = TLOid.startsWith('TL-');
+  const isMasterlist = !TLOid.startsWith('APP-');
   try {
     let result;
     if (isMasterlist) {
@@ -156,7 +156,7 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   const { TLOid } = req.params;
-  const isMasterlist = TLOid.startsWith('TL-');
+  const isMasterlist = !TLOid.startsWith('APP-');
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -178,8 +178,18 @@ export const updateProfile = async (req, res) => {
     const updates = [];
     const values = [];
 
+    const table = isMasterlist ? 'third_level_official_masterlist' : 'third_level_officials_profiling_application';
+    const idCol = isMasterlist ? '"TLOid"' : 'app_TLOid';
+
+    const colsRes = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = $1
+    `, [table]);
+    const validCols = new Set(colsRes.rows.map(r => r.column_name.toLowerCase()));
+
     allFields.forEach(f => {
-      if (req.body[f] !== undefined) {
+      if (req.body[f] !== undefined && validCols.has(f.toLowerCase())) {
         let val = req.body[f] === '' ? null : req.body[f];
         if (JSONB_FIELDS.has(f) && val !== null && typeof val !== 'string') val = JSON.stringify(val);
         values.push(val);
@@ -187,15 +197,13 @@ export const updateProfile = async (req, res) => {
       }
     });
 
-    if (req.body.target_TLOid && !isMasterlist) {
+    if (req.body.target_TLOid && !isMasterlist && validCols.has('application_status')) {
       updates.push(`application_status = 'applied'`);
       updates.push(`submitted_at = NOW()`);
     }
 
     if (updates.length > 0) {
       values.push(new Date(), TLOid);
-      const table = isMasterlist ? 'third_level_official_masterlist' : 'third_level_officials_profiling_application';
-      const idCol = isMasterlist ? '"TLOid"' : 'app_TLOid';
 
       if (isMasterlist && req.user?.email) {
         await client.query(`SET LOCAL "app.current_user" = '${req.user.email.replace(/'/g, "''")}'`);
