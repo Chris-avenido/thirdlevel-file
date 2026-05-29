@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-    FiMail, 
-    FiLock, 
-    FiEye, 
-    FiEyeOff, 
-    FiArrowRight, 
+import {
+    FiMail,
+    FiLock,
+    FiEye,
+    FiEyeOff,
+    FiArrowRight,
     FiArrowLeft,
     FiAlertCircle,
     FiSmartphone,
@@ -33,7 +33,7 @@ const Login = () => {
     const [isPortalEnforced, setIsPortalEnforced] = useState(true);
     const [showBackPrompt, setShowBackPrompt] = useState(false);
     const [showDialpadModal, setShowDialpadModal] = useState(false);
-    
+
     // UI flows
     const [rememberedUser, setRememberedUser] = useState(() => {
         const stored = localStorage.getItem('remembered_user');
@@ -41,14 +41,15 @@ const Login = () => {
             try {
                 const user = JSON.parse(stored);
                 const isCOPortal = location.state?.isCO || false;
-                
+
                 // Check if user role matches the portal constraint
-                const isAllowed = isCOPortal 
-                    ? (user.role === 'Personnel Admin' || user.role === 'Super User')
-                    : (user.role === 'TLO Applicant');
-                    
+                const roleLower = user.role?.toLowerCase() || '';
+                const isAllowed = isCOPortal
+                    ? (roleLower === 'personnel admin' || roleLower === 'super user')
+                    : (roleLower === 'tlo applicant');
+
                 if (isAllowed) return user;
-                
+
                 // If it doesn't match, silently clear it so they see normal login
                 localStorage.removeItem('remembered_user');
             } catch (e) {
@@ -58,7 +59,7 @@ const Login = () => {
         return null;
     });
     const [usePassword, setUsePassword] = useState(!localStorage.getItem('remembered_user'));
-    
+
     const navigate = useNavigate();
     const location = useLocation();
     const isCO = location.state?.isCO || false;
@@ -77,14 +78,15 @@ const Login = () => {
         try {
             const data = await loginWithCredentials(loginId, password);
             if (data.success) {
+                const roleLower = data.user.role?.toLowerCase() || '';
                 // Role enforcement
                 if (isCO) {
-                    if (data.user.role !== 'Personnel Admin' && data.user.role !== 'Super User') {
+                    if (roleLower !== 'personnel admin' && roleLower !== 'super user') {
                         setLoading(false);
                         return Swal.fire('Access Denied', 'This portal is restricted to Central Office Personnel Administrators.', 'error');
                     }
                 } else {
-                    if (data.user.role !== 'TLO Applicant') {
+                    if (roleLower !== 'tlo applicant') {
                         setLoading(false);
                         return Swal.fire('Access Denied', 'This portal is restricted to Third Level Applicants.', 'error');
                     }
@@ -92,9 +94,9 @@ const Login = () => {
 
                 // Store for "PinLogin" feature
                 localStorage.setItem('remembered_user', JSON.stringify(data.user));
-                
+
                 // Role-based redirection
-                if (data.user.role === 'Personnel Admin' || data.user.role === 'Super User') {
+                if (roleLower === 'personnel admin' || roleLower === 'super user') {
                     navigate('/officials-registry');
                 } else {
                     navigate('/official-profiling');
@@ -114,21 +116,22 @@ const Login = () => {
         try {
             const data = await verifyPin(loginId, completedPin);
             if (data.success) {
+                const roleLower = data.user.role?.toLowerCase() || '';
                 // Role enforcement
                 if (isCO) {
-                    if (data.user.role !== 'Personnel Admin' && data.user.role !== 'Super User') {
+                    if (roleLower !== 'personnel admin' && roleLower !== 'super user') {
                         setLoading(false);
                         return Swal.fire('Access Denied', 'This portal is restricted to Central Office Personnel Administrators.', 'error');
                     }
                 } else {
-                    if (data.user.role !== 'TLO Applicant') {
+                    if (roleLower !== 'tlo applicant') {
                         setLoading(false);
                         return Swal.fire('Access Denied', 'This portal is restricted to Third Level Applicants.', 'error');
                     }
                 }
 
                 // Role-based redirection
-                if (data.user.role === 'Personnel Admin' || data.user.role === 'Super User') {
+                if (roleLower === 'personnel admin' || roleLower === 'super user') {
                     navigate('/officials-registry');
                 } else {
                     navigate('/official-profiling');
@@ -160,9 +163,9 @@ const Login = () => {
 
                 <div className="relative z-10 w-[90%] max-w-md">
                     <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-8 transform transition-all hover:scale-[1.01] duration-500 relative">
-                        
+
                         {/* BACK BUTTON */}
-                        <button 
+                        <button
                             onClick={() => navigate('/')}
                             className="absolute top-6 left-6 p-2 rounded-xl bg-white/50 text-slate-400 hover:text-[#004A99] hover:bg-white transition-all shadow-sm border border-slate-100 group z-20"
                         >
@@ -179,14 +182,14 @@ const Login = () => {
                         </div>
 
                         {rememberedUser && !usePassword ? (
-                            <PinLogin 
-                                rememberedUser={rememberedUser} 
+                            <PinLogin
+                                rememberedUser={rememberedUser}
                                 onSwitchAccount={() => {
                                     localStorage.removeItem('remembered_user');
                                     setRememberedUser(null);
                                     setUsePassword(true);
-                                }} 
-                                onUsePassword={() => setUsePassword(true)} 
+                                }}
+                                onUsePassword={() => setUsePassword(true)}
                             />
                         ) : (
                             <form onSubmit={handleLogin} className="space-y-6">
@@ -198,7 +201,7 @@ const Login = () => {
                                             <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'id' ? 'text-blue-600' : 'text-slate-400'}`}>
                                                 <FiMail className="w-5 h-5" />
                                             </div>
-                                            <input 
+                                            <input
                                                 type="text"
                                                 value={loginId}
                                                 onChange={(e) => setLoginId(e.target.value)}
@@ -213,14 +216,14 @@ const Login = () => {
 
                                     {/* AUTH MODE TOGGLE */}
                                     <div className="flex bg-slate-100 p-1 rounded-2xl">
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => setLoginMode('password')}
                                             className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'password' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
                                             Password
                                         </button>
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => setLoginMode('passcode')}
                                             className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'passcode' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -238,7 +241,7 @@ const Login = () => {
                                             <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'secret' ? 'text-blue-600' : 'text-slate-400'}`}>
                                                 <FiLock className="w-5 h-5" />
                                             </div>
-                                            <input 
+                                            <input
                                                 type={showPassword || loginMode === 'passcode' ? 'text' : 'password'}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
@@ -253,7 +256,7 @@ const Login = () => {
                                                 required
                                             />
                                             {loginMode === 'password' && (
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={() => setShowPassword(!showPassword)}
                                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors p-1"
@@ -266,8 +269,8 @@ const Login = () => {
                                 </div>
 
                                 <div className="flex items-center justify-between px-1">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={() => loginMode === 'password' ? setShowForgotModal(true) : setShowForgotPasscodeModal(true)}
                                         className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors"
                                     >
@@ -275,7 +278,7 @@ const Login = () => {
                                     </button>
                                 </div>
 
-                                <button 
+                                <button
                                     type="submit"
                                     disabled={loading}
                                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 transform transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
@@ -299,7 +302,7 @@ const Login = () => {
                 <AnimatePresence>
                     {showDialpadModal && (
                         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
@@ -327,7 +330,7 @@ const Login = () => {
 
                     {showForgotModal && (
                         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
                                 className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl text-center"
                             >
