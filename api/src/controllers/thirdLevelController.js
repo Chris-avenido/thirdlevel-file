@@ -2,6 +2,87 @@
 import pool from '../config/db.js';
 import { upsertBinary } from '../utils/binaryPipeline.js';
 
+let oicSchemaReady = false;
+const optionalColumnExpressionCache = new Map();
+
+const ensureOicColumn = async (client = pool) => {
+  if (client === pool && oicSchemaReady) return;
+
+  await client.query(`
+    ALTER TABLE third_level_official_masterlist
+    ADD COLUMN IF NOT EXISTS is_oic BOOLEAN DEFAULT FALSE
+  `);
+  await client.query(`
+    ALTER TABLE third_level_officials_profiling_application
+    ADD COLUMN IF NOT EXISTS is_oic BOOLEAN DEFAULT FALSE
+  `);
+  await client.query(`
+    UPDATE third_level_official_masterlist
+    SET is_oic = TRUE,
+        position_title = TRIM(REGEXP_REPLACE(position_title, '^OIC\\s+', '', 'i'))
+    WHERE position_title ~* '^OIC\\s+'
+  `);
+  await client.query(`
+    UPDATE third_level_officials_profiling_application
+    SET is_oic = TRUE,
+        position_title = TRIM(REGEXP_REPLACE(position_title, '^OIC\\s+', '', 'i'))
+    WHERE position_title ~* '^OIC\\s+'
+  `);
+
+  if (client === pool) oicSchemaReady = true;
+};
+
+const sanitizeOicPosition = (positionTitle) => {
+  if (typeof positionTitle !== 'string') return { position_title: positionTitle, is_oic: false };
+  const cleaned = positionTitle.replace(/^OIC\s+/i, '').trim();
+  return { position_title: cleaned, is_oic: cleaned !== positionTitle.trim() };
+};
+
+const POSITION_TITLE_DISPLAY = {
+  RD: 'Regional Director',
+  ARD: 'Assistant Regional Director',
+  SDS: 'Schools Division Superintendent',
+  ASDS: 'Assistant Schools Division Superintendent'
+};
+
+const THIRD_LEVEL_POSITIONS = [
+  'Secretary',
+  'Undersecretary',
+  'Assistant Secretary',
+  'Director IV',
+  'Director III',
+  'Regional Director',
+  'Assistant Regional Director',
+  'Schools Division Superintendent',
+  'Assistant Schools Division Superintendent',
+  'RD',
+  'ARD',
+  'SDS',
+  'ASDS'
+];
+
+const displayPositionTitle = (positionTitle) => (
+  POSITION_TITLE_DISPLAY[positionTitle] || positionTitle
+);
+
+const getOptionalColumnExpression = async (table, alias, columns, fallback = 'NULL::TEXT') => {
+  const cacheKey = `${table}:${alias}:${columns.join(',')}`;
+  if (optionalColumnExpressionCache.has(cacheKey)) {
+    return optionalColumnExpressionCache.get(cacheKey);
+  }
+
+  const colsRes = await pool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = $1
+  `, [table]);
+  const available = new Set(colsRes.rows.map(r => r.column_name.toLowerCase()));
+  const column = columns.find(col => available.has(col));
+  const expression = column ? `${alias}."${column}"::TEXT` : fallback;
+  optionalColumnExpressionCache.set(cacheKey, expression);
+  return expression;
+};
+
 // If compressBufferTo96Dpi is needed, it should be imported here.
 // import { compressBufferTo96Dpi } from '../utils/pdfUtils.js'; // Example
 
@@ -141,6 +222,7 @@ export const getProfile = async (req, res) => {
   const { TLOid } = req.params;
   const isMasterlist = !TLOid.startsWith('APP-');
   try {
+    await ensureOicColumn();
     let result;
     if (isMasterlist) {
       result = await pool.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
@@ -160,6 +242,14 @@ export const updateProfile = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await ensureOicColumn(client);
+
+    if (req.body.position_title) {
+      const normalizedPosition = sanitizeOicPosition(req.body.position_title);
+      req.body.position_title = normalizedPosition.position_title;
+      if (normalizedPosition.is_oic && req.body.is_oic === undefined) req.body.is_oic = true;
+    }
+
     const allFields = [
       'strand', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
@@ -169,7 +259,7 @@ export const updateProfile = async (req, res) => {
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
-      'previous_positions',
+      'previous_positions', 'is_oic',
       'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
       'pending_admin_case', 'ombudsman_case', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
     ];
@@ -257,8 +347,9 @@ export const submitApplication = async (req, res) => {
 
 export const getVacancies = async (req, res) => {
   try {
+    await ensureOicColumn();
     const result = await pool.query(`
-      SELECT "TLOid", position_title, office, strand, first_name, last_name, status 
+      SELECT "TLOid", position_title, office, strand, first_name, last_name, status, is_oic
       FROM third_level_official_masterlist 
       WHERE first_name ILIKE '%VACANT%' OR status = 'Vacant'
       ORDER BY strand, office, position_title
@@ -275,6 +366,7 @@ export const getApplications = async (req, res) => {
   }
 
   try {
+    await ensureOicColumn();
     const { search, strand, position } = req.query;
     let query = `
       SELECT 
@@ -330,6 +422,7 @@ export const processApplication = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await ensureOicColumn(client);
 
     if (action === 'reject') {
       await client.query(`
@@ -419,6 +512,12 @@ export const getOfficials = async (req, res) => {
   const params = [];
   const conditions = [];
 
+  try {
+    await ensureOicColumn();
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+
   if (search) {
     params.push(`%${search}%`);
     conditions.push(`(first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR email ILIKE $${params.length} OR position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR strand ILIKE $${params.length})`);
@@ -444,9 +543,10 @@ export const getOfficials = async (req, res) => {
   }
 
   if (category === 'Third Level') {
-    conditions.push(`position_title IN ('Secretary', 'Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Regional Director', 'Assistant Regional Director')`);
+    params.push(THIRD_LEVEL_POSITIONS);
+    conditions.push(`position_title = ANY($${params.length}) AND COALESCE(is_oic, FALSE) = FALSE`);
   } else if (category === 'OIC / Chiefs') {
-    conditions.push(`position_title NOT IN ('Secretary', 'Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Regional Director', 'Assistant Regional Director')`);
+    conditions.push(`COALESCE(is_oic, FALSE) = TRUE`);
   }
 
   if (conditions.length > 0) {
@@ -461,7 +561,13 @@ export const getOfficials = async (req, res) => {
 
   try {
     const result = await pool.query(query, params);
-    res.json({ success: true, data: result.rows });
+    res.json({
+      success: true,
+      data: result.rows.map(row => ({
+        ...row,
+        position_title: displayPositionTitle(row.position_title)
+      }))
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -547,6 +653,7 @@ export const getPositionIncumbents = async (req, res) => {
 export const getActiveOfficials = async (req, res) => {
   const { exclude_TLOid } = req.query;
   try {
+    await ensureOicColumn();
     const params = [];
     let query = `
       SELECT "TLOid", first_name, last_name, position_title, office, strand, email
@@ -565,23 +672,86 @@ export const getActiveOfficials = async (req, res) => {
   }
 };
 
+export const getUnassignedPersonnel = async (req, res) => {
+  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { search } = req.query;
+  const requestedLimit = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50;
+  try {
+    await ensureOicColumn();
+    const appEmployeeExpr = await getOptionalColumnExpression(
+      'third_level_officials_profiling_application',
+      'a',
+      ['employee_number', 'employee_no', 'emp_no']
+    );
+    const userEmployeeExpr = await getOptionalColumnExpression(
+      'users',
+      'u',
+      ['employee_number', 'employee_no', 'emp_no']
+    );
+    const params = [];
+    let query = `
+      SELECT DISTINCT ON (LOWER(COALESCE(a.email, u.email)))
+        COALESCE(a.app_TLOid, u.uid) AS "TLOid",
+        COALESCE(NULLIF(a.first_name, ''), u.first_name) AS first_name,
+        COALESCE(NULLIF(a.last_name, ''), u.last_name) AS last_name,
+        COALESCE(a.email, u.email) AS email,
+        COALESCE(${appEmployeeExpr}, ${userEmployeeExpr}) AS employee_number,
+        COALESCE(a.contact_details, u.contact_number) AS contact_details
+      FROM users u
+      FULL JOIN third_level_officials_profiling_application a
+        ON LOWER(a.email) = LOWER(u.email)
+      WHERE COALESCE(a.email, u.email) IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM third_level_official_masterlist m
+          WHERE LOWER(m.email) = LOWER(COALESCE(a.email, u.email))
+            AND m.status = 'Active'
+        )
+        AND COALESCE(NULLIF(a.first_name, ''), u.first_name) IS NOT NULL
+    `;
+
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND (
+        COALESCE(a.first_name, u.first_name) ILIKE $${params.length}
+        OR COALESCE(a.last_name, u.last_name) ILIKE $${params.length}
+        OR CONCAT_WS(' ', COALESCE(NULLIF(a.first_name, ''), u.first_name), COALESCE(NULLIF(a.last_name, ''), u.last_name)) ILIKE $${params.length}
+        OR COALESCE(a.app_TLOid, u.uid) ILIKE $${params.length}
+        OR COALESCE(${appEmployeeExpr}, ${userEmployeeExpr}) ILIKE $${params.length}
+      )`;
+    }
+
+    params.push(limit);
+    query += ` ORDER BY LOWER(COALESCE(a.email, u.email)), last_name ASC, first_name ASC LIMIT $${params.length}`;
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const adminAction = async (req, res) => {
   if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const { TLOid, action, justification, target_TLOid, successor_TLOid } = req.body;
+  const { TLOid, action, justification, target_TLOid, successor_TLOid, assignee_TLOid } = req.body;
   if (!TLOid || !action) return res.status(400).json({ error: 'TLOid and action are required' });
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await ensureOicColumn(client);
 
     const currentRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
     const official = currentRes.rows[0];
     if (!official) throw new Error('Official not found');
 
-    if (official.first_name && official.first_name !== 'VACANT') {
+    if (official.first_name && official.first_name !== 'VACANT' && action !== 'reassign') {
       await client.query(`
         INSERT INTO third_level_officials_updates
           ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
@@ -640,6 +810,52 @@ export const adminAction = async (req, res) => {
       }
 
     } else if (action === 'reassign') {
+      if (assignee_TLOid) {
+        const assigneeRes = await client.query(`
+          SELECT app_TLOid AS "TLOid", first_name, last_name, email, contact_details
+          FROM third_level_officials_profiling_application
+          WHERE app_TLOid = $1
+          UNION ALL
+          SELECT uid AS "TLOid", first_name, last_name, email, contact_number AS contact_details
+          FROM users
+          WHERE uid = $1
+          LIMIT 1
+        `, [assignee_TLOid]);
+        const assignee = assigneeRes.rows[0];
+        if (!assignee) throw new Error('Assignee not found');
+
+        const existingAssignmentRes = await client.query(`
+          SELECT 1
+          FROM third_level_official_masterlist
+          WHERE LOWER(email) = LOWER($1)
+            AND status = 'Active'
+          LIMIT 1
+        `, [assignee.email]);
+        if (existingAssignmentRes.rows.length > 0) throw new Error('Selected personnel already has an assigned position');
+
+        if (official.first_name && official.first_name !== 'VACANT') {
+          await client.query(`
+            INSERT INTO third_level_officials_updates
+              ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, NOW())
+          `, [TLOid, official.first_name, official.last_name, official.position_title,
+            official.office, official.strand, official.email, justification || 'Reassigned position to another personnel']);
+        }
+
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
+              status = 'Active', updated_at = NOW()
+          WHERE "TLOid" = $5
+        `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid]);
+
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW())
+        `, [TLOid, assignee.first_name, assignee.last_name, official.position_title,
+          official.office, official.strand, assignee.email, justification || 'Assigned through reassignment']);
+      } else
       if (target_TLOid) {
         const targetRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [target_TLOid]);
         const targetSlot = targetRes.rows[0];

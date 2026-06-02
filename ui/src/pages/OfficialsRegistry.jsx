@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -116,9 +116,12 @@ const OfficialsRegistry = () => {
     const [activeTab, setActiveTab] = useState('Third Level'); // 'Third Level' | 'OIC / Chiefs' | 'Legacy'
     const [strandFilter, setStrandFilter] = useState('All');
     const [positionFilter, setPositionFilter] = useState('All');
-    const [viewMode, setViewMode] = useState('grid');
+    const [viewMode, setViewMode] = useState('table');
     const [strands, setStrands] = useState([]);
     const [tabPositions, setTabPositions] = useState([]); // Positions specifically for the active tab
+    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+    const [tableFilters, setTableFilters] = useState({});
+    const [currentPage, setCurrentPage] = useState(1);
 
     const fetchTabPositions = async () => {
         try {
@@ -159,8 +162,25 @@ const OfficialsRegistry = () => {
     const [targetSlot, setTargetSlot] = useState('');
     const [vacantSlots, setVacantSlots] = useState([]);
     const [activeOfficials, setActiveOfficials] = useState([]);
+    const [unassignedPersonnel, setUnassignedPersonnel] = useState([]);
+    const [unassignedSearch, setUnassignedSearch] = useState('');
+    const [unassignedLoading, setUnassignedLoading] = useState(false);
+    const [assigneeSlot, setAssigneeSlot] = useState('');
     const [successorSlot, setSuccessorSlot] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    const unassignedAbortRef = useRef(null);
+    const unassignedCacheRef = useRef(new Map());
+
+    const ListRowsIcon = () => (
+        <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="18" width="18" xmlns="http://www.w3.org/2000/svg">
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+        </svg>
+    );
 
     useEffect(() => {
         fetchStrands();
@@ -173,6 +193,10 @@ const OfficialsRegistry = () => {
             fetchOfficials();
         }
     }, [searchTerm, activeTab, strandFilter, positionFilter]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, activeTab, strandFilter, positionFilter, sortConfig, tableFilters]);
 
     const fetchStrands = async () => {
         try {
@@ -282,12 +306,52 @@ const OfficialsRegistry = () => {
         }
     };
 
+    const fetchUnassignedPersonnel = async (search = '') => {
+        const normalizedSearch = search.trim();
+        if (unassignedCacheRef.current.has(normalizedSearch)) {
+            setUnassignedPersonnel(unassignedCacheRef.current.get(normalizedSearch));
+            return;
+        }
+
+        if (unassignedAbortRef.current) {
+            unassignedAbortRef.current.abort();
+        }
+
+        const controller = new AbortController();
+        unassignedAbortRef.current = controller;
+        setUnassignedLoading(true);
+        try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('limit', normalizedSearch ? '75' : '50');
+            if (normalizedSearch) queryParams.append('search', normalizedSearch);
+            const res = await fetch(apiUrl(`/api/third-level/unassigned-personnel?${queryParams.toString()}`), {
+                headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` },
+                signal: controller.signal
+            });
+            const data = await res.json();
+            if (data.success) {
+                unassignedCacheRef.current.set(normalizedSearch, data.data);
+                setUnassignedPersonnel(data.data);
+            }
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            console.error('Failed to fetch unassigned personnel:', err);
+        } finally {
+            if (unassignedAbortRef.current === controller) {
+                unassignedAbortRef.current = null;
+                setUnassignedLoading(false);
+            }
+        }
+    };
+
     const handleAdminAction = async () => {
-        if (!justification) return Swal.fire('Notice', 'Please provide a justification.', 'info');
-        if (adminAction === 'reassign' && !targetSlot) return Swal.fire('Notice', 'Please select a target vacant slot.', 'info');
+        if (!justification && adminAction !== 'reassign') return Swal.fire('Notice', 'Please provide a justification.', 'info');
+        if (adminAction === 'reassign' && !assigneeSlot) return Swal.fire('Notice', 'Please select personnel to reassign to this position.', 'info');
 
         setActionLoading(true);
         try {
+            const personName = `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`.trim();
+            const positionName = actionOfficial?.position_title || 'position';
             const res = await fetch(apiUrl('/api/third-level/admin-action'), {
                 method: 'POST',
                 headers: {
@@ -299,12 +363,18 @@ const OfficialsRegistry = () => {
                     action: adminAction,
                     justification,
                     target_TLOid: targetSlot,
-                    successor_TLOid: successorSlot || undefined
+                    successor_TLOid: successorSlot || undefined,
+                    assignee_TLOid: assigneeSlot || undefined
                 })
             });
             const data = await res.json();
             if (data.success) {
-                Swal.fire('Notice', `Official ${adminAction}ed successfully.`, 'info');
+                const message = adminAction === 'vacate'
+                    ? `${personName || 'Official'} has vacated ${positionName}`
+                    : adminAction === 'reassign'
+                        ? `Personnel reassigned to ${positionName}`
+                        : `Official ${adminAction}ed successfully.`;
+                Swal.fire('Notice', message, 'info');
                 setShowActionModal(false);
                 fetchOfficials();
             } else {
@@ -323,17 +393,11 @@ const OfficialsRegistry = () => {
         setJustification('');
         setTargetSlot('');
         setSuccessorSlot('');
+        setAssigneeSlot('');
+        setUnassignedSearch('');
         setShowActionModal(true);
         if (action === 'reassign') {
-            try {
-                const res = await fetch(apiUrl('/api/third-level/officials?status=Vacant'), {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                if (data.success) setVacantSlots(data.data);
-            } catch (err) {
-                console.error('Failed to fetch vacant slots:', err);
-            }
+            setUnassignedPersonnel(unassignedCacheRef.current.get('') || []);
         }
         if (action === 'succeed') {
             try {
@@ -347,6 +411,125 @@ const OfficialsRegistry = () => {
             }
         }
     };
+
+    useEffect(() => {
+        if (!showActionModal || adminAction !== 'reassign') return;
+        const timer = setTimeout(() => fetchUnassignedPersonnel(unassignedSearch), 350);
+        return () => clearTimeout(timer);
+    }, [unassignedSearch, showActionModal, adminAction]);
+
+    const tableColumns = useMemo(() => ([
+        {
+            key: 'name',
+            label: 'Official Profile',
+            value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''} ${item.email || ''}`,
+            filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
+        },
+        {
+            key: 'position',
+            label: 'Current Position',
+            value: (item) => activeTab === 'Applications'
+                ? `${item.target_position || ''} ${item.target_office || ''} ${item.target_strand || ''}`
+                : `${item.position_title || ''} ${item.is_oic ? 'OIC' : ''}`,
+            filterValue: (item) => activeTab === 'Applications'
+                ? (item.target_position || 'Unspecified')
+                : `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
+        },
+        {
+            key: 'office',
+            label: 'Strand / Office',
+            value: (item) => activeTab === 'Applications'
+                ? `${item.position_title || ''} ${item.office || ''}`
+                : `${item.office || ''} ${item.strand || ''}`,
+            filterValue: (item) => activeTab === 'Applications'
+                ? (item.office || 'N/A')
+                : `${item.office || 'Main Office'} / ${item.strand || 'No Strand'}`
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            value: (item) => activeTab === 'Applications' ? 'Applied' : (item.status || ''),
+            filterValue: (item) => activeTab === 'Applications' ? 'Applied' : (item.status || 'Unknown')
+        }
+    ]), [activeTab]);
+
+    const activeRecords = activeTab === 'Applications' ? applications : officials;
+    const tableFilterOptions = useMemo(() => {
+        return tableColumns.reduce((options, column) => {
+            const values = activeRecords
+                .map(item => (column.filterValue ? column.filterValue(item) : column.value(item)).trim())
+                .filter(Boolean);
+            options[column.key] = [...new Set(values)].sort((a, b) => a.localeCompare(b));
+            return options;
+        }, {});
+    }, [activeRecords, tableColumns]);
+
+    const filteredRecords = useMemo(() => {
+        return activeRecords.filter(item => tableColumns.every(column => {
+            const filter = tableFilters[column.key];
+            if (!filter) return true;
+            const value = column.filterValue ? column.filterValue(item) : column.value(item);
+            return value === filter;
+        }));
+    }, [activeRecords, tableColumns, tableFilters]);
+
+    const sortedRecords = useMemo(() => {
+        const column = tableColumns.find(c => c.key === sortConfig.key);
+        if (!column) return filteredRecords;
+        return [...filteredRecords].sort((a, b) => {
+            const left = column.value(a).toLowerCase();
+            const right = column.value(b).toLowerCase();
+            if (left < right) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (left > right) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [filteredRecords, tableColumns, sortConfig]);
+
+    const pageSize = 20;
+    const pageCount = Math.max(1, Math.ceil(sortedRecords.length / pageSize));
+    const pagedRecords = sortedRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const pageButtons = useMemo(() => {
+        const visible = new Set([1, pageCount, currentPage - 1, currentPage, currentPage + 1].filter(page => page >= 1 && page <= pageCount));
+        const pages = [];
+        let previous = 0;
+        [...visible].sort((a, b) => a - b).forEach(page => {
+            if (page - previous > 1) pages.push('ellipsis-' + page);
+            pages.push(page);
+            previous = page;
+        });
+        return pages;
+    }, [currentPage, pageCount]);
+
+    const handleSort = (key) => {
+        setSortConfig(current => ({
+            key,
+            direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+        }));
+    };
+
+    const TableHeader = ({ column }) => (
+        <th className="px-8 py-4 text-left align-top">
+            <div className="flex items-center gap-3 min-w-[220px]">
+                <button
+                    onClick={() => handleSort(column.key)}
+                    className="shrink-0 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-blue-600 transition-colors"
+                >
+                    {column.label}
+                    <span className="text-[9px]">{sortConfig.key === column.key ? (sortConfig.direction === 'asc' ? 'ASC' : 'DESC') : 'SORT'}</span>
+                </button>
+                <select
+                    value={tableFilters[column.key] || ''}
+                    onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
+                    className="min-w-[120px] max-w-[220px] bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300"
+                >
+                    <option value="">All</option>
+                    {(tableFilterOptions[column.key] || []).map(option => (
+                        <option key={option} value={option}>{option}</option>
+                    ))}
+                </select>
+            </div>
+        </th>
+    );
 
     const handleProcessApplication = async (app_TLOid, action, denial_reason = '') => {
         if (!window.confirm(`Are you sure you want to ${action} this application?`)) return;
@@ -483,8 +666,9 @@ const OfficialsRegistry = () => {
                                 <button 
                                     onClick={() => setViewMode('table')}
                                     className={`p-3 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    title="Table view"
                                 >
-                                    <FiList size={18} />
+                                    <ListRowsIcon />
                                 </button>
                                 <button 
                                     onClick={() => setViewMode('grid')}
@@ -502,7 +686,7 @@ const OfficialsRegistry = () => {
                             <div className="h-96 flex items-center justify-center">
                                 <div className="w-12 h-12 border-4 border-[#004A99]/10 border-t-[#004A99] rounded-full animate-spin"></div>
                             </div>
-                        ) : officials.length === 0 ? (
+                        ) : sortedRecords.length === 0 ? (
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
                                 <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
                                 <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight">No Records Found</h3>
@@ -514,15 +698,12 @@ const OfficialsRegistry = () => {
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-slate-50/50 border-b border-slate-100">
-                                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Official Profile</th>
-                                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Current Position</th>
-                                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Strand / Office</th>
-                                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                                                {tableColumns.map(column => <TableHeader key={column.key} column={column} />)}
                                                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
-                                            {(activeTab === 'Applications' ? applications : officials).map((item) => (
+                                            {pagedRecords.map((item) => (
                                                 <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors">
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-4">
@@ -556,6 +737,7 @@ const OfficialsRegistry = () => {
                                                             >
                                                                 <div className="font-black text-[#004A99] text-[11px] uppercase tracking-tight flex items-center gap-2">
                                                                     {item.position_title || 'Unassigned'}
+                                                                    {item.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest">OIC</span>}
                                                                     <FiClock className="opacity-0 group-hover/pos:opacity-100 transition-opacity text-slate-400" size={12} />
                                                                 </div>
                                                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
@@ -601,24 +783,30 @@ const OfficialsRegistry = () => {
                                                     </td>
                                                     <td className="px-8 py-6 text-right">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <button 
-                                                                onClick={() => navigate(`/official-profiling?email=${item.email}`)}
-                                                                title="View Profile"
-                                                                className="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:bg-[#004A99] hover:text-white hover:border-[#004A99] transition-all shadow-sm"
-                                                            >
-                                                                <FiExternalLink size={18} />
-                                                            </button>
-                                                            {activeTab !== 'Applications' && item.first_name && (
+                                                            {item.email && (
+                                                                <button 
+                                                                    onClick={() => navigate(`/official-profiling?email=${item.email}`)}
+                                                                    title="View Profile"
+                                                                    className="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:bg-[#004A99] hover:text-white hover:border-[#004A99] transition-all shadow-sm"
+                                                                >
+                                                                    <FiExternalLink size={18} />
+                                                                </button>
+                                                            )}
+                                                            {activeTab !== 'Applications' && (
                                                                 <div className="flex gap-2">
                                                                     <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
                                                                         <FiLayers size={14} /> Reassign
                                                                     </button>
-                                                                    <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                                        <FiTrash2 size={14} /> Vacate
-                                                                    </button>
-                                                                    <button onClick={() => openActionModal(item, 'succeed')} title="Succeed" className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
-                                                                        <FiCheckCircle size={14} /> Succeed
-                                                                    </button>
+                                                                    {item.first_name && (
+                                                                        <>
+                                                                            <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                                                <FiTrash2 size={14} /> Vacate
+                                                                            </button>
+                                                                            <button onClick={() => openActionModal(item, 'succeed')} title="Succeed" className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
+                                                                                <FiCheckCircle size={14} /> Succeed
+                                                                            </button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -628,15 +816,36 @@ const OfficialsRegistry = () => {
                                         </tbody>
                                     </table>
                                 </div>
+                                <div className="px-8 py-5 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        Showing {sortedRecords.length === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, sortedRecords.length)} of {sortedRecords.length} records
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
+                                        {pageButtons.map(page => typeof page === 'number' ? (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`w-9 h-9 rounded-xl text-[10px] font-black border transition-all ${currentPage === page ? 'bg-[#004A99] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ) : (
+                                            <span key={page} className="px-1 text-[10px] font-black text-slate-300">...</span>
+                                        ))}
+                                        <span className="px-2 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {pageCount}</span>
+                                        <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
+                                    </div>
+                                </div>
                             </motion.div>
                         ) : (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                { (activeTab === 'Applications' ? applications : officials).map((item) => (
+                                { sortedRecords.map((item) => (
                                     <motion.div
                                         key={item.TLOid}
                                         whileHover={{ y: -8 }}
-                                        onClick={() => navigate(`/official-profiling?email=${item.email}`)}
-                                        className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 cursor-pointer group flex flex-col justify-between h-full relative overflow-hidden"
+                                        onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
+                                        className={`bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                     >
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                                         <div>
@@ -648,7 +857,12 @@ const OfficialsRegistry = () => {
                                                 </div>
                                                 {activeTab === 'Applications' ? (
                                                     <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[9px] font-black uppercase tracking-widest">Applied</span>
-                                                ) : <StatusBadge status={item.status} />}
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        {item.is_oic && <span className="px-3 py-1 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[9px] font-black uppercase tracking-widest">OIC</span>}
+                                                        <StatusBadge status={item.status} />
+                                                    </div>
+                                                )}
                                             </div>
                                             
                                             <div className="space-y-1 relative z-10">
@@ -712,17 +926,21 @@ const OfficialsRegistry = () => {
                                         ) : (
                                             <div className="mt-8 pt-6 border-t border-slate-50 flex flex-col gap-4 relative z-20" onClick={e => e.stopPropagation()}>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {item.first_name && (
+                                                    {activeTab !== 'Applications' && (
                                                         <>
                                                             <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
                                                                 <FiLayers size={12} /> Reassign
                                                             </button>
+                                                            {item.first_name && (
+                                                                <>
                                                             <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
                                                                 <FiTrash2 size={12} /> Vacate
                                                             </button>
                                                             <button onClick={() => openActionModal(item, 'succeed')} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
                                                                 <FiCheckCircle size={12} /> Succeed
                                                             </button>
+                                                                </>
+                                                            )}
                                                         </>
                                                     )}
                                                 </div>
@@ -839,8 +1057,8 @@ const OfficialsRegistry = () => {
                                     <div className="flex justify-between items-start mb-8">
                                         <div>
                                             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{adminAction}ING OFFICIAL</h2>
-                                            <p className="text-slate-400 font-bold mt-2">{actionOfficial?.first_name} {actionOfficial?.last_name}</p>
+                                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{adminAction === 'reassign' ? 'REASSIGN POSITION' : `${adminAction}ING OFFICIAL`}</h2>
+                                            <p className="text-slate-400 font-bold mt-2">{adminAction === 'reassign' ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}</p>
                                         </div>
                                         <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all">
                                             <FiX size={20} />
@@ -849,17 +1067,37 @@ const OfficialsRegistry = () => {
 
                                     <div className="space-y-6">
                                         {adminAction === 'reassign' && (
-                                            <SearchableSelect 
-                                                label="Select Target Vacant Slot"
-                                                placeholder="Choose a position..."
-                                                value={targetSlot}
-                                                onChange={setTargetSlot}
-                                                options={vacantSlots.map(v => ({
-                                                    value: v.TLOid,
-                                                    label: v.position_title,
-                                                    sublabel: `${v.office} (${v.strand || 'No Strand'})`
-                                                }))}
-                                            />
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Search Personnel Without Position</label>
+                                                    <div className="relative">
+                                                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                                        <input
+                                                            value={unassignedSearch}
+                                                            onChange={(e) => setUnassignedSearch(e.target.value)}
+                                                            placeholder="Search by name or employee number..."
+                                                            className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <SearchableSelect 
+                                                    label="Reassign To"
+                                                    info={unassignedLoading ? 'Loading available personnel...' : 'Showing personnel without an active position. Search to narrow the list.'}
+                                                    placeholder={unassignedLoading ? 'Loading personnel...' : 'Choose personnel...'}
+                                                    value={assigneeSlot}
+                                                    onChange={setAssigneeSlot}
+                                                    options={unassignedPersonnel.map(p => ({
+                                                        value: p.TLOid,
+                                                        label: `${p.first_name} ${p.last_name || ''}`.trim(),
+                                                        sublabel: [p.employee_number || p.TLOid, p.email].filter(Boolean).join(' - ')
+                                                    }))}
+                                                />
+                                                {!unassignedLoading && unassignedPersonnel.length === 0 && (
+                                                    <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
 
                                         {adminAction === 'succeed' && (
@@ -885,7 +1123,7 @@ const OfficialsRegistry = () => {
                                             <textarea 
                                                 value={justification}
                                                 onChange={(e) => setJustification(e.target.value)}
-                                                placeholder="Please provide a detailed reason for this action..."
+                                                placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide a detailed reason for this action...'}
                                                 rows={4}
                                                 className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
                                             />
