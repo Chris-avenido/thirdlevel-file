@@ -708,81 +708,136 @@ const OfficialProfiling = () => {
     // ── MAIN PROFILING FORM ──
     return (
         <PageTransition>
-            <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
+            <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
 
-                {/* Header */}
-                <div className="bg-[#0038A8] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiAwaDZ2LTZoLTZ2NnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
-                    <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-8 py-10 lg:py-14">
-                        <div className="flex justify-between items-center mb-8">
-                            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-blue-200 hover:text-white font-black text-[10px] uppercase tracking-widest transition-colors">
-                                <FiChevronLeft size={16} /> Back
-                            </button>
-                            <div className="flex items-center gap-6">
-                                <button onClick={logout} className="flex items-center gap-2 text-blue-200 hover:text-red-400 font-black text-[10px] uppercase tracking-widest transition-colors">
-                                    <FiLock size={16} /> Sign Out
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                            <div className="flex items-center gap-6 min-w-0">
-                                <div className="w-16 h-16 bg-white/10 rounded-[1.5rem] flex items-center justify-center text-white border border-white/20 shrink-0">
-                                    <FiUser size={32} />
+                {/* ── Top Navigation Bar ── */}
+                <div className="bg-[#0a1e3f]">
+                    <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-2.5 flex justify-between items-center">
+                        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-blue-300 hover:text-white font-semibold text-xs transition-colors">
+                            <FiChevronLeft size={14} /> Back
+                        </button>
+                        <button onClick={logout} className="flex items-center gap-2 text-blue-300 hover:text-red-300 font-semibold text-xs transition-colors">
+                            <FiLock size={13} /> Sign Out
+                        </button>
+                    </div>
+                </div>
+
+                {/* ── Profile Banner ── */}
+                <div className="bg-gradient-to-r from-[#0038A8] to-[#1a4fbd] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiAwaDZ2LTZoLTZ2NnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20" />
+                    <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-8 py-6 lg:py-8">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                            {/* Left: Avatar + Profile Info */}
+                            <div className="flex items-center gap-5 min-w-0">
+                                <div className="relative shrink-0">
+                                    <div className="w-[72px] h-[72px] bg-white/10 rounded-2xl flex items-center justify-center text-white/60 border border-white/20 shadow-lg shadow-black/10">
+                                        <FiUser size={36} />
+                                    </div>
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-400 rounded-full border-[2.5px] border-[#0038A8] shadow-sm" />
                                 </div>
                                 <div className="min-w-0">
-                                    <h1 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none break-words">{fullName}</h1>
-                                    <p className="text-blue-200 text-[10px] font-black uppercase tracking-[0.28em] mt-3 break-words">{profile.position_title || 'Position'}</p>
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <h1 className="text-2xl lg:text-3xl font-black text-white tracking-tight leading-none">{fullName}</h1>
+                                        {applicationStatus && (
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FCD116] text-[#1a3a6e] text-[9px] font-black uppercase tracking-wider rounded-full shadow-sm">
+                                                <span className="w-1.5 h-1.5 bg-[#1a3a6e] rounded-full" />
+                                                {applicationStatus === 'under_review' ? 'In Review' : applicationStatus === 'approved' ? 'Approved' : applicationStatus === 'disapproved' ? 'Denied' : 'Draft'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-blue-200/80 text-sm font-medium mt-1.5">{profile.position_title || 'No position selected'}</p>
+                                    <div className="flex items-center gap-2.5 mt-2.5 flex-wrap text-blue-300/60 text-[11px] font-medium">
+                                        {TLOid && (
+                                            <span className="flex items-center gap-1">
+                                                <span className="opacity-50">#</span> {applicationId ? `APP-${String(applicationId).padStart(4, '0')}` : TLOid}
+                                            </span>
+                                        )}
+                                        {TLOid && <span className="opacity-30">·</span>}
+                                        <span className="flex items-center gap-1.5">
+                                            <FiCalendar size={11} /> Applied {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                        {/* <span className="opacity-30">·</span>
+                                        <span className="flex items-center gap-1.5">
+                                            <FiBriefcase size={11} /> Department TBD
+                                        </span> */}
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Progress Card */}
-                            <div className="w-full lg:w-44 bg-white/10 border border-white/20 rounded-[1.5rem] p-4 shadow-xl shadow-blue-950/10 shrink-0">
-                                <div className="flex items-center justify-between gap-3">
-                                    <p className="text-blue-100 text-[9px] font-black uppercase tracking-widest leading-tight">Progress</p>
-                                    <p className="text-white font-black italic text-3xl leading-none">{completeness}%</p>
-                                </div>
-                                <div className="h-2 bg-white/20 rounded-full overflow-hidden mt-4">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${completeness}%` }}
-                                        className={`h-full ${completeness === 100 ? 'bg-emerald-400' : 'bg-[#FCD116]'}`}
-                                    />
+                            {/* Right: Action Buttons */}
+                            <div className="flex items-center gap-3 shrink-0">
+                                <div className="">
+                                    <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-4">
+                                        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                                            <div className="flex-1">
+                                                <div className="w-full lg:w-44 bg-white/10 border border-white/20 rounded-[1.5rem] p-4 shadow-xl shadow-blue-950/10 shrink-0">
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <p className="text-blue-100 text-[9px] font-black uppercase tracking-widest leading-tight">Progress</p>
+                                                        <p className="text-white font-black italic text-3xl leading-none">{completeness}%</p>
+                                                    </div>
+                                                    <div className="h-2 bg-white/20 rounded-full overflow-hidden mt-4">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${completeness}%` }}
+                                                            className={`h-full ${completeness === 100 ? 'bg-emerald-400' : 'bg-[#FCD116]'}`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Tab Content */}
-                <div className="max-w-6xl mx-auto px-6 lg:px-8 py-10">
+                {/* ── Body Content ── */}
+                <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-8">
                     <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-8 items-start">
-                        <aside className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-4 lg:sticky lg:top-6">
-                            <p className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.28em]">Profile Sections</p>
-                            <div className="space-y-1">
-                                {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
-                                    const isLocked = t.id === 'application' && completeness < 100;
-                                    const active = tab === t.id;
-                                    return (
-                                        <button
-                                            key={t.id}
-                                            disabled={isLocked}
-                                            onClick={() => !isLocked && setTab(t.id)}
-                                            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest transition-all
-                                                ${active ? 'bg-[#0038A8] text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}
-                                                ${isLocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
-                                        >
-                                            <span className="flex items-center gap-3 min-w-0">
-                                                <t.icon size={14} className="shrink-0" />
-                                                <span className="truncate">{t.label}</span>
-                                            </span>
-                                            {isLocked ? <FiLock size={12} className="shrink-0" /> : active ? <FiArrowRight size={12} className="shrink-0" /> : null}
-                                        </button>
-                                    );
-                                })}
+                        {/* Sidebar */}
+                        <aside className="bg-white rounded-2xl border border-slate-200/80 shadow-sm lg:sticky lg:top-6 overflow-hidden">
+                            {/* Talent Portal Branding */}
+                            <div className="px-5 pt-5 pb-4 border-b border-slate-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-[#0038A8]/10 rounded-xl flex items-center justify-center text-[#0038A8]">
+                                        <FiUser size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-slate-800 leading-tight">Talent Portal</p>
+                                        <p className="text-[10px] font-medium text-slate-400">Applicant Workspace</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Navigation */}
+                            <div className="p-3">
+                                <p className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Sections</p>
+                                <div className="space-y-0.5">
+                                    {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
+                                        const isLocked = t.id === 'application' && completeness < 100;
+                                        const active = tab === t.id;
+                                        return (
+                                            <button
+                                                key={t.id}
+                                                disabled={isLocked}
+                                                onClick={() => !isLocked && setTab(t.id)}
+                                                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left text-[11px] font-semibold transition-all
+                                                    ${active ? 'bg-[#0038A8] text-white shadow-md shadow-blue-900/20' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}
+                                                    ${isLocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
+                                            >
+                                                <span className="flex items-center gap-3 min-w-0">
+                                                    <t.icon size={15} className="shrink-0" />
+                                                    <span className="truncate">{t.label}</span>
+                                                </span>
+                                                {isLocked ? <FiLock size={12} className="shrink-0 opacity-50" /> : active ? <FiArrowRight size={12} className="shrink-0" /> : null}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </aside>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0">
+                        {/* Main Content Area */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0">
                         <div className={tab === 'experience' ? 'lg:col-span-2' : 'lg:col-span-3'}>
                             <AnimatePresence mode="wait">
                                 <motion.div
@@ -795,8 +850,8 @@ const OfficialProfiling = () => {
 
                                     {/* ── PERSONAL INFO ── */}
                                     {tab === 'personal' && (
-                                        <div className="space-y-10">
-                                            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                        <div className="space-y-6">
+                                            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
                                                 <SectionLabel>Personal Information</SectionLabel>
                                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                                     <Field label="Last Name"><input type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
@@ -834,7 +889,7 @@ const OfficialProfiling = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
                                                 <SectionLabel color="#0038A8">Designation & Appointment</SectionLabel>
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                     <Field label="Position Title (As per Appointment / Designation)">
@@ -892,8 +947,8 @@ const OfficialProfiling = () => {
 
                                     {/* ── ELIGIBILITY ── */}
                                     {tab === 'eligibility' && (
-                                        <div className="space-y-8">
-                                            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                        <div className="space-y-6">
+                                            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
                                                 <SectionLabel>EMT Eligibility</SectionLabel>
                                                 <Field label="Are you an EMT Passer?">
                                                     <div className="flex gap-3">
@@ -954,8 +1009,8 @@ const OfficialProfiling = () => {
 
                                     {/* ── EXPERIENCE ── */}
                                     {tab === 'experience' && (
-                                        <div className="space-y-8">
-                                            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+                                        <div className="space-y-6">
+                                            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm">
                                                 <SectionLabel>Managerial Experience</SectionLabel>
                                                 <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                     <div>
@@ -1008,8 +1063,8 @@ const OfficialProfiling = () => {
 
                                     {/* ── EDUCATION ── */}
                                     {tab === 'education' && (
-                                        <div className="space-y-8">
-                                            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                        <div className="space-y-6">
+                                            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
                                                 <SectionLabel>Educational Attainment</SectionLabel>
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                                     <Field label="Highest Educational Attainment">
@@ -1193,8 +1248,8 @@ const OfficialProfiling = () => {
 
                                     {/* ── PROFESSIONAL DEVELOPMENT TRAININGS ── */}
                                     {tab === 'trainings' && (
-                                        <div className="space-y-8">
-                                            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                        <div className="space-y-6">
+                                            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
                                                 <SectionLabel color="#0038A8">Professional Development Trainings</SectionLabel>
 
                                                 <div className="bg-blue-50/40 rounded-[2rem] p-5 border border-blue-100 flex items-center gap-3">
@@ -1317,8 +1372,8 @@ const OfficialProfiling = () => {
 
                                     {/* ── APPLICATION ── */}
                                     {tab === 'application' && (
-                                        <div className="space-y-8">
-                                            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                        <div className="space-y-6">
+                                            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
                                                 <div className="flex items-center justify-between">
                                                     <SectionLabel color="#0038A8">Apply for Vacant Position</SectionLabel>
                                                     {applicationStatus === 'under_review' && (
