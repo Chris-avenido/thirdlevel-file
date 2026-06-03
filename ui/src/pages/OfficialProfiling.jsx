@@ -82,6 +82,11 @@ const SectionLabel = ({ color = '#CE1126', children }) => (
     <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-5" style={{ color, borderLeft: `4px solid ${color}`, paddingLeft: '1rem' }}>{children}</p>
 );
 
+const buildFullName = (profile) => {
+    const suffix = profile.suffix && profile.suffix.toLowerCase() !== 'not applicable' ? profile.suffix : '';
+    return [profile.first_name, profile.middle_name, profile.last_name, suffix].filter(Boolean).join(' ').trim();
+};
+
 const OfficialProfiling = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -131,6 +136,8 @@ const OfficialProfiling = () => {
     const [exportModalOpen, setExportModalOpen] = useState(false);
     const [selectedExportType, setSelectedExportType] = useState('csv');
     const [exporting, setExporting] = useState(false);
+    const fullName = buildFullName(profile) || 'Official Profiling';
+    const completedFields = COMPLETENESS_FIELDS.filter(f => !!profile[f]).length;
 
     // Export Logic
     const generateCSV = () => {
@@ -706,7 +713,7 @@ const OfficialProfiling = () => {
                 {/* Header */}
                 <div className="bg-[#0038A8] relative overflow-hidden">
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiAwaDZ2LTZoLTZ2NnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
-                    <div className="relative z-10 max-w-4xl mx-auto px-6 lg:px-8 py-10 lg:py-14">
+                    <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-8 py-10 lg:py-14">
                         <div className="flex justify-between items-center mb-8">
                             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-blue-200 hover:text-white font-black text-[10px] uppercase tracking-widest transition-colors">
                                 <FiChevronLeft size={16} /> Back
@@ -722,67 +729,69 @@ const OfficialProfiling = () => {
                                 <FiUser size={32} />
                             </div>
                             <div>
-                                <h1 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none">Official Profiling</h1>
-                                <p className="text-blue-200 text-[10px] font-black uppercase tracking-[0.4em] mt-2">3rd Level Officials • Personnel Division TLM Section</p>
+                                <h1 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none break-words">{fullName}</h1>
+                                <p className="text-blue-200 text-[10px] font-black uppercase tracking-[0.28em] mt-3 break-words">{profile.position_title || 'Position'}</p>
                             </div>
                         </div>
-                        {profile.last_name && profile.first_name && (
-                            <div className="mt-6 inline-flex px-5 py-2 bg-white/10 rounded-2xl border border-white/20">
-                                <p className="text-white font-black text-sm italic tracking-tight">
-                                    {profile.last_name.toUpperCase()}, {profile.first_name} {profile.middle_name}
-                                    {profile.age ? <span className="text-blue-200 not-italic font-bold ml-3 text-[10px]">Age {profile.age}</span> : null}
-                                </p>
+                        {/* Progress Card */}
+                        <div className="mt-8 bg-white/10 p-5 rounded-[2rem] border border-white/20">
+                            <div className="flex items-center justify-between gap-5">
+                                <div>
+                                    <p className="text-white text-[10px] font-black uppercase tracking-widest">Profile Progress</p>
+                                    <p className="text-blue-200 text-[9px] font-bold mt-1">
+                                        {completedFields} of {COMPLETENESS_FIELDS.length} required fields completed
+                                    </p>
+                                </div>
+                                <div className="w-16 h-16 rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
+                                    <p className="text-white font-black italic text-xl">{completeness}%</p>
+                                </div>
                             </div>
-                        )}
-
-                        {/* Progress Tracker */}
-                        <div className="mt-8 bg-white/10 p-6 rounded-[2.5rem] border border-white/20">
-                            <div className="flex justify-between items-center mb-3">
-                                <p className="text-white text-[10px] font-black uppercase tracking-widest">Profile Completion Status</p>
-                                <p className="text-white font-black italic text-2xl">{completeness}%</p>
-                            </div>
-                            <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+                            <div className="h-2 bg-white/20 rounded-full overflow-hidden mt-4">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${completeness}%` }}
-                                    className={`h-full ${completeness === 100 ? 'bg-[#0038A8]' : 'bg-[#FCD116]'}`}
+                                    className={`h-full ${completeness === 100 ? 'bg-emerald-400' : 'bg-[#FCD116]'}`}
                                 />
                             </div>
-                            <p className="text-blue-200 text-[9px] font-bold mt-3 italic">
+                            <p className="text-blue-100 text-[9px] font-bold mt-3 italic">
                                 {completeness < 100
-                                    ? `Please fill in all ${COMPLETENESS_FIELDS.length} mandatory fields to unlock the Application module.`
-                                    : "Protocol satisfied. You are eligible to apply for vacant positions."}
+                                    ? 'Complete all required fields to unlock the Application module.'
+                                    : 'Profile complete. You may apply for vacant positions.'}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Tab Bar */}
-                <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-                    <div className={`mx-auto px-6 lg:px-8 flex overflow-x-auto scrollbar-none transition-all duration-300 ${tab === 'experience' ? 'max-w-6xl' : 'max-w-4xl'}`}>
-                        {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
-                            const isLocked = t.id === 'application' && completeness < 100;
-                            return (
-                                <button
-                                    key={t.id}
-                                    disabled={isLocked}
-                                    onClick={() => !isLocked && setTab(t.id)}
-                                    className={`flex items-center gap-2 px-5 py-4 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all 
-                                        ${tab === t.id ? 'border-[#0038A8] text-[#0038A8] bg-[#0038A8]/5' : 'border-transparent text-slate-400 hover:text-slate-600'}
-                                        ${isLocked ? 'opacity-30 cursor-not-allowed grayscale' : ''}`}
-                                >
-                                    <t.icon size={13} />
-                                    {t.label}
-                                    {isLocked && <FiLock className="ml-1" size={10} />}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
                 {/* Tab Content */}
-                <div className={`mx-auto px-6 lg:px-8 py-10 transition-all duration-300 ${tab === 'experience' ? 'max-w-6xl' : 'max-w-4xl'}`}>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="max-w-6xl mx-auto px-6 lg:px-8 py-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-8 items-start">
+                        <aside className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-4 lg:sticky lg:top-6">
+                            <p className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.28em]">Profile Sections</p>
+                            <div className="space-y-1">
+                                {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
+                                    const isLocked = t.id === 'application' && completeness < 100;
+                                    const active = tab === t.id;
+                                    return (
+                                        <button
+                                            key={t.id}
+                                            disabled={isLocked}
+                                            onClick={() => !isLocked && setTab(t.id)}
+                                            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest transition-all
+                                                ${active ? 'bg-[#0038A8] text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}
+                                                ${isLocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
+                                        >
+                                            <span className="flex items-center gap-3 min-w-0">
+                                                <t.icon size={14} className="shrink-0" />
+                                                <span className="truncate">{t.label}</span>
+                                            </span>
+                                            {isLocked ? <FiLock size={12} className="shrink-0" /> : active ? <FiArrowRight size={12} className="shrink-0" /> : null}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </aside>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0">
                         <div className={tab === 'experience' ? 'lg:col-span-2' : 'lg:col-span-3'}>
                             <AnimatePresence mode="wait">
                                 <motion.div
@@ -2004,6 +2013,7 @@ const OfficialProfiling = () => {
 
                         </div>
                     </div>
+                </div>
                 </div>
 
                 {/* Removed Global Export Modal because it was moved into Summary Tab as an inline popover */}
