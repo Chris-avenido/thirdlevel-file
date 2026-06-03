@@ -216,6 +216,17 @@ const OfficialsRegistry = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const unassignedAbortRef = useRef(null);
     const unassignedCacheRef = useRef(new Map());
+    const [selectedOffice, setSelectedOffice] = useState('');
+
+    const uniqueOffices = useMemo(() => {
+        const offices = vacantSlots.map(slot => slot.office).filter(Boolean);
+        return [...new Set(offices)].sort();
+    }, [vacantSlots]);
+
+    const filteredVacantSlots = useMemo(() => {
+        if (!selectedOffice) return [];
+        return vacantSlots.filter(slot => slot.office === selectedOffice);
+    }, [vacantSlots, selectedOffice]);
 
     const ListRowsIcon = () => (
         <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="18" width="18" xmlns="http://www.w3.org/2000/svg">
@@ -383,7 +394,16 @@ const OfficialsRegistry = () => {
 
     const handleAdminAction = async () => {
         if (!justification && adminAction !== 'reassign') return Swal.fire('Notice', 'Please provide a justification.', 'info');
-        if (adminAction === 'reassign' && !assigneeSlot) return Swal.fire('Notice', 'Please select personnel to reassign to this position.', 'info');
+        
+        if (adminAction === 'reassign') {
+            const isVacant = !actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT';
+            if (isVacant && !assigneeSlot) {
+                return Swal.fire('Notice', 'Please select personnel to reassign to this position.', 'info');
+            }
+            if (!isVacant && !targetSlot) {
+                return Swal.fire('Notice', 'Please select a vacant position to reassign this official to.', 'info');
+            }
+        }
 
         setActionLoading(true);
         try {
@@ -399,17 +419,18 @@ const OfficialsRegistry = () => {
                     TLOid: actionOfficial.TLOid,
                     action: adminAction,
                     justification,
-                    target_TLOid: targetSlot,
+                    target_TLOid: targetSlot || undefined,
                     successor_TLOid: successorSlot || undefined,
                     assignee_TLOid: assigneeSlot || undefined
                 })
             });
             const data = await res.json();
             if (data.success) {
+                const isVacant = !actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT';
                 const message = adminAction === 'vacate'
                     ? `${personName || 'Official'} has vacated ${positionName}`
                     : adminAction === 'reassign'
-                        ? `Personnel reassigned to ${positionName}`
+                        ? (isVacant ? `Personnel reassigned to ${positionName}` : `${personName || 'Official'} reassigned successfully.`)
                         : `Official ${adminAction}ed successfully.`;
                 Swal.fire('Notice', message, 'info');
                 setShowActionModal(false);
@@ -432,14 +453,31 @@ const OfficialsRegistry = () => {
         setSuccessorSlot('');
         setAssigneeSlot('');
         setUnassignedSearch('');
+        setSelectedOffice('');
+        setVacantSlots([]);
         setShowActionModal(true);
         if (action === 'reassign') {
-            setUnassignedPersonnel(unassignedCacheRef.current.get('') || []);
+            const isVacant = !official.first_name || official.first_name === 'VACANT';
+            if (isVacant) {
+                setUnassignedPersonnel(unassignedCacheRef.current.get('') || []);
+            } else {
+                try {
+                    const res = await fetch(apiUrl('/api/third-level/vacancies'), {
+                        headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setVacantSlots(data.data);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch vacancies:', err);
+                }
+            }
         }
         if (action === 'succeed') {
             try {
                 const res = await fetch(apiUrl(`/api/third-level/active-officials?exclude_TLOid=${official.TLOid}`), {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
                 });
                 const data = await res.json();
                 if (data.success) setActiveOfficials(data.data);
@@ -451,9 +489,11 @@ const OfficialsRegistry = () => {
 
     useEffect(() => {
         if (!showActionModal || adminAction !== 'reassign') return;
+        const isVacant = !actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT';
+        if (!isVacant) return;
         const timer = setTimeout(() => fetchUnassignedPersonnel(unassignedSearch), 350);
         return () => clearTimeout(timer);
-    }, [unassignedSearch, showActionModal, adminAction]);
+    }, [unassignedSearch, showActionModal, adminAction, actionOfficial]);
 
     const tableColumns = useMemo(() => ([
         {
@@ -786,7 +826,10 @@ const OfficialsRegistry = () => {
                                         <tbody className="divide-y divide-slate-50">
                                             {pagedRecords.map((item) => (
                                                 <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors">
-                                                    <td className="px-8 py-6">
+                                                    <td 
+                                                        className={`px-8 py-6 ${item.email ? 'cursor-pointer' : ''}`}
+                                                        onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
+                                                    >
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-lg border border-white shadow-sm overflow-hidden">
                                                                 {item.photo_binary_id ? (
@@ -794,7 +837,7 @@ const OfficialsRegistry = () => {
                                                                 ) : <FiUser size={20} />}
                                                             </div>
                                                             <div>
-                                                                <div className="font-black text-slate-800 text-sm leading-none">
+                                                                <div className="font-black text-slate-800 text-sm leading-none group-hover:text-[#004A99] group-hover:underline transition-colors">
                                                                     {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
                                                                 </div>
                                                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-2">
@@ -1075,8 +1118,16 @@ const OfficialsRegistry = () => {
                                     <div className="flex justify-between items-start mb-8">
                                         <div>
                                             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{adminAction === 'reassign' ? 'REASSIGN POSITION' : `${adminAction}ING OFFICIAL`}</h2>
-                                            <p className="text-slate-400 font-bold mt-2">{adminAction === 'reassign' ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}</p>
+                                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+                                                {adminAction === 'reassign' 
+                                                    ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL') 
+                                                    : `${adminAction}ING OFFICIAL`}
+                                            </h2>
+                                            <p className="text-slate-400 font-bold mt-2">
+                                                {adminAction === 'reassign' 
+                                                    ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`) 
+                                                    : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}
+                                            </p>
                                         </div>
                                         <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all">
                                             <FiX size={20} />
@@ -1086,34 +1137,69 @@ const OfficialsRegistry = () => {
                                     <div className="space-y-6">
                                         {adminAction === 'reassign' && (
                                             <div className="space-y-4">
-                                                <div>
-                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Search Personnel Without Position</label>
-                                                    <div className="relative">
-                                                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                                        <input
-                                                            value={unassignedSearch}
-                                                            onChange={(e) => setUnassignedSearch(e.target.value)}
-                                                            placeholder="Search by name or employee number..."
-                                                            className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                {(!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? (
+                                                    <>
+                                                        <div>
+                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Search Personnel Without Position</label>
+                                                            <div className="relative">
+                                                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                                                <input
+                                                                    value={unassignedSearch}
+                                                                    onChange={(e) => setUnassignedSearch(e.target.value)}
+                                                                    placeholder="Search by name or employee number..."
+                                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <SearchableSelect 
+                                                            label="Reassign To"
+                                                            info={unassignedLoading ? 'Loading available personnel...' : 'Showing personnel without an active position. Search to narrow the list.'}
+                                                            placeholder={unassignedLoading ? 'Loading personnel...' : 'Choose personnel...'}
+                                                            value={assigneeSlot}
+                                                            onChange={setAssigneeSlot}
+                                                            options={unassignedPersonnel.map(p => ({
+                                                                value: p.TLOid,
+                                                                label: `${p.first_name} ${p.last_name || ''}`.trim(),
+                                                                sublabel: [p.employee_number || p.TLOid, p.email].filter(Boolean).join(' - ')
+                                                            }))}
                                                         />
-                                                    </div>
-                                                </div>
-                                                <SearchableSelect 
-                                                    label="Reassign To"
-                                                    info={unassignedLoading ? 'Loading available personnel...' : 'Showing personnel without an active position. Search to narrow the list.'}
-                                                    placeholder={unassignedLoading ? 'Loading personnel...' : 'Choose personnel...'}
-                                                    value={assigneeSlot}
-                                                    onChange={setAssigneeSlot}
-                                                    options={unassignedPersonnel.map(p => ({
-                                                        value: p.TLOid,
-                                                        label: `${p.first_name} ${p.last_name || ''}`.trim(),
-                                                        sublabel: [p.employee_number || p.TLOid, p.email].filter(Boolean).join(' - ')
-                                                    }))}
-                                                />
-                                                {!unassignedLoading && unassignedPersonnel.length === 0 && (
-                                                    <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
-                                                    </div>
+                                                        {!unassignedLoading && unassignedPersonnel.length === 0 && (
+                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <SearchableSelect 
+                                                            label="Select Target Office"
+                                                            placeholder="Choose Office..."
+                                                            value={selectedOffice}
+                                                            onChange={(val) => {
+                                                                setSelectedOffice(val);
+                                                                setTargetSlot('');
+                                                            }}
+                                                            options={uniqueOffices.map(o => ({ value: o, label: o }))}
+                                                        />
+                                                        
+                                                        {selectedOffice ? (
+                                                            <SearchableSelect 
+                                                                label="Select Vacant Position"
+                                                                placeholder="Choose vacant position..."
+                                                                value={targetSlot}
+                                                                onChange={setTargetSlot}
+                                                                options={filteredVacantSlots.map(slot => ({
+                                                                    value: slot.TLOid,
+                                                                    label: slot.position_title,
+                                                                    sublabel: slot.strand ? `Strand: ${slot.strand}` : 'No Strand'
+                                                                }))}
+                                                            />
+                                                        ) : (
+                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Please select an office first to view vacant positions</p>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         )}
