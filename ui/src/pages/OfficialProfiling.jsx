@@ -724,40 +724,31 @@ const OfficialProfiling = () => {
                                 </button>
                             </div>
                         </div>
-                        <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 bg-white/10 rounded-[1.5rem] flex items-center justify-center text-white border border-white/20">
-                                <FiUser size={32} />
-                            </div>
-                            <div>
-                                <h1 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none break-words">{fullName}</h1>
-                                <p className="text-blue-200 text-[10px] font-black uppercase tracking-[0.28em] mt-3 break-words">{profile.position_title || 'Position'}</p>
-                            </div>
-                        </div>
-                        {/* Progress Card */}
-                        <div className="mt-8 bg-white/10 p-5 rounded-[2rem] border border-white/20">
-                            <div className="flex items-center justify-between gap-5">
-                                <div>
-                                    <p className="text-white text-[10px] font-black uppercase tracking-widest">Profile Progress</p>
-                                    <p className="text-blue-200 text-[9px] font-bold mt-1">
-                                        {completedFields} of {COMPLETENESS_FIELDS.length} required fields completed
-                                    </p>
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                            <div className="flex items-center gap-6 min-w-0">
+                                <div className="w-16 h-16 bg-white/10 rounded-[1.5rem] flex items-center justify-center text-white border border-white/20 shrink-0">
+                                    <FiUser size={32} />
                                 </div>
-                                <div className="w-16 h-16 rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
-                                    <p className="text-white font-black italic text-xl">{completeness}%</p>
+                                <div className="min-w-0">
+                                    <h1 className="text-3xl lg:text-5xl font-black text-white italic tracking-tighter leading-none break-words">{fullName}</h1>
+                                    <p className="text-blue-200 text-[10px] font-black uppercase tracking-[0.28em] mt-3 break-words">{profile.position_title || 'Position'}</p>
                                 </div>
                             </div>
-                            <div className="h-2 bg-white/20 rounded-full overflow-hidden mt-4">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${completeness}%` }}
-                                    className={`h-full ${completeness === 100 ? 'bg-emerald-400' : 'bg-[#FCD116]'}`}
-                                />
+
+                            {/* Progress Card */}
+                            <div className="w-full lg:w-44 bg-white/10 border border-white/20 rounded-[1.5rem] p-4 shadow-xl shadow-blue-950/10 shrink-0">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-blue-100 text-[9px] font-black uppercase tracking-widest leading-tight">Progress</p>
+                                    <p className="text-white font-black italic text-3xl leading-none">{completeness}%</p>
+                                </div>
+                                <div className="h-2 bg-white/20 rounded-full overflow-hidden mt-4">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${completeness}%` }}
+                                        className={`h-full ${completeness === 100 ? 'bg-emerald-400' : 'bg-[#FCD116]'}`}
+                                    />
+                                </div>
                             </div>
-                            <p className="text-blue-100 text-[9px] font-bold mt-3 italic">
-                                {completeness < 100
-                                    ? 'Complete all required fields to unlock the Application module.'
-                                    : 'Profile complete. You may apply for vacant positions.'}
-                            </p>
                         </div>
                     </div>
                 </div>
