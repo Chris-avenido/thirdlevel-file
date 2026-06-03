@@ -14,6 +14,22 @@ import LoadingScreen from '../components/LoadingScreen';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 
+const THIRD_LEVEL_POSITIONS = [
+    'Secretary',
+    'Undersecretary',
+    'Assistant Secretary',
+    'Director IV',
+    'Director III',
+    'Regional Director',
+    'Assistant Regional Director',
+    'Schools Division Superintendent',
+    'Assistant Schools Division Superintendent',
+    'RD',
+    'ARD',
+    'SDS',
+    'ASDS'
+];
+
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
     const { user, logout, token } = useAuth();
@@ -109,11 +125,9 @@ const OfficialsRegistry = () => {
     };
 
     const [officials, setOfficials] = useState([]);
-    const [applications, setApplications] = useState([]);
-    const [processingId, setProcessingId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('Third Level'); // 'Third Level' | 'OIC / Chiefs' | 'Legacy'
+    const [activeTab, setActiveTab] = useState('Third Level'); // 'Third Level' | 'OIC / Chiefs'
     const [strandFilter, setStrandFilter] = useState('All');
     const [positionFilter, setPositionFilter] = useState('All');
     const [viewMode, setViewMode] = useState('table');
@@ -123,14 +137,48 @@ const OfficialsRegistry = () => {
     const [tableFilters, setTableFilters] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
 
+    // Filter officials on the client side
+    const thirdLevelOfficials = useMemo(() => {
+        return officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+    }, [officials]);
+
+    const oicChiefs = useMemo(() => {
+        return officials.filter(o => o.is_oic);
+    }, [officials]);
+
+    // Position breakdowns for hover cards
+    const thirdLevelBreakdown = useMemo(() => {
+        const counts = {};
+        thirdLevelOfficials.forEach(o => {
+            if (o.first_name && o.first_name !== 'VACANT') {
+                const pos = o.position_title || 'Unassigned';
+                counts[pos] = (counts[pos] || 0) + 1;
+            }
+        });
+        return Object.fromEntries(
+            Object.entries(counts).sort((a, b) => b[1] - a[1])
+        );
+    }, [thirdLevelOfficials]);
+
+    const oicChiefsBreakdown = useMemo(() => {
+        const counts = {};
+        oicChiefs.forEach(o => {
+            if (o.first_name && o.first_name !== 'VACANT') {
+                const pos = o.position_title || 'Unassigned';
+                counts[pos] = (counts[pos] || 0) + 1;
+            }
+        });
+        return Object.fromEntries(
+            Object.entries(counts).sort((a, b) => b[1] - a[1])
+        );
+    }, [oicChiefs]);
+
     const fetchTabPositions = async () => {
         try {
             // Fetch all positions for the current tab to keep the dropdown stable
             const queryParams = new URLSearchParams();
-            if (activeTab !== 'Legacy' && activeTab !== 'Applications') {
-                queryParams.append('category', activeTab);
-                queryParams.append('status', 'Active');
-            }
+            queryParams.append('category', activeTab);
+            queryParams.append('status', 'Active');
             const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -145,9 +193,7 @@ const OfficialsRegistry = () => {
     };
 
     useEffect(() => {
-        if (activeTab !== 'Applications' && activeTab !== 'Legacy') {
-            fetchTabPositions();
-        }
+        fetchTabPositions();
     }, [activeTab]);
     const [showIncumbencyModal, setShowIncumbencyModal] = useState(false);
     const [selectedPosition, setSelectedPosition] = useState(null);
@@ -187,12 +233,8 @@ const OfficialsRegistry = () => {
     }, []);
 
     useEffect(() => {
-        if (activeTab === 'Applications') {
-            fetchApplications();
-        } else {
-            fetchOfficials();
-        }
-    }, [searchTerm, activeTab, strandFilter, positionFilter]);
+        fetchOfficials();
+    }, [searchTerm, strandFilter, positionFilter]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -219,12 +261,7 @@ const OfficialsRegistry = () => {
         try {
             const queryParams = new URLSearchParams();
             if (searchTerm) queryParams.append('search', searchTerm);
-            if (activeTab !== 'Legacy') {
-                queryParams.append('category', activeTab);
-                queryParams.append('status', 'All');
-            } else {
-                queryParams.append('status', 'Legacy'); // Backend handles 'Legacy' as 'no status filter'
-            }
+            queryParams.append('status', 'All');
             if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
 
@@ -428,32 +465,26 @@ const OfficialsRegistry = () => {
         {
             key: 'position',
             label: 'Current Position',
-            value: (item) => activeTab === 'Applications'
-                ? `${item.target_position || ''} ${item.target_office || ''} ${item.target_strand || ''}`
-                : `${item.position_title || ''} ${item.is_oic ? 'OIC' : ''}`,
-            filterValue: (item) => activeTab === 'Applications'
-                ? (item.target_position || 'Unspecified')
-                : `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
+            value: (item) => `${item.position_title || ''} ${item.is_oic ? 'OIC' : ''}`,
+            filterValue: (item) => `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
         },
         {
             key: 'office',
             label: 'Strand / Office',
-            value: (item) => activeTab === 'Applications'
-                ? `${item.position_title || ''} ${item.office || ''}`
-                : `${item.office || ''} ${item.strand || ''}`,
-            filterValue: (item) => activeTab === 'Applications'
-                ? (item.office || 'N/A')
-                : `${item.office || 'Main Office'} / ${item.strand || 'No Strand'}`
+            value: (item) => `${item.office || ''} ${item.strand || ''}`,
+            filterValue: (item) => `${item.office || 'Main Office'} / ${item.strand || 'No Strand'}`
         },
         {
             key: 'status',
             label: 'Status',
-            value: (item) => activeTab === 'Applications' ? 'Applied' : (item.status || ''),
-            filterValue: (item) => activeTab === 'Applications' ? 'Applied' : (item.status || 'Unknown')
+            value: (item) => item.status || '',
+            filterValue: (item) => item.status || 'Unknown'
         }
-    ]), [activeTab]);
+    ]), []);
 
-    const activeRecords = activeTab === 'Applications' ? applications : officials;
+    const activeRecords = useMemo(() => {
+        return activeTab === 'Third Level' ? thirdLevelOfficials : oicChiefs;
+    }, [activeTab, thirdLevelOfficials, oicChiefs]);
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
             const values = activeRecords
@@ -590,27 +621,79 @@ const OfficialsRegistry = () => {
                     {/* TABS & CATEGORIES */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                         <div className="flex p-1 bg-slate-100 rounded-2xl w-fit">
-                            {['Third Level', 'OIC / Chiefs', 'Legacy', 'Applications'].map(tab => (
+                            {['Third Level', 'OIC / Chiefs'].map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => { setActiveTab(tab); setPositionFilter('All'); setStrandFilter('All'); }}
                                     className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-white text-[#004A99] shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
-                                    {tab === 'Legacy' ? 'Legacy Registry' : tab === 'Applications' ? 'Recruitment' : tab}
+                                    {tab}
                                 </button>
                             ))}
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                        <div className="flex flex-wrap items-center gap-4">
+                            {/* Card 1: Third Level Officials */}
+                            <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                    <FiUsers size={18} />
+                                </div>
+                                <div>
+                                    <span className="block text-2xl font-black text-slate-900 leading-none tracking-tight">
+                                        {thirdLevelOfficials.length}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level Officials</span>
+                                </div>
+                                
+                                {/* Hover Breakdown Tooltip */}
+                                <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
+                                        Position Breakdown
+                                    </div>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                        {Object.entries(thirdLevelBreakdown).length > 0 ? (
+                                            Object.entries(thirdLevelBreakdown).map(([position, count]) => (
+                                                <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
+                                                    <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
+                                                    <span className="text-slate-900 font-black px-2 py-0.5 bg-blue-50 text-blue-700 rounded-lg shrink-0">{count}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 2: Division Chiefs / OIC */}
+                            <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+                                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
                                     <FiActivity size={18} />
                                 </div>
                                 <div>
                                     <span className="block text-2xl font-black text-slate-900 leading-none tracking-tight">
-                                        {activeTab === 'Applications' ? applications.length : officials.length}
+                                        {oicChiefs.length}
                                     </span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Records</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs / OIC</span>
+                                </div>
+                                
+                                {/* Hover Breakdown Tooltip */}
+                                <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
+                                        Position Breakdown
+                                    </div>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                        {Object.entries(oicChiefsBreakdown).length > 0 ? (
+                                            Object.entries(oicChiefsBreakdown).map(([position, count]) => (
+                                                <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
+                                                    <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
+                                                    <span className="text-slate-900 font-black px-2 py-0.5 bg-amber-50 text-amber-700 rounded-lg shrink-0">{count}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -646,20 +729,18 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Position Dropdown */}
-                            {activeTab !== 'Applications' && activeTab !== 'Legacy' && (
-                                <div className="w-full lg:w-[280px]">
-                                    <SearchableSelect 
-                                        label=""
-                                        placeholder="All Positions"
-                                        value={positionFilter}
-                                        onChange={setPositionFilter}
-                                        options={[
-                                            { value: 'All', label: 'All Positions' },
-                                            ...tabPositions.map(p => ({ value: p, label: p }))
-                                        ]}
-                                    />
-                                </div>
-                            )}
+                            <div className="w-full lg:w-[280px]">
+                                <SearchableSelect 
+                                    label=""
+                                    placeholder="All Positions"
+                                    value={positionFilter}
+                                    onChange={setPositionFilter}
+                                    options={[
+                                        { value: 'All', label: 'All Positions' },
+                                        ...tabPositions.map(p => ({ value: p, label: p }))
+                                    ]}
+                                />
+                            </div>
 
                             {/* View Switcher */}
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
@@ -724,62 +805,28 @@ const OfficialsRegistry = () => {
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        {activeTab === 'Applications' ? (
-                                                            <div>
-                                                                <div className="font-black text-[#CE1126] text-[10px] uppercase tracking-tighter italic mb-1">Applying for:</div>
-                                                                <div className="font-black text-[#004A99] text-[11px] uppercase tracking-tight">{item.target_position || 'Unspecified'}</div>
-                                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{item.target_office} · {item.target_strand}</div>
+                                                        <button 
+                                                            onClick={() => handlePositionClick(item)}
+                                                            className="text-left group/pos hover:translate-x-1 transition-transform"
+                                                        >
+                                                            <div className="font-black text-[#004A99] text-[11px] uppercase tracking-tight flex items-center gap-2">
+                                                                {item.position_title || 'Unassigned'}
+                                                                {item.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest">OIC</span>}
+                                                                <FiClock className="opacity-0 group-hover/pos:opacity-100 transition-opacity text-slate-400" size={12} />
                                                             </div>
-                                                        ) : (
-                                                            <button 
-                                                                onClick={() => handlePositionClick(item)}
-                                                                className="text-left group/pos hover:translate-x-1 transition-transform"
-                                                            >
-                                                                <div className="font-black text-[#004A99] text-[11px] uppercase tracking-tight flex items-center gap-2">
-                                                                    {item.position_title || 'Unassigned'}
-                                                                    {item.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest">OIC</span>}
-                                                                    <FiClock className="opacity-0 group-hover/pos:opacity-100 transition-opacity text-slate-400" size={12} />
-                                                                </div>
-                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                                                    Since {item.date_of_assignment ? new Date(item.date_of_assignment).toLocaleDateString() : 'N/A'}
-                                                                </div>
-                                                            </button>
-                                                        )}
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                                Since {item.date_of_assignment ? new Date(item.date_of_assignment).toLocaleDateString() : 'N/A'}
+                                                            </div>
+                                                        </button>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        {activeTab === 'Applications' ? (
-                                                            <div>
-                                                                <div className="text-xs font-bold text-slate-700">{item.position_title || 'Current Rank'}</div>
-                                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{item.office || 'N/A'}</div>
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                <div className="text-xs font-bold text-slate-700">{item.office || 'Main Office'}</div>
-                                                                <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">{item.strand || 'No Strand'}</div>
-                                                            </>
-                                                        )}
+                                                        <>
+                                                            <div className="text-xs font-bold text-slate-700">{item.office || 'Main Office'}</div>
+                                                            <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">{item.strand || 'No Strand'}</div>
+                                                        </>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        {activeTab === 'Applications' ? (
-                                                            <div className="flex items-center gap-2">
-                                                                <button 
-                                                                    disabled={processingId === item.TLOid}
-                                                                    onClick={() => handleProcessApplication(item.TLOid, 'approve')}
-                                                                    className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 disabled:opacity-50"
-                                                                >
-                                                                    Approve
-                                                                </button>
-                                                                <button 
-                                                                    disabled={processingId === item.TLOid}
-                                                                    onClick={() => handleProcessApplication(item.TLOid, 'reject')}
-                                                                    className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all border border-rose-100 disabled:opacity-50"
-                                                                >
-                                                                    Reject
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <StatusBadge status={item.status} />
-                                                        )}
+                                                        <StatusBadge status={item.status} />
                                                     </td>
                                                     <td className="px-8 py-6 text-right">
                                                         <div className="flex items-center justify-end gap-2">
@@ -792,23 +839,21 @@ const OfficialsRegistry = () => {
                                                                     <FiExternalLink size={18} />
                                                                 </button>
                                                             )}
-                                                            {activeTab !== 'Applications' && (
-                                                                <div className="flex gap-2">
-                                                                    <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
-                                                                        <FiLayers size={14} /> Reassign
-                                                                    </button>
-                                                                    {item.first_name && (
-                                                                        <>
-                                                                            <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                                                <FiTrash2 size={14} /> Vacate
-                                                                            </button>
-                                                                            <button onClick={() => openActionModal(item, 'succeed')} title="Succeed" className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
-                                                                                <FiCheckCircle size={14} /> Succeed
-                                                                            </button>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            <div className="flex gap-2">
+                                                                <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
+                                                                    <FiLayers size={14} /> Reassign
+                                                                </button>
+                                                                {item.first_name && (
+                                                                    <>
+                                                                        <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                                            <FiTrash2 size={14} /> Vacate
+                                                                        </button>
+                                                                        <button onClick={() => openActionModal(item, 'succeed')} title="Succeed" className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
+                                                                            <FiCheckCircle size={14} /> Succeed
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 </motion.tr>
@@ -855,14 +900,10 @@ const OfficialsRegistry = () => {
                                                         <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
                                                     ) : <FiUser size={32} />}
                                                 </div>
-                                                {activeTab === 'Applications' ? (
-                                                    <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[9px] font-black uppercase tracking-widest">Applied</span>
-                                                ) : (
-                                                    <div className="flex items-center gap-2">
-                                                        {item.is_oic && <span className="px-3 py-1 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[9px] font-black uppercase tracking-widest">OIC</span>}
-                                                        <StatusBadge status={item.status} />
-                                                    </div>
-                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    {item.is_oic && <span className="px-3 py-1 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[9px] font-black uppercase tracking-widest">OIC</span>}
+                                                    <StatusBadge status={item.status} />
+                                                </div>
                                             </div>
                                             
                                             <div className="space-y-1 relative z-10">
@@ -873,7 +914,7 @@ const OfficialsRegistry = () => {
                                                     onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
                                                     className="text-[10px] font-black text-[#004A99] uppercase tracking-[0.2em] hover:text-blue-600 transition-colors text-left flex items-center gap-1"
                                                 >
-                                                    {activeTab === 'Applications' ? (item.target_position || 'Candidate') : (item.position_title || 'Candidate')}
+                                                    {item.position_title || 'Candidate'}
                                                     <FiClock className="text-slate-400" size={10} />
                                                 </button>
                                                 
@@ -896,64 +937,41 @@ const OfficialsRegistry = () => {
                                             
                                             <div className="mt-8 pt-6 border-t border-slate-50 space-y-4">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{activeTab === 'Applications' ? 'Current Office' : 'Strand'}</span>
-                                                    <span className="text-[10px] font-bold text-slate-700">{activeTab === 'Applications' ? item.office : item.strand || 'N/A'}</span>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
+                                                    <span className="text-[10px] font-bold text-slate-700">{item.strand || 'N/A'}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{activeTab === 'Applications' ? 'Target Office' : 'Office'}</span>
-                                                    <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{activeTab === 'Applications' ? item.target_office : item.office || 'Main Office'}</span>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Office</span>
+                                                    <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{item.office || 'Main Office'}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {activeTab === 'Applications' ? (
-                                            <div className="mt-8 flex gap-2 relative z-20" onClick={e => e.stopPropagation()}>
-                                                <button 
-                                                    disabled={processingId === item.TLOid}
-                                                    onClick={() => handleProcessApplication(item.TLOid, 'approve')}
-                                                    className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-                                                >
-                                                    Approve
+                                        <div className="mt-8 pt-6 border-t border-slate-50 flex flex-col gap-4 relative z-20" onClick={e => e.stopPropagation()}>
+                                            <div className="flex flex-wrap gap-2">
+                                                <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
+                                                    <FiLayers size={12} /> Reassign
                                                 </button>
-                                                <button 
-                                                    disabled={processingId === item.TLOid}
-                                                    onClick={() => handleProcessApplication(item.TLOid, 'reject')}
-                                                    className="flex-1 py-3 bg-white border-2 border-slate-100 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all disabled:opacity-50"
-                                                >
-                                                    Reject
+                                                {item.first_name && (
+                                                    <>
+                                                        <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                            <FiTrash2 size={12} /> Vacate
+                                                        </button>
+                                                        <button onClick={() => openActionModal(item, 'succeed')} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
+                                                            <FiCheckCircle size={12} /> Succeed
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-blue-600 transition-colors">
+                                                    Full Profile <FiArrowRight size={14} />
+                                                </div>
+                                                <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-600 hover:text-white transition-all" title="View History">
+                                                    <FiClock size={16} />
                                                 </button>
                                             </div>
-                                        ) : (
-                                            <div className="mt-8 pt-6 border-t border-slate-50 flex flex-col gap-4 relative z-20" onClick={e => e.stopPropagation()}>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {activeTab !== 'Applications' && (
-                                                        <>
-                                                            <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
-                                                                <FiLayers size={12} /> Reassign
-                                                            </button>
-                                                            {item.first_name && (
-                                                                <>
-                                                            <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                                <FiTrash2 size={12} /> Vacate
-                                                            </button>
-                                                            <button onClick={() => openActionModal(item, 'succeed')} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
-                                                                <FiCheckCircle size={12} /> Succeed
-                                                            </button>
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-blue-600 transition-colors">
-                                                        Full Profile <FiArrowRight size={14} />
-                                                    </div>
-                                                    <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-600 hover:text-white transition-all" title="View History">
-                                                        <FiClock size={16} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
+                                        </div>
                                     </motion.div>
                                 ))}
                             </motion.div>
