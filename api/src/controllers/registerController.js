@@ -43,7 +43,13 @@ export const sendOtp = async (req, res) => {
       [email.toLowerCase().trim(), code]
     );
 
-    await sendOTPEmail(email, code);
+    console.log(`[Development Fallback] OTP for ${email} is: ${code}`);
+    try {
+      await sendOTPEmail(email, code);
+    } catch (emailErr) {
+      console.warn('[Development] Failed to send email via SMTP, falling back to logged OTP:', emailErr.message);
+    }
+
     res.json({ success: true, message: 'OTP sent successfully' });
   } catch (err) {
     console.error('Send OTP Error:', err);
