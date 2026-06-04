@@ -1190,7 +1190,7 @@ const OfficialsRegistry = () => {
                                                                 onChange={setTargetSlot}
                                                                 options={filteredVacantSlots.map(slot => ({
                                                                     value: slot.TLOid,
-                                                                    label: slot.position_title,
+                                                                    label: slot.is_oic ? `${slot.position_title} (OIC)` : slot.position_title,
                                                                     sublabel: slot.strand ? `Strand: ${slot.strand}` : 'No Strand'
                                                                 }))}
                                                             />

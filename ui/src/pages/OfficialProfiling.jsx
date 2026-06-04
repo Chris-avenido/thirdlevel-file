@@ -114,7 +114,7 @@ const OfficialProfiling = () => {
     const [profile, setProfile] = useState({
         last_name: '', first_name: '', middle_name: '', suffix: '',
         gender: '', date_of_birth: '', age: '', civil_status: '',
-        position_title: '', date_of_assignment: '',
+        position_title: '', is_oic: false, date_of_assignment: '',
         emt_passer: null, emt_date: '', ces_stage: '', ces_conferment_date: '',
         total_years_third_level: '', permanent_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
@@ -428,6 +428,7 @@ const OfficialProfiling = () => {
                     age: d.age ?? '',
                     civil_status: d.civil_status || '',
                     position_title: d.position_title || '',
+                    is_oic: d.is_oic ?? false,
                     date_of_assignment: d.date_of_assignment ? d.date_of_assignment.split('T')[0] : '',
                     emt_passer: d.emt_passer ?? null,
                     emt_date: d.emt_date ? d.emt_date.split('T')[0] : '',
@@ -867,7 +868,10 @@ const OfficialProfiling = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-blue-200/80 text-xs md:text-sm font-medium mt-1 truncate">{profile.position_title || 'No position selected'}</p>
+                                    <p className="text-blue-200/80 text-xs md:text-sm font-medium mt-1 truncate flex items-center gap-2">
+                                        <span>{profile.position_title || 'No position selected'}</span>
+                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                    </p>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[9px] md:text-[11px] font-medium">
                                         {TLOid && (
                                             <span className="flex items-center gap-1">
@@ -1027,14 +1031,13 @@ const OfficialProfiling = () => {
 
                                                 <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 lg:p-8 border border-slate-200/60 shadow-xl shadow-slate-100/30 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-100/40 hover:border-slate-300/60 space-y-5">
                                                     <SectionLabel color="#0038A8">Designation & Appointment</SectionLabel>
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                                         <Field label="Position Title (As per Appointment / Designation)">
                                                             <select value={profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                 <option value="">Select Position Title</option>
                                                                 {[
                                                                     'Undersecretary',
                                                                     'Assistant Secretary',
-                                                                    'OIC Assistant Secretary',
                                                                     'Director IV',
                                                                     'Director III',
                                                                     'Chief Administrative Officer'
@@ -1042,7 +1045,6 @@ const OfficialProfiling = () => {
                                                                 {profile.position_title && ![
                                                                     'Undersecretary',
                                                                     'Assistant Secretary',
-                                                                    'OIC Assistant Secretary',
                                                                     'Director IV',
                                                                     'Director III',
                                                                     'Chief Administrative Officer'
@@ -1050,6 +1052,24 @@ const OfficialProfiling = () => {
                                                                         <option value={profile.position_title}>{profile.position_title}</option>
                                                                     )}
                                                             </select>
+                                                        </Field>
+                                                        <Field label="Officer-in-Charge (OIC) Status">
+                                                            <div className="flex items-center gap-3 py-2 px-1">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setP('is_oic', !profile.is_oic)}
+                                                                    className="text-slate-500 hover:text-slate-700 transition-colors"
+                                                                >
+                                                                    {profile.is_oic ? (
+                                                                        <FiToggleRight size={32} className="text-[#0038A8]" />
+                                                                    ) : (
+                                                                        <FiToggleLeft size={32} className="text-slate-300" />
+                                                                    )}
+                                                                </button>
+                                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                                                    {profile.is_oic ? 'Designated as OIC' : 'Regular Appointment'}
+                                                                </span>
+                                                            </div>
                                                         </Field>
                                                         <Field label="Date of Present Position (Appointment Date)">
                                                             <div className="relative">
@@ -1561,7 +1581,10 @@ const OfficialProfiling = () => {
                                                                             <FiBriefcase size={20} />
                                                                         </div>
                                                                         <div>
-                                                                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight italic">{v.position_title}</h4>
+                                                                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight italic flex items-center gap-2">
+                                                                                <span>{v.position_title}</span>
+                                                                                {v.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                            </h4>
                                                                             <div className="flex items-center gap-3 mt-1">
                                                                                 <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">{v.office}</span>
                                                                                 <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
@@ -1586,7 +1609,18 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                     <div>
                                                                         <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] mb-1">Selected Vacancy</p>
-                                                                        <h3 className="text-xl font-black italic tracking-tight">{vacancies.find(x => x.TLOid === targetVacancyId)?.position_title}</h3>
+                                                                        <h3 className="text-xl font-black italic tracking-tight flex items-center gap-2">
+                                                                            {(() => {
+                                                                                const vac = vacancies.find(x => x.TLOid === targetVacancyId);
+                                                                                if (!vac) return null;
+                                                                                return (
+                                                                                    <>
+                                                                                        <span>{vac.position_title}</span>
+                                                                                        {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                    </>
+                                                                                );
+                                                                            })()}
+                                                                        </h3>
                                                                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">{vacancies.find(x => x.TLOid === targetVacancyId)?.office}</p>
                                                                     </div>
                                                                 </div>
@@ -1709,14 +1743,27 @@ const OfficialProfiling = () => {
                                                                                                 <img src={newLogo} alt="Logo" className="w-24 h-24 object-contain" />
                                                                                                 <div>
                                                                                                     <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
-                                                                                                    <h2 className="text-xl font-bold uppercase mt-1 text-slate-800">{profile.position_title || 'N/A'}, {profile.office || 'N/A'}</h2>
+                                                                                                    <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
+                                                                                                        <span>{profile.position_title || 'N/A'}</span>
+                                                                                                        {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                        {profile.office ? `, ${profile.office}` : ''}
+                                                                                                    </h2>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="flex gap-6 items-start">
                                                                                                 <div className="text-center w-56">
                                                                                                     <div className="bg-red-700 text-white font-bold py-1.5 text-xs uppercase tracking-wider">Position Applied For</div>
                                                                                                     <div className="border border-red-700 py-2 text-sm font-bold min-h-[44px] flex items-center justify-center text-slate-900 bg-white">
-                                                                                                        {targetVacancyId ? vacancies.find(v => v.TLOid === targetVacancyId)?.position_title : '—'}
+                                                                                                        {(() => {
+                                                                                                            const vac = vacancies.find(v => v.TLOid === targetVacancyId);
+                                                                                                            if (!vac) return '—';
+                                                                                                            return (
+                                                                                                                <div className="flex items-center gap-2">
+                                                                                                                    <span>{vac.position_title}</span>
+                                                                                                                    {vac.is_oic && <span className="px-1.5 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                </div>
+                                                                                                            );
+                                                                                                        })()}
                                                                                                     </div>
                                                                                                 </div>
                                                                                                 <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
@@ -1797,7 +1844,11 @@ const OfficialProfiling = () => {
                                                                                         <img src={newLogo} alt="Logo" className="w-16 h-16 object-contain" />
                                                                                         <div>
                                                                                             <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
-                                                                                            <h2 className="text-sm font-bold text-slate-700 uppercase">{profile.position_title || 'N/A'}, {profile.office || 'N/A'}</h2>
+                                                                                            <h2 className="text-sm font-bold text-slate-700 uppercase flex items-center gap-2">
+                                                                                                <span>{profile.position_title || 'N/A'}</span>
+                                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                {profile.office ? `, ${profile.office}` : ''}
+                                                                                            </h2>
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="flex gap-6 mt-4">
@@ -1833,14 +1884,36 @@ const OfficialProfiling = () => {
                                                             <SummaryRow label="Date of Birth" value={profile.date_of_birth} />
                                                             <SummaryRow label="Age" value={profile.age} />
                                                             <SummaryRow label="Civil Status" value={profile.civil_status} />
-                                                            <SummaryRow label="Target Vacancy" value={targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId)?.position_title : null} />
+                                                            <SummaryRow 
+                                                                label="Target Vacancy" 
+                                                                value={(() => {
+                                                                    const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
+                                                                    if (!vac) return null;
+                                                                    return (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span>{vac.position_title}</span>
+                                                                            {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                        </div>
+                                                                    );
+                                                                })()} 
+                                                            />
                                                         </div>
                                                     </div>
 
                                                     <div>
                                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Designation & Appointment</p>
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                            <SummaryRow label="Position Title" value={profile.position_title} />
+                                                            <SummaryRow 
+                                                                label="Position Title" 
+                                                                value={
+                                                                    profile.position_title ? (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span>{profile.position_title}</span>
+                                                                            {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                        </div>
+                                                                    ) : null
+                                                                } 
+                                                             />
                                                             <SummaryRow label="Date of Present Position" value={profile.date_of_assignment} />
                                                             <SummaryRow label="Permanent Address" value={profile.permanent_address} />
                                                         </div>
