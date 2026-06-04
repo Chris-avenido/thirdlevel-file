@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight, 
+import {
+    FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight,
     FiMoreVertical, FiDownload, FiPlus, FiGrid, FiList,
     FiCheckCircle, FiAlertCircle, FiClock, FiActivity, FiArrowRight,
     FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2
@@ -33,13 +33,13 @@ const THIRD_LEVEL_POSITIONS = [
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
     const { user, logout, token } = useAuth();
-    
+
     // --- SEARCHABLE SELECT COMPONENT ---
     const SearchableSelect = ({ label, options, value, onChange, placeholder, info }) => {
         const [isOpen, setIsOpen] = useState(false);
         const [search, setSearch] = useState('');
-        
-        const filteredOptions = options.filter(opt => 
+
+        const filteredOptions = options.filter(opt =>
             opt.label.toLowerCase().includes(search.toLowerCase()) ||
             opt.sublabel?.toLowerCase().includes(search.toLowerCase())
         );
@@ -50,8 +50,8 @@ const OfficialsRegistry = () => {
             <div className="relative">
                 {label && <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">{label}</label>}
                 {info && <p className="text-[9px] text-slate-400 font-bold mb-3">{info}</p>}
-                
-                <div 
+
+                <div
                     onClick={() => setIsOpen(!isOpen)}
                     className="w-full bg-slate-50 border-2 border-transparent hover:border-blue-600/10 cursor-pointer rounded-2xl py-4 px-5 flex justify-between items-center transition-all group"
                 >
@@ -70,7 +70,7 @@ const OfficialsRegistry = () => {
                     {isOpen && (
                         <>
                             <div className="fixed inset-0 z-[120]" onClick={() => setIsOpen(false)} />
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -79,7 +79,7 @@ const OfficialsRegistry = () => {
                                 <div className="p-4 border-b border-slate-50 bg-slate-50/50">
                                     <div className="relative">
                                         <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                        <input 
+                                        <input
                                             autoFocus
                                             type="text"
                                             value={search}
@@ -92,7 +92,7 @@ const OfficialsRegistry = () => {
                                 <div className="overflow-y-auto py-2 custom-scrollbar">
                                     {filteredOptions.length > 0 ? (
                                         filteredOptions.map((opt) => (
-                                            <div 
+                                            <div
                                                 key={opt.value}
                                                 onClick={() => {
                                                     onChange(opt.value);
@@ -199,7 +199,7 @@ const OfficialsRegistry = () => {
     const [selectedPosition, setSelectedPosition] = useState(null);
     const [incumbents, setIncumbents] = useState([]);
     const [incumbentsLoading, setIncumbentsLoading] = useState(false);
-    
+
     // Admin Action State
     const [showActionModal, setShowActionModal] = useState(false);
     const [actionOfficial, setActionOfficial] = useState(null);
@@ -394,7 +394,7 @@ const OfficialsRegistry = () => {
 
     const handleAdminAction = async () => {
         if (!justification && adminAction !== 'reassign') return Swal.fire('Notice', 'Please provide a justification.', 'info');
-        
+
         if (adminAction === 'reassign') {
             const isVacant = !actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT';
             if (isVacant && !assigneeSlot) {
@@ -604,7 +604,7 @@ const OfficialsRegistry = () => {
 
     const handleProcessApplication = async (app_TLOid, action, denial_reason = '') => {
         if (!window.confirm(`Are you sure you want to ${action} this application?`)) return;
-        
+
         setProcessingId(app_TLOid);
         try {
             const res = await fetch(apiUrl('/api/third-level/process-application'), {
@@ -632,7 +632,7 @@ const OfficialsRegistry = () => {
     return (
         <PageTransition>
             <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans overflow-x-hidden">
-                
+
                 {/* TOP NAVIGATION BAR */}
                 <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-4">
@@ -657,7 +657,7 @@ const OfficialsRegistry = () => {
                 </header>
 
                 <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
-                    
+
                     {/* TABS & CATEGORIES */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                         <div className="flex p-1 bg-slate-100 rounded-2xl w-fit">
@@ -684,7 +684,7 @@ const OfficialsRegistry = () => {
                                     </span>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level Officials</span>
                                 </div>
-                                
+
                                 {/* Hover Breakdown Tooltip */}
                                 <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
@@ -716,7 +716,7 @@ const OfficialsRegistry = () => {
                                     </span>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs / OIC</span>
                                 </div>
-                                
+
                                 {/* Hover Breakdown Tooltip */}
                                 <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
@@ -745,7 +745,7 @@ const OfficialsRegistry = () => {
                             {/* Search */}
                             <div className="relative flex-1 w-full">
                                 <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input 
+                                <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -756,7 +756,7 @@ const OfficialsRegistry = () => {
 
                             {/* Strand Dropdown */}
                             <div className="w-full lg:w-[280px]">
-                                <SearchableSelect 
+                                <SearchableSelect
                                     label=""
                                     placeholder="All Strands"
                                     value={strandFilter}
@@ -770,7 +770,7 @@ const OfficialsRegistry = () => {
 
                             {/* Position Dropdown */}
                             <div className="w-full lg:w-[280px]">
-                                <SearchableSelect 
+                                <SearchableSelect
                                     label=""
                                     placeholder="All Positions"
                                     value={positionFilter}
@@ -784,14 +784,14 @@ const OfficialsRegistry = () => {
 
                             {/* View Switcher */}
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                                <button 
+                                <button
                                     onClick={() => setViewMode('table')}
                                     className={`p-3 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                     title="Table view"
                                 >
                                     <ListRowsIcon />
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setViewMode('grid')}
                                     className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
@@ -826,7 +826,7 @@ const OfficialsRegistry = () => {
                                         <tbody className="divide-y divide-slate-50">
                                             {pagedRecords.map((item) => (
                                                 <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors">
-                                                    <td 
+                                                    <td
                                                         className={`px-8 py-6 ${item.email ? 'cursor-pointer' : ''}`}
                                                         onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
                                                     >
@@ -848,7 +848,7 @@ const OfficialsRegistry = () => {
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <button 
+                                                        <button
                                                             onClick={() => handlePositionClick(item)}
                                                             className="text-left group/pos hover:translate-x-1 transition-transform"
                                                         >
@@ -874,7 +874,7 @@ const OfficialsRegistry = () => {
                                                     <td className="px-8 py-6 text-right">
                                                         <div className="flex items-center justify-end gap-2">
                                                             {item.email && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => navigate(`/official-profiling?email=${item.email}`)}
                                                                     title="View Profile"
                                                                     className="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:bg-[#004A99] hover:text-white hover:border-[#004A99] transition-all shadow-sm"
@@ -928,7 +928,7 @@ const OfficialsRegistry = () => {
                             </motion.div>
                         ) : (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                { sortedRecords.map((item) => (
+                                {sortedRecords.map((item) => (
                                     <motion.div
                                         key={item.TLOid}
                                         whileHover={{ y: -8 }}
@@ -948,19 +948,19 @@ const OfficialsRegistry = () => {
                                                     <StatusBadge status={item.status} />
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="space-y-1 relative z-10">
                                                 <h3 className="text-2xl font-black text-slate-800 tracking-tighter leading-tight uppercase italic">
-                                                    {item.first_name ? <>{item.first_name} <br/> {item.last_name}</> : <span className="text-rose-500 text-lg">VACANT POSITION</span>}
+                                                    {item.first_name ? <>{item.first_name} <br /> {item.last_name}</> : <span className="text-rose-500 text-lg">VACANT POSITION</span>}
                                                 </h3>
-                                                <button 
+                                                <button
                                                     onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
                                                     className="text-[10px] font-black text-[#004A99] uppercase tracking-[0.2em] hover:text-blue-600 transition-colors text-left flex items-center gap-1"
                                                 >
                                                     {item.position_title || 'Candidate'}
                                                     <FiClock className="text-slate-400" size={10} />
                                                 </button>
-                                                
+
                                                 {item.concurrent_positions && (
                                                     <div className="mt-3 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm">
                                                         <div className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
@@ -977,7 +977,7 @@ const OfficialsRegistry = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                            
+
                                             <div className="mt-8 pt-6 border-t border-slate-50 space-y-4">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
@@ -1027,77 +1027,77 @@ const OfficialsRegistry = () => {
                     <AnimatePresence>
                         {showIncumbencyModal && (
                             <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                className="bg-white rounded-[3rem] w-full max-w-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border border-white/50 overflow-hidden relative"
-                            >
-                                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent"></div>
-                                
-                                <div className="p-10 relative z-10">
-                                    <div className="flex justify-between items-start mb-8">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">
-                                                <FiClock /> Positional History
-                                            </div>
-                                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
-                                            <p className="text-slate-400 font-medium">{selectedPosition?.office || 'Department of Education'}</p>
-                                        </div>
-                                        <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border border-slate-100 transition-all">
-                                            <FiX size={24} />
-                                        </button>
-                                    </div>
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                    className="bg-white rounded-[3rem] w-full max-w-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border border-white/50 overflow-hidden relative"
+                                >
+                                    <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent"></div>
 
-                                    <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3">Last Known Incumbents</h4>
-                                        {incumbentsLoading ? (
-                                            <div className="h-48 flex items-center justify-center">
-                                                <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                                    <div className="p-10 relative z-10">
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">
+                                                    <FiClock /> Positional History
+                                                </div>
+                                                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
+                                                <p className="text-slate-400 font-medium">{selectedPosition?.office || 'Department of Education'}</p>
                                             </div>
-                                        ) : incumbents.length === 0 ? (
-                                            <div className="py-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                                                <FiClock className="mx-auto text-slate-200 mb-4" size={32} />
-                                                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">No historical data recorded</p>
-                                            </div>
-                                        ) : (
-                                            <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                                {incumbents.map((inc, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-lg hover:shadow-blue-900/5 transition-all">
-                                                                <div className="flex items-center gap-4">
-                                                            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-500/20">
-                                                                {inc.first_name ? inc.first_name[0] : 'V'}{inc.last_name ? inc.last_name[0] : ''}
+                                            <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border border-slate-100 transition-all">
+                                                <FiX size={24} />
+                                            </button>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3">Last Known Incumbents</h4>
+                                            {incumbentsLoading ? (
+                                                <div className="h-48 flex items-center justify-center">
+                                                    <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                                                </div>
+                                            ) : incumbents.length === 0 ? (
+                                                <div className="py-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                                    <FiClock className="mx-auto text-slate-200 mb-4" size={32} />
+                                                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">No historical data recorded</p>
+                                                </div>
+                                            ) : (
+                                                <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                    {incumbents.map((inc, i) => (
+                                                        <div key={i} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-lg hover:shadow-blue-900/5 transition-all">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-500/20">
+                                                                    {inc.first_name ? inc.first_name[0] : 'V'}{inc.last_name ? inc.last_name[0] : ''}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-black text-slate-800 text-sm italic uppercase">{inc.first_name || 'VACANT'} {inc.last_name || ''}</div>
+                                                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Incumbent Tenure ID: {inc.TLOid}</div>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <div className="font-black text-slate-800 text-sm italic uppercase">{inc.first_name || 'VACANT'} {inc.last_name || ''}</div>
-                                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Incumbent Tenure ID: {inc.TLOid}</div>
+                                                            <div className="text-right">
+                                                                <div className="text-[10px] font-black text-[#CE1126] uppercase tracking-widest leading-none mb-1">Updated</div>
+                                                                <div className="text-[9px] font-bold text-slate-400 uppercase">{new Date(inc.tenure_date).toLocaleDateString()}</div>
                                                             </div>
                                                         </div>
-                                                        <div className="text-right">
-                                                            <div className="text-[10px] font-black text-[#CE1126] uppercase tracking-widest leading-none mb-1">Updated</div>
-                                                            <div className="text-[9px] font-bold text-slate-400 uppercase">{new Date(inc.tenure_date).toLocaleDateString()}</div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-10 bg-blue-600 rounded-2xl p-6 text-white flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <FiInfo size={24} className="opacity-50" />
-                                            <p className="text-[10px] font-bold uppercase tracking-wide leading-relaxed">This ledger tracks movements based on administrative updates. Promoting or reassigning an official will append a new entry to this history.</p>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                        <button 
-                                            onClick={() => setShowIncumbencyModal(false)}
-                                            className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                                        >
-                                            Dismiss
-                                        </button>
+
+                                        <div className="mt-10 bg-blue-600 rounded-2xl p-6 text-white flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <FiInfo size={24} className="opacity-50" />
+                                                <p className="text-[10px] font-bold uppercase tracking-wide leading-relaxed">This ledger tracks movements based on administrative updates. Promoting or reassigning an official will append a new entry to this history.</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setShowIncumbencyModal(false)}
+                                                className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                Dismiss
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        </div>
+                                </motion.div>
+                            </div>
                         )}
                     </AnimatePresence>,
                     document.body
@@ -1108,142 +1108,142 @@ const OfficialsRegistry = () => {
                     <AnimatePresence>
                         {showActionModal && (
                             <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.95, y: 30 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                                className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border border-white/50"
-                            >
-                                <div className="p-10">
-                                    <div className="flex justify-between items-start mb-8">
-                                        <div>
-                                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
-                                                {adminAction === 'reassign' 
-                                                    ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL') 
-                                                    : `${adminAction}ING OFFICIAL`}
-                                            </h2>
-                                            <p className="text-slate-400 font-bold mt-2">
-                                                {adminAction === 'reassign' 
-                                                    ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`) 
-                                                    : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}
-                                            </p>
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                                    className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border border-white/50"
+                                >
+                                    <div className="p-10">
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div>
+                                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 block">Administrative Action</span>
+                                                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+                                                    {adminAction === 'reassign'
+                                                        ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
+                                                        : `${adminAction}ING OFFICIAL`}
+                                                </h2>
+                                                <p className="text-slate-400 font-bold mt-2">
+                                                    {adminAction === 'reassign'
+                                                        ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`)
+                                                        : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}
+                                                </p>
+                                            </div>
+                                            <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all">
+                                                <FiX size={20} />
+                                            </button>
                                         </div>
-                                        <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all">
-                                            <FiX size={20} />
-                                        </button>
-                                    </div>
 
-                                    <div className="space-y-6">
-                                        {adminAction === 'reassign' && (
-                                            <div className="space-y-4">
-                                                {(!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? (
-                                                    <>
-                                                        <div>
-                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Search Personnel Without Position</label>
-                                                            <div className="relative">
-                                                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                                                <input
-                                                                    value={unassignedSearch}
-                                                                    onChange={(e) => setUnassignedSearch(e.target.value)}
-                                                                    placeholder="Search by name or employee number..."
-                                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
-                                                                />
+                                        <div className="space-y-6">
+                                            {adminAction === 'reassign' && (
+                                                <div className="space-y-4">
+                                                    {(!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? (
+                                                        <>
+                                                            <div>
+                                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Search Personnel Without Position</label>
+                                                                <div className="relative">
+                                                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                                                    <input
+                                                                        value={unassignedSearch}
+                                                                        onChange={(e) => setUnassignedSearch(e.target.value)}
+                                                                        placeholder="Search by name or employee number..."
+                                                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                                    />
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <SearchableSelect 
-                                                            label="Reassign To"
-                                                            info={unassignedLoading ? 'Loading available personnel...' : 'Showing personnel without an active position. Search to narrow the list.'}
-                                                            placeholder={unassignedLoading ? 'Loading personnel...' : 'Choose personnel...'}
-                                                            value={assigneeSlot}
-                                                            onChange={setAssigneeSlot}
-                                                            options={unassignedPersonnel.map(p => ({
-                                                                value: p.TLOid,
-                                                                label: `${p.first_name} ${p.last_name || ''}`.trim(),
-                                                                sublabel: [p.employee_number || p.TLOid, p.email].filter(Boolean).join(' - ')
-                                                            }))}
-                                                        />
-                                                        {!unassignedLoading && unassignedPersonnel.length === 0 && (
-                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <SearchableSelect 
-                                                            label="Select Target Office"
-                                                            placeholder="Choose Office..."
-                                                            value={selectedOffice}
-                                                            onChange={(val) => {
-                                                                setSelectedOffice(val);
-                                                                setTargetSlot('');
-                                                            }}
-                                                            options={uniqueOffices.map(o => ({ value: o, label: o }))}
-                                                        />
-                                                        
-                                                        {selectedOffice ? (
-                                                            <SearchableSelect 
-                                                                label="Select Vacant Position"
-                                                                placeholder="Choose vacant position..."
-                                                                value={targetSlot}
-                                                                onChange={setTargetSlot}
-                                                                options={filteredVacantSlots.map(slot => ({
-                                                                    value: slot.TLOid,
-                                                                    label: slot.is_oic ? `${slot.position_title} (OIC)` : slot.position_title,
-                                                                    sublabel: slot.strand ? `Strand: ${slot.strand}` : 'No Strand'
+                                                            <SearchableSelect
+                                                                label="Reassign To"
+                                                                info={unassignedLoading ? 'Loading available personnel...' : 'Showing personnel without an active position. Search to narrow the list.'}
+                                                                placeholder={unassignedLoading ? 'Loading personnel...' : 'Choose personnel...'}
+                                                                value={assigneeSlot}
+                                                                onChange={setAssigneeSlot}
+                                                                options={unassignedPersonnel.map(p => ({
+                                                                    value: p.TLOid,
+                                                                    label: `${p.first_name} ${p.last_name || ''}`.trim(),
+                                                                    sublabel: [p.employee_number || p.TLOid, p.email].filter(Boolean).join(' - ')
                                                                 }))}
                                                             />
-                                                        ) : (
-                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Please select an office first to view vacant positions</p>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
+                                                            {!unassignedLoading && unassignedPersonnel.length === 0 && (
+                                                                <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <SearchableSelect
+                                                                label="Select Target Office"
+                                                                placeholder="Choose Office..."
+                                                                value={selectedOffice}
+                                                                onChange={(val) => {
+                                                                    setSelectedOffice(val);
+                                                                    setTargetSlot('');
+                                                                }}
+                                                                options={uniqueOffices.map(o => ({ value: o, label: o }))}
+                                                            />
+
+                                                            {selectedOffice ? (
+                                                                <SearchableSelect
+                                                                    label="Select Vacant Position"
+                                                                    placeholder="Choose vacant position..."
+                                                                    value={targetSlot}
+                                                                    onChange={setTargetSlot}
+                                                                    options={filteredVacantSlots.map(slot => ({
+                                                                        value: slot.TLOid,
+                                                                        label: slot.is_oic ? `${slot.position_title} (OIC)` : slot.position_title,
+                                                                        sublabel: slot.strand ? `Strand: ${slot.strand}` : 'No Strand'
+                                                                    }))}
+                                                                />
+                                                            ) : (
+                                                                <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Please select an office first to view vacant positions</p>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {adminAction === 'succeed' && (
+                                                <SearchableSelect
+                                                    label="Select Successor"
+                                                    info="If selected, the successor will take this position and their old slot becomes vacant."
+                                                    placeholder="No successor (leave vacant)..."
+                                                    value={successorSlot}
+                                                    onChange={setSuccessorSlot}
+                                                    options={[
+                                                        { value: '', label: 'No successor', sublabel: 'Position will stay vacant' },
+                                                        ...activeOfficials.map(o => ({
+                                                            value: o.TLOid,
+                                                            label: `${o.first_name} ${o.last_name}`,
+                                                            sublabel: `${o.position_title} — ${o.office}`
+                                                        }))
+                                                    ]}
+                                                />
+                                            )}
+
+                                            <div>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Reason</label>
+                                                <textarea
+                                                    value={justification}
+                                                    onChange={(e) => setJustification(e.target.value)}
+                                                    placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide a detailed reason for this action...'}
+                                                    rows={4}
+                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
+                                                />
                                             </div>
-                                        )}
 
-                                        {adminAction === 'succeed' && (
-                                            <SearchableSelect 
-                                                label="Select Successor"
-                                                info="If selected, the successor will take this position and their old slot becomes vacant."
-                                                placeholder="No successor (leave vacant)..."
-                                                value={successorSlot}
-                                                onChange={setSuccessorSlot}
-                                                options={[
-                                                    { value: '', label: 'No successor', sublabel: 'Position will stay vacant' },
-                                                    ...activeOfficials.map(o => ({
-                                                        value: o.TLOid,
-                                                        label: `${o.first_name} ${o.last_name}`,
-                                                        sublabel: `${o.position_title} — ${o.office}`
-                                                    }))
-                                                ]}
-                                            />
-                                        )}
-
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Reason</label>
-                                            <textarea 
-                                                value={justification}
-                                                onChange={(e) => setJustification(e.target.value)}
-                                                placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide a detailed reason for this action...'}
-                                                rows={4}
-                                                className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
-                                            />
+                                            <button
+                                                disabled={actionLoading}
+                                                onClick={handleAdminAction}
+                                                className="w-full py-5 bg-[#004A99] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
+                                            >
+                                                {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
+                                            </button>
                                         </div>
-
-                                        <button 
-                                            disabled={actionLoading}
-                                            onClick={handleAdminAction}
-                                            className="w-full py-5 bg-[#004A99] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
-                                        >
-                                            {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
-                                        </button>
                                     </div>
-                                </div>
-                            </motion.div>
-                        </div>
+                                </motion.div>
+                            </div>
                         )}
                     </AnimatePresence>,
                     document.body
