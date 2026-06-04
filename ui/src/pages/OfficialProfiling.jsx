@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiUser, FiAward, FiBriefcase, FiBook, FiFileText, FiShield,
-    FiChevronLeft, FiSave, FiPlus, FiTrash2, FiCheckCircle,
+    FiChevronLeft, FiChevronRight, FiSave, FiPlus, FiTrash2, FiCheckCircle,
     FiAlertTriangle, FiInfo, FiUpload, FiToggleLeft, FiToggleRight,
     FiSearch, FiLoader, FiList, FiLock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
     FiDownload, FiX, FiMonitor, FiFile
@@ -68,8 +68,8 @@ const calculateDuration = (start, end) => {
     return { years, months };
 };
 
-const inp = 'w-full bg-slate-50/50 hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-xl py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 shadow-sm shadow-slate-50';
-const sel = 'w-full bg-slate-50/50 hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-xl py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all shadow-sm shadow-slate-50';
+const inp = 'w-full bg-white hover:bg-slate-50/50 border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400/80 shadow-none';
+const sel = 'w-full bg-white hover:bg-slate-50/50 border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all shadow-none';
 
 const Field = ({ label, children }) => (
     <div className="flex flex-col gap-1.5 group">
@@ -78,11 +78,8 @@ const Field = ({ label, children }) => (
     </div>
 );
 
-const SectionLabel = ({ color = '#0038A8', children }) => (
-    <div className="flex items-center gap-3 border-b border-slate-100 pb-3.5 mb-6">
-        <div className="w-1.5 h-4.5 rounded-full" style={{ backgroundColor: color }} />
-        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-800">{children}</p>
-    </div>
+const SectionLabel = ({ children }) => (
+    <p className="text-[11px] font-black uppercase tracking-[0.05em] text-[#0038A8] mb-4">{children}</p>
 );
 
 const buildFullName = (profile) => {
@@ -328,6 +325,33 @@ const OfficialProfiling = () => {
             setP('profiling_status', 'profiling');
         }
     }, [completeness]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) {
+                document.documentElement.style.overflow = 'hidden';
+                document.body.style.overflow = 'hidden';
+                document.documentElement.style.height = '100%';
+                document.body.style.height = '100%';
+            } else {
+                document.documentElement.style.overflow = '';
+                document.body.style.overflow = '';
+                document.documentElement.style.height = '';
+                document.body.style.height = '';
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+            document.documentElement.style.height = '';
+            document.body.style.height = '';
+        };
+    }, []);
 
     useEffect(() => {
         const emailToLookup = urlEmail || user?.email || user?.userEmail || localStorage.getItem('userEmail');
@@ -831,32 +855,29 @@ const OfficialProfiling = () => {
                     )}
                 </AnimatePresence>
 
-                {/* ── Top Navigation Bar ── */}
-                <div className="bg-[#0a1e3f]/95 backdrop-blur-md sticky top-0 z-40 border-b border-white/5 shadow-md">
-                    <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-3.5 flex justify-between items-center">
-                        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-300 hover:text-white font-semibold text-xs transition-all hover:bg-white/5 py-1.5 px-3.5 rounded-xl border border-white/5 hover:border-white/10">
-                            <FiChevronLeft size={15} /> Back
-                        </button>
-                        <button onClick={logout} className="flex items-center gap-2 text-slate-300 hover:text-red-400 font-semibold text-xs transition-all hover:bg-white/5 py-1.5 px-3.5 rounded-xl border border-white/5 hover:border-white/10">
-                            <FiLock size={14} /> Sign Out
-                        </button>
-                    </div>
-                </div>
+                {/* ── Unified Premium Header Banner ── */}
+                <div className="bg-[#0a1e3f] text-white relative overflow-hidden shadow-lg border-b border-slate-200/10 py-6 px-6 lg:px-8 shrink-0">
+                    <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
+                        {/* Top Navigation Row */}
+                        <div className="flex justify-between items-center w-full">
+                            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-300 hover:text-white font-bold text-[10px] uppercase tracking-wider transition-all">
+                                <FiChevronLeft size={16} /> Back
+                            </button>
+                            <button onClick={logout} className="flex items-center gap-2 text-slate-300 hover:text-red-400 font-bold text-[10px] uppercase tracking-wider transition-all">
+                                <FiLock size={14} /> Sign Out
+                            </button>
+                        </div>
 
-                {/* ── Profile Banner ── */}
-                <div className="bg-gradient-to-r from-[#0038A8] via-[#0845be] to-[#1a4fbd] relative overflow-hidden shadow-lg border-b border-slate-200/10">
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiAwaDZ2LTZoLTZ2NnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20 mix-blend-overlay" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                    <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-8 py-6 lg:py-8">
-                        <div className="flex flex-row items-center justify-between gap-4 w-full">
+                        {/* Profile Info Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                             {/* Left: Avatar + Profile Info */}
                             <div className="flex items-center gap-4 min-w-0">
                                 <div className="relative shrink-0">
-                                    <div className="w-[56px] h-[56px] md:w-[72px] md:h-[72px] bg-white/10 rounded-2xl flex items-center justify-center text-white/60 border border-white/20 shadow-lg shadow-black/10">
+                                    <div className="w-[56px] h-[56px] md:w-[72px] md:h-[72px] bg-white/10 rounded-full flex items-center justify-center text-white/60 border border-white/20 shadow-lg shadow-black/10">
                                         <FiUser size={30} className="md:hidden" />
                                         <FiUser size={36} className="hidden md:block" />
                                     </div>
-                                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-400 rounded-full border-[2px] md:border-[2.5px] border-[#0038A8] shadow-sm" />
+                                    <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-400 rounded-full border-[2px] md:border-[2.5px] border-[#0a1e3f] shadow-sm" />
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2.5 flex-wrap">
@@ -875,29 +896,30 @@ const OfficialProfiling = () => {
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[9px] md:text-[11px] font-medium">
                                         {TLOid && (
                                             <span className="flex items-center gap-1">
-                                                <span className="opacity-50">#</span> {applicationId ? `APP-${String(applicationId).padStart(4, '0')}` : TLOid}
+                                                • {applicationId ? `APP-${String(applicationId).padStart(4, '0')}` : TLOid}
                                             </span>
                                         )}
                                         {TLOid && <span className="opacity-30">·</span>}
                                         <span className="flex items-center gap-1">
-                                            <FiCalendar size={11} /> Applied {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            Applied {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </span>
                                     </div>
                                 </div>
                             </div>
+
                             {/* Right: Progress Card */}
                             <div className="shrink-0">
-                                <div className="w-28 sm:w-36 md:w-44 bg-white/10 backdrop-blur-md border border-white/25 rounded-2xl p-3 sm:p-4 shadow-2xl shadow-blue-950/15">
-                                    <div className="flex items-center justify-between gap-1.5">
-                                        <p className="text-blue-100 text-[8px] md:text-[9px] font-bold uppercase tracking-widest leading-none">Progress</p>
-                                        <p className="text-white font-black italic text-xl sm:text-2xl md:text-3xl leading-none">{completeness}%</p>
-                                    </div>
-                                    <div className="h-1.5 md:h-2 bg-white/20 rounded-full overflow-hidden mt-2.5">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${completeness}%` }}
-                                            className={`h-full ${completeness === 100 ? 'bg-emerald-400 shadow-sm shadow-emerald-450/50' : 'bg-[#FCD116] shadow-sm shadow-yellow-450/50'}`}
-                                        />
+                                <div className="w-40 bg-[#09152b] border border-white/5 rounded-2xl p-3 shadow-lg flex flex-col justify-center">
+                                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest leading-none">Progress</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <p className="text-[#FCD116] font-black text-lg leading-none">{completeness}%</p>
+                                        <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${completeness}%` }}
+                                                className="h-full bg-[#FCD116]"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -906,41 +928,41 @@ const OfficialProfiling = () => {
                 </div>
 
                 {/* ── Body Content ── */}
-                <div className="max-w-[1400px] w-full mx-auto px-6 lg:px-8 py-6 flex-1 lg:overflow-hidden">
-                    <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-8 items-start lg:h-full lg:overflow-hidden">
-                        {/* Sidebar (Desktop Only) */}
-                        <aside className="hidden lg:block bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-100/30 overflow-hidden lg:max-h-full">
-                            {/* Talent Portal Branding */}
-                            <div className="px-5 pt-5 pb-4 border-b border-slate-100">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-[#0038A8]/10 rounded-xl flex items-center justify-center text-[#0038A8]">
-                                        <FiUser size={20} />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-black text-slate-800 leading-tight">Talent Portal</p>
-                                        <p className="text-[10px] font-medium text-slate-400">Applicant Workspace</p>
-                                    </div>
+                <div className="w-full flex-1 flex flex-row lg:overflow-hidden bg-white">
+                    {/* Sidebar (Desktop Only) */}
+                    <aside className="hidden lg:flex flex-col bg-white border-r border-slate-200/80 w-[260px] h-full shrink-0 overflow-y-auto pt-6">
+                        {/* Talent Portal Branding */}
+                        <div className="px-5 pt-2 pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[#0038A8]/10 rounded-xl flex items-center justify-center text-[#0038A8]">
+                                    <FiUser size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black text-slate-800 leading-tight">Talent Portal</p>
+                                    <p className="text-[10px] font-medium text-slate-400">Applicant Workspace</p>
                                 </div>
                             </div>
-                            {/* Navigation */}
-                            <div className="p-3">
-                                <p className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Sections</p>
-                                <div className="space-y-0.5">
-                                    {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
-                                        const isLocked = t.id === 'application' && completeness < 100;
-                                        const active = tab === t.id;
-                                        const completed = isTabCompleted(t.id);
-                                        return (
+                        </div>
+                        {/* Navigation */}
+                        <div className="p-4 flex-1">
+                            <p className="px-3 py-2 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Profile Sections</p>
+                            <div className="space-y-1">
+                                {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
+                                    const isLocked = t.id === 'application' && completeness < 100;
+                                    const active = tab === t.id;
+                                    const completed = isTabCompleted(t.id);
+                                    return (
+                                        <React.Fragment key={t.id}>
+                                            {t.id === 'application' && <div className="my-3 border-t border-slate-100 mx-3" />}
                                             <button
-                                                key={t.id}
                                                 disabled={isLocked}
                                                 onClick={() => !isLocked && setTab(t.id)}
-                                                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left text-[11px] font-semibold transition-all
-                                                    ${active ? 'bg-[#0038A8] text-white shadow-md shadow-blue-900/20' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}
+                                                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-left text-[11px] font-bold transition-all
+                                                    ${active ? 'bg-[#0038A8] text-white shadow-md shadow-blue-900/20' : 'text-slate-505 text-slate-500 hover:bg-slate-50 hover:text-slate-800'}
                                                     ${isLocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                                             >
                                                 <span className="flex items-center gap-3 min-w-0">
-                                                    <t.icon size={15} className="shrink-0" />
+                                                    {React.createElement(t.icon, { size: 16, className: "shrink-0" })}
                                                     <span className="truncate">{t.label}</span>
                                                 </span>
                                                 {isLocked ? (
@@ -948,42 +970,47 @@ const OfficialProfiling = () => {
                                                 ) : completed ? (
                                                     <FiCheckCircle size={13} className={active ? 'text-emerald-300' : 'text-emerald-500'} />
                                                 ) : active ? (
-                                                    <FiArrowRight size={12} className="shrink-0" />
+                                                    <FiChevronRight size={14} className="shrink-0 text-white" />
                                                 ) : null}
                                             </button>
-                                        );
-                                    })}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                        {/* Mobile Toggle Bar */}
+                        <div className="lg:hidden flex items-center justify-between bg-white border-b border-slate-200 p-4 shadow-sm shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-[#0038A8]/10 flex items-center justify-center text-[#0038A8]">
+                                    {React.createElement(TABS.find(t => t.id === tab)?.icon || FiUser, { size: 16 })}
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Active Section</p>
+                                    <p className="text-xs font-black text-slate-800 uppercase tracking-wider mt-1">{TABS.find(t => t.id === tab)?.label}</p>
                                 </div>
                             </div>
-                        </aside>
+                            <button
+                                onClick={() => setIsMobileMenuOpen(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-[#0038A8]/15 hover:bg-[#0038A8]/20 text-[#0038A8] text-xs font-black rounded-xl transition-all border border-[#0038A8]/10"
+                            >
+                                <FiList size={14} /> Change Section
+                            </button>
+                        </div>
 
-                        {/* Main Content Area */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0 lg:h-full lg:overflow-y-auto lg:pr-3">
-                            {/* Mobile Toggle Bar */}
-                            <div className="lg:hidden lg:col-span-3 flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-[#0038A8]/10 flex items-center justify-center text-[#0038A8]">
-                                        {React.createElement(TABS.find(t => t.id === tab)?.icon || FiUser, { size: 16 })}
-                                    </div>
-                                    <div>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Active Section</p>
-                                        <p className="text-xs font-black text-slate-800 uppercase tracking-wider mt-1">{TABS.find(t => t.id === tab)?.label}</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setIsMobileMenuOpen(true)}
-                                    className="flex items-center gap-1.5 px-3 py-2 bg-[#0038A8]/15 hover:bg-[#0038A8]/20 text-[#0038A8] text-xs font-black rounded-xl transition-all border border-[#0038A8]/10 animate-pulse"
-                                >
-                                    <FiList size={14} /> Change Section
-                                </button>
-                            </div>
-
-                            <div className={tab === 'experience' ? 'lg:col-span-2' : 'lg:col-span-3'}>
-                                <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={tab}
-                                        initial={{ opacity: 0, y: 12 }}
-                                        animate={{ opacity: 1, y: 0 }}
+                        {/* Scrollable Form Area */}
+                        <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-[#f8fafc] pb-24">
+                            <div className="max-w-[1200px] w-full mx-auto">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                                    <div className={tab === 'experience' ? 'lg:col-span-2' : 'lg:col-span-3'}>
+                                        <AnimatePresence mode="wait">
+                                            <motion.div
+                                                key={tab}
+                                                initial={{ opacity: 0, y: 12 }}
+                                                animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -8 }}
                                         transition={{ duration: 0.15 }}
                                     >
@@ -991,111 +1018,110 @@ const OfficialProfiling = () => {
                                         {/* ── PERSONAL INFO ── */}
                                         {tab === 'personal' && (
                                             <div className="space-y-6">
-                                                <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 lg:p-8 border border-slate-200/60 shadow-xl shadow-slate-100/30 space-y-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-100/40 hover:border-slate-300/60">
-                                                    <SectionLabel>Personal Information</SectionLabel>
-                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                                        <Field label="First Name"><input type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
-                                                        <Field label="Last Name"><input type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
-                                                        <Field label="Middle Name"><input type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
-                                                        <Field label="Suffix (Type 'Not Applicable' if none)"><input type="text" value={profile.suffix} onChange={e => setP('suffix', e.target.value)} placeholder="e.g. Jr., III, Not Applicable" className={inp} /></Field>
+                                                <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-100 shadow-sm space-y-8">
+                                                    <div>
+                                                        <SectionLabel>Personal Information</SectionLabel>
+                                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                                            <Field label="First Name"><input type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
+                                                            <Field label="Last Name"><input type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
+                                                            <Field label="Middle Name"><input type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
+                                                            <Field label="Suffix (Type 'Not Applicable' if none)"><input type="text" value={profile.suffix} onChange={e => setP('suffix', e.target.value)} placeholder="e.g. Jr., III, Not Applicable" className={inp} /></Field>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                                                            <Field label="Gender">
+                                                                <select value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
+                                                                    <option value="">Select</option>
+                                                                    <option value="Male">Male</option>
+                                                                    <option value="Female">Female</option>
+                                                                </select>
+                                                            </Field>
+                                                            <Field label="Date of Birth">
+                                                                <div className="relative">
+                                                                    <input type="date" value={profile.date_of_birth} onChange={e => setProfile(p => ({ ...p, date_of_birth: e.target.value, age: computeAge(e.target.value) }))} className={`${inp} pr-10`} />
+                                                                    <FiCalendar
+                                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-350 cursor-pointer hover:text-[#0038A8] transition-colors"
+                                                                        size={14}
+                                                                        onClick={(e) => e.currentTarget.previousSibling.showPicker()}
+                                                                    />
+                                                                </div>
+                                                            </Field>
+                                                            <Field label="Age (auto-computed)">
+                                                                <div className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-500 min-h-[38px] flex items-center justify-center">
+                                                                    {profile.age || '—'}
+                                                                </div>
+                                                            </Field>
+                                                            <Field label="Civil Status">
+                                                                <select value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
+                                                                    <option value="">Select</option>
+                                                                    {['Single', 'Married', 'Widowed', 'Separated'].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                </select>
+                                                            </Field>
+                                                        </div>
                                                     </div>
-                                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                                        <Field label="Gender">
-                                                            <select value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
-                                                                <option value="">Select</option>
-                                                                <option value="Male">Male</option>
-                                                                <option value="Female">Female</option>
-                                                            </select>
-                                                        </Field>
-                                                        <Field label="Date of Birth">
-                                                            <div className="relative">
-                                                                <input type="date" value={profile.date_of_birth} onChange={e => setProfile(p => ({ ...p, date_of_birth: e.target.value, age: computeAge(e.target.value) }))} className={`${inp} pr-10`} />
-                                                                <FiCalendar
-                                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                    size={14}
-                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                />
-                                                            </div>
-                                                        </Field>
-                                                        <Field label="Age (auto-computed)">
-                                                            <div className="bg-slate-100 rounded-2xl py-3 px-5 text-sm font-black text-[#0038A8]">{profile.age || '—'}</div>
-                                                        </Field>
-                                                        <Field label="Civil Status">
-                                                            <select value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
-                                                                <option value="">Select</option>
-                                                                {['Single', 'Married', 'Widowed', 'Separated'].map(o => <option key={o} value={o}>{o}</option>)}
-                                                            </select>
-                                                        </Field>
-                                                    </div>
-                                                </div>
 
-                                                <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 lg:p-8 border border-slate-200/60 shadow-xl shadow-slate-100/30 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-100/40 hover:border-slate-300/60 space-y-5">
-                                                    <SectionLabel color="#0038A8">Designation & Appointment</SectionLabel>
-                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                                        <Field label="Position Title (As per Appointment / Designation)">
-                                                            <select value={profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
-                                                                <option value="">Select Position Title</option>
-                                                                {[
-                                                                    'Undersecretary',
-                                                                    'Assistant Secretary',
-                                                                    'Director IV',
-                                                                    'Director III',
-                                                                    'Chief Administrative Officer'
-                                                                ].map(o => <option key={o} value={o}>{o}</option>)}
-                                                                {profile.position_title && ![
-                                                                    'Undersecretary',
-                                                                    'Assistant Secretary',
-                                                                    'Director IV',
-                                                                    'Director III',
-                                                                    'Chief Administrative Officer'
-                                                                ].includes(profile.position_title) && (
-                                                                        <option value={profile.position_title}>{profile.position_title}</option>
-                                                                    )}
-                                                            </select>
-                                                        </Field>
-                                                        <Field label="Officer-in-Charge (OIC) Status">
-                                                            <div className="flex items-center gap-3 py-2 px-1">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setP('is_oic', !profile.is_oic)}
-                                                                    className="text-slate-500 hover:text-slate-700 transition-colors"
-                                                                >
-                                                                    {profile.is_oic ? (
-                                                                        <FiToggleRight size={32} className="text-[#0038A8]" />
-                                                                    ) : (
-                                                                        <FiToggleLeft size={32} className="text-slate-300" />
-                                                                    )}
-                                                                </button>
-                                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                                                    {profile.is_oic ? 'Designated as OIC' : 'Regular Appointment'}
-                                                                </span>
-                                                            </div>
-                                                        </Field>
-                                                        <Field label="Date of Present Position (Appointment Date)">
-                                                            <div className="relative">
-                                                                <input type="date" value={profile.date_of_assignment} onChange={e => setP('date_of_assignment', e.target.value)} className={`${inp} pr-10`} />
-                                                                <FiCalendar
-                                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                    size={14}
-                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                />
-                                                            </div>
-                                                        </Field>
+                                                    <div className="border-t border-slate-100 pt-8">
+                                                        <SectionLabel>Designation & Appointment</SectionLabel>
+                                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                                            <Field label="Position Title (As per Appointment / Designation)">
+                                                                <select value={profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                    <option value="">Select Position Title</option>
+                                                                    {[
+                                                                        'Undersecretary',
+                                                                        'Assistant Secretary',
+                                                                        'Director IV',
+                                                                        'Director III',
+                                                                        'Chief Administrative Officer'
+                                                                    ].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                    {profile.position_title && ![
+                                                                        'Undersecretary',
+                                                                        'Assistant Secretary',
+                                                                        'Director IV',
+                                                                        'Director III',
+                                                                        'Chief Administrative Officer'
+                                                                    ].includes(profile.position_title) && (
+                                                                            <option value={profile.position_title}>{profile.position_title}</option>
+                                                                        )}
+                                                                </select>
+                                                            </Field>
+                                                            <Field label="Officer-in-Charge (OIC) Status">
+                                                                <div className="flex items-center gap-3 py-2 px-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setP('is_oic', !profile.is_oic)}
+                                                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${profile.is_oic ? 'bg-[#0038A8]' : 'bg-slate-200'}`}
+                                                                    >
+                                                                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                                    </button>
+                                                                    <span className="text-xs font-bold text-slate-700">
+                                                                        {profile.is_oic ? 'Officer-in-Charge (OIC)' : 'Regular Appointment'}
+                                                                    </span>
+                                                                </div>
+                                                            </Field>
+                                                            <Field label="Date of Present Position (Appointment Date)">
+                                                                <div className="relative">
+                                                                    <input type="date" value={profile.date_of_assignment} onChange={e => setP('date_of_assignment', e.target.value)} className={`${inp} pr-10`} />
+                                                                    <FiCalendar
+                                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-350 cursor-pointer hover:text-[#0038A8] transition-colors"
+                                                                        size={14}
+                                                                        onClick={(e) => e.currentTarget.previousSibling.showPicker()}
+                                                                    />
+                                                                </div>
+                                                            </Field>
+                                                        </div>
                                                     </div>
-                                                </div>
 
-                                                <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 border border-slate-200/60 shadow-xl shadow-slate-100/30 space-y-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-100/40 hover:border-slate-300/60">
-                                                    <SectionLabel color="#64748b">Contact Details</SectionLabel>
-                                                    <Field label="Permanent Address">
-                                                        <input type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
-                                                    </Field>
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                        <Field label="Alternative Email 1"><input type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" className={inp} /></Field>
-                                                        <Field label="Alternative Email 2"><input type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" className={inp} /></Field>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                        <Field label="Alternative Contact 1"><input type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. 09171234567 (11 digits)" className={inp} /></Field>
-                                                        <Field label="Alternative Contact 2"><input type="text" value={profile.alt_contact_details_2 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_2', val); }} placeholder="e.g. 09181234567 (11 digits)" className={inp} /></Field>
+                                                    <div className="border-t border-slate-100 pt-8">
+                                                        <SectionLabel>Contact Details</SectionLabel>
+                                                        <div className="space-y-4">
+                                                            <Field label="Permanent Address">
+                                                                <input type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
+                                                            </Field>
+                                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                                                <Field label="Phone Number"><input type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
+                                                                <Field label="Alternative Email 1"><input type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" className={inp} /></Field>
+                                                                <Field label="Alternative Email 2"><input type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" className={inp} /></Field>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2108,53 +2134,55 @@ const OfficialProfiling = () => {
 
                                                         {/* Action Buttons */}
                                                         {!certified ? (
-                                                            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                                                                {dataSource === 'masterlist' ? (
-                                                                    <button
-                                                                        onClick={() => handleCertify(false)}
-                                                                        disabled={!dpaConsent || !truthConsent || certifying}
-                                                                        className="flex-1 py-5 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                                                    >
-                                                                        {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiCheckCircle size={16} />}
-                                                                        {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
-                                                                    </button>
-                                                                ) : (
-                                                                    <>
+                                                            <div className="space-y-3 pt-2 w-full">
+                                                                <div className="flex flex-col sm:flex-row gap-3">
+                                                                    {dataSource === 'masterlist' ? (
                                                                         <button
                                                                             onClick={() => handleCertify(false)}
-                                                                            disabled={!dpaConsent || !truthConsent || certifying || applicationStatus === 'applied'}
-                                                                            className="flex-1 py-5 bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                                            disabled={!dpaConsent || !truthConsent || certifying}
+                                                                            className="flex-1 py-5 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                                                         >
-                                                                            {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
-                                                                            Save Consent Only
+                                                                            {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiCheckCircle size={16} />}
+                                                                            {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
                                                                         </button>
-                                                                        {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
+                                                                    ) : (
+                                                                        <>
                                                                             <button
-                                                                                onClick={targetVacancyId ? handleSubmitApplication : () => setTab('application')}
-                                                                                disabled={!dpaConsent || !truthConsent || saving}
-                                                                                className="flex-1 py-5 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
+                                                                                onClick={() => handleCertify(false)}
+                                                                                disabled={!dpaConsent || !truthConsent || certifying || applicationStatus === 'applied'}
+                                                                                className="flex-1 py-5 bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                                                             >
-                                                                                {saving ? <FiLoader className="animate-spin" size={16} /> : <FiArrowRight size={16} />}
-                                                                                {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
+                                                                                {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
+                                                                                Save Consent Only
                                                                             </button>
-                                                                        )}
-                                                                        {applicationStatus === 'applied' && (
-                                                                            <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-amber-50 border-2 border-amber-200 rounded-full text-amber-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                <FiClock size={14} /> Applied (Pending Review)
-                                                                            </div>
-                                                                        )}
-                                                                        {applicationStatus === 'disapproved' && (
-                                                                            <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-rose-50 border-2 border-rose-200 rounded-full text-rose-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                <FiXCircle size={14} /> Disapproved
-                                                                            </div>
-                                                                        )}
-                                                                        {applicationStatus === 'approved' && (
-                                                                            <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-emerald-50 border-2 border-emerald-200 rounded-full text-emerald-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                <FiCheckCircle size={14} /> Approved
-                                                                            </div>
-                                                                        )}
-                                                                    </>
-                                                                )}
+                                                                            {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
+                                                                                <button
+                                                                                    onClick={targetVacancyId ? handleSubmitApplication : () => setTab('application')}
+                                                                                    disabled={!dpaConsent || !truthConsent || saving}
+                                                                                    className="flex-1 py-5 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
+                                                                                >
+                                                                                    {saving ? <FiLoader className="animate-spin" size={16} /> : <FiArrowRight size={16} />}
+                                                                                    {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
+                                                                                </button>
+                                                                            )}
+                                                                            {applicationStatus === 'applied' && (
+                                                                                <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-amber-50 border-2 border-amber-200 rounded-full text-amber-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                    <FiClock size={14} /> Applied (Pending Review)
+                                                                                </div>
+                                                                            )}
+                                                                            {applicationStatus === 'disapproved' && (
+                                                                                <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-rose-50 border-2 border-rose-200 rounded-full text-rose-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                    <FiXCircle size={14} /> Disapproved
+                                                                                </div>
+                                                                            )}
+                                                                            {applicationStatus === 'approved' && (
+                                                                                <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-emerald-50 border-2 border-emerald-200 rounded-full text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                    <FiCheckCircle size={14} /> Approved
+                                                                                </div>
+                                                                            )}
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                                 {(!dpaConsent || !truthConsent) && (
                                                                     <p className="text-[9px] font-bold text-slate-400 text-center mt-2 w-full">Please check both declarations above to proceed.</p>
                                                                 )}
@@ -2195,25 +2223,6 @@ const OfficialProfiling = () => {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-
-                                {/* Conditional Save Buttons based on user request (Show on all tabs) */}
-                                {applicationStatus !== 'applied' && (
-                                    <div className="mt-10 flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        <div className="w-full h-px bg-slate-200"></div>
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={saving}
-                                            className="group relative px-16 py-5 bg-[#0038A8] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-lg shadow-[#0038A8]/20 hover:shadow-xl hover:shadow-[#0038A8]/30 hover:scale-[1.02] transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-4 overflow-hidden"
-                                        >
-                                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                                            {saving ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
-                                            {saving ? 'Processing...' : 'Confirm Changes'}
-                                        </button>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database
-                                        </p>
-                                    </div>
-                                )}
 
                                 {applicationStatus === 'disapproved' && tab === 'application' && (
                                     <div className="mt-10 flex justify-center">
@@ -2285,6 +2294,23 @@ const OfficialProfiling = () => {
                     </div>
                 </div>
 
+                {/* Persistent Bottom Action Bar */}
+                {applicationStatus !== 'applied' && (
+                    <div className="bg-white border-t border-slate-200 py-4 px-6 lg:px-8 flex items-center justify-between z-20 shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database
+                        </span>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="px-8 py-3 bg-[#0038A8] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
+                            {saving ? 'Saving...' : 'Save Progress'}
+                        </button>
+                    </div>
+                )}
+
                 {/* Removed Global Export Modal because it was moved into Summary Tab as an inline popover */}
                 {/* Floating Menu Button for mobile/tablet */}
                 <button
@@ -2294,7 +2320,9 @@ const OfficialProfiling = () => {
                     <FiList size={20} />
                 </button>
             </div>
-        </PageTransition>
+        </div>
+    </div>
+</PageTransition>
     );
 };
 

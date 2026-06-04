@@ -32,10 +32,53 @@ const ensureOicColumn = async (client = pool) => {
   if (client === pool) oicSchemaReady = true;
 };
 
-const sanitizeOicPosition = (positionTitle) => {
-  if (typeof positionTitle !== 'string') return { position_title: positionTitle, is_oic: false };
-  const cleaned = positionTitle.replace(/^OIC\s+/i, '').trim();
-  return { position_title: cleaned, is_oic: cleaned !== positionTitle.trim() };
+const sanitizeOicPosition = (positionTitle, existingIsOic = false) => {
+  if (typeof positionTitle !== 'string') return { position_title: positionTitle, is_oic: !!existingIsOic };
+  let cleaned = positionTitle.trim();
+  let isOic = !!existingIsOic;
+
+  const oicPrefixRegex = /^(OIC\s*-\s*|OIC\s+)/i;
+  if (oicPrefixRegex.test(cleaned)) {
+    isOic = true;
+    cleaned = cleaned.replace(oicPrefixRegex, '').trim();
+  }
+  const oicSuffixRegex = /\s*\(?OIC\)?\s*$/i;
+  if (oicSuffixRegex.test(cleaned)) {
+    isOic = true;
+    cleaned = cleaned.replace(oicSuffixRegex, '').trim();
+  }
+
+  const abbreviationMap = {
+    'RD': 'Regional Director',
+    'ARD': 'Assistant Regional Director',
+    'SDS': 'Schools Division Superintendent',
+    'ASDS': 'Assistant Schools Division Superintendent'
+  };
+
+  const upperCleaned = cleaned.toUpperCase();
+  if (abbreviationMap[upperCleaned]) {
+    cleaned = abbreviationMap[upperCleaned];
+  } else if (abbreviationMap[cleaned]) {
+    cleaned = abbreviationMap[cleaned];
+  }
+
+  return { position_title: cleaned, is_oic: isOic };
+};
+
+const getPositionTitleVariants = (title) => {
+  if (!title) return [];
+  const map = {
+    'RD': 'Regional Director',
+    'Regional Director': 'RD',
+    'ARD': 'Assistant Regional Director',
+    'Assistant Regional Director': 'ARD',
+    'SDS': 'Schools Division Superintendent',
+    'Schools Division Superintendent': 'SDS',
+    'ASDS': 'Assistant Schools Division Superintendent',
+    'Assistant Schools Division Superintendent': 'ASDS'
+  };
+  const other = map[title] || map[title.trim()];
+  return other ? [title, other] : [title];
 };
 
 const POSITION_TITLE_DISPLAY = {
@@ -147,7 +190,11 @@ export const getByEmail = async (req, res) => {
     `, [email]);
 
     if (masterRes.rows.length > 0) {
-      return res.json({ success: true, data: masterRes.rows[0], source: 'masterlist' });
+      const row = masterRes.rows[0];
+      const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
+      row.position_title = normalized.position_title;
+      row.is_oic = normalized.is_oic;
+      return res.json({ success: true, data: row, source: 'masterlist' });
     }
 
     const stagingRes = await pool.query(`
@@ -157,7 +204,11 @@ export const getByEmail = async (req, res) => {
     `, [email]);
 
     if (stagingRes.rows.length > 0) {
-      return res.json({ success: true, data: stagingRes.rows[0], source: 'staging' });
+      const row = stagingRes.rows[0];
+      const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
+      row.position_title = normalized.position_title;
+      row.is_oic = normalized.is_oic;
+      return res.json({ success: true, data: row, source: 'staging' });
     }
 
     return res.json({ success: false, data: null });
@@ -170,7 +221,7 @@ export const uploadDocument = async (req, res) => {
   const { TLOid, docType } = req.params;
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-  const isMasterlist = !TLOid.startsWith('APP-');
+  const isMasterlist = !TLOid.startsWith('APP-') && !(TLOid.startsWith('TLO-') && TLOid.split('-').length > 2);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -220,7 +271,7 @@ export const uploadDocument = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   const { TLOid } = req.params;
-  const isMasterlist = !TLOid.startsWith('APP-');
+  const isMasterlist = !TLOid.startsWith('APP-') && !(TLOid.startsWith('TLO-') && TLOid.split('-').length > 2);
   try {
     await ensureOicColumn();
     let result;
@@ -230,7 +281,11 @@ export const getProfile = async (req, res) => {
       result = await pool.query('SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application WHERE app_TLOid = $1', [TLOid]);
     }
     if (result.rows.length === 0) return res.status(404).json({ error: 'Profile not found' });
-    res.json({ success: true, data: result.rows[0] });
+    const row = result.rows[0];
+    const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
+    row.position_title = normalized.position_title;
+    row.is_oic = normalized.is_oic;
+    res.json({ success: true, data: row });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -238,16 +293,16 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   const { TLOid } = req.params;
-  const isMasterlist = !TLOid.startsWith('APP-');
+  const isMasterlist = !TLOid.startsWith('APP-') && !(TLOid.startsWith('TLO-') && TLOid.split('-').length > 2);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     await ensureOicColumn(client);
 
     if (req.body.position_title) {
-      const normalizedPosition = sanitizeOicPosition(req.body.position_title);
+      const normalizedPosition = sanitizeOicPosition(req.body.position_title, req.body.is_oic);
       req.body.position_title = normalizedPosition.position_title;
-      if (normalizedPosition.is_oic && req.body.is_oic === undefined) req.body.is_oic = true;
+      req.body.is_oic = normalizedPosition.is_oic;
     }
 
     const allFields = [
@@ -354,7 +409,7 @@ export const getVacancies = async (req, res) => {
       WHERE first_name ILIKE '%VACANT%' OR status = 'Vacant'
       ORDER BY strand, office, position_title
     `);
-    res.json({ success: true, data: result.rows });
+    res.json({ success: true, data: result.rows.map(row => ({ ...row, position_title: displayPositionTitle(row.position_title) })) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -597,7 +652,7 @@ export const getCareerPath = async (req, res) => {
       ) u
       ORDER BY u.updated_at DESC
     `, [TLOid]);
-    res.json({ success: true, data: result.rows });
+    res.json({ success: true, data: result.rows.map(row => ({ ...row, position_title: displayPositionTitle(row.position_title) })) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -612,7 +667,8 @@ export const getPositionIncumbents = async (req, res) => {
 
   try {
     const isOfficeProvided = office && office !== 'null' && office !== 'undefined' && office !== '';
-    const params = isOfficeProvided ? [position_title, office] : [position_title];
+    const positionTitleVariants = getPositionTitleVariants(position_title);
+    const params = isOfficeProvided ? [positionTitleVariants, office] : [positionTitleVariants];
     const officeCondition = isOfficeProvided ? 'AND (office = $2 OR office IS NULL)' : '';
 
     const query = `
@@ -621,7 +677,7 @@ export const getPositionIncumbents = async (req, res) => {
           0 as id, "TLOid", first_name, last_name, strand, office, 'Current' as remarks, updated_at as tenure_date,
           1 as is_current
         FROM third_level_official_masterlist
-        WHERE position_title = $1 ${officeCondition}
+        WHERE position_title = ANY($1) ${officeCondition}
           AND first_name IS NOT NULL AND first_name != 'VACANT'
         
         UNION ALL
@@ -630,7 +686,7 @@ export const getPositionIncumbents = async (req, res) => {
           0 as id, "TLOid", first_name, last_name, strand, office, remarks, updated_at as tenure_date,
           0 as is_current
         FROM third_level_officials_updates
-        WHERE position_title = $1 ${officeCondition}
+        WHERE position_title = ANY($1) ${officeCondition}
           AND first_name IS NOT NULL AND first_name != 'VACANT'
       ),
       RankedIncumbents AS (
@@ -666,7 +722,7 @@ export const getActiveOfficials = async (req, res) => {
     }
     query += ` ORDER BY last_name ASC, first_name ASC`;
     const result = await pool.query(query, params);
-    res.json({ success: true, data: result.rows });
+    res.json({ success: true, data: result.rows.map(row => ({ ...row, position_title: displayPositionTitle(row.position_title) })) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
