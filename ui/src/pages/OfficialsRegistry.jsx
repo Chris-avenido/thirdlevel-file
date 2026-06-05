@@ -142,8 +142,12 @@ const OfficialsRegistry = () => {
         return officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
     }, [officials]);
 
-    const oicChiefs = useMemo(() => {
-        return officials.filter(o => o.is_oic);
+    const thirdLevelOic = useMemo(() => {
+        return officials.filter(o => o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+    }, [officials]);
+
+    const divisionChiefsOic = useMemo(() => {
+        return officials.filter(o => o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
     }, [officials]);
 
     // Position breakdowns for hover cards
@@ -160,9 +164,9 @@ const OfficialsRegistry = () => {
         );
     }, [thirdLevelOfficials]);
 
-    const oicChiefsBreakdown = useMemo(() => {
+    const thirdLevelOicBreakdown = useMemo(() => {
         const counts = {};
-        oicChiefs.forEach(o => {
+        thirdLevelOic.forEach(o => {
             if (o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
@@ -171,7 +175,20 @@ const OfficialsRegistry = () => {
         return Object.fromEntries(
             Object.entries(counts).sort((a, b) => b[1] - a[1])
         );
-    }, [oicChiefs]);
+    }, [thirdLevelOic]);
+
+    const divisionChiefsBreakdown = useMemo(() => {
+        const counts = {};
+        divisionChiefsOic.forEach(o => {
+            if (o.first_name && o.first_name !== 'VACANT') {
+                const pos = o.position_title || 'Unassigned';
+                counts[pos] = (counts[pos] || 0) + 1;
+            }
+        });
+        return Object.fromEntries(
+            Object.entries(counts).sort((a, b) => b[1] - a[1])
+        );
+    }, [divisionChiefsOic]);
 
     const fetchTabPositions = async () => {
         try {
@@ -523,8 +540,8 @@ const OfficialsRegistry = () => {
     ]), []);
 
     const activeRecords = useMemo(() => {
-        return activeTab === 'Third Level' ? thirdLevelOfficials : oicChiefs;
-    }, [activeTab, thirdLevelOfficials, oicChiefs]);
+        return activeTab === 'Third Level' ? thirdLevelOfficials : [...thirdLevelOic, ...divisionChiefsOic];
+    }, [activeTab, thirdLevelOfficials, thirdLevelOic, divisionChiefsOic]);
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
             const values = activeRecords
@@ -658,21 +675,9 @@ const OfficialsRegistry = () => {
 
                 <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
 
-                    {/* TABS & CATEGORIES */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                        <div className="flex p-1 bg-slate-100 rounded-2xl w-fit">
-                            {['Third Level', 'OIC / Chiefs'].map(tab => (
-                                <button
-                                    key={tab}
-                                    onClick={() => { setActiveTab(tab); setPositionFilter('All'); setStrandFilter('All'); }}
-                                    className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-white text-[#004A99] shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-4">
+                    {/* STATS CARDS */}
+                    <div className="flex justify-center mb-8">
+                        <div className="flex flex-wrap items-center justify-center gap-4">
                             {/* Card 1: Third Level Officials */}
                             <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
                                 <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
@@ -705,16 +710,16 @@ const OfficialsRegistry = () => {
                                 </div>
                             </div>
 
-                            {/* Card 2: Division Chiefs / OIC */}
+                            {/* Card 2: Third Level (OIC) */}
                             <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
                                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
                                     <FiActivity size={18} />
                                 </div>
                                 <div>
                                     <span className="block text-2xl font-black text-slate-900 leading-none tracking-tight">
-                                        {oicChiefs.length}
+                                        {thirdLevelOic.length}
                                     </span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs / OIC</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level (OIC)</span>
                                 </div>
 
                                 {/* Hover Breakdown Tooltip */}
@@ -723,11 +728,43 @@ const OfficialsRegistry = () => {
                                         Position Breakdown
                                     </div>
                                     <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                        {Object.entries(oicChiefsBreakdown).length > 0 ? (
-                                            Object.entries(oicChiefsBreakdown).map(([position, count]) => (
+                                        {Object.entries(thirdLevelOicBreakdown).length > 0 ? (
+                                            Object.entries(thirdLevelOicBreakdown).map(([position, count]) => (
                                                 <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
                                                     <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
                                                     <span className="text-slate-900 font-black px-2 py-0.5 bg-amber-50 text-amber-700 rounded-lg shrink-0">{count}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 3: Division Chiefs (OIC) */}
+                            <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+                                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                                    <FiActivity size={18} />
+                                </div>
+                                <div>
+                                    <span className="block text-2xl font-black text-slate-900 leading-none tracking-tight">
+                                        {divisionChiefsOic.length}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs (OIC)</span>
+                                </div>
+
+                                {/* Hover Breakdown Tooltip */}
+                                <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
+                                        Position Breakdown
+                                    </div>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                        {Object.entries(divisionChiefsBreakdown).length > 0 ? (
+                                            Object.entries(divisionChiefsBreakdown).map(([position, count]) => (
+                                                <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
+                                                    <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
+                                                    <span className="text-slate-900 font-black px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-lg shrink-0">{count}</span>
                                                 </div>
                                             ))
                                         ) : (
@@ -751,6 +788,20 @@ const OfficialsRegistry = () => {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Search by name, position, or office..."
                                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold focus:bg-white focus:border-blue-600/20 focus:ring-4 focus:ring-blue-500/5 transition-all outline-none shadow-inner"
+                                />
+                            </div>
+
+                            {/* Category Dropdown */}
+                            <div className="w-full lg:w-[240px]">
+                                <SearchableSelect
+                                    label=""
+                                    placeholder="Select Category"
+                                    value={activeTab}
+                                    onChange={(val) => { setActiveTab(val); setPositionFilter('All'); setStrandFilter('All'); }}
+                                    options={[
+                                        { value: 'Third Level', label: 'Third Level Officials' },
+                                        { value: 'OIC / Chiefs', label: 'OIC / Division Chiefs' }
+                                    ]}
                                 />
                             </div>
 

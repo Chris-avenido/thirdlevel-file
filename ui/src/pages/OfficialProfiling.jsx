@@ -14,6 +14,8 @@ import html2pdf from 'html2pdf.js';
 import PptxGenJS from 'pptxgenjs';
 import newLogo from '../assets/new_logo.png';
 import { apiUrl } from '../utils/api';
+import { compressImageClientSide } from '../utils/imageCompressor';
+import ModernDatePicker from '../components/ModernDatePicker';
 import Swal from 'sweetalert2';
 
 const TABS = [
@@ -568,6 +570,11 @@ const OfficialProfiling = () => {
                     alt_email_2: d.alt_email_2 || '',
                     alt_contact_details_1: d.alt_contact_details_1 || '',
                     alt_contact_details_2: d.alt_contact_details_2 || '',
+                    photo_binary_id: d.photo_binary_id || null,
+                    pds_binary_id: d.pds_binary_id || null,
+                    profile_word_binary_id: d.profile_word_binary_id || null,
+                    profile_ppt_binary_id: d.profile_ppt_binary_id || null,
+                    service_records_binary_id: d.service_records_binary_id || null,
                 });
 
                 setPrevPositions(d.previous_positions || []);
@@ -803,8 +810,15 @@ const OfficialProfiling = () => {
         if (!TLOid || !file) return;
         setSaving(true);
         try {
+            let fileToUpload = file;
+            
+            // Compress 2x2 ID Picture
+            if (docType === 'photo' && file.type.startsWith('image/')) {
+                fileToUpload = await compressImageClientSide(file);
+            }
+
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', fileToUpload);
 
             const res = await fetch(apiUrl(`/api/third-level/${TLOid}/upload/${docType}`), {
                 method: 'POST',
@@ -1001,9 +1015,15 @@ const OfficialProfiling = () => {
                             {/* Left: Avatar + Profile Info */}
                             <div className="flex items-center gap-4 min-w-0">
                                 <div className="relative shrink-0">
-                                    <div className="w-[56px] h-[56px] md:w-[72px] md:h-[72px] bg-white/10 rounded-full flex items-center justify-center text-white/60 border border-white/20 shadow-lg shadow-black/10">
-                                        <FiUser size={30} className="md:hidden" />
-                                        <FiUser size={36} className="hidden md:block" />
+                                    <div className="w-[56px] h-[56px] md:w-[72px] md:h-[72px] bg-white/10 rounded-full flex items-center justify-center text-white/60 border border-white/20 shadow-lg shadow-black/10 overflow-hidden">
+                                        {profile.photo_binary_id ? (
+                                            <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <>
+                                                <FiUser size={30} className="md:hidden" />
+                                                <FiUser size={36} className="hidden md:block" />
+                                            </>
+                                        )}
                                     </div>
                                     <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-400 rounded-full border-[2px] md:border-[2.5px] border-[#0a1e3f] shadow-sm" />
                                 </div>
@@ -1165,12 +1185,8 @@ const OfficialProfiling = () => {
                                                                     </Field>
                                                                     <Field label="Date of Birth">
                                                                         <div className="relative">
-                                                                            <input type="date" max={new Date().toISOString().split('T')[0]} value={profile.date_of_birth} onChange={e => setProfile(p => ({ ...p, date_of_birth: e.target.value, age: computeAge(e.target.value) }))} className={`${inp} pr-10`} />
-                                                                            <FiCalendar
-                                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-350 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                size={14}
-                                                                                onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                            />
+                                                                            <ModernDatePicker maxDate={new Date()} value={profile.date_of_birth} onChange={val => setProfile(p => ({ ...p, date_of_birth: val, age: computeAge(val) }))} className={inp} />
+                                                                            
                                                                         </div>
                                                                     </Field>
                                                                     <Field label="Age (auto-computed)">
@@ -1227,12 +1243,8 @@ const OfficialProfiling = () => {
                                                                     </Field>
                                                                     <Field label="Date of Present Position (Appointment Date)">
                                                                         <div className="relative">
-                                                                            <input type="date" value={profile.date_of_assignment} onChange={e => setP('date_of_assignment', e.target.value)} className={`${inp} pr-10`} />
-                                                                            <FiCalendar
-                                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-350 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                size={14}
-                                                                                onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                            />
+                                                                            <ModernDatePicker value={profile.date_of_assignment} onChange={val => setP('date_of_assignment', val)} className={inp} />
+                                                                            
                                                                         </div>
                                                                     </Field>
                                                                 </div>
@@ -1285,12 +1297,8 @@ const OfficialProfiling = () => {
                                                             {profile.emt_passer === true && (
                                                                 <Field label="Date passed EMT">
                                                                     <div className="relative">
-                                                                        <input type="date" value={profile.emt_date} onChange={e => setP('emt_date', e.target.value)} className={`${inp} pr-10`} />
-                                                                        <FiCalendar
-                                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                            size={14}
-                                                                            onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                        />
+                                                                        <ModernDatePicker value={profile.emt_date} onChange={val => setP('emt_date', val)} className={inp} />
+                                                                        
                                                                     </div>
                                                                 </Field>
                                                             )}
@@ -1319,12 +1327,8 @@ const OfficialProfiling = () => {
                                                             </Field>
                                                             <Field label="Date of Conferment (if applicable)">
                                                                 <div className="relative">
-                                                                    <input type="date" value={profile.ces_conferment_date} onChange={e => setP('ces_conferment_date', e.target.value)} className={`${inp} pr-10`} />
-                                                                    <FiCalendar
-                                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                        size={14}
-                                                                        onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                    />
+                                                                    <ModernDatePicker value={profile.ces_conferment_date} onChange={val => setP('ces_conferment_date', val)} className={inp} />
+                                                                    
                                                                 </div>
                                                             </Field>
                                                         </div>
@@ -1422,23 +1426,15 @@ const OfficialProfiling = () => {
                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">From Date</span>
                                                                             <div className="relative">
-                                                                                <input type="date" value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: e.target.value } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full pr-8 shadow-sm" />
-                                                                                <FiCalendar
-                                                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-200 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                    size={12}
-                                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                                />
+                                                                                <ModernDatePicker value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
                                                                             <div className="relative">
-                                                                                <input type="date" value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: e.target.value } : x))} className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all w-full pr-8" />
-                                                                                <FiCalendar
-                                                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-200 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                    size={12}
-                                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                                />
+                                                                                <ModernDatePicker value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex flex-col gap-1.5 w-full">
@@ -1518,12 +1514,8 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <input type="month" value={profile.performance_rating_1_period} onChange={e => setP('performance_rating_1_period', e.target.value)} className={`${inp} pr-10`} />
-                                                                                <FiCalendar
-                                                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                    size={14}
-                                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                                />
+                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP('performance_rating_1_period', val)} className={inp} />
+                                                                                
                                                                             </div>
                                                                         </Field>
                                                                     </div>
@@ -1538,12 +1530,8 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <input type="month" value={profile.performance_rating_2_period} onChange={e => setP('performance_rating_2_period', e.target.value)} className={`${inp} pr-10`} />
-                                                                                <FiCalendar
-                                                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                    size={14}
-                                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                                />
+                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP('performance_rating_2_period', val)} className={inp} />
+                                                                                
                                                                             </div>
                                                                         </Field>
                                                                     </div>
@@ -1581,11 +1569,7 @@ const OfficialProfiling = () => {
                                                                                     onChange={e => setP('cespes_rating_1_period', e.target.value)}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
-                                                                                <FiCalendar
-                                                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                    size={14}
-                                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                                />
+                                                                                
                                                                             </div>
                                                                         </Field>
                                                                     </div>
@@ -1616,11 +1600,7 @@ const OfficialProfiling = () => {
                                                                                     onChange={e => setP('cespes_rating_2_period', e.target.value)}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
-                                                                                <FiCalendar
-                                                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                    size={14}
-                                                                                    onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                                />
+                                                                                
                                                                             </div>
                                                                         </Field>
                                                                     </div>
@@ -1673,12 +1653,8 @@ const OfficialProfiling = () => {
                                                                     <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_160px_100px_44px] gap-3 items-center bg-slate-50/40 hover:bg-slate-50 p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
                                                                         <input type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
                                                                         <div className="relative">
-                                                                            <input type="date" value={tr.date_completed ? tr.date_completed.split('T')[0] : ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, date_completed: e.target.value } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full pr-8 shadow-sm" />
-                                                                            <FiCalendar
-                                                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-200 cursor-pointer hover:text-[#0038A8] transition-colors"
-                                                                                size={12}
-                                                                                onClick={(e) => e.currentTarget.previousSibling.showPicker()}
-                                                                            />
+                                                                            <ModernDatePicker value={tr.date_completed ? tr.date_completed.split('T')[0] : ''} onChange={val => setTrainings(t => t.map((x, i) => i === idx ? { ...x, date_completed: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                            
                                                                         </div>
                                                                         <input type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Hours" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
                                                                         <button onClick={() => handleRemoveTraining(tr)} className="w-10 h-10 flex items-center justify-center bg-[#CE1126]/10 text-[#CE1126] rounded-xl hover:bg-[#CE1126] hover:text-white transition-all"><FiTrash2 size={14} /></button>
