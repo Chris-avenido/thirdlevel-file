@@ -41,3 +41,9 @@ stride.conf.patch
 __pycache__/
 .claude/
 desktop.ini
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
