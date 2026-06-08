@@ -6,7 +6,7 @@ import {
     FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight,
     FiMoreVertical, FiDownload, FiPlus, FiGrid, FiList,
     FiCheckCircle, FiAlertCircle, FiClock, FiActivity, FiArrowRight,
-    FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2
+    FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2, FiRefreshCw
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
@@ -175,7 +175,7 @@ const OfficialsRegistry = () => {
             const cleanPos = pos.replace(/^(OIC-?\s*)|(\s*\(OIC\))$/ig, '').trim();
             const index = order.findIndex(p => p.toLowerCase() === cleanPos.toLowerCase());
             if (index !== -1) return index;
-            
+
             const fallbackIndex = order.findIndex(p => p.toLowerCase() === pos.toLowerCase());
             return fallbackIndex === -1 ? 999 : fallbackIndex;
         };
@@ -229,7 +229,7 @@ const OfficialsRegistry = () => {
         try {
             // Fetch all positions for the current tab to keep the dropdown stable
             const queryParams = new URLSearchParams();
-            
+
             // Map the frontend tab to backend category
             let backendCategory = 'Third Level';
             if (activeTab === 'Third Level (OIC)' || activeTab === 'Division Chiefs (OIC)') {
@@ -250,7 +250,11 @@ const OfficialsRegistry = () => {
                 } else if (activeTab === 'Division Chiefs (OIC)') {
                     filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
                 }
-                const uniquePositions = [...new Set(filteredData.map(o => o.position_title).filter(Boolean))].sort();
+                let uniquePositions = [...new Set(filteredData.map(o => o.position_title).filter(Boolean))].sort();
+
+                // Remove Vacant Tests from selector
+                uniquePositions = uniquePositions.filter(p => !p.toUpperCase().includes('VACANT TEST'));
+
                 setTabPositions(uniquePositions);
             }
         } catch (err) {
@@ -325,7 +329,18 @@ const OfficialsRegistry = () => {
             });
             const data = await res.json();
             if (data.success) {
-                const uniqueStrands = [...new Set(data.data.map(o => o.strand).filter(Boolean))].sort();
+                let uniqueStrands = [...new Set(data.data.map(o => o.strand).filter(Boolean))].sort();
+
+                // Exclude Regions and Vacant strands
+                uniqueStrands = uniqueStrands.filter(s => {
+                    const upper = s.toUpperCase();
+                    if (upper.includes('VACANT')) return false;
+                    if (upper.startsWith('REGION ')) return false;
+                    const regions = ['NCR', 'CAR', 'NIR', 'BARMM', 'CARAGA'];
+                    if (regions.includes(upper)) return false;
+                    return true;
+                });
+
                 setStrands(uniqueStrands);
             }
         } catch (err) {
@@ -389,16 +404,20 @@ const OfficialsRegistry = () => {
             case 'inactive': return 'bg-slate-50 text-slate-400 border-slate-100';
             case 'retired': return 'bg-purple-50 text-purple-600 border-purple-100';
             case 'succeeded': return 'bg-cyan-50 text-cyan-600 border-cyan-100';
-            case 'vacated': return 'bg-rose-50 text-rose-600 border-rose-100';
+            case 'vacated':
+            case 'vacant': return 'bg-rose-50 text-rose-600 border-rose-100';
             default: return 'bg-blue-50 text-blue-600 border-blue-100';
         }
     };
 
-    const StatusBadge = ({ status }) => (
-        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(status)}`}>
-            {status || 'Unknown'}
-        </span>
-    );
+    const StatusBadge = ({ status }) => {
+        const displayStatus = status === 'Vacated' ? 'Vacant' : status;
+        return (
+            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(displayStatus)}`}>
+                {displayStatus || 'Unknown'}
+            </span>
+        );
+    };
 
     const fetchApplications = async () => {
         setLoading(true);
@@ -565,26 +584,37 @@ const OfficialsRegistry = () => {
         {
             key: 'name',
             label: 'Official Profile',
+            width: 'w-3/12 lg:w-3/12',
             value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''} ${item.email || ''}`,
             filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
         },
         {
             key: 'position',
             label: 'Current Position',
+            width: 'w-3/12 lg:w-2/12',
             value: (item) => `${item.position_title || ''} ${item.is_oic ? 'OIC' : ''}`,
             filterValue: (item) => `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
         },
         {
+            key: 'strand',
+            label: 'Strand',
+            width: 'w-2/12',
+            value: (item) => item.strand || '',
+            filterValue: (item) => item.strand || 'No Strand'
+        },
+        {
             key: 'office',
-            label: 'Strand / Office',
-            value: (item) => `${item.office || ''} ${item.strand || ''}`,
-            filterValue: (item) => `${item.office || 'Main Office'} / ${item.strand || 'No Strand'}`
+            label: 'Office',
+            width: 'w-2/12 lg:w-3/12',
+            value: (item) => item.office || '',
+            filterValue: (item) => item.office || 'Main Office'
         },
         {
             key: 'status',
             label: 'Status',
-            value: (item) => item.status || '',
-            filterValue: (item) => item.status || 'Unknown'
+            width: 'w-[80px]',
+            value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
+            filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
         }
     ]), []);
 
@@ -600,35 +630,35 @@ const OfficialsRegistry = () => {
         const strand = item.strand || '';
         const office = item.office || '';
         const pos = item.position_title || '';
-        
+
         const isRegionStrand = /^(Region|NCR|CAR|NIR)/i.test(strand);
         if (!isRegionStrand) return 'Central Office';
-        
+
         const isROOffice = !office || office.toLowerCase() === strand.toLowerCase() || office.toLowerCase().includes('regional office') || office.toLowerCase() === 'ro';
         const isROPosition = /(Regional Director|RD|ARD)/i.test(pos);
         const isSDOPosition = /(Schools Division Superintendent|SDS|ASDS)/i.test(pos);
-        
+
         if (isSDOPosition) return 'Schools Division Office';
         if (isROOffice || isROPosition) return 'Regional Office';
-        
+
         return 'Schools Division Office';
     };
 
     const getOfficialRegion = (item) => {
         if (getOfficialLevel(item) === 'Central Office') return 'Central Office';
-        
+
         const strand = (item.strand || '').trim();
         if (strand.toUpperCase() === 'REGION XIII' || strand.toUpperCase() === 'CARAGA') return 'CARAGA';
-        
+
         const knownRegions = [
-            'Region I', 'Region II', 'Region III', 'Region IV-A', 'Region IV-B', 
-            'Region V', 'Region VI', 'Region VII', 'Region VIII', 'Region IX', 
+            'Region I', 'Region II', 'Region III', 'Region IV-A', 'Region IV-B',
+            'Region V', 'Region VI', 'Region VII', 'Region VIII', 'Region IX',
             'Region X', 'Region XI', 'Region XII', 'NCR', 'CAR', 'NIR', 'BARMM'
         ];
-        
+
         const found = knownRegions.find(r => r.toLowerCase() === strand.toLowerCase());
         if (found) return found;
-        
+
         return 'Central Office';
     };
     const tableFilterOptions = useMemo(() => {
@@ -645,7 +675,7 @@ const OfficialsRegistry = () => {
         return activeRecords.filter(item => {
             if (levelFilter !== 'All' && getOfficialLevel(item) !== levelFilter) return false;
             if (regionFilter !== 'All' && getOfficialRegion(item) !== regionFilter) return false;
-            
+
             return tableColumns.every(column => {
                 const filter = tableFilters[column.key];
                 if (!filter) return true;
@@ -690,16 +720,16 @@ const OfficialsRegistry = () => {
     };
 
     const TableHeader = ({ column }) => (
-        <th className="px-8 py-4 text-left align-top">
-            <div className="flex flex-col gap-2 min-w-[220px]">
+        <th className={`px-3 py-3 text-left align-top ${column.width || ''}`}>
+            <div className="flex flex-col gap-2">
                 <button
                     onClick={() => handleSort(column.key)}
                     className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-blue-600 transition-colors w-full"
                 >
                     <span>{column.label}</span>
                     <span className="text-slate-300 text-sm">
-                        {sortConfig.key === column.key 
-                            ? (sortConfig.direction === 'asc' ? '↑' : '↓') 
+                        {sortConfig.key === column.key
+                            ? (sortConfig.direction === 'asc' ? '↑' : '↓')
                             : '↕'}
                     </span>
                 </button>
@@ -777,7 +807,7 @@ const OfficialsRegistry = () => {
                     <div className="flex justify-center mb-8">
                         <div className="flex flex-wrap items-center justify-center gap-4">
                             {/* Card 1: Third Level Officials */}
-                            <div 
+                            <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level Officials' ? 'border-blue-500 shadow-md ring-4 ring-blue-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
@@ -812,7 +842,7 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Card 2: Third Level (OIC) */}
-                            <div 
+                            <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level (OIC)' ? 'border-amber-500 shadow-md ring-4 ring-amber-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
@@ -847,7 +877,7 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Card 3: Division Chiefs (OIC) */}
-                            <div 
+                            <div
                                 onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs (OIC)' ? 'border-emerald-500 shadow-md ring-4 ring-emerald-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
@@ -886,18 +916,6 @@ const OfficialsRegistry = () => {
                     {/* FILTERS & SEARCH BAR */}
                     <div className="bg-white rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/40 border border-slate-100 mb-8 space-y-6">
                         <div className="flex flex-col lg:flex-row gap-4 items-center">
-                            {/* Search */}
-                            <div className="relative flex-1 w-full">
-                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search by name, position, or office..."
-                                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold focus:bg-white focus:border-blue-600/20 focus:ring-4 focus:ring-blue-500/5 transition-all outline-none shadow-inner"
-                                />
-                            </div>
-
                             {/* Category Dropdown */}
                             <div className="w-full lg:w-[240px]">
                                 <SearchableSelect
@@ -990,8 +1008,27 @@ const OfficialsRegistry = () => {
                                 />
                             </div>
 
+                            {/* Reset Filters */}
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setTableFilters({});
+                                    setActiveTab('All');
+                                    setLevelFilter('All');
+                                    setRegionFilter('All');
+                                    setStrandFilter('All');
+                                    setPositionFilter('All');
+                                }}
+                                className="px-5 py-4 bg-rose-50/50 text-rose-500 rounded-2xl border border-rose-100 font-bold text-xs hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                                title="Reset all filters"
+                            >
+                                <FiRefreshCw size={16} /> Reset
+                            </button>
+
+
+
                             {/* View Switcher */}
-                            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 lg:ml-auto">
                                 <button
                                     onClick={() => setViewMode('table')}
                                     className={`p-3 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -1009,6 +1046,18 @@ const OfficialsRegistry = () => {
                         </div>
                     </div>
 
+                    {/* SEARCH BAR */}
+                    <div className="relative w-full mb-8">
+                        <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search by name, position, or office..."
+                            className="w-full bg-white border border-slate-100 rounded-[2rem] py-5 pl-14 pr-6 text-slate-700 font-bold focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none shadow-xl shadow-slate-200/40"
+                        />
+                    </div>
+
                     {/* MAIN CONTENT AREA */}
                     <AnimatePresence mode="wait">
                         {loading ? (
@@ -1023,84 +1072,83 @@ const OfficialsRegistry = () => {
                             </motion.div>
                         ) : viewMode === 'table' ? (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100">
-                                <div className="overflow-x-auto hide-horizontal-scrollbar">
-                                    <table className="w-full text-left border-collapse">
+                                <div className="w-full">
+                                    <table className="w-full text-left border-collapse table-fixed">
                                         <thead>
                                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                                 {tableColumns.map(column => <TableHeader key={column.key} column={column} />)}
-                                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                                                <th className="px-3 py-3 w-[150px] lg:w-[180px] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {pagedRecords.map((item) => (
                                                 <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors">
                                                     <td
-                                                        className={`px-8 py-6 ${item.email ? 'cursor-pointer' : ''}`}
+                                                        className={`px-3 py-3 align-top ${item.email ? 'cursor-pointer' : ''}`}
                                                         onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
                                                     >
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-lg border border-white shadow-sm overflow-hidden">
+                                                        <div className="flex items-start gap-3">
+                                                            <div className="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-lg border border-white shadow-sm overflow-hidden shrink-0 mt-0.5">
                                                                 {item.photo_binary_id ? (
                                                                     <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
-                                                                ) : <FiUser size={20} />}
+                                                                ) : <FiUser size={18} />}
                                                             </div>
-                                                            <div>
-                                                                <div className="font-black text-slate-800 text-sm leading-none group-hover:text-[#004A99] group-hover:underline transition-colors">
-                                                                    {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                            <div className="min-w-0">
+                                                                <div className="font-black text-slate-800 text-xs leading-none group-hover:text-[#004A99] group-hover:underline transition-colors truncate">
+                                                                    {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[9px]">VACANT POSITION</span>}
                                                                 </div>
-                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-2">
-                                                                    <FiArrowRight className="text-blue-500" size={10} />
-                                                                    {item.email}
+                                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1.5 truncate">
+                                                                    <FiArrowRight className="text-blue-500 shrink-0" size={8} />
+                                                                    <span className="truncate">{item.email}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-8 py-6">
+                                                    <td className="px-3 py-3 align-top">
                                                         <button
                                                             onClick={() => handlePositionClick(item)}
-                                                            className="text-left group/pos hover:translate-x-1 transition-transform"
+                                                            className="text-left group/pos hover:translate-x-1 transition-transform w-full"
                                                         >
-                                                            <div className="font-black text-[#004A99] text-[11px] uppercase tracking-tight flex items-center gap-2">
-                                                                {item.position_title || 'Unassigned'}
-                                                                {item.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest">OIC</span>}
-                                                                <FiClock className="opacity-0 group-hover/pos:opacity-100 transition-opacity text-slate-400" size={12} />
+                                                            <div className="font-black text-[#004A99] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
+                                                                <span className="line-clamp-2">{item.position_title || 'Unassigned'}</span>
+                                                                {item.is_oic && <span className="px-1.5 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[7px] font-black uppercase tracking-widest shrink-0 mt-0.5">OIC</span>}
                                                             </div>
-                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                                                                 Since {item.date_of_assignment ? new Date(item.date_of_assignment).toLocaleDateString() : 'N/A'}
                                                             </div>
                                                         </button>
                                                     </td>
-                                                    <td className="px-8 py-6">
-                                                        <>
-                                                            <div className="text-xs font-bold text-slate-700">{item.office || 'Main Office'}</div>
-                                                            <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">{item.strand || 'No Strand'}</div>
-                                                        </>
+                                                    <td className="px-3 py-3 align-top">
+                                                        <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest line-clamp-2">{item.strand || 'No Strand'}</div>
                                                     </td>
-                                                    <td className="px-8 py-6">
+                                                    <td className="px-3 py-3 align-top">
+                                                        <div className="text-[10px] font-bold text-slate-700 line-clamp-2">{item.office || 'Main Office'}</div>
+                                                    </td>
+                                                    <td className="px-3 py-3 align-top">
                                                         <StatusBadge status={item.status} />
                                                     </td>
-                                                    <td className="px-8 py-6 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
+                                                    <td className="px-3 py-3 text-right align-top">
+                                                        <div className="flex items-start justify-end gap-1.5">
                                                             {item.email && (
                                                                 <button
                                                                     onClick={() => navigate(`/official-profiling?email=${item.email}`)}
                                                                     title="View Profile"
-                                                                    className="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:bg-[#004A99] hover:text-white hover:border-[#004A99] transition-all shadow-sm"
+                                                                    className="p-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg hover:bg-[#004A99] hover:text-white hover:border-[#004A99] transition-all shadow-sm shrink-0"
                                                                 >
-                                                                    <FiExternalLink size={18} />
+                                                                    <FiExternalLink size={14} />
                                                                 </button>
                                                             )}
-                                                            <div className="flex gap-2">
-                                                                <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
-                                                                    <FiLayers size={14} /> Reassign
+                                                            <div className="flex flex-wrap items-center justify-end gap-1 w-full max-w-[140px]">
+                                                                <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex-1 min-w-[60px] flex items-center justify-center gap-1 px-1.5 py-1 bg-amber-50 text-amber-600 rounded-md text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
+                                                                    <FiLayers size={10} /> Reassign
                                                                 </button>
                                                                 {item.first_name && (
                                                                     <>
-                                                                        <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                                            <FiTrash2 size={14} /> Vacate
+                                                                        <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex-1 min-w-[60px] flex items-center justify-center gap-1 px-1.5 py-1 bg-rose-50 text-rose-600 rounded-md text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
+                                                                            <FiTrash2 size={10} /> Vacate
                                                                         </button>
-                                                                        <button onClick={() => openActionModal(item, 'succeed')} title="Succeed" className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
-                                                                            <FiCheckCircle size={14} /> Succeed
+                                                                        <button onClick={() => openActionModal(item, 'succeed')} title="Succeed" className="w-full flex items-center justify-center gap-1 px-1.5 py-1 bg-emerald-50 text-emerald-600 rounded-md text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm shrink-0">
+                                                                            <FiCheckCircle size={10} /> Succeed
                                                                         </button>
                                                                     </>
                                                                 )}
@@ -1470,3 +1518,4 @@ const OfficialsRegistry = () => {
 };
 
 export default OfficialsRegistry;
+
