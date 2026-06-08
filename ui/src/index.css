@@ -134,3 +134,30 @@ body {
 .react-datepicker__month-select:focus, .react-datepicker__year-select:focus {
   border-color: #0038A8;
 }
+
+/* Custom Scrollbar Utility */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbar for clean horizontal tables but keep scrolling */
+.hide-horizontal-scrollbar::-webkit-scrollbar {
+  height: 0px;
+  display: none;
+  background: transparent;
+}
+.hide-horizontal-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

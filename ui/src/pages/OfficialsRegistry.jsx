@@ -127,7 +127,9 @@ const OfficialsRegistry = () => {
     const [officials, setOfficials] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('Third Level'); // 'Third Level' | 'OIC / Chiefs'
+    const [activeTab, setActiveTab] = useState('All');
+    const [levelFilter, setLevelFilter] = useState('All');
+    const [regionFilter, setRegionFilter] = useState('All');
     const [strandFilter, setStrandFilter] = useState('All');
     const [positionFilter, setPositionFilter] = useState('All');
     const [viewMode, setViewMode] = useState('table');
@@ -151,6 +153,45 @@ const OfficialsRegistry = () => {
     }, [officials]);
 
     // Position breakdowns for hover cards
+    const sortBreakdown = (counts) => {
+        const order = [
+            'Secretary',
+            'Undersecretary',
+            'Assistant Sec',
+            'Assistant Secretary',
+            'Director IV',
+            'Director III',
+            'Regional Dir',
+            'Regional Director',
+            'ARD',
+            'Assistant Regional Director',
+            'SDS',
+            'Schools Division Superintendent',
+            'ASDS',
+            'Assistant Schools Division Superintendent'
+        ];
+
+        const getWeight = (pos) => {
+            const cleanPos = pos.replace(/^(OIC-?\s*)|(\s*\(OIC\))$/ig, '').trim();
+            const index = order.findIndex(p => p.toLowerCase() === cleanPos.toLowerCase());
+            if (index !== -1) return index;
+            
+            const fallbackIndex = order.findIndex(p => p.toLowerCase() === pos.toLowerCase());
+            return fallbackIndex === -1 ? 999 : fallbackIndex;
+        };
+
+        return Object.fromEntries(
+            Object.entries(counts).sort((a, b) => {
+                const weightA = getWeight(a[0]);
+                const weightB = getWeight(b[0]);
+                if (weightA !== weightB) return weightA - weightB;
+                // fallback to count (descending) or alphabetical
+                if (b[1] !== a[1]) return b[1] - a[1];
+                return a[0].localeCompare(b[0]);
+            })
+        );
+    };
+
     const thirdLevelBreakdown = useMemo(() => {
         const counts = {};
         thirdLevelOfficials.forEach(o => {
@@ -159,9 +200,7 @@ const OfficialsRegistry = () => {
                 counts[pos] = (counts[pos] || 0) + 1;
             }
         });
-        return Object.fromEntries(
-            Object.entries(counts).sort((a, b) => b[1] - a[1])
-        );
+        return sortBreakdown(counts);
     }, [thirdLevelOfficials]);
 
     const thirdLevelOicBreakdown = useMemo(() => {
@@ -172,9 +211,7 @@ const OfficialsRegistry = () => {
                 counts[pos] = (counts[pos] || 0) + 1;
             }
         });
-        return Object.fromEntries(
-            Object.entries(counts).sort((a, b) => b[1] - a[1])
-        );
+        return sortBreakdown(counts);
     }, [thirdLevelOic]);
 
     const divisionChiefsBreakdown = useMemo(() => {
@@ -185,23 +222,35 @@ const OfficialsRegistry = () => {
                 counts[pos] = (counts[pos] || 0) + 1;
             }
         });
-        return Object.fromEntries(
-            Object.entries(counts).sort((a, b) => b[1] - a[1])
-        );
+        return sortBreakdown(counts);
     }, [divisionChiefsOic]);
 
     const fetchTabPositions = async () => {
         try {
             // Fetch all positions for the current tab to keep the dropdown stable
             const queryParams = new URLSearchParams();
-            queryParams.append('category', activeTab);
+            
+            // Map the frontend tab to backend category
+            let backendCategory = 'Third Level';
+            if (activeTab === 'Third Level (OIC)' || activeTab === 'Division Chiefs (OIC)') {
+                backendCategory = 'OIC / Chiefs';
+            } else if (activeTab === 'All') {
+                backendCategory = 'All';
+            }
+            queryParams.append('category', backendCategory);
             queryParams.append('status', 'Active');
             const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
             if (data.success) {
-                const uniquePositions = [...new Set(data.data.map(o => o.position_title).filter(Boolean))].sort();
+                let filteredData = data.data;
+                if (activeTab === 'Third Level (OIC)') {
+                    filteredData = data.data.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title));
+                } else if (activeTab === 'Division Chiefs (OIC)') {
+                    filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+                }
+                const uniquePositions = [...new Set(filteredData.map(o => o.position_title).filter(Boolean))].sort();
                 setTabPositions(uniquePositions);
             }
         } catch (err) {
@@ -540,8 +589,48 @@ const OfficialsRegistry = () => {
     ]), []);
 
     const activeRecords = useMemo(() => {
-        return activeTab === 'Third Level' ? thirdLevelOfficials : [...thirdLevelOic, ...divisionChiefsOic];
+        if (activeTab === 'All') return [...thirdLevelOfficials, ...thirdLevelOic, ...divisionChiefsOic];
+        if (activeTab === 'Third Level Officials') return thirdLevelOfficials;
+        if (activeTab === 'Third Level (OIC)') return thirdLevelOic;
+        if (activeTab === 'Division Chiefs (OIC)') return divisionChiefsOic;
+        return thirdLevelOfficials;
     }, [activeTab, thirdLevelOfficials, thirdLevelOic, divisionChiefsOic]);
+
+    const getOfficialLevel = (item) => {
+        const strand = item.strand || '';
+        const office = item.office || '';
+        const pos = item.position_title || '';
+        
+        const isRegionStrand = /^(Region|NCR|CAR|NIR)/i.test(strand);
+        if (!isRegionStrand) return 'Central Office';
+        
+        const isROOffice = !office || office.toLowerCase() === strand.toLowerCase() || office.toLowerCase().includes('regional office') || office.toLowerCase() === 'ro';
+        const isROPosition = /(Regional Director|RD|ARD)/i.test(pos);
+        const isSDOPosition = /(Schools Division Superintendent|SDS|ASDS)/i.test(pos);
+        
+        if (isSDOPosition) return 'Schools Division Office';
+        if (isROOffice || isROPosition) return 'Regional Office';
+        
+        return 'Schools Division Office';
+    };
+
+    const getOfficialRegion = (item) => {
+        if (getOfficialLevel(item) === 'Central Office') return 'Central Office';
+        
+        const strand = (item.strand || '').trim();
+        if (strand.toUpperCase() === 'REGION XIII' || strand.toUpperCase() === 'CARAGA') return 'CARAGA';
+        
+        const knownRegions = [
+            'Region I', 'Region II', 'Region III', 'Region IV-A', 'Region IV-B', 
+            'Region V', 'Region VI', 'Region VII', 'Region VIII', 'Region IX', 
+            'Region X', 'Region XI', 'Region XII', 'NCR', 'CAR', 'NIR', 'BARMM'
+        ];
+        
+        const found = knownRegions.find(r => r.toLowerCase() === strand.toLowerCase());
+        if (found) return found;
+        
+        return 'Central Office';
+    };
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
             const values = activeRecords
@@ -553,13 +642,18 @@ const OfficialsRegistry = () => {
     }, [activeRecords, tableColumns]);
 
     const filteredRecords = useMemo(() => {
-        return activeRecords.filter(item => tableColumns.every(column => {
-            const filter = tableFilters[column.key];
-            if (!filter) return true;
-            const value = column.filterValue ? column.filterValue(item) : column.value(item);
-            return value === filter;
-        }));
-    }, [activeRecords, tableColumns, tableFilters]);
+        return activeRecords.filter(item => {
+            if (levelFilter !== 'All' && getOfficialLevel(item) !== levelFilter) return false;
+            if (regionFilter !== 'All' && getOfficialRegion(item) !== regionFilter) return false;
+            
+            return tableColumns.every(column => {
+                const filter = tableFilters[column.key];
+                if (!filter) return true;
+                const value = column.filterValue ? column.filterValue(item) : column.value(item);
+                return value === filter;
+            });
+        });
+    }, [activeRecords, tableColumns, tableFilters, levelFilter, regionFilter]);
 
     const sortedRecords = useMemo(() => {
         const column = tableColumns.find(c => c.key === sortConfig.key);
@@ -597,18 +691,22 @@ const OfficialsRegistry = () => {
 
     const TableHeader = ({ column }) => (
         <th className="px-8 py-4 text-left align-top">
-            <div className="flex items-center gap-3 min-w-[220px]">
+            <div className="flex flex-col gap-2 min-w-[220px]">
                 <button
                     onClick={() => handleSort(column.key)}
-                    className="shrink-0 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-blue-600 transition-colors"
+                    className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-blue-600 transition-colors w-full"
                 >
-                    {column.label}
-                    <span className="text-[9px]">{sortConfig.key === column.key ? (sortConfig.direction === 'asc' ? 'ASC' : 'DESC') : 'SORT'}</span>
+                    <span>{column.label}</span>
+                    <span className="text-slate-300 text-sm">
+                        {sortConfig.key === column.key 
+                            ? (sortConfig.direction === 'asc' ? '↑' : '↓') 
+                            : '↕'}
+                    </span>
                 </button>
                 <select
                     value={tableFilters[column.key] || ''}
                     onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                    className="min-w-[120px] max-w-[220px] bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300 shadow-sm"
                 >
                     <option value="">All</option>
                     {(tableFilterOptions[column.key] || []).map(option => (
@@ -679,7 +777,10 @@ const OfficialsRegistry = () => {
                     <div className="flex justify-center mb-8">
                         <div className="flex flex-wrap items-center justify-center gap-4">
                             {/* Card 1: Third Level Officials */}
-                            <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+                            <div 
+                                onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level Officials' ? 'border-blue-500 shadow-md ring-4 ring-blue-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
+                            >
                                 <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
                                     <FiUsers size={18} />
                                 </div>
@@ -711,7 +812,10 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Card 2: Third Level (OIC) */}
-                            <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+                            <div 
+                                onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level (OIC)' ? 'border-amber-500 shadow-md ring-4 ring-amber-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
+                            >
                                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
                                     <FiActivity size={18} />
                                 </div>
@@ -743,7 +847,10 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Card 3: Division Chiefs (OIC) */}
-                            <div className="relative group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition-all">
+                            <div 
+                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs (OIC)' ? 'border-emerald-500 shadow-md ring-4 ring-emerald-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
+                            >
                                 <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
                                     <FiActivity size={18} />
                                 </div>
@@ -797,10 +904,60 @@ const OfficialsRegistry = () => {
                                     label=""
                                     placeholder="Select Category"
                                     value={activeTab}
-                                    onChange={(val) => { setActiveTab(val); setPositionFilter('All'); setStrandFilter('All'); }}
+                                    onChange={(val) => { setActiveTab(val); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                     options={[
-                                        { value: 'Third Level', label: 'Third Level Officials' },
-                                        { value: 'OIC / Chiefs', label: 'OIC / Division Chiefs' }
+                                        { value: 'All', label: 'All Categories' },
+                                        { value: 'Third Level Officials', label: 'Third Level Officials' },
+                                        { value: 'Third Level (OIC)', label: 'Third Level (OIC)' },
+                                        { value: 'Division Chiefs (OIC)', label: 'Division Chiefs (OIC)' }
+                                    ]}
+                                />
+                            </div>
+
+                            {/* Level Dropdown */}
+                            <div className="w-full lg:w-[240px]">
+                                <SearchableSelect
+                                    label=""
+                                    placeholder="All Levels"
+                                    value={levelFilter}
+                                    onChange={setLevelFilter}
+                                    options={[
+                                        { value: 'All', label: 'All Levels' },
+                                        { value: 'Central Office', label: 'Central Office' },
+                                        { value: 'Regional Office', label: 'Regional Office' },
+                                        { value: 'Schools Division Office', label: 'Schools Division Office' }
+                                    ]}
+                                />
+                            </div>
+
+                            {/* Region Dropdown */}
+                            <div className="w-full lg:w-[240px]">
+                                <SearchableSelect
+                                    label=""
+                                    placeholder="All Regions"
+                                    value={regionFilter}
+                                    onChange={setRegionFilter}
+                                    options={[
+                                        { value: 'All', label: 'All Regions' },
+                                        { value: 'Central Office', label: 'Central Office' },
+                                        { value: 'Region I', label: 'Region I' },
+                                        { value: 'Region II', label: 'Region II' },
+                                        { value: 'Region III', label: 'Region III' },
+                                        { value: 'Region IV-A', label: 'Region IV-A' },
+                                        { value: 'Region IV-B', label: 'Region IV-B' },
+                                        { value: 'Region V', label: 'Region V' },
+                                        { value: 'Region VI', label: 'Region VI' },
+                                        { value: 'Region VII', label: 'Region VII' },
+                                        { value: 'Region VIII', label: 'Region VIII' },
+                                        { value: 'Region IX', label: 'Region IX' },
+                                        { value: 'Region X', label: 'Region X' },
+                                        { value: 'Region XI', label: 'Region XI' },
+                                        { value: 'Region XII', label: 'Region XII' },
+                                        { value: 'CARAGA', label: 'CARAGA' },
+                                        { value: 'NCR', label: 'NCR' },
+                                        { value: 'CAR', label: 'CAR' },
+                                        { value: 'NIR', label: 'NIR' },
+                                        { value: 'BARMM', label: 'BARMM' }
                                     ]}
                                 />
                             </div>
@@ -866,7 +1023,7 @@ const OfficialsRegistry = () => {
                             </motion.div>
                         ) : viewMode === 'table' ? (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100">
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto hide-horizontal-scrollbar">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-slate-50/50 border-b border-slate-100">

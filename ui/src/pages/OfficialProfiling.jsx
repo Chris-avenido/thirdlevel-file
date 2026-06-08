@@ -227,6 +227,36 @@ const OfficialProfiling = () => {
     const [exportModalOpen, setExportModalOpen] = useState(false);
     const [selectedExportType, setSelectedExportType] = useState('csv');
     const [exporting, setExporting] = useState(false);
+    const [previewScale, setPreviewScale] = useState(1);
+    const previewContainerRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (!exportModalOpen) return;
+        const observer = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const width = entry.contentRect.width;
+                // Previews are 1000px wide, plus padding -> ~1040px
+                const targetWidth = 1040;
+                if (width < targetWidth) {
+                    setPreviewScale(width / targetWidth);
+                } else {
+                    setPreviewScale(1);
+                }
+            }
+        });
+        
+        // Use timeout to allow DOM to render before observing
+        const timeoutId = setTimeout(() => {
+            if (previewContainerRef.current) {
+                observer.observe(previewContainerRef.current);
+            }
+        }, 100);
+
+        return () => {
+            clearTimeout(timeoutId);
+            observer.disconnect();
+        };
+    }, [exportModalOpen, selectedExportType]);
     const fullName = buildFullName(profile) || 'Official Profiling';
     const completedFields = COMPLETENESS_FIELDS.filter(f => !!profile[f]).length;
 
@@ -814,7 +844,7 @@ const OfficialProfiling = () => {
             
             // Compress 2x2 ID Picture
             if (docType === 'photo' && file.type.startsWith('image/')) {
-                fileToUpload = await compressImageClientSide(file);
+                fileToUpload = await compressImageClientSide(file, 800, 0.9);
             }
 
             const formData = new FormData();
@@ -1169,37 +1199,74 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-100 shadow-sm space-y-8">
                                                             <div>
                                                                 <SectionLabel>Personal Information</SectionLabel>
-                                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                                                    <Field label="First Name"><input type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
-                                                                    <Field label="Last Name"><input type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
-                                                                    <Field label="Middle Name"><input type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
-                                                                    <Field label="Suffix (Type 'Not Applicable' if none)"><input type="text" value={profile.suffix} onChange={e => setP('suffix', e.target.value)} placeholder="e.g. Jr., III, Not Applicable" className={inp} /></Field>
-                                                                </div>
-                                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                                                                    <Field label="Gender">
-                                                                        <select value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
-                                                                            <option value="">Select</option>
-                                                                            <option value="Male">Male</option>
-                                                                            <option value="Female">Female</option>
-                                                                        </select>
-                                                                    </Field>
-                                                                    <Field label="Date of Birth">
-                                                                        <div className="relative">
-                                                                            <ModernDatePicker maxDate={new Date()} value={profile.date_of_birth} onChange={val => setProfile(p => ({ ...p, date_of_birth: val, age: computeAge(val) }))} className={inp} />
-                                                                            
+                                                                <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+                                                                    {/* 2x2 ID Upload */}
+                                                                    <div className="w-full lg:w-[132px] shrink-0">
+                                                                        <Field label="2x2 ID Picture">
+                                                                            <div className="relative group/upload w-full aspect-square max-w-[132px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
+                                                                                <input
+                                                                                    type="file"
+                                                                                    accept="image/*"
+                                                                                    onChange={(e) => {
+                                                                                        const file = e.target.files[0];
+                                                                                        if (file) handleFileUpload(file, 'photo');
+                                                                                    }}
+                                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                                />
+                                                                                {profile.photo_binary_id ? (
+                                                                                    <>
+                                                                                        <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="2x2 ID" className="w-full h-full object-cover" />
+                                                                                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/upload:opacity-100 transition-opacity flex flex-col items-center justify-center text-white z-0 backdrop-blur-sm">
+                                                                                            <FiUpload size={20} className="mb-2" />
+                                                                                            <span className="text-[9px] font-black uppercase tracking-widest text-center px-2">Change Photo</span>
+                                                                                        </div>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <div className="flex flex-col items-center justify-center p-4 text-slate-400 group-hover/upload:text-[#0038A8] transition-colors">
+                                                                                        <FiUpload size={24} className={saving ? 'animate-bounce' : 'mb-3'} />
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight mt-1">
+                                                                                            {saving ? 'Processing...' : 'Upload Photo'}
+                                                                                        </span>
+                                                                                        <span className="text-[8px] font-bold text-slate-400 italic mt-1.5 text-center">PNG or JPG</span>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </Field>
+                                                                    </div>
+                                                                    
+                                                                    <div className="flex-1 w-full space-y-4">
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                                                                            <Field label="First Name"><input type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="Last Name"><input type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="Middle Name"><input type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="Suffix (Type 'Not Applicable' if none)"><input type="text" value={profile.suffix} onChange={e => setP('suffix', e.target.value)} placeholder="e.g. Jr., III" className={inp} /></Field>
                                                                         </div>
-                                                                    </Field>
-                                                                    <Field label="Age (auto-computed)">
-                                                                        <div className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-500 min-h-[38px] flex items-center justify-center">
-                                                                            {profile.age || '—'}
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                                                                            <Field label="Gender">
+                                                                                <select value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
+                                                                                    <option value="">Select</option>
+                                                                                    <option value="Male">Male</option>
+                                                                                    <option value="Female">Female</option>
+                                                                                </select>
+                                                                            </Field>
+                                                                            <Field label="Date of Birth">
+                                                                                <div className="relative">
+                                                                                    <ModernDatePicker maxDate={new Date()} value={profile.date_of_birth} onChange={val => setProfile(p => ({ ...p, date_of_birth: val, age: computeAge(val) }))} className={inp} />
+                                                                                </div>
+                                                                            </Field>
+                                                                            <Field label="Age (auto-computed)">
+                                                                                <div className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-500 min-h-[38px] flex items-center justify-center">
+                                                                                    {profile.age || '—'}
+                                                                                </div>
+                                                                            </Field>
+                                                                            <Field label="Civil Status">
+                                                                                <select value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
+                                                                                    <option value="">Select</option>
+                                                                                    {['Single', 'Married', 'Widowed', 'Separated'].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                                </select>
+                                                                            </Field>
                                                                         </div>
-                                                                    </Field>
-                                                                    <Field label="Civil Status">
-                                                                        <select value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
-                                                                            <option value="">Select</option>
-                                                                            {['Single', 'Married', 'Widowed', 'Separated'].map(o => <option key={o} value={o}>{o}</option>)}
-                                                                        </select>
-                                                                    </Field>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
@@ -1679,7 +1746,6 @@ const OfficialProfiling = () => {
                                                         </div>
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
-                                                                { id: 'photo', label: '2x2 ID Picture', note: 'PNG or JPG, official photo', accept: 'image/*' },
                                                                 { id: 'pds', label: 'Personal Data Sheet (CSC Form 212, rev 2025)', note: 'PDF with Work Experience Sheet attached', accept: '.pdf' },
                                                                 { id: 'profile_word', label: 'Accomplished Profile (Word File)', note: 'Word format required', accept: '.doc,.docx' },
                                                                 { id: 'profile_ppt', label: 'Accomplished Profile (PPT Format)', note: 'PowerPoint format required', accept: '.ppt,.pptx' },
@@ -1857,11 +1923,18 @@ const OfficialProfiling = () => {
                                                                     <AnimatePresence>
                                                                         {exportModalOpen && (
                                                                             <motion.div
-                                                                                initial={{ opacity: 0, scale: 0.95, originX: 1, originY: 0 }}
-                                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                                exit={{ opacity: 0, scale: 0.95 }}
-                                                                                className="absolute right-0 top-full mt-3 w-[900px] max-w-[85vw] bg-white rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] border border-slate-200 flex flex-col lg:flex-row overflow-hidden z-[100]"
+                                                                                initial={{ opacity: 0 }}
+                                                                                animate={{ opacity: 1 }}
+                                                                                exit={{ opacity: 0 }}
+                                                                                className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-slate-900/60 backdrop-blur-sm"
                                                                             >
+                                                                                <motion.div
+                                                                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                    className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                >
                                                                                 {/* Sidebar Options */}
                                                                                 <div className="w-full lg:w-64 bg-slate-50 border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
                                                                                     <div className="flex items-center justify-between mb-4">
@@ -1906,18 +1979,18 @@ const OfficialProfiling = () => {
                                                                                 </div>
 
                                                                                 {/* Preview Area */}
-                                                                                <div className="flex-1 overflow-y-auto max-h-[600px] p-6 lg:p-8 flex justify-center items-start bg-slate-100">
+                                                                                <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
                                                                                     {selectedExportType === 'csv' && (
-                                                                                        <div className="w-full bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                                                                                            <div className="bg-slate-800 px-4 py-2 flex items-center gap-2">
-                                                                                                <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-rose-500" /><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /></div>
-                                                                                                <span className="text-[10px] text-slate-400 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
+                                                                                        <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                                                                            <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
+                                                                                                <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
+                                                                                                <span className="text-[11px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
                                                                                             </div>
-                                                                                            <div className="p-0 overflow-x-auto">
-                                                                                                <table className="w-full text-left border-collapse text-xs font-mono whitespace-nowrap">
+                                                                                            <div className="p-0 overflow-x-auto custom-scrollbar">
+                                                                                                <table className="w-full text-left border-collapse text-[11px] font-mono whitespace-nowrap">
                                                                                                     <thead className="bg-slate-50 sticky top-0">
                                                                                                         <tr className="border-b border-slate-200 text-slate-500">
-                                                                                                            <th className="p-3 font-bold">Data Field</th><th className="p-3 font-bold">Exported Value</th>
+                                                                                                            <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
                                                                                                         </tr>
                                                                                                     </thead>
                                                                                                     <tbody>
@@ -1929,8 +2002,8 @@ const OfficialProfiling = () => {
                                                                                                             ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
                                                                                                             ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
                                                                                                         ].map(([k, v], i) => (
-                                                                                                            <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-slate-50">
-                                                                                                                <td className="p-3 font-bold text-slate-500">{k}</td><td className="p-3">{v || '—'}</td>
+                                                                                                            <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
+                                                                                                                <td className="px-4 py-3 font-bold text-slate-500 border-r border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
                                                                                                             </tr>
                                                                                                         ))}
                                                                                                     </tbody>
@@ -1940,8 +2013,9 @@ const OfficialProfiling = () => {
                                                                                     )}
 
                                                                                     {selectedExportType === 'pdf' && (
-                                                                                        <div className="w-full overflow-x-auto p-4 rounded-xl shadow-lg border border-slate-200 bg-white" style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
-                                                                                            <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-sans text-black" id="pdf-preview-content">
+                                                                                        <div className="w-full flex justify-center custom-scrollbar overflow-auto pb-10">
+                                                                                            <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
+                                                                                                <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-sans text-black" id="pdf-preview-content">
                                                                                                 <div className="flex justify-between items-start mb-8">
                                                                                                     <div className="flex gap-6 items-center">
                                                                                                         <img src={newLogo} alt="Logo" className="w-24 h-24 object-contain" />
@@ -2039,38 +2113,44 @@ const OfficialProfiling = () => {
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    )}
+                                                                                    </div>
+                                                                                )}
 
-                                                                                    {selectedExportType === 'ppt' && (
-                                                                                        <div className="w-full max-w-2xl bg-white aspect-[16/9] border border-slate-200 shadow-lg relative p-8 flex flex-col font-sans" style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}>
-                                                                                            <div className="absolute top-0 left-0 w-full h-2 bg-[#0038A8]"></div>
-                                                                                            <div className="flex gap-4 items-center mb-6">
-                                                                                                <img src={newLogo} alt="Logo" className="w-16 h-16 object-contain" />
-                                                                                                <div>
-                                                                                                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
-                                                                                                    <h2 className="text-sm font-bold text-slate-700 uppercase flex items-center gap-2">
-                                                                                                        <span>{profile.position_title || 'N/A'}</span>
-                                                                                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                        {profile.office ? `, ${profile.office}` : ''}
-                                                                                                    </h2>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <div className="flex gap-6 mt-4">
-                                                                                                <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-4">
-                                                                                                    <h3 className="text-xs font-black text-[#0038A8] uppercase tracking-widest mb-2 border-b border-blue-100 pb-1">Managerial Experience</h3>
-                                                                                                    {history.slice(0, 3).map((h, i) => (
-                                                                                                        <p key={i} className="text-xs text-slate-700 mb-1 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
-                                                                                                    ))}
-                                                                                                </div>
-                                                                                                <div className="w-48 border-2 border-red-700 rounded-xl p-4">
-                                                                                                    <h3 className="text-xs font-black text-red-700 uppercase tracking-widest mb-2 border-b border-red-100 pb-1">Performance</h3>
-                                                                                                    <p className="text-xs text-slate-700 mb-1 font-bold">CESPES: <span className="font-black text-slate-900">{profile.cespes_1_rating || '—'}</span></p>
-                                                                                                    <p className="text-xs text-slate-700 font-bold">OPCRF: <span className="font-black text-slate-900">{profile.performance_rating_1 || '—'}</span></p>
+                                                                                {selectedExportType === 'ppt' && (
+                                                                                        <div className="w-full flex justify-center custom-scrollbar overflow-auto pb-10">
+                                                                                            <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-sans transition-transform duration-200" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
+                                                                                                <div className="w-[1000px] h-[562.5px] p-10 relative">
+                                                                                                    <div className="absolute top-0 left-0 w-full h-2 bg-[#0038A8]"></div>
+                                                                                                    <div className="flex gap-4 items-center mb-6">
+                                                                                                        <img src={newLogo} alt="Logo" className="w-16 h-16 object-contain" />
+                                                                                                        <div>
+                                                                                                            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
+                                                                                                            <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
+                                                                                                                <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                {profile.office ? `, ${profile.office}` : ''}
+                                                                                                            </h2>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div className="flex gap-6 mt-8">
+                                                                                                        <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
+                                                                                                            <h3 className="text-sm font-black text-[#0038A8] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
+                                                                                                            {history.slice(0, 3).map((h, i) => (
+                                                                                                                <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
+                                                                                                            ))}
+                                                                                                        </div>
+                                                                                                        <div className="w-64 border-2 border-red-700 rounded-xl p-6">
+                                                                                                            <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
+                                                                                                            <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-black text-slate-900">{profile.cespes_1_rating || '—'}</span></p>
+                                                                                                            <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-black text-slate-900">{profile.performance_rating_1 || '—'}</span></p>
+                                                                                                        </div>
+                                                                                                    </div>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
+                                                                                </motion.div>
                                                                             </motion.div>
                                                                         )}
                                                                     </AnimatePresence>
