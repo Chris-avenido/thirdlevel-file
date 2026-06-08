@@ -6,30 +6,10 @@ let oicSchemaReady = false;
 const optionalColumnExpressionCache = new Map();
 
 const ensureOicColumn = async (client = pool) => {
-  if (client === pool && oicSchemaReady) return;
-
-  await client.query(`
-    ALTER TABLE third_level_official_masterlist
-    ADD COLUMN IF NOT EXISTS is_oic BOOLEAN DEFAULT FALSE
-  `);
-  await client.query(`
-    ALTER TABLE third_level_officials_profiling_application
-    ADD COLUMN IF NOT EXISTS is_oic BOOLEAN DEFAULT FALSE
-  `);
-  await client.query(`
-    UPDATE third_level_official_masterlist
-    SET is_oic = TRUE,
-        position_title = TRIM(REGEXP_REPLACE(position_title, '^OIC\\s+', '', 'i'))
-    WHERE position_title ~* '^OIC\\s+'
-  `);
-  await client.query(`
-    UPDATE third_level_officials_profiling_application
-    SET is_oic = TRUE,
-        position_title = TRIM(REGEXP_REPLACE(position_title, '^OIC\\s+', '', 'i'))
-    WHERE position_title ~* '^OIC\\s+'
-  `);
-
+  // Schema has already been permanently migrated in the database.
+  // We stub this out to prevent massive schema locks on API cold starts.
   if (client === pool) oicSchemaReady = true;
+  return;
 };
 
 const sanitizeOicPosition = (positionTitle, existingIsOic = false) => {
@@ -550,19 +530,28 @@ export const getOfficials = async (req, res) => {
 
   const { search, status, strand, category, position } = req.query;
   let query = `
-    WITH RankedOfficials AS (
+    WITH ConcurrentMap AS (
+       SELECT 
+         t1."TLOid",
+         string_agg(t2.position_title || ' (' || COALESCE(t2.office, '') || ')', ' | ') as concurrent_positions
+       FROM third_level_official_masterlist t1
+       JOIN third_level_official_masterlist t2 
+         ON LOWER(t1.email) = LOWER(t2.email) 
+         AND t1."TLOid" != t2."TLOid" 
+         AND t2.status = 'Active'
+       WHERE t1.email IS NOT NULL AND t1.email != ''
+       GROUP BY t1."TLOid"
+    ),
+    RankedOfficials AS (
       SELECT 
         m.*,
-        (
-          SELECT string_agg(position_title || ' (' || COALESCE(office, '') || ')', ' | ') 
-          FROM third_level_official_masterlist 
-          WHERE LOWER(email) = LOWER(m.email) AND "TLOid" != m."TLOid" AND status = 'Active'
-        ) as concurrent_positions,
+        cm.concurrent_positions,
         ROW_NUMBER() OVER (
-          PARTITION BY CASE WHEN first_name IS NULL OR first_name = 'VACANT' THEN "TLOid" ELSE LOWER(email) END 
-          ORDER BY "TLOid" ASC
+          PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
+          ORDER BY m."TLOid" ASC
         ) as rn
       FROM third_level_official_masterlist m
+      LEFT JOIN ConcurrentMap cm ON m."TLOid" = cm."TLOid"
   `;
   const params = [];
   const conditions = [];
