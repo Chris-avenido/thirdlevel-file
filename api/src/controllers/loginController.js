@@ -12,7 +12,7 @@ export const login = async (req, res) => {
 
   try {
     const authRes = await pool.query(
-      'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role FROM users WHERE LOWER(email) = $1',
+      'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
     const centralUser = authRes.rows[0];
@@ -71,12 +71,30 @@ export const login = async (req, res) => {
     const lastName = registryUser?.last_name || centralUser.last_name || '';
 
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
-    const token = jwt.sign({ uid, email: normalizedEmail, role }, secret, { expiresIn: '30d' });
+    const token = jwt.sign({
+      uid,
+      email: normalizedEmail,
+      role,
+      assigned_region: centralUser.assigned_region,
+      assigned_division: centralUser.assigned_division,
+      region: centralUser.region,
+      division: centralUser.division
+    }, secret, { expiresIn: '30d' });
 
     res.json({
       success: true,
       token,
-      user: { uid, email: normalizedEmail, role, first_name: firstName, last_name: lastName }
+      user: {
+        uid,
+        email: normalizedEmail,
+        role,
+        first_name: firstName,
+        last_name: lastName,
+        assigned_region: centralUser.assigned_region,
+        assigned_division: centralUser.assigned_division,
+        region: centralUser.region,
+        division: centralUser.division
+      }
     });
   } catch (err) {
     console.error('[Login] Detailed Error:', {
@@ -154,7 +172,7 @@ export const pinLogin = async (req, res) => {
 
   try {
     const authRes = await pool.query(
-      'SELECT uid, passcode, first_name, last_name FROM users WHERE LOWER(email) = $1',
+      'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
     const centralUser = authRes.rows[0];
@@ -190,12 +208,27 @@ export const pinLogin = async (req, res) => {
     const lastName = registryUser?.last_name || centralUser?.last_name || '';
 
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
-    const token = jwt.sign({ uid, email: normalizedEmail, role }, secret, { expiresIn: '30d' });
+    const token = jwt.sign({
+      uid,
+      email: normalizedEmail,
+      role,
+      assigned_region: centralUser?.assigned_region,
+      assigned_division: centralUser?.assigned_division
+    }, secret, { expiresIn: '30d' });
 
     res.json({
       success: true,
       token,
-      user: { uid, email: normalizedEmail, role, first_name: firstName, last_name: lastName, passcode: storedPasscode }
+      user: {
+        uid,
+        email: normalizedEmail,
+        role,
+        first_name: firstName,
+        last_name: lastName,
+        passcode: storedPasscode,
+        assigned_region: centralUser?.assigned_region,
+        assigned_division: centralUser?.assigned_division
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

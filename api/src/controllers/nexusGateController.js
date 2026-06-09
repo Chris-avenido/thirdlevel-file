@@ -13,7 +13,9 @@ export const checkAuthCode = async (req, res) => {
     if (result.rows.length === 0) return res.json({ valid: false });
     
     let role = result.rows[0].role;
-    if (role === 'Central Office') role = 'Personnel Admin';
+    if (role === 'CO_PD') role = 'Central Office';
+    if (role === 'RO_HRMO') role = 'Regional Office';
+    if (role === 'SDO_HRMO') role = 'School Division Office';
     if (role === 'Third Level Applicant') role = 'TLO Applicant';
     
     res.json({ valid: true, role });

@@ -142,7 +142,7 @@ export const checkEmail = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  const { email, password, firstName, lastName, contactNumber, authCode } = req.body;
+  const { email, password, firstName, lastName, contactNumber, authCode, assigned_region, assigned_division } = req.body;
 
   if (!email || !password || !authCode) {
     return res.status(400).json({ error: 'Email, Password, and Authorization Code are required' });
@@ -165,9 +165,11 @@ export const registerUser = async (req, res) => {
 
     let assignedRole = authCheck.rows[0].role;
     if (assignedRole === 'Third Level Applicant') assignedRole = 'TLO Applicant';
-    if (assignedRole === 'Central Office') assignedRole = 'Personnel Admin';
+    if (assignedRole === 'CO_PD') assignedRole = 'Central Office';
+    if (assignedRole === 'RO_HRMO') assignedRole = 'Regional Office';
+    if (assignedRole === 'SDO_HRMO') assignedRole = 'School Division Office';
 
-    if (assignedRole === 'Personnel Admin' && !normalizedEmail.endsWith('@deped.gov.ph')) {
+    if (['Personnel Admin', 'Central Office'].includes(assignedRole) && !normalizedEmail.endsWith('@deped.gov.ph')) {
       client.release();
       return res.status(400).json({ error: 'Central Office Admin accounts must use an official @deped.gov.ph email' });
     }
@@ -191,12 +193,13 @@ export const registerUser = async (req, res) => {
 
     await client.query(
       `INSERT INTO users (
-        uid, email, password_hash, first_name, last_name, contact_number, role, registration_status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Approved', NOW())`,
-      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole]
+        uid, email, password_hash, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Approved', NOW())`,
+      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division]
     );
 
-    if (assignedRole !== 'Personnel Admin') {
+    const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
+    if (!adminRoles.includes(assignedRole)) {
       await client.query(
         `INSERT INTO third_level_officials_profiling_application (
           application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, created_at, updated_at
@@ -209,7 +212,7 @@ export const registerUser = async (req, res) => {
 
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
     const token = jwt.sign(
-      { uid, email: normalizedEmail, role: assignedRole },
+      { uid, email: normalizedEmail, role: assignedRole, assigned_region, assigned_division },
       secret,
       { expiresIn: '30d' }
     );
@@ -217,7 +220,7 @@ export const registerUser = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: { uid, email: normalizedEmail, role: assignedRole, first_name: firstName, last_name: lastName }
+      user: { uid, email: normalizedEmail, role: assignedRole, first_name: firstName, last_name: lastName, assigned_region, assigned_division }
     });
   } catch (err) {
     if (client) await client.query('ROLLBACK');

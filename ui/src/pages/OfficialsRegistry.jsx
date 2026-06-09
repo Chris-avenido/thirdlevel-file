@@ -1101,6 +1101,11 @@ const OfficialsRegistry = () => {
                                                                     <FiArrowRight className="text-blue-500 shrink-0" size={8} />
                                                                     <span className="truncate">{item.email}</span>
                                                                 </div>
+                                                                {item.updated_at && (
+                                                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                                        Updated: {new Date(item.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </td>
@@ -1243,6 +1248,14 @@ const OfficialsRegistry = () => {
                                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Office</span>
                                                     <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{item.office || 'Main Office'}</span>
                                                 </div>
+                                                {item.updated_at && (
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Updated</span>
+                                                        <span className="text-[10px] font-bold text-slate-700 truncate ml-4">
+                                                            {new Date(item.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 

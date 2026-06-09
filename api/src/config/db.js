@@ -29,6 +29,8 @@ pool.on('error', (err) => {
 export const initDB = async () => {
   try {
     await pool.query('ALTER TABLE third_level_officials_updates ADD COLUMN IF NOT EXISTS remarks TEXT;');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_region TEXT;');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_division TEXT;');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS authorization_codes (
         id SERIAL PRIMARY KEY,
@@ -41,14 +43,18 @@ export const initDB = async () => {
     `);
     await pool.query(`
       INSERT INTO authorization_codes (code, role, is_active)
-      VALUES ($1, $2, TRUE)
+      VALUES 
+        ($1, $2, TRUE),
+        ($3, $4, TRUE)
       ON CONFLICT (code) DO UPDATE
       SET role = EXCLUDED.role,
           is_active = TRUE,
           updated_at = NOW();
     `, [
-      (process.env.CO_AUTH_CODE || 'INSIGHTED-CO-ADMIN').toUpperCase().trim(),
-      'Central Office'
+      (process.env.CO_AUTH_CODE || 'nVxCpLrTqWmK').toUpperCase().trim(),
+      'Central Office',
+      (process.env.APP_AUTH_CODE || 'mXqWpLsKdJfN').toUpperCase().trim(),
+      'Third Level Applicant'
     ]);
     console.log('[Database] Schema verified.');
   } catch (err) {

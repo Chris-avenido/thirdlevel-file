@@ -286,7 +286,7 @@ export const updateProfile = async (req, res) => {
     }
 
     const allFields = [
-      'strand', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
+      'strand', 'division', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'date_of_assignment', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
@@ -384,7 +384,7 @@ export const getVacancies = async (req, res) => {
   try {
     await ensureOicColumn();
     const result = await pool.query(`
-      SELECT "TLOid", position_title, office, strand, first_name, last_name, status, is_oic
+      SELECT "TLOid", position_title, office, strand, first_name, last_name, status, is_oic, updated_at
       FROM third_level_official_masterlist 
       WHERE first_name ILIKE '%VACANT%' OR status = 'Vacant'
       ORDER BY strand, office, position_title
@@ -396,7 +396,8 @@ export const getVacancies = async (req, res) => {
 };
 
 export const getApplications = async (req, res) => {
-  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  const allowedRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'RO HRMO', 'SDO HRMO'];
+  if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
@@ -424,6 +425,24 @@ export const getApplications = async (req, res) => {
     `;
     const params = [];
 
+    const userRole = req.user.role;
+    const isRO = userRole === 'Regional Office' || userRole === 'RO_HRMO' || userRole === 'RO HRMO';
+    const isSDO = userRole === 'School Division Office' || userRole === 'SDO_HRMO' || userRole === 'SDO HRMO';
+
+    const targetRegion = req.user.assigned_region || req.user.region;
+    const targetDivision = req.user.assigned_division || req.user.division;
+
+    if (isRO && targetRegion) {
+      params.push(targetRegion);
+      query += ` AND m.strand = $${params.length}`;
+    }
+    if (isSDO && targetRegion && targetDivision) {
+      params.push(targetRegion);
+      query += ` AND m.strand = $${params.length}`;
+      params.push(targetDivision);
+      query += ` AND m.division = $${params.length}`;
+    }
+
     if (search) {
       params.push(`%${search}%`);
       query += ` AND (a.first_name ILIKE $${params.length} OR a.last_name ILIKE $${params.length} OR a.email ILIKE $${params.length} OR v.position_title ILIKE $${params.length} OR v.office ILIKE $${params.length} OR v.strand ILIKE $${params.length})`;
@@ -447,7 +466,8 @@ export const getApplications = async (req, res) => {
 };
 
 export const processApplication = async (req, res) => {
-  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
+  if (!adminRoles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
@@ -524,7 +544,8 @@ export const processApplication = async (req, res) => {
 };
 
 export const getOfficials = async (req, res) => {
-  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  const allowedRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'RO HRMO', 'SDO HRMO'];
+  if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
   }
 
@@ -560,6 +581,24 @@ export const getOfficials = async (req, res) => {
     await ensureOicColumn();
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+
+  const userRole = req.user.role;
+  const isRO = userRole === 'Regional Office' || userRole === 'RO_HRMO' || userRole === 'RO HRMO';
+  const isSDO = userRole === 'School Division Office' || userRole === 'SDO_HRMO' || userRole === 'SDO HRMO';
+
+  const targetRegion = req.user.assigned_region || req.user.region;
+  const targetDivision = req.user.assigned_division || req.user.division;
+
+  if (isRO && targetRegion) {
+    params.push(targetRegion);
+    conditions.push(`strand = $${params.length}`);
+  }
+  if (isSDO && targetRegion && targetDivision) {
+    params.push(targetRegion);
+    conditions.push(`strand = $${params.length}`);
+    params.push(targetDivision);
+    conditions.push(`division = $${params.length}`);
   }
 
   if (search) {
@@ -718,7 +757,8 @@ export const getActiveOfficials = async (req, res) => {
 };
 
 export const getUnassignedPersonnel = async (req, res) => {
-  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
+  if (!adminRoles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Access denied' });
   }
 

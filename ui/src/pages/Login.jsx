@@ -49,7 +49,7 @@ const Login = () => {
                 // Check if user role matches the portal constraint
                 const roleLower = user.role?.toLowerCase() || '';
                 const isAllowed = isCOPortal
-                    ? (roleLower === 'personnel admin' || roleLower === 'super user')
+                    ? (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower))
                     : (roleLower === 'tlo applicant');
 
                 if (isAllowed) return user;
@@ -84,9 +84,9 @@ const Login = () => {
                 const roleLower = data.user.role?.toLowerCase() || '';
                 // Role enforcement
                 if (isCO) {
-                    if (roleLower !== 'personnel admin' && roleLower !== 'super user') {
+                    if (!['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
                         setLoading(false);
-                        return Swal.fire('Access Denied', 'This portal is restricted to Central Office Personnel Administrators.', 'error');
+                        return Swal.fire('Access Denied', 'This portal is restricted to Administrative Personnel.', 'error');
                     }
                 } else {
                     if (roleLower !== 'tlo applicant') {
@@ -99,7 +99,7 @@ const Login = () => {
                 localStorage.setItem('remembered_user', JSON.stringify(data.user));
 
                 // Role-based redirection
-                if (roleLower === 'personnel admin' || roleLower === 'super user') {
+                if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
                     navigate('/officials-registry');
                 } else {
                     navigate('/official-profiling');
@@ -122,9 +122,9 @@ const Login = () => {
                 const roleLower = data.user.role?.toLowerCase() || '';
                 // Role enforcement
                 if (isCO) {
-                    if (roleLower !== 'personnel admin' && roleLower !== 'super user') {
+                    if (!['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
                         setLoading(false);
-                        return Swal.fire('Access Denied', 'This portal is restricted to Central Office Personnel Administrators.', 'error');
+                        return Swal.fire('Access Denied', 'This portal is restricted to Administrative Personnel.', 'error');
                     }
                 } else {
                     if (roleLower !== 'tlo applicant') {
@@ -134,7 +134,7 @@ const Login = () => {
                 }
 
                 // Role-based redirection
-                if (roleLower === 'personnel admin' || roleLower === 'super user') {
+                if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
                     navigate('/officials-registry');
                 } else {
                     navigate('/official-profiling');

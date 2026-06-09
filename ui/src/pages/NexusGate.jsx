@@ -34,8 +34,8 @@ const NexusGate = () => {
             const data = await res.json();
             if (!data.valid) {
                 setCoError('Invalid or expired authorization code. Please contact your administrator.');
-            } else if (data.role !== 'Personnel Admin') {
-                setCoError('This code is not authorized for Central Office access.');
+            } else if (!['Personnel Admin', 'Central Office', 'Regional Office', 'School Division Office'].includes(data.role)) {
+                setCoError('This code is not authorized for administrative access.');
             } else {
                 setCoVerified(true);
             }
@@ -95,12 +95,12 @@ const NexusGate = () => {
                         <div className="space-y-3">
                             <div className="space-y-1">
                                 <h3 className="text-3xl font-black text-slate-800 tracking-tighter italic leading-tight uppercase">
-                                    <span className="normal-case">Recruitment</span>
+                                    <span className="normal-case">Records Management</span>
                                 </h3>
                                 <p className="text-xs font-black text-[#004A99] uppercase tracking-widest">& Career Path</p>
                             </div>
                             <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                                Apply for 3rd level positions and manage your professional profile for DepEd's career progression programs.
+                                Manage official records and professional profiles for 3rd level positions within the department.
                             </p>
                         </div>
                         <div className="flex items-center gap-3 mt-6 text-[#004A99] font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
@@ -125,12 +125,12 @@ const NexusGate = () => {
                         <div className="space-y-3">
                             <div className="space-y-1">
                                 <h3 className="text-3xl font-black text-slate-800 tracking-tighter italic leading-tight uppercase">
-                                    <span className="normal-case">Central</span> Office
+                                    <span className="normal-case">Third Level Dashboard</span>
                                 </h3>
                                 <p className="text-xs font-black text-[#CE1126] uppercase tracking-widest">Administrative Portal</p>
                             </div>
                             <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                                Personnel Division access for monitoring applications, managing the TLO masterlist, and processing administrative actions.
+                                Users include HRMO or Personnel Division of DepEd Central Office. Access for managing the TLO masterlist and administrative actions.
                             </p>
                         </div>
                         <div className="flex items-center gap-3 mt-6 text-[#CE1126] font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">

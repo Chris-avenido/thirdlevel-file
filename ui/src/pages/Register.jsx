@@ -132,7 +132,7 @@ const Register = () => {
                 login(data.user, data.token);
                 setSuccess(true);
 
-                const redirectPath = (data.user.role === 'Personnel Admin' || data.user.role === 'Admin' || data.user.role === 'Super User')
+                const redirectPath = (['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'].includes(data.user.role))
                     ? '/officials-registry'
                     : '/official-profiling';
 

@@ -212,6 +212,7 @@ const OfficialProfiling = () => {
         cespes_rating_1_period: '', cespes_rating_2_period: '',
         managerial_experience_total: '',
         pending_admin_case: '', ombudsman_case: '',
+        updated_at: null,
     });
     const [prevPositions, setPrevPositions] = useState([]);
     const [trainings, setTrainings] = useState([]);
@@ -605,6 +606,7 @@ const OfficialProfiling = () => {
                     profile_word_binary_id: d.profile_word_binary_id || null,
                     profile_ppt_binary_id: d.profile_ppt_binary_id || null,
                     service_records_binary_id: d.service_records_binary_id || null,
+                    updated_at: d.updated_at || null,
                 });
 
                 setPrevPositions(d.previous_positions || []);
@@ -1081,6 +1083,12 @@ const OfficialProfiling = () => {
                                         <span className="flex items-center gap-1">
                                             Applied {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </span>
+                                        {profile.updated_at && <span className="opacity-30">·</span>}
+                                        {profile.updated_at && (
+                                            <span className="flex items-center gap-1">
+                                                Last Updated: {new Date(profile.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
