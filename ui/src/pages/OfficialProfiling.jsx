@@ -201,7 +201,7 @@ const OfficialProfiling = () => {
     const [profile, setProfile] = useState({
         last_name: '', first_name: '', middle_name: '', suffix: '',
         gender: '', date_of_birth: '', age: '', civil_status: '',
-        position_title: '', is_oic: false, date_of_assignment: '',
+        position_title: '', designation: '', is_oic: false, date_of_assignment: '',
         emt_passer: null, emt_date: '', ces_stage: '', ces_conferment_date: '',
         total_years_third_level: '', permanent_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
@@ -298,7 +298,7 @@ const OfficialProfiling = () => {
         try {
             const header = [
                 'First Name', 'Last Name', 'Middle Name', 'Suffix', 'Gender', 'Date of Birth', 'Age', 'Civil Status',
-                'Position Title', 'Date of Present Position', 'Permanent Address',
+                'Position Title', 'Designation', 'Date of Present Position', 'Permanent Address',
                 'EMT Passer', 'EMT Date', 'CES Stage', 'CES Conferment Date',
                 'Highest Education', 'Specific Degree', 'Program / Course', 'Year Graduated',
                 'Latest Rating (1st)', 'Previous Rating (2nd)', 'CESPES 1st Sem', 'CESPES 2nd Sem', 'Total Managerial Experience',
@@ -306,7 +306,7 @@ const OfficialProfiling = () => {
             ];
             const row = [
                 profile.first_name, profile.last_name, profile.middle_name, profile.suffix, profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
-                profile.position_title, profile.date_of_assignment, profile.permanent_address,
+                profile.position_title, profile.designation, profile.date_of_assignment, profile.permanent_address,
                 profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date, profile.ces_stage, profile.ces_conferment_date,
                 profile.highest_education, profile.specific_degree, profile.education_program, profile.education_year_graduated,
                 profile.performance_rating_1, profile.performance_rating_2, profile.cespes_1_rating, profile.cespes_2_rating, profile.managerial_experience_total,
@@ -573,6 +573,7 @@ const OfficialProfiling = () => {
                     age: d.age ?? '',
                     civil_status: d.civil_status || '',
                     position_title: d.position_title || '',
+                    designation: d.designation || '',
                     is_oic: d.is_oic ?? false,
                     date_of_assignment: d.date_of_assignment ? d.date_of_assignment.split('T')[0] : '',
                     emt_passer: d.emt_passer ?? null,
@@ -1070,7 +1071,7 @@ const OfficialProfiling = () => {
                                         )}
                                     </div>
                                     <p className="text-blue-200/80 text-xs md:text-sm font-medium mt-1 truncate flex items-center gap-2">
-                                        <span>{profile.position_title || 'No position selected'}</span>
+                                        <span>{profile.position_title || 'No position selected'}{profile.designation ? ` - ${profile.designation}` : ''}</span>
                                         {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[9px] md:text-[11px] font-medium">
@@ -1280,8 +1281,8 @@ const OfficialProfiling = () => {
 
                                                             <div className="border-t border-slate-100 pt-8">
                                                                 <SectionLabel>Designation & Appointment</SectionLabel>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                                                    <Field label="Position Title (As per Appointment / Designation)">
+                                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                                                                    <Field label="Position Title (As per Appointment)">
                                                                         <select value={profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                             <option value="">Select Position Title</option>
                                                                             {[
@@ -1299,6 +1300,27 @@ const OfficialProfiling = () => {
                                                                                 'Chief Administrative Officer'
                                                                             ].includes(profile.position_title) && (
                                                                                     <option value={profile.position_title}>{profile.position_title}</option>
+                                                                                )}
+                                                                        </select>
+                                                                    </Field>
+                                                                    <Field label="Designation">
+                                                                        <select value={profile.designation || ''} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                            <option value="">Select Designation</option>
+                                                                            {[
+                                                                                'Undersecretary',
+                                                                                'Assistant Secretary',
+                                                                                'Director IV',
+                                                                                'Director III',
+                                                                                'Chief Administrative Officer'
+                                                                            ].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                            {profile.designation && ![
+                                                                                'Undersecretary',
+                                                                                'Assistant Secretary',
+                                                                                'Director IV',
+                                                                                'Director III',
+                                                                                'Chief Administrative Officer'
+                                                                            ].includes(profile.designation) && (
+                                                                                    <option value={profile.designation}>{profile.designation}</option>
                                                                                 )}
                                                                         </select>
                                                                     </Field>
@@ -2005,7 +2027,7 @@ const OfficialProfiling = () => {
                                                                                                         {[
                                                                                                             ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
                                                                                                             ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
-                                                                                                            ['Civil Status', profile.civil_status], ['Position Title', profile.position_title],
+                                                                                                            ['Civil Status', profile.civil_status], ['Position Title', profile.position_title], ['Designation', profile.designation],
                                                                                                             ['Permanent Address', profile.permanent_address], ['CES Stage', profile.ces_stage],
                                                                                                             ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
                                                                                                             ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],

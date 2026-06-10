@@ -288,7 +288,7 @@ export const updateProfile = async (req, res) => {
     const allFields = [
       'strand', 'division', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
-      'position_title', 'date_of_assignment', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
+      'position_title', 'designation', 'date_of_assignment', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
       'relevant_trainings', 'notable_achievements', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
