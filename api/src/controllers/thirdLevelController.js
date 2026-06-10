@@ -499,7 +499,7 @@ export const processApplication = async (req, res) => {
       const masterlistCols = new Set(masterlistColsRes.rows.map(r => r.column_name.toLowerCase()));
 
       const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings']);
-      const exclude = ['id', 'TLOid', 'created_at', 'updated_at', 'status', 'strand', 'office', 'position_title']; 
+      const exclude = ['id', 'TLOid', 'created_at', 'updated_at', 'status', 'strand', 'office', 'position_title'];
       const columns = Object.keys(applicant).filter(k => {
         const lowerK = k.toLowerCase();
         return masterlistCols.has(lowerK) && !exclude.map(e => e.toLowerCase()).includes(lowerK);
@@ -551,28 +551,14 @@ export const getOfficials = async (req, res) => {
 
   const { search, status, strand, category, position } = req.query;
   let query = `
-    WITH ConcurrentMap AS (
-       SELECT 
-         t1."TLOid",
-         string_agg(t2.position_title || ' (' || COALESCE(t2.office, '') || ')', ' | ') as concurrent_positions
-       FROM third_level_official_masterlist t1
-       JOIN third_level_official_masterlist t2 
-         ON LOWER(t1.email) = LOWER(t2.email) 
-         AND t1."TLOid" != t2."TLOid" 
-         AND t2.status = 'Active'
-       WHERE t1.email IS NOT NULL AND t1.email != ''
-       GROUP BY t1."TLOid"
-    ),
-    RankedOfficials AS (
+    WITH RankedOfficials AS (
       SELECT 
         m.*,
-        cm.concurrent_positions,
         ROW_NUMBER() OVER (
           PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
           ORDER BY m."TLOid" ASC
         ) as rn
       FROM third_level_official_masterlist m
-      LEFT JOIN ConcurrentMap cm ON m."TLOid" = cm."TLOid"
   `;
   const params = [];
   const conditions = [];
@@ -638,8 +624,18 @@ export const getOfficials = async (req, res) => {
 
   query += ` 
     ) 
-    SELECT * FROM RankedOfficials WHERE rn = 1 
-    ORDER BY "TLOid" ASC
+    SELECT 
+      f.*,
+      (
+         SELECT string_agg(t2.position_title || ' (' || COALESCE(t2.office, '') || ')', ' | ')
+         FROM third_level_official_masterlist t2 
+         WHERE LOWER(t2.email) = LOWER(f.email)
+           AND t2."TLOid" != f."TLOid" 
+           AND t2.status = 'Active'
+      ) as concurrent_positions
+    FROM RankedOfficials f 
+    WHERE f.rn = 1 
+    ORDER BY f."TLOid" ASC
   `;
 
   try {
@@ -941,47 +937,47 @@ export const adminAction = async (req, res) => {
         `, [TLOid, assignee.first_name, assignee.last_name, official.position_title,
           official.office, official.strand, assignee.email, justification || 'Assigned through reassignment']);
       } else
-      if (target_TLOid) {
-        const targetRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [target_TLOid]);
-        const targetSlot = targetRes.rows[0];
+        if (target_TLOid) {
+          const targetRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [target_TLOid]);
+          const targetSlot = targetRes.rows[0];
 
-        if (targetSlot && targetSlot.first_name && targetSlot.first_name !== 'VACANT') {
-          await client.query(`
+          if (targetSlot && targetSlot.first_name && targetSlot.first_name !== 'VACANT') {
+            await client.query(`
             INSERT INTO third_level_officials_updates
               ("TLOid", first_name, last_name, position_title, office, strand, email, status, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', NOW())
           `, [target_TLOid, targetSlot.first_name, targetSlot.last_name, targetSlot.position_title,
-            targetSlot.office, targetSlot.strand, targetSlot.email]);
-        }
+              targetSlot.office, targetSlot.strand, targetSlot.email]);
+          }
 
-        await client.query(`
+          await client.query(`
           UPDATE third_level_official_masterlist
           SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
               status = 'Active', updated_at = NOW()
           WHERE "TLOid" = $5
         `, [official.first_name, official.last_name, official.email, official.contact_details, target_TLOid]);
 
-        await client.query(`
+          await client.query(`
           INSERT INTO third_level_officials_updates
             ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
           VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW())
         `, [target_TLOid, official.first_name, official.last_name,
-          targetSlot?.position_title || official.position_title,
-          targetSlot?.office || official.office,
-          targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`]);
+            targetSlot?.position_title || official.position_title,
+            targetSlot?.office || official.office,
+            targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`]);
 
-        await client.query(`
+          await client.query(`
           UPDATE third_level_official_masterlist
           SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW()
           WHERE "TLOid" = $1
         `, [TLOid]);
-      } else {
-        await client.query(`
+        } else {
+          await client.query(`
           UPDATE third_level_official_masterlist
           SET updated_at = NOW()
           WHERE "TLOid" = $1
         `, [TLOid]);
-      }
+        }
     }
 
     await client.query('COMMIT');
