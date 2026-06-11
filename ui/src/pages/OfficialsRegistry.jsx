@@ -53,7 +53,7 @@ const OfficialsRegistry = () => {
 
                 <div
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-full bg-slate-50 border-2 border-transparent hover:border-blue-600/10 cursor-pointer rounded-2xl py-4 px-5 flex justify-between items-center transition-all group"
+                    className="w-full bg-slate-50 border-2 border-transparent hover:border-[#08315F]/10 cursor-pointer rounded-2xl py-4 px-5 flex justify-between items-center transition-all group"
                 >
                     <div className="flex flex-col">
                         <span className={`text-sm font-bold ${selectedOption ? 'text-slate-900' : 'text-slate-400'}`}>
@@ -63,7 +63,7 @@ const OfficialsRegistry = () => {
                             <span className="text-[10px] text-slate-400 font-bold">{selectedOption.sublabel}</span>
                         )}
                     </div>
-                    <FiChevronRight className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-blue-600' : 'text-slate-300'}`} size={18} />
+                    <FiChevronRight className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-[#075985]' : 'text-slate-300'}`} size={18} />
                 </div>
 
                 <AnimatePresence>
@@ -85,7 +85,7 @@ const OfficialsRegistry = () => {
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
                                             placeholder="Search options..."
-                                            className="w-full bg-white border-2 border-slate-100 focus:border-blue-600/20 rounded-xl py-3 pl-10 pr-4 text-xs font-bold text-slate-700 outline-none transition-all"
+                                            className="w-full bg-white border-2 border-slate-100 focus:border-[#08315F]/20 rounded-xl py-3 pl-10 pr-4 text-xs font-bold text-slate-700 outline-none transition-all"
                                         />
                                     </div>
                                 </div>
@@ -99,7 +99,7 @@ const OfficialsRegistry = () => {
                                                     setIsOpen(false);
                                                     setSearch('');
                                                 }}
-                                                className={`px-5 py-4 cursor-pointer flex flex-col hover:bg-blue-50 transition-colors ${value === opt.value ? 'bg-blue-50/50 border-l-4 border-blue-600' : 'border-l-4 border-transparent'}`}
+                                                className={`px-5 py-4 cursor-pointer flex flex-col hover:bg-blue-50 transition-colors ${value === opt.value ? 'bg-blue-50/50 border-l-4 border-[#08315F]' : 'border-l-4 border-transparent'}`}
                                             >
                                                 <span className={`text-xs font-black uppercase tracking-tight ${value === opt.value ? 'text-blue-700' : 'text-slate-700'}`}>
                                                     {opt.label}
@@ -406,7 +406,7 @@ const OfficialsRegistry = () => {
             case 'succeeded': return 'bg-cyan-50 text-cyan-600 border-cyan-100';
             case 'vacated':
             case 'vacant': return 'bg-rose-50 text-rose-600 border-rose-100';
-            default: return 'bg-blue-50 text-blue-600 border-blue-100';
+            default: return 'bg-blue-50 text-[#075985] border-blue-100';
         }
     };
 
@@ -724,7 +724,7 @@ const OfficialsRegistry = () => {
             <div className="flex flex-col gap-2">
                 <button
                     onClick={() => handleSort(column.key)}
-                    className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-blue-600 transition-colors w-full"
+                    className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors w-full"
                 >
                     <span>{column.label}</span>
                     <span className="text-slate-300 text-sm">
@@ -776,24 +776,24 @@ const OfficialsRegistry = () => {
 
     return (
         <PageTransition>
-            <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans overflow-x-hidden">
+            <div className="min-h-screen bg-transparent flex flex-col font-sans overflow-x-hidden">
 
                 {/* TOP NAVIGATION BAR */}
                 <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-[#004A99] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+                        <div className="w-10 h-10 bg-[#08315F] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
                             <FiUsers size={20} />
                         </div>
                         <div>
-                            <h1 className="text-lg font-black text-slate-800 tracking-tight leading-none italic uppercase">Personnel <span className="text-[#004A99] not-italic">Registry</span></h1>
+                            <h1 className="text-lg font-['Quicksand'] font-black text-[#08315F] tracking-tight leading-none italic uppercase">Personnel <span className="text-[#08315F] not-italic">Registry</span></h1>
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Official Leadership Management</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-xs font-black text-slate-800 leading-none">{user?.first_name} {user?.last_name}</span>
-                            <span className="text-[9px] font-bold text-[#CE1126] uppercase tracking-widest mt-1">{user?.role}</span>
+                            <span className="text-xs font-['Quicksand'] font-black text-[#08315F] leading-none">{user?.first_name} {user?.last_name}</span>
+                            <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
                         </div>
                         <button onClick={logout} className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all border border-slate-100">
                             <FiLogOut size={18} />
@@ -811,11 +811,11 @@ const OfficialsRegistry = () => {
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level Officials' ? 'border-blue-500 shadow-md ring-4 ring-blue-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
-                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                <div className="w-10 h-10 bg-blue-50 text-[#075985] rounded-xl flex items-center justify-center">
                                     <FiUsers size={18} />
                                 </div>
                                 <div>
-                                    <span className="block text-2xl font-black text-slate-900 leading-none tracking-tight">
+                                    <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
                                         {thirdLevelOfficials.length}
                                     </span>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level Officials</span>
@@ -850,7 +850,7 @@ const OfficialsRegistry = () => {
                                     <FiActivity size={18} />
                                 </div>
                                 <div>
-                                    <span className="block text-2xl font-black text-slate-900 leading-none tracking-tight">
+                                    <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
                                         {thirdLevelOic.length}
                                     </span>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level (OIC)</span>
@@ -885,7 +885,7 @@ const OfficialsRegistry = () => {
                                     <FiActivity size={18} />
                                 </div>
                                 <div>
-                                    <span className="block text-2xl font-black text-slate-900 leading-none tracking-tight">
+                                    <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
                                         {divisionChiefsOic.length}
                                     </span>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs (OIC)</span>
@@ -1031,14 +1031,14 @@ const OfficialsRegistry = () => {
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 lg:ml-auto">
                                 <button
                                     onClick={() => setViewMode('table')}
-                                    className={`p-3 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`p-3 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-[#075985] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                     title="Table view"
                                 >
                                     <ListRowsIcon />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-[#075985] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
                                     <FiGrid size={18} />
                                 </button>
@@ -1067,7 +1067,7 @@ const OfficialsRegistry = () => {
                         ) : sortedRecords.length === 0 ? (
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
                                 <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
-                                <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight">No Records Found</h3>
+                                <h3 className="text-xl font-['Quicksand'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
                                 <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                             </motion.div>
                         ) : viewMode === 'table' ? (
@@ -1094,11 +1094,11 @@ const OfficialsRegistry = () => {
                                                                 ) : <FiUser size={18} />}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <div className="font-black text-slate-800 text-xs leading-none group-hover:text-[#004A99] group-hover:underline transition-colors truncate">
+                                                                <div className="font-['Quicksand'] font-black text-[#08315F] text-xs leading-none group-hover:text-[#08315F] group-hover:underline transition-colors truncate">
                                                                     {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[9px]">VACANT POSITION</span>}
                                                                 </div>
                                                                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1.5 truncate">
-                                                                    <FiArrowRight className="text-blue-500 shrink-0" size={8} />
+                                                                    <FiArrowRight className="text-[#075985] shrink-0" size={8} />
                                                                     <span className="truncate">{item.email}</span>
                                                                 </div>
                                                                 {item.updated_at && (
@@ -1114,7 +1114,7 @@ const OfficialsRegistry = () => {
                                                             onClick={() => handlePositionClick(item)}
                                                             className="text-left group/pos hover:translate-x-1 transition-transform w-full"
                                                         >
-                                                            <div className="font-black text-[#004A99] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
+                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
                                                                 <span className="line-clamp-2">{item.position_title || 'Unassigned'}</span>
                                                                 {item.is_oic && <span className="px-1.5 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[7px] font-black uppercase tracking-widest shrink-0 mt-0.5">OIC</span>}
                                                             </div>
@@ -1138,7 +1138,7 @@ const OfficialsRegistry = () => {
                                                                 <button
                                                                     onClick={() => navigate(`/official-profiling?email=${item.email}`)}
                                                                     title="View Profile"
-                                                                    className="p-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg hover:bg-[#004A99] hover:text-white hover:border-[#004A99] transition-all shadow-sm shrink-0"
+                                                                    className="p-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg hover:bg-[#08315F] hover:text-white hover:border-[#004A99] transition-all shadow-sm shrink-0"
                                                                 >
                                                                     <FiExternalLink size={14} />
                                                                 </button>
@@ -1175,7 +1175,7 @@ const OfficialsRegistry = () => {
                                             <button
                                                 key={page}
                                                 onClick={() => setCurrentPage(page)}
-                                                className={`w-9 h-9 rounded-xl text-[10px] font-black border transition-all ${currentPage === page ? 'bg-[#004A99] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                                className={`w-9 h-9 rounded-xl text-[10px] font-black border transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
                                             >
                                                 {page}
                                             </button>
@@ -1211,12 +1211,12 @@ const OfficialsRegistry = () => {
                                             </div>
 
                                             <div className="space-y-1 relative z-10">
-                                                <h3 className="text-2xl font-black text-slate-800 tracking-tighter leading-tight uppercase italic">
+                                                <h3 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic">
                                                     {item.first_name ? <>{item.first_name} <br /> {item.last_name}</> : <span className="text-rose-500 text-lg">VACANT POSITION</span>}
                                                 </h3>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
-                                                    className="text-[10px] font-black text-[#004A99] uppercase tracking-[0.2em] hover:text-blue-600 transition-colors text-left flex items-center gap-1"
+                                                    className="text-[10px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1"
                                                 >
                                                     {item.position_title || 'Candidate'}
                                                     <FiClock className="text-slate-400" size={10} />
@@ -1276,10 +1276,10 @@ const OfficialsRegistry = () => {
                                                 )}
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-blue-600 transition-colors">
+                                                <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-[#075985] transition-colors">
                                                     Full Profile <FiArrowRight size={14} />
                                                 </div>
-                                                <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-600 hover:text-white transition-all" title="View History">
+                                                <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#08315F] hover:text-white transition-all" title="View History">
                                                     <FiClock size={16} />
                                                 </button>
                                             </div>
@@ -1307,10 +1307,10 @@ const OfficialsRegistry = () => {
                                     <div className="p-10 relative z-10">
                                         <div className="flex justify-between items-start mb-8">
                                             <div className="space-y-1">
-                                                <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">
+                                                <div className="flex items-center gap-2 text-[#075985] font-black text-[10px] uppercase tracking-[0.2em] mb-2">
                                                     <FiClock /> Positional History
                                                 </div>
-                                                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
+                                                <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
                                                 <p className="text-slate-400 font-medium">{selectedPosition?.office || 'Department of Education'}</p>
                                             </div>
                                             <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border border-slate-100 transition-all">
@@ -1334,16 +1334,16 @@ const OfficialsRegistry = () => {
                                                     {incumbents.map((inc, i) => (
                                                         <div key={i} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-lg hover:shadow-blue-900/5 transition-all">
                                                             <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-500/20">
+                                                                <div className="w-10 h-10 rounded-xl bg-[#08315F] text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-500/20">
                                                                     {inc.first_name ? inc.first_name[0] : 'V'}{inc.last_name ? inc.last_name[0] : ''}
                                                                 </div>
                                                                 <div>
-                                                                    <div className="font-black text-slate-800 text-sm italic uppercase">{inc.first_name || 'VACANT'} {inc.last_name || ''}</div>
+                                                                    <div className="font-['Quicksand'] font-black text-[#08315F] text-sm italic uppercase">{inc.first_name || 'VACANT'} {inc.last_name || ''}</div>
                                                                     <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Incumbent Tenure ID: {inc.TLOid}</div>
                                                                 </div>
                                                             </div>
                                                             <div className="text-right">
-                                                                <div className="text-[10px] font-black text-[#CE1126] uppercase tracking-widest leading-none mb-1">Updated</div>
+                                                                <div className="text-[10px] font-black text-[#FBBF24] uppercase tracking-widest leading-none mb-1">Updated</div>
                                                                 <div className="text-[9px] font-bold text-slate-400 uppercase">{new Date(inc.tenure_date).toLocaleDateString()}</div>
                                                             </div>
                                                         </div>
@@ -1352,7 +1352,7 @@ const OfficialsRegistry = () => {
                                             )}
                                         </div>
 
-                                        <div className="mt-10 bg-blue-600 rounded-2xl p-6 text-white flex items-center justify-between">
+                                        <div className="mt-10 bg-[#08315F] rounded-2xl p-6 text-white flex items-center justify-between">
                                             <div className="flex items-center gap-4">
                                                 <FiInfo size={24} className="opacity-50" />
                                                 <p className="text-[10px] font-bold uppercase tracking-wide leading-relaxed">This ledger tracks movements based on administrative updates. Promoting or reassigning an official will append a new entry to this history.</p>
@@ -1386,8 +1386,8 @@ const OfficialsRegistry = () => {
                                     <div className="p-10">
                                         <div className="flex justify-between items-start mb-8">
                                             <div>
-                                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+                                                <span className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
+                                                <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
                                                     {adminAction === 'reassign'
                                                         ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
                                                         : `${adminAction}ING OFFICIAL`}
@@ -1416,7 +1416,7 @@ const OfficialsRegistry = () => {
                                                                         value={unassignedSearch}
                                                                         onChange={(e) => setUnassignedSearch(e.target.value)}
                                                                         placeholder="Search by name or employee number..."
-                                                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
                                                                     />
                                                                 </div>
                                                             </div>
@@ -1498,14 +1498,14 @@ const OfficialsRegistry = () => {
                                                     onChange={(e) => setJustification(e.target.value)}
                                                     placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide a detailed reason for this action...'}
                                                     rows={4}
-                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-600/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
+                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
                                                 />
                                             </div>
 
                                             <button
                                                 disabled={actionLoading}
                                                 onClick={handleAdminAction}
-                                                className="w-full py-5 bg-[#004A99] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
+                                                className="w-full py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
                                             >
                                                 {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
                                             </button>

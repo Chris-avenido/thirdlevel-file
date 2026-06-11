@@ -1,24 +1,25 @@
 const fs = require('fs');
-let code = fs.readFileSync('src/pages/OfficialProfiling.jsx', 'utf8');
+const path = require('path');
 
-code = code.replace(/<FiCalendar[\s\S]*?\/>/g, (match) => {
-    // Only remove the ones that have absolute right-x top-1/2
-    if (match.includes('absolute right-') && match.includes('-translate-y-1/2')) {
-        return '';
+function fixFile(filePath) {
+    if (!fs.existsSync(filePath)) return;
+    let content = fs.readFileSync(filePath, 'utf8');
+    
+    // Replace the class names with exact hex codes to guarantee rendering
+    content = content.replace(/insight-navy/g, '[#08315F]');
+    content = content.replace(/insight-blue/g, '[#075985]');
+    content = content.replace(/insight-gold/g, '[#FBBF24]');
+    
+    // Add the logo to NexusGate.jsx if it's that file
+    if (filePath.includes('NexusGate.jsx')) {
+        const target = '<h1 className="text-4xl font-heading font-black text-[#08315F] tracking-tight text-left leading-tight">';
+        const replacement = '<img src={logo} alt="InsightED Logo" className="h-16 w-auto mb-6" />\n                        <h1 className="text-4xl font-heading font-black text-[#08315F] tracking-tight text-left leading-tight">';
+        content = content.replace(target, replacement);
     }
-    return match;
-});
-
-code = code.replace(/<input type=\"month\" value=\{profile.performance_rating_1_period\} onChange=\{e => setP\('performance_rating_1_period', e\.target\.value\)\} className=\{\`\$\{inp\} pr-10\`\} \/>/g, 
-    '<ModernDatePicker isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP(\'performance_rating_1_period\', val)} className={inp} />');
     
-code = code.replace(/<input type=\"month\" value=\{profile.performance_rating_2_period\} onChange=\{e => setP\('performance_rating_2_period', e\.target\.value\)\} className=\{\`\$\{inp\} pr-10\`\} \/>/g, 
-    '<ModernDatePicker isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP(\'performance_rating_2_period\', val)} className={inp} />');
-    
-code = code.replace(/<input type=\"month\" value=\{profile.cespes_rating_1_period\} onChange=\{e => setP\('cespes_rating_1_period', e\.target\.value\)\} className=\{\`\$\{inp\} pr-10\`\} \/>/g, 
-    '<ModernDatePicker isMonthPicker value={profile.cespes_rating_1_period} onChange={val => setP(\'cespes_rating_1_period\', val)} className={inp} />');
+    fs.writeFileSync(filePath, content);
+    console.log('Fixed', filePath);
+}
 
-code = code.replace(/<input type=\"month\" value=\{profile.cespes_rating_2_period\} onChange=\{e => setP\('cespes_rating_2_period', e\.target\.value\)\} className=\{\`\$\{inp\} pr-10\`\} \/>/g, 
-    '<ModernDatePicker isMonthPicker value={profile.cespes_rating_2_period} onChange={val => setP(\'cespes_rating_2_period\', val)} className={inp} />');
-
-fs.writeFileSync('src/pages/OfficialProfiling.jsx', code);
+fixFile('e:/christop/staging/ui/src/pages/NexusGate.jsx');
+fixFile('e:/christop/staging/ui/src/pages/Gate.jsx');

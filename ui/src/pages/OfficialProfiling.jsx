@@ -71,18 +71,18 @@ const calculateDuration = (start, end) => {
     return { years, months };
 };
 
-const inp = 'w-full bg-white hover:bg-slate-50/50 border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400/80 shadow-none';
-const sel = 'w-full bg-white hover:bg-slate-50/50 border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all shadow-none';
+const inp = 'w-full bg-white hover:bg-transparent border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400/80 shadow-none';
+const sel = 'w-full bg-white hover:bg-transparent border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all shadow-none';
 
 const Field = ({ label, children }) => (
     <div className="flex flex-col gap-1.5 group">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest transition-colors duration-200 group-focus-within:text-[#0038A8]">{label}</label>
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest transition-colors duration-200 group-focus-within:text-[#08315F]">{label}</label>
         {children}
     </div>
 );
 
 const SectionLabel = ({ children }) => (
-    <p className="text-[11px] font-black uppercase tracking-[0.05em] text-[#0038A8] mb-4">{children}</p>
+    <p className="text-[11px] font-black uppercase tracking-[0.05em] text-[#08315F] mb-4">{children}</p>
 );
 
 const buildFullName = (profile) => {
@@ -163,7 +163,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder, className }) 
                                     setSearch(opt);
                                     setIsOpen(false);
                                 }}
-                                className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-transparent transition-colors"
                             >
                                 {opt}
                             </button>
@@ -245,7 +245,7 @@ const OfficialProfiling = () => {
                 }
             }
         });
-        
+
         // Use timeout to allow DOM to render before observing
         const timeoutId = setTimeout(() => {
             if (previewContainerRef.current) {
@@ -844,7 +844,7 @@ const OfficialProfiling = () => {
         setSaving(true);
         try {
             let fileToUpload = file;
-            
+
             // Compress 2x2 ID Picture
             if (docType === 'photo' && file.type.startsWith('image/')) {
                 fileToUpload = await compressImageClientSide(file, 800, 0.9);
@@ -893,7 +893,7 @@ const OfficialProfiling = () => {
     // ── LOADING ──
     if (status === 'loading') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans">
+            <div className="min-h-screen flex items-center justify-center bg-transparent font-['Quicksand']">
                 <div className="flex flex-col items-center gap-6">
                     <div className="w-14 h-14 border-[5px] border-[#0038A8] border-t-transparent rounded-full animate-spin" />
                     <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px]">Loading Your Profile...</p>
@@ -906,14 +906,14 @@ const OfficialProfiling = () => {
     if (status === 'not-found' || status === 'error') {
         return (
             <PageTransition>
-                <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 font-sans text-center">
-                    <div className="max-w-md w-full bg-white rounded-[3rem] p-12 shadow-2xl border border-slate-100">
+                <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8 font-['Quicksand'] text-center">
+                    <div className="max-w-md w-full bg-white border-2 border-[#08315F] rounded-[22px] p-12 shadow-none">
                         <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
                             <FiSearch size={40} />
                         </div>
-                        <h2 className="text-3xl font-black text-slate-900 italic tracking-tighter mb-4">Record Not Found</h2>
+                        <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] italic tracking-tighter mb-4">Record Not Found</h2>
                         <p className="text-sm font-bold text-slate-500 leading-relaxed mb-8">
-                            Your account email (<span className="text-[#0038A8]">{user?.email || 'unknown'}</span>) is not yet linked to an active Third Level Official record in the masterlist.
+                            Your account email (<span className="text-[#08315F]">{user?.email || 'unknown'}</span>) is not yet linked to an active Third Level Official record in the masterlist.
                         </p>
                         <p className="text-[11px] font-bold text-slate-400 italic mb-8">
                             {(user?.role === 'Third Level Applicant' || user?.role === 'Regional Office' || user?.role === 'School Division Office')
@@ -925,7 +925,7 @@ const OfficialProfiling = () => {
                                 <button
                                     onClick={handleInitializeRecord}
                                     disabled={saving}
-                                    className="w-full py-4 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-xl hover:bg-blue-900 transition-all flex items-center justify-center gap-3"
+                                    className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-xl hover:bg-[#08315F] transition-all flex items-center justify-center gap-3"
                                 >
                                     {saving ? <FiLoader className="animate-spin" /> : <FiPlus size={16} />} Initialize My Profile
                                 </button>
@@ -943,11 +943,8 @@ const OfficialProfiling = () => {
     // ── MAIN PROFILING FORM ──
     return (
         <PageTransition>
-            <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900 relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+            <div className="min-h-screen bg-transparent font-['Quicksand'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
                 {/* Ambient Decorative Background Elements */}
-                <div className="fixed top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-[#0038A8]/5 to-transparent pointer-events-none -z-10" />
-                <div className="fixed top-[200px] left-[5%] w-[450px] h-[450px] bg-blue-300/10 rounded-full blur-[120px] pointer-events-none -z-10" />
-                <div className="fixed top-[600px] right-[5%] w-[350px] h-[350px] bg-sky-200/10 rounded-full blur-[100px] pointer-events-none -z-10" />
 
                 {/* ── Mobile Sidebar Drawer ── */}
                 <AnimatePresence>
@@ -972,17 +969,17 @@ const OfficialProfiling = () => {
                                 {/* Header */}
                                 <div className="px-5 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-[#0038A8]/10 rounded-xl flex items-center justify-center text-[#0038A8]">
+                                        <div className="w-10 h-10 bg-[#08315F]/10 rounded-xl flex items-center justify-center text-[#08315F]">
                                             <FiUser size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-black text-slate-800 leading-tight">Talent Portal</p>
+                                            <p className="text-sm font-['Quicksand'] font-black text-[#08315F] leading-tight">Talent Portal</p>
                                             <p className="text-[10px] font-medium text-slate-400">Applicant Workspace</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                                        className="w-8 h-8 rounded-full bg-transparent hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
                                     >
                                         <FiX size={16} />
                                     </button>
@@ -1006,7 +1003,7 @@ const OfficialProfiling = () => {
                                                         }
                                                     }}
                                                     className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-left text-[12px] font-semibold transition-all
-                                                        ${active ? 'bg-[#0038A8] text-white shadow-md shadow-blue-900/20' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}
+                                                        ${active ? 'bg-[#08315F] text-white shadow-md shadow-blue-900/20' : 'text-slate-600 hover:bg-transparent hover:text-slate-800'}
                                                         ${isLocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                                                 >
                                                     <span className="flex items-center gap-3 min-w-0">
@@ -1031,8 +1028,9 @@ const OfficialProfiling = () => {
                 </AnimatePresence>
 
                 {/* ── Unified Premium Header Banner ── */}
-                <div className="bg-[#0a1e3f] text-white relative overflow-hidden shadow-lg border-b border-slate-200/10 py-6 px-6 lg:px-8 shrink-0">
-                    <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
+                <div className="bg-[#08315F] text-white relative overflow-hidden shadow-lg border-b border-[#0038A8]/20 py-6 px-6 lg:px-8 shrink-0">
+                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-[#075985] rounded-[100%] opacity-90 pointer-events-none transform rotate-12 z-0"></div>
+                    <div className="max-w-[1400px] mx-auto flex flex-col gap-6 relative z-10">
                         {/* Top Navigation Row */}
                         <div className="flex justify-between items-center w-full">
                             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-300 hover:text-white font-bold text-[10px] uppercase tracking-wider transition-all">
@@ -1072,7 +1070,7 @@ const OfficialProfiling = () => {
                                     </div>
                                     <p className="text-blue-200/80 text-xs md:text-sm font-medium mt-1 truncate flex items-center gap-2">
                                         <span>{profile.position_title || 'No position selected'}{profile.designation ? ` - ${profile.designation}` : ''}</span>
-                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[9px] md:text-[11px] font-medium">
                                         {TLOid && (
@@ -1096,7 +1094,7 @@ const OfficialProfiling = () => {
 
                             {/* Right: Progress Card */}
                             <div className="shrink-0">
-                                <div className="w-40 bg-[#09152b] border border-white/5 rounded-2xl p-3 shadow-lg flex flex-col justify-center">
+                                <div className="w-40 bg-[#075985] border border-white/5 rounded-2xl p-3 shadow-lg flex flex-col justify-center">
                                     <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest leading-none">Progress</p>
                                     <div className="flex items-center gap-3 mt-1">
                                         <p className="text-[#FCD116] font-black text-lg leading-none">{completeness}%</p>
@@ -1115,17 +1113,17 @@ const OfficialProfiling = () => {
                 </div>
 
                 {/* ── Body Content ── */}
-                <div className="w-full flex-1 flex flex-row lg:overflow-hidden bg-white">
+                <div className="w-full flex-1 flex flex-row lg:overflow-hidden bg-transparent">
                     {/* Sidebar (Desktop Only) */}
-                    <aside className="hidden lg:flex flex-col bg-white border-r border-slate-200/80 w-[260px] h-full shrink-0 overflow-y-auto pt-6">
+                    <aside className="hidden lg:flex flex-col bg-transparent border-r border-slate-200/80 w-[260px] h-full shrink-0 overflow-y-auto pt-6">
                         {/* Talent Portal Branding */}
                         <div className="px-5 pt-2 pb-4 border-b border-slate-100">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-[#0038A8]/10 rounded-xl flex items-center justify-center text-[#0038A8]">
+                                <div className="w-10 h-10 bg-[#08315F]/10 rounded-xl flex items-center justify-center text-[#08315F]">
                                     <FiUser size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-black text-slate-800 leading-tight">Talent Portal</p>
+                                    <p className="text-sm font-['Quicksand'] font-black text-[#08315F] leading-tight">Talent Portal</p>
                                     <p className="text-[10px] font-medium text-slate-400">Applicant Workspace</p>
                                 </div>
                             </div>
@@ -1145,7 +1143,7 @@ const OfficialProfiling = () => {
                                                 disabled={isLocked}
                                                 onClick={() => !isLocked && setTab(t.id)}
                                                 className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-left text-[11px] font-bold transition-all
-                                                    ${active ? 'bg-[#0038A8] text-white shadow-md shadow-blue-900/20' : 'text-slate-505 text-slate-500 hover:bg-slate-50 hover:text-slate-800'}
+                                                    ${active ? 'bg-[#08315F] text-white shadow-md shadow-blue-900/20' : 'text-slate-505 text-slate-500 hover:bg-transparent hover:text-slate-800'}
                                                     ${isLocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                                             >
                                                 <span className="flex items-center gap-3 min-w-0">
@@ -1170,26 +1168,26 @@ const OfficialProfiling = () => {
                     {/* Main Content Area */}
                     <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
                         {/* Mobile Toggle Bar */}
-                        <div className="lg:hidden flex items-center justify-between bg-white border-b border-slate-200 p-4 shadow-sm shrink-0">
+                        <div className="lg:hidden flex items-center justify-between bg-transparent border-b border-slate-200 p-4 shadow-sm shrink-0">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-[#0038A8]/10 flex items-center justify-center text-[#0038A8]">
+                                <div className="w-8 h-8 rounded-lg bg-[#08315F]/10 flex items-center justify-center text-[#08315F]">
                                     {React.createElement(TABS.find(t => t.id === tab)?.icon || FiUser, { size: 16 })}
                                 </div>
                                 <div>
                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Active Section</p>
-                                    <p className="text-xs font-black text-slate-800 uppercase tracking-wider mt-1">{TABS.find(t => t.id === tab)?.label}</p>
+                                    <p className="text-xs font-['Quicksand'] font-black text-[#08315F] uppercase tracking-wider mt-1">{TABS.find(t => t.id === tab)?.label}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-[#0038A8]/15 hover:bg-[#0038A8]/20 text-[#0038A8] text-xs font-black rounded-xl transition-all border border-[#0038A8]/10"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-[#08315F]/15 hover:bg-[#08315F]/20 text-[#08315F] text-xs font-black rounded-xl transition-all border border-[#0038A8]/10"
                             >
                                 <FiList size={14} /> Change Section
                             </button>
                         </div>
 
                         {/* Scrollable Form Area */}
-                        <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-[#f8fafc] pb-24">
+                        <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-transparent pb-24">
                             <div className="max-w-[1400px] w-full mx-auto">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                                     <div className="md:col-span-3">
@@ -1205,14 +1203,14 @@ const OfficialProfiling = () => {
                                                 {/* ── PERSONAL INFO ── */}
                                                 {tab === 'personal' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-100 shadow-sm space-y-8">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 lg:p-10 space-y-8 shadow-none">
                                                             <div>
                                                                 <SectionLabel>Personal Information</SectionLabel>
                                                                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
                                                                     {/* 2x2 ID Upload */}
                                                                     <div className="w-full lg:w-[132px] shrink-0">
                                                                         <Field label="2x2 ID Picture">
-                                                                            <div className="relative group/upload w-full aspect-square max-w-[132px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
+                                                                            <div className="relative group/upload w-full aspect-square max-w-[132px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
                                                                                 <input
                                                                                     type="file"
                                                                                     accept="image/*"
@@ -1231,7 +1229,7 @@ const OfficialProfiling = () => {
                                                                                         </div>
                                                                                     </>
                                                                                 ) : (
-                                                                                    <div className="flex flex-col items-center justify-center p-4 text-slate-400 group-hover/upload:text-[#0038A8] transition-colors">
+                                                                                    <div className="flex flex-col items-center justify-center p-4 text-slate-400 group-hover/upload:text-[#08315F] transition-colors">
                                                                                         <FiUpload size={24} className={saving ? 'animate-bounce' : 'mb-3'} />
                                                                                         <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight mt-1">
                                                                                             {saving ? 'Processing...' : 'Upload Photo'}
@@ -1242,7 +1240,7 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                         </Field>
                                                                     </div>
-                                                                    
+
                                                                     <div className="flex-1 w-full space-y-4">
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                                                                             <Field label="First Name"><input type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
@@ -1264,7 +1262,7 @@ const OfficialProfiling = () => {
                                                                                 </div>
                                                                             </Field>
                                                                             <Field label="Age (auto-computed)">
-                                                                                <div className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-500 min-h-[38px] flex items-center justify-center">
+                                                                                <div className="w-full bg-transparent border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-500 min-h-[38px] flex items-center justify-center">
                                                                                     {profile.age || '—'}
                                                                                 </div>
                                                                             </Field>
@@ -1329,7 +1327,7 @@ const OfficialProfiling = () => {
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => setP('is_oic', !profile.is_oic)}
-                                                                                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${profile.is_oic ? 'bg-[#0038A8]' : 'bg-slate-200'}`}
+                                                                                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-200'}`}
                                                                             >
                                                                                 <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
                                                                             </button>
@@ -1341,7 +1339,7 @@ const OfficialProfiling = () => {
                                                                     <Field label="Date of Present Position (Appointment Date)">
                                                                         <div className="relative">
                                                                             <ModernDatePicker value={profile.date_of_assignment} onChange={val => setP('date_of_assignment', val)} className={inp} />
-                                                                            
+
                                                                         </div>
                                                                     </Field>
                                                                 </div>
@@ -1367,7 +1365,7 @@ const OfficialProfiling = () => {
                                                 {/* ── ELIGIBILITY ── */}
                                                 {tab === 'eligibility' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel>EMT Eligibility</SectionLabel>
                                                             <Field label="Are you an EMT Passer?">
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
@@ -1377,7 +1375,7 @@ const OfficialProfiling = () => {
                                                                             onClick={() => setP('emt_passer', opt.val)}
                                                                             className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
                                                                         ${profile.emt_passer === opt.val
-                                                                                    ? (opt.val ? 'bg-[#0038A8] text-white shadow-sm shadow-blue-900/10' : 'bg-[#CE1126] text-white shadow-sm shadow-red-900/10')
+                                                                                    ? (opt.val ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
                                                                                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
                                                                         >
                                                                             {opt.label}
@@ -1385,7 +1383,7 @@ const OfficialProfiling = () => {
                                                                     ))}
                                                                     <button
                                                                         onClick={() => setProfile(p => ({ ...p, emt_passer: null, emt_date: '' }))}
-                                                                        className="px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
+                                                                        className="px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 hover:bg-transparent transition-all"
                                                                     >
                                                                         Clear
                                                                     </button>
@@ -1395,7 +1393,7 @@ const OfficialProfiling = () => {
                                                                 <Field label="Date passed EMT">
                                                                     <div className="relative">
                                                                         <ModernDatePicker value={profile.emt_date} onChange={val => setP('emt_date', val)} className={inp} />
-                                                                        
+
                                                                     </div>
                                                                 </Field>
                                                             )}
@@ -1425,7 +1423,7 @@ const OfficialProfiling = () => {
                                                             <Field label="Date of Conferment (if applicable)">
                                                                 <div className="relative">
                                                                     <ModernDatePicker value={profile.ces_conferment_date} onChange={val => setP('ces_conferment_date', val)} className={inp} />
-                                                                    
+
                                                                 </div>
                                                             </Field>
                                                         </div>
@@ -1437,29 +1435,29 @@ const OfficialProfiling = () => {
                                                     <div className="space-y-6">
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                                                             <div className="md:col-span-2">
-                                                                <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm h-full">
+                                                                <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none h-full">
                                                                     <SectionLabel>Managerial Experience</SectionLabel>
-                                                                    <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                                                                    <div className="bg-[#F4F8FB]/50 p-6 rounded-3xl border border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                                                                         <div>
-                                                                            <p className="text-[10px] font-black text-[#0038A8] uppercase tracking-widest mb-1">Total Managerial Experience</p>
+                                                                            <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest mb-1">Total Managerial Experience</p>
                                                                             <p className="text-[9px] font-bold text-slate-400 italic leading-tight">Automatically computed based on your current and previous positions.</p>
                                                                         </div>
                                                                         <div className="bg-white px-6 py-3 rounded-2xl border-2 border-blue-200 shadow-sm">
-                                                                            <p className="text-xl font-black text-[#0038A8] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
+                                                                            <p className="text-xl font-black text-[#08315F] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             {/* SIDEBAR: CAREER PROGRESSION */}
                                                             <div className="md:col-span-1">
-                                                                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40">
+                                                                <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
                                                                     <div className="flex items-center gap-3 mb-8">
-                                                                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                                                        <div className="w-10 h-10 bg-[#F4F8FB] text-[#075985] rounded-2xl flex items-center justify-center">
                                                                             <FiClock size={20} />
                                                                         </div>
                                                                         <div>
-                                                                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight italic leading-none">Career Progression</h3>
+                                                                            <h3 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
                                                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Professional Journey</p>
                                                                         </div>
                                                                     </div>
@@ -1473,22 +1471,22 @@ const OfficialProfiling = () => {
                                                                                 <div className="w-6 h-6 border-2 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
                                                                             </div>
                                                                         ) : history.length === 0 ? (
-                                                                            <div className="py-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                                                            <div className="py-12 text-center bg-transparent rounded-3xl border border-dashed border-slate-200">
                                                                                 <FiClock className="mx-auto text-slate-200 mb-2" size={24} />
                                                                                 <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Initial Entry Record</p>
                                                                             </div>
                                                                         ) : (
                                                                             history.map((item, idx) => (
                                                                                 <div key={idx} className="flex gap-6 relative z-10">
-                                                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0 ${idx === 0 ? 'bg-blue-600 text-white shadow-blue-500/30' : 'bg-slate-200 text-slate-500'}`}>
+                                                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0 ${idx === 0 ? 'bg-[#08315F] text-white shadow-blue-500/30' : 'bg-slate-200 text-slate-500'}`}>
                                                                                         {idx === 0 ? <FiAward size={14} /> : <FiActivity size={14} />}
                                                                                     </div>
                                                                                     <div className="flex-1 pt-1">
                                                                                         <div className="flex justify-between items-start">
-                                                                                            <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-tight leading-none italic">{item.position_title}</h4>
-                                                                                            <span className="text-[8px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
+                                                                                            <h4 className="text-[11px] font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
+                                                                                            <span className="text-[8px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
                                                                                         </div>
-                                                                                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
+                                                                                        <p className="text-[10px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
                                                                                         {item.previous_incumbent && (
                                                                                             <p className="text-[9px] font-bold text-slate-400 mt-1 flex items-center gap-1">
                                                                                                 <FiChevronLeft size={10} className="rotate-180" />
@@ -1504,14 +1502,14 @@ const OfficialProfiling = () => {
                                                             </div>
                                                         </div>
 
-                                                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-                                                            <SectionLabel color="#0038A8">Previous Positions Held</SectionLabel>
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
+                                                            <SectionLabel color="#08315F">Previous Positions Held</SectionLabel>
                                                             <div className="space-y-3">
                                                                 <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-3 px-2">
                                                                     {['Position', 'Office / Division', 'From', 'To', 'OIC?', ''].map(h => <span key={h} className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{h}</span>)}
                                                                 </div>
                                                                 {prevPositions.map((pos, idx) => (
-                                                                    <motion.div key={pos.position_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-slate-50 p-4 md:p-6 xl:p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
+                                                                    <motion.div key={pos.position_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
                                                                             <SearchableSelect value={pos.position_name || ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: val } : x))} options={PREVIOUS_POSITION_OPTIONS} placeholder="Position" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm" />
@@ -1524,27 +1522,27 @@ const OfficialProfiling = () => {
                                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">From Date</span>
                                                                             <div className="relative">
                                                                                 <ModernDatePicker value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                
+
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
                                                                             <div className="relative">
                                                                                 <ModernDatePicker value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                
+
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">OIC Status</span>
-                                                                            <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, is_oic: !x.is_oic } : x))} className={`flex items-center justify-center gap-1 text-[9px] font-black uppercase py-2 px-1 rounded-xl transition-all h-[38px] ${pos.is_oic ? 'bg-[#FCD116] text-[#0038A8]' : 'bg-white border border-slate-200 text-slate-400 shadow-sm'}`}>{pos.is_oic ? <FiToggleRight size={14} /> : <FiToggleLeft size={14} />} OIC</button>
+                                                                            <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, is_oic: !x.is_oic } : x))} className={`flex items-center justify-center gap-1 text-[9px] font-black uppercase py-2 px-1 rounded-xl transition-all h-[38px] ${pos.is_oic ? 'bg-[#FCD116] text-[#08315F]' : 'bg-white border border-slate-200 text-slate-400 shadow-sm'}`}>{pos.is_oic ? <FiToggleRight size={14} /> : <FiToggleLeft size={14} />} OIC</button>
                                                                         </div>
                                                                         <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
                                                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden md:invisible">Action</span>
-                                                                            <button onClick={() => handleRemovePosition(pos)} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#CE1126]/10 text-[#CE1126] rounded-xl hover:bg-[#CE1126] hover:text-white transition-all"><FiTrash2 size={14} /></button>
+                                                                            <button onClick={() => handleRemovePosition(pos)} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
                                                                         </div>
                                                                     </motion.div>
                                                                 ))}
-                                                                <button onClick={handleAddPosition} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#0038A8] transition-all flex items-center justify-center gap-2 mt-2">
+                                                                <button onClick={handleAddPosition} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
                                                                     <FiPlus size={14} /> Add Position
                                                                 </button>
                                                             </div>
@@ -1555,7 +1553,7 @@ const OfficialProfiling = () => {
                                                 {/* ── EDUCATION ── */}
                                                 {tab === 'education' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel>Educational Attainment</SectionLabel>
                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                                                 <Field label="Highest Educational Attainment">
@@ -1598,13 +1596,13 @@ const OfficialProfiling = () => {
                                                         </div>
 
                                                         {/* Performance Section */}
-                                                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <SectionLabel color="#0038A8">Performance Ratings</SectionLabel>
 
                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                                 {/* Rating 1 */}
-                                                                <div className="p-6 bg-[#0038A8]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
-                                                                    <p className="text-[10px] font-black text-[#0038A8] uppercase tracking-widest">Latest Rating (1st)</p>
+                                                                <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Latest Rating (1st)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
                                                                             <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" className={inp} />
@@ -1612,15 +1610,15 @@ const OfficialProfiling = () => {
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
                                                                                 <ModernDatePicker isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP('performance_rating_1_period', val)} className={inp} />
-                                                                                
+
                                                                             </div>
                                                                         </Field>
                                                                     </div>
                                                                 </div>
 
                                                                 {/* Rating 2 */}
-                                                                <div className="p-6 bg-[#0038A8]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
-                                                                    <p className="text-[10px] font-black text-[#0038A8] uppercase tracking-widest">Previous Rating (2nd)</p>
+                                                                <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Previous Rating (2nd)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
                                                                             <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_2} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_2', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_2', n.toString()); } }} placeholder="4.750" className={inp} />
@@ -1628,16 +1626,16 @@ const OfficialProfiling = () => {
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
                                                                                 <ModernDatePicker isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP('performance_rating_2_period', val)} className={inp} />
-                                                                                
+
                                                                             </div>
                                                                         </Field>
                                                                     </div>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="p-6 bg-blue-50/30 rounded-[2rem] border border-blue-100 space-y-5">
+                                                            <div className="p-6 bg-[#F4F8FB]/30 rounded-[2rem] border border-blue-100 space-y-5">
                                                                 <div className="flex items-center gap-3">
-                                                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">CESPES Rating</p>
+                                                                    <p className="text-[10px] font-black text-[#075985] uppercase tracking-widest">CESPES Rating</p>
                                                                     <span className="text-[9px] font-bold text-blue-400 italic flex items-center gap-1"><FiInfo size={11} /> Career Executive Service Performance Evaluation System</span>
                                                                 </div>
 
@@ -1666,7 +1664,7 @@ const OfficialProfiling = () => {
                                                                                     onChange={e => setP('cespes_rating_1_period', e.target.value)}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
-                                                                                
+
                                                                             </div>
                                                                         </Field>
                                                                     </div>
@@ -1697,7 +1695,7 @@ const OfficialProfiling = () => {
                                                                                     onChange={e => setP('cespes_rating_2_period', e.target.value)}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
-                                                                                
+
                                                                             </div>
                                                                         </Field>
                                                                     </div>
@@ -1706,7 +1704,7 @@ const OfficialProfiling = () => {
                                                         </div>
 
                                                         {/* Recognition Section */}
-                                                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <SectionLabel color="#FCD116">Notable Achievements</SectionLabel>
                                                             <Field label="Awards / Recognitions / Notable Achievements (No Abbreviations)">
                                                                 <textarea
@@ -1714,7 +1712,7 @@ const OfficialProfiling = () => {
                                                                     onChange={e => setP('notable_achievements', e.target.value)}
                                                                     rows={5}
                                                                     placeholder="Please list your most significant awards, recognitions, and professional milestones."
-                                                                    className="w-full bg-slate-50/50 hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50"
+                                                                    className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50"
                                                                 />
                                                             </Field>
                                                         </div>
@@ -1724,17 +1722,17 @@ const OfficialProfiling = () => {
                                                 {/* ── PROFESSIONAL DEVELOPMENT TRAININGS ── */}
                                                 {tab === 'trainings' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel color="#0038A8">Professional Development Trainings</SectionLabel>
 
-                                                            <div className="bg-blue-50/40 rounded-[2rem] p-5 border border-blue-100 flex items-center gap-3">
+                                                            <div className="bg-[#F4F8FB]/40 rounded-[2rem] p-5 border border-blue-100 flex items-center gap-3">
                                                                 <FiInfo size={16} className="text-blue-400 shrink-0" />
-                                                                <p className="text-[10px] font-bold text-blue-600">List all relevant trainings, seminars, and professional development programs attended. Include the total number of training hours accumulated.</p>
+                                                                <p className="text-[10px] font-bold text-[#075985]">List all relevant trainings, seminars, and professional development programs attended. Include the total number of training hours accumulated.</p>
                                                             </div>
 
                                                             {/* Total Training Hours */}
                                                             <Field label="Total Number of Training Hours (Auto-computed)">
-                                                                <div className="bg-slate-100 rounded-2xl py-3 px-5 text-sm font-black text-[#0038A8] border border-slate-200">
+                                                                <div className="bg-slate-100 rounded-2xl py-3 px-5 text-sm font-black text-[#08315F] border border-slate-200">
                                                                     {profile.total_training_hours || '0'} Hours
                                                                 </div>
                                                             </Field>
@@ -1747,17 +1745,17 @@ const OfficialProfiling = () => {
                                                                     ))}
                                                                 </div>
                                                                 {trainings.map((tr, idx) => (
-                                                                    <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_160px_100px_44px] gap-3 items-center bg-slate-50/40 hover:bg-slate-50 p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
+                                                                    <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_160px_100px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
                                                                         <input type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
                                                                         <div className="relative">
                                                                             <ModernDatePicker value={tr.date_completed ? tr.date_completed.split('T')[0] : ''} onChange={val => setTrainings(t => t.map((x, i) => i === idx ? { ...x, date_completed: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                            
+
                                                                         </div>
                                                                         <input type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Hours" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
-                                                                        <button onClick={() => handleRemoveTraining(tr)} className="w-10 h-10 flex items-center justify-center bg-[#CE1126]/10 text-[#CE1126] rounded-xl hover:bg-[#CE1126] hover:text-white transition-all"><FiTrash2 size={14} /></button>
+                                                                        <button onClick={() => handleRemoveTraining(tr)} className="w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
                                                                     </motion.div>
                                                                 ))}
-                                                                <button onClick={handleAddTraining} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#0038A8] transition-all flex items-center justify-center gap-2 mt-2">
+                                                                <button onClick={handleAddTraining} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
                                                                     <FiPlus size={14} /> Add Training
                                                                 </button>
                                                             </div>
@@ -1768,9 +1766,9 @@ const OfficialProfiling = () => {
                                                 {/* ── DOCUMENTS ── */}
                                                 {tab === 'documents' && (
                                                     <div className="space-y-6">
-                                                        <div className="flex items-start gap-4 p-6 bg-blue-50 rounded-[2rem] border border-blue-100">
-                                                            <FiInfo className="text-[#0038A8] mt-1 shrink-0" size={18} />
-                                                            <p className="text-[11px] font-bold text-blue-700 leading-relaxed">
+                                                        <div className="flex items-start gap-4 p-6 bg-[#F4F8FB] rounded-[2rem] border border-blue-100">
+                                                            <FiInfo className="text-[#08315F] mt-1 shrink-0" size={18} />
+                                                            <p className="text-[11px] font-bold text-[#08315F] leading-relaxed">
                                                                 Document uploads are processed by the Personnel Division. Files will be stored securely in the system once upload integration is completed. The reference IDs below track which documents have been linked to your profile.
                                                             </p>
                                                         </div>
@@ -1781,11 +1779,11 @@ const OfficialProfiling = () => {
                                                                 { id: 'profile_ppt', label: 'Accomplished Profile (PPT Format)', note: 'PowerPoint format required', accept: '.ppt,.pptx' },
                                                                 { id: 'service_records', label: 'Service Records', note: 'PDF — verifies previous positions', accept: '.pdf' },
                                                             ].map(({ id, label, note, accept }) => (
-                                                                <div key={id} className="flex flex-col gap-3 p-6 bg-slate-50/40 hover:bg-slate-50 border border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md">
+                                                                <div key={id} className="flex flex-col gap-3 p-6 bg-slate-50/40 hover:bg-transparent border border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md">
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#0038A8]"><FiFileText size={18} /></div>
+                                                                        <div className="w-10 h-10 bg-transparent rounded-xl flex items-center justify-center text-[#08315F]"><FiFileText size={18} /></div>
                                                                         <div className="flex-1">
-                                                                            <p className="text-[11px] font-black text-slate-800 leading-tight">{label}</p>
+                                                                            <p className="text-[11px] font-['Quicksand'] font-black text-[#08315F] leading-tight">{label}</p>
                                                                             <p className="text-[9px] font-bold text-slate-400 italic mt-0.5">{note}</p>
                                                                         </div>
                                                                         {profile[`${id}_binary_id`] && (
@@ -1804,7 +1802,7 @@ const OfficialProfiling = () => {
                                                                             }}
                                                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                                                         />
-                                                                        <div className={`flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile[`${id}_binary_id`] ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#0038A8]'}`}>
+                                                                        <div className={`flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile[`${id}_binary_id`] ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
                                                                             <FiUpload size={14} className={saving ? 'animate-bounce' : ''} />
                                                                             <span className="text-[10px] font-black uppercase tracking-widest">
                                                                                 {saving ? 'Processing...' : profile[`${id}_binary_id`] ? 'Replace Document' : 'Upload Document'}
@@ -1829,12 +1827,12 @@ const OfficialProfiling = () => {
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <Field label="Pending Administrative Case/s (Type 'Not Applicable' if none)">
-                                                                <textarea value={profile.pending_admin_case} onChange={e => setP('pending_admin_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none. Otherwise, describe the nature and status of the case." className="w-full bg-slate-50/50 hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
+                                                                <textarea value={profile.pending_admin_case} onChange={e => setP('pending_admin_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none. Otherwise, describe the nature and status of the case." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
                                                             </Field>
                                                             <Field label="Ombudsman / Sandiganbayan / CSC Case/s (Type 'Not Applicable' if none)">
-                                                                <textarea value={profile.ombudsman_case} onChange={e => setP('ombudsman_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none." className="w-full bg-slate-50 border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                                <textarea value={profile.ombudsman_case} onChange={e => setP('ombudsman_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
                                                             </Field>
                                                         </div>
                                                     </div>
@@ -1843,7 +1841,7 @@ const OfficialProfiling = () => {
                                                 {/* ── APPLICATION ── */}
                                                 {tab === 'application' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-5">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <div className="flex items-center justify-between">
                                                                 <SectionLabel color="#0038A8">Apply for Vacant Position</SectionLabel>
                                                                 {applicationStatus === 'under_review' && (
@@ -1854,17 +1852,17 @@ const OfficialProfiling = () => {
                                                             </div>
 
                                                             <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-2xl">
-                                                                Please select the vacant position you wish to apply for. Your profile must be <span className="text-[#0038A8] font-bold">100% complete</span> and certified before you can submit your application.
+                                                                Please select the vacant position you wish to apply for. Your profile must be <span className="text-[#08315F] font-bold">100% complete</span> and certified before you can submit your application.
                                                             </p>
 
                                                             <div className="grid grid-cols-1 gap-4">
                                                                 {vacanciesLoading ? (
-                                                                    <div className="py-20 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
-                                                                        <FiLoader className="animate-spin mx-auto text-blue-600 mb-4" size={32} />
+                                                                    <div className="py-20 text-center bg-transparent rounded-[2rem] border-2 border-dashed border-slate-200">
+                                                                        <FiLoader className="animate-spin mx-auto text-[#075985] mb-4" size={32} />
                                                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fetching Available Vacancies...</p>
                                                                     </div>
                                                                 ) : vacancies.length === 0 ? (
-                                                                    <div className="py-20 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                                                                    <div className="py-20 text-center bg-transparent rounded-[2rem] border-2 border-dashed border-slate-200">
                                                                         <FiAlertTriangle className="mx-auto text-amber-400 mb-4" size={32} />
                                                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Vacant Positions Found</p>
                                                                     </div>
@@ -1874,25 +1872,25 @@ const OfficialProfiling = () => {
                                                                             key={v.TLOid}
                                                                             disabled={applicationStatus === 'under_review'}
                                                                             onClick={() => setTargetVacancyId(v.TLOid)}
-                                                                            className={`w-full flex items-center justify-between p-6 rounded-[2rem] border-2 transition-all text-left group ${targetVacancyId === v.TLOid ? 'bg-blue-50 border-[#0038A8] shadow-lg shadow-blue-900/10' : 'bg-white border-slate-100 hover:border-slate-200'}`}
+                                                                            className={`w-full flex items-center justify-between p-6 rounded-[2rem] border-2 transition-all text-left group ${targetVacancyId === v.TLOid ? 'bg-[#F4F8FB] border-[#0038A8] shadow-lg shadow-blue-900/10' : 'bg-white border-slate-100 hover:border-slate-200'}`}
                                                                         >
                                                                             <div className="flex items-center gap-5">
-                                                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${targetVacancyId === v.TLOid ? 'bg-[#0038A8] text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100'}`}>
+                                                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${targetVacancyId === v.TLOid ? 'bg-[#08315F] text-white' : 'bg-transparent text-slate-400 group-hover:bg-slate-100'}`}>
                                                                                     <FiBriefcase size={20} />
                                                                                 </div>
                                                                                 <div>
-                                                                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight italic flex items-center gap-2">
+                                                                                    <h4 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic flex items-center gap-2">
                                                                                         <span>{v.position_title}</span>
-                                                                                        {v.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                        {v.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                     </h4>
                                                                                     <div className="flex items-center gap-3 mt-1">
-                                                                                        <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">{v.office}</span>
+                                                                                        <span className="text-[9px] font-bold text-[#075985] uppercase tracking-widest">{v.office}</span>
                                                                                         <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
                                                                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{v.strand}</span>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
-                                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${targetVacancyId === v.TLOid ? 'bg-[#0038A8] border-[#0038A8] text-white' : 'border-slate-100 text-transparent'}`}>
+                                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${targetVacancyId === v.TLOid ? 'bg-[#08315F] border-[#0038A8] text-white' : 'border-slate-100 text-transparent'}`}>
                                                                                 <FiCheckCircle size={14} />
                                                                             </div>
                                                                         </button>
@@ -1916,7 +1914,7 @@ const OfficialProfiling = () => {
                                                                                         return (
                                                                                             <>
                                                                                                 <span>{vac.position_title}</span>
-                                                                                                {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                             </>
                                                                                         );
                                                                                     })()}
@@ -1927,7 +1925,7 @@ const OfficialProfiling = () => {
 
                                                                         <button
                                                                             onClick={() => setTab('summary')}
-                                                                            className="w-full lg:w-auto px-10 py-4 bg-white text-[#0038A8] font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3"
+                                                                            className="w-full lg:w-auto px-10 py-4 bg-white text-[#08315F] font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3"
                                                                         >
                                                                             Proceed to Final Step <FiArrowRight size={14} />
                                                                         </button>
@@ -1943,11 +1941,11 @@ const OfficialProfiling = () => {
                                                     <div className="space-y-8">
 
                                                         {/* ── Profile Summary Card ── */}
-                                                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-8">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-8">
                                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4 relative">
                                                                 <SectionLabel>Profile Summary</SectionLabel>
                                                                 <div className="relative">
-                                                                    <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#0038A8] px-5 py-2.5 rounded-full text-white hover:bg-blue-800 font-black text-[10px] uppercase tracking-widest transition-all shadow-md hover:shadow-lg w-max relative z-[51]">
+                                                                    <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#08315F] px-5 py-2.5 rounded-full text-white hover:bg-blue-800 font-black text-[10px] uppercase tracking-widest transition-all shadow-md hover:shadow-lg w-max relative z-[51]">
                                                                         <FiDownload size={14} /> Export Profile
                                                                     </button>
                                                                     <AnimatePresence>
@@ -1965,221 +1963,221 @@ const OfficialProfiling = () => {
                                                                                     className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
                                                                                     onClick={e => e.stopPropagation()}
                                                                                 >
-                                                                                {/* Sidebar Options */}
-                                                                                <div className="w-full lg:w-64 bg-slate-50 border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
-                                                                                    <div className="flex items-center justify-between mb-4">
-                                                                                        <div>
-                                                                                            <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight italic">Export Options</h2>
-                                                                                        </div>
-                                                                                        <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm">
-                                                                                            <FiX size={16} />
-                                                                                        </button>
-                                                                                    </div>
-                                                                                    {[
-                                                                                        { id: 'csv', label: 'Data Export (CSV)', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-                                                                                        { id: 'pdf', label: 'Document (PDF)', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
-                                                                                        { id: 'ppt', label: 'Presentation (PPT)', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-                                                                                    ].map(opt => (
-                                                                                        <button
-                                                                                            key={opt.id}
-                                                                                            onClick={() => setSelectedExportType(opt.id)}
-                                                                                            className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                                                                                        >
-                                                                                            <opt.icon size={16} className={selectedExportType === opt.id ? opt.color : 'text-slate-400'} />
+                                                                                    {/* Sidebar Options */}
+                                                                                    <div className="w-full lg:w-64 bg-transparent border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
+                                                                                        <div className="flex items-center justify-between mb-4">
                                                                                             <div>
-                                                                                                <p className={`text-[10px] font-black uppercase tracking-tight ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
+                                                                                                <h2 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
                                                                                             </div>
-                                                                                        </button>
-                                                                                    ))}
-
-                                                                                    <div className="mt-auto pt-6">
-                                                                                        <button
-                                                                                            onClick={() => {
-                                                                                                if (selectedExportType === 'csv') generateCSV();
-                                                                                                if (selectedExportType === 'pdf') generatePDF();
-                                                                                                if (selectedExportType === 'ppt') generatePPT();
-                                                                                            }}
-                                                                                            disabled={exporting}
-                                                                                            className="w-full py-4 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                                                        >
-                                                                                            {exporting ? <FiLoader className="animate-spin" size={16} /> : <FiDownload size={16} />}
-                                                                                            {exporting ? 'Generating...' : `Download`}
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                {/* Preview Area */}
-                                                                                <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
-                                                                                    {selectedExportType === 'csv' && (
-                                                                                        <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                                                                            <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
-                                                                                                <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
-                                                                                                <span className="text-[11px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
-                                                                                            </div>
-                                                                                            <div className="p-0 overflow-x-auto custom-scrollbar">
-                                                                                                <table className="w-full text-left border-collapse text-[11px] font-mono whitespace-nowrap">
-                                                                                                    <thead className="bg-slate-50 sticky top-0">
-                                                                                                        <tr className="border-b border-slate-200 text-slate-500">
-                                                                                                            <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
-                                                                                                        </tr>
-                                                                                                    </thead>
-                                                                                                    <tbody>
-                                                                                                        {[
-                                                                                                            ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
-                                                                                                            ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
-                                                                                                            ['Civil Status', profile.civil_status], ['Position Title', profile.position_title], ['Designation', profile.designation],
-                                                                                                            ['Permanent Address', profile.permanent_address], ['CES Stage', profile.ces_stage],
-                                                                                                            ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
-                                                                                                            ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
-                                                                                                        ].map(([k, v], i) => (
-                                                                                                            <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
-                                                                                                                <td className="px-4 py-3 font-bold text-slate-500 border-r border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
-                                                                                                            </tr>
-                                                                                                        ))}
-                                                                                                    </tbody>
-                                                                                                </table>
-                                                                                            </div>
+                                                                                            <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm">
+                                                                                                <FiX size={16} />
+                                                                                            </button>
                                                                                         </div>
-                                                                                    )}
+                                                                                        {[
+                                                                                            { id: 'csv', label: 'Data Export (CSV)', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+                                                                                            { id: 'pdf', label: 'Document (PDF)', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
+                                                                                            { id: 'ppt', label: 'Presentation (PPT)', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+                                                                                        ].map(opt => (
+                                                                                            <button
+                                                                                                key={opt.id}
+                                                                                                onClick={() => setSelectedExportType(opt.id)}
+                                                                                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                                                                                            >
+                                                                                                <opt.icon size={16} className={selectedExportType === opt.id ? opt.color : 'text-slate-400'} />
+                                                                                                <div>
+                                                                                                    <p className={`text-[10px] font-black uppercase tracking-tight ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
+                                                                                                </div>
+                                                                                            </button>
+                                                                                        ))}
 
-                                                                                    {selectedExportType === 'pdf' && (
-                                                                                        <div className="w-full flex justify-center custom-scrollbar overflow-auto pb-10">
-                                                                                            <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
-                                                                                                <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-sans text-black" id="pdf-preview-content">
-                                                                                                <div className="flex justify-between items-start mb-8">
-                                                                                                    <div className="flex gap-6 items-center">
-                                                                                                        <img src={newLogo} alt="Logo" className="w-24 h-24 object-contain" />
-                                                                                                        <div>
-                                                                                                            <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
-                                                                                                            <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
-                                                                                                                <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                {profile.office ? `, ${profile.office}` : ''}
-                                                                                                            </h2>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                    <div className="flex gap-6 items-start">
-                                                                                                        <div className="text-center w-56">
-                                                                                                            <div className="bg-red-700 text-white font-bold py-1.5 text-xs uppercase tracking-wider">Position Applied For</div>
-                                                                                                            <div className="border border-red-700 py-2 text-sm font-bold min-h-[44px] flex items-center justify-center text-slate-900 bg-white">
-                                                                                                                {(() => {
-                                                                                                                    const vac = vacancies.find(v => v.TLOid === targetVacancyId);
-                                                                                                                    if (!vac) return '—';
-                                                                                                                    return (
-                                                                                                                        <div className="flex items-center gap-2">
-                                                                                                                            <span>{vac.position_title}</span>
-                                                                                                                            {vac.is_oic && <span className="px-1.5 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                        </div>
-                                                                                                                    );
-                                                                                                                })()}
+                                                                                        <div className="mt-auto pt-6">
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    if (selectedExportType === 'csv') generateCSV();
+                                                                                                    if (selectedExportType === 'pdf') generatePDF();
+                                                                                                    if (selectedExportType === 'ppt') generatePPT();
+                                                                                                }}
+                                                                                                disabled={exporting}
+                                                                                                className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                            >
+                                                                                                {exporting ? <FiLoader className="animate-spin" size={16} /> : <FiDownload size={16} />}
+                                                                                                {exporting ? 'Generating...' : `Download`}
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {/* Preview Area */}
+                                                                                    <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
+                                                                                        {selectedExportType === 'csv' && (
+                                                                                            <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                                                                                <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
+                                                                                                    <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
+                                                                                                    <span className="text-[11px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
+                                                                                                </div>
+                                                                                                <div className="p-0 overflow-x-auto custom-scrollbar">
+                                                                                                    <table className="w-full text-left border-collapse text-[11px] font-mono whitespace-nowrap">
+                                                                                                        <thead className="bg-transparent sticky top-0">
+                                                                                                            <tr className="border-b border-slate-200 text-slate-500">
+                                                                                                                <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
+                                                                                                            </tr>
+                                                                                                        </thead>
+                                                                                                        <tbody>
+                                                                                                            {[
+                                                                                                                ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
+                                                                                                                ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
+                                                                                                                ['Civil Status', profile.civil_status], ['Position Title', profile.position_title], ['Designation', profile.designation],
+                                                                                                                ['Permanent Address', profile.permanent_address], ['CES Stage', profile.ces_stage],
+                                                                                                                ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
+                                                                                                                ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
+                                                                                                            ].map(([k, v], i) => (
+                                                                                                                <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
+                                                                                                                    <td className="px-4 py-3 font-bold text-slate-500 border-r border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
+                                                                                                                </tr>
+                                                                                                            ))}
+                                                                                                        </tbody>
+                                                                                                    </table>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+
+                                                                                        {selectedExportType === 'pdf' && (
+                                                                                            <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border border-slate-200 shadow-inner hide-scrollbar">
+                                                                                                <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
+                                                                                                    <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Quicksand'] text-black" id="pdf-preview-content">
+                                                                                                        <div className="flex justify-between items-start mb-8">
+                                                                                                            <div className="flex gap-6 items-center">
+                                                                                                                <img src={newLogo} alt="Logo" className="w-24 h-24 object-contain" />
+                                                                                                                <div>
+                                                                                                                    <h1 className="text-3xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
+                                                                                                                    <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
+                                                                                                                        <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                        {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                        {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                    </h2>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <div className="flex gap-6 items-start">
+                                                                                                                <div className="text-center w-56">
+                                                                                                                    <div className="bg-red-700 text-white font-bold py-1.5 text-xs uppercase tracking-wider">Position Applied For</div>
+                                                                                                                    <div className="border border-red-700 py-2 text-sm font-bold min-h-[44px] flex items-center justify-center text-[#08315F] bg-white">
+                                                                                                                        {(() => {
+                                                                                                                            const vac = vacancies.find(v => v.TLOid === targetVacancyId);
+                                                                                                                            if (!vac) return '—';
+                                                                                                                            return (
+                                                                                                                                <div className="flex items-center gap-2">
+                                                                                                                                    <span>{vac.position_title}</span>
+                                                                                                                                    {vac.is_oic && <span className="px-1.5 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                                </div>
+                                                                                                                            );
+                                                                                                                        })()}
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                                <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
+                                                                                                                    2x2 Photo
+                                                                                                                </div>
                                                                                                             </div>
                                                                                                         </div>
-                                                                                                        <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
-                                                                                                            2x2 Photo
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                                <div className="grid grid-cols-12 gap-10">
-                                                                                                    <div className="col-span-7 space-y-8">
-                                                                                                        <table className="w-full text-sm border-collapse">
-                                                                                                            <thead>
-                                                                                                                <tr><th colSpan={3} className="bg-[#0038A8] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Managerial Experience</th></tr>
-                                                                                                            </thead>
-                                                                                                            <tbody>
-                                                                                                                {history.slice(0, 4).map((h, i) => {
-                                                                                                                    const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                                                                                                                    return (
-                                                                                                                        <tr key={i} className="text-slate-800">
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium w-1/3">{h.position_title || '—'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/3">{h.office || '—'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
+                                                                                                        <div className="grid grid-cols-12 gap-10">
+                                                                                                            <div className="col-span-7 space-y-8">
+                                                                                                                <table className="w-full text-sm border-collapse">
+                                                                                                                    <thead>
+                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Managerial Experience</th></tr>
+                                                                                                                    </thead>
+                                                                                                                    <tbody>
+                                                                                                                        {history.slice(0, 4).map((h, i) => {
+                                                                                                                            const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                                                                                                                            return (
+                                                                                                                                <tr key={i} className="text-slate-800">
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 font-medium w-1/3">{h.position_title || '—'}</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/3">{h.office || '—'}</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
+                                                                                                                                </tr>
+                                                                                                                            );
+                                                                                                                        })}
+                                                                                                                        {history.length === 0 && <tr><td colSpan={3} className="border border-slate-400 px-3 py-2 text-center text-slate-500 italic">No experience listed</td></tr>}
+                                                                                                                    </tbody>
+                                                                                                                </table>
+                                                                                                                <table className="w-full text-sm border-collapse">
+                                                                                                                    <thead>
+                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Educational Attainment</th></tr>
+                                                                                                                    </thead>
+                                                                                                                    <tbody className="text-slate-800">
+                                                                                                                        <tr>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">N/A</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.specific_degree || profile.education_program || '—'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.education_year_graduated || '—'}</td>
                                                                                                                         </tr>
-                                                                                                                    );
-                                                                                                                })}
-                                                                                                                {history.length === 0 && <tr><td colSpan={3} className="border border-slate-400 px-3 py-2 text-center text-slate-500 italic">No experience listed</td></tr>}
-                                                                                                            </tbody>
-                                                                                                        </table>
-                                                                                                        <table className="w-full text-sm border-collapse">
-                                                                                                            <thead>
-                                                                                                                <tr><th colSpan={3} className="bg-[#0038A8] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Educational Attainment</th></tr>
-                                                                                                            </thead>
-                                                                                                            <tbody className="text-slate-800">
-                                                                                                                <tr>
-                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">N/A</td>
-                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.specific_degree || profile.education_program || '—'}</td>
-                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.education_year_graduated || '—'}</td>
-                                                                                                                </tr>
-                                                                                                            </tbody>
-                                                                                                        </table>
-                                                                                                    </div>
-                                                                                                    <div className="col-span-5 space-y-8 relative">
-                                                                                                        <div className="absolute -top-14 left-0 w-24">
-                                                                                                            <div className="bg-amber-500 text-white font-bold py-1 text-center text-xs uppercase tracking-widest">Age</div>
-                                                                                                            <div className="border border-amber-500 py-1.5 text-center font-bold text-lg text-slate-900 bg-white">{profile.age || '—'}</div>
+                                                                                                                    </tbody>
+                                                                                                                </table>
+                                                                                                            </div>
+                                                                                                            <div className="col-span-5 space-y-8 relative">
+                                                                                                                <div className="absolute -top-14 left-0 w-24">
+                                                                                                                    <div className="bg-amber-500 text-white font-bold py-1 text-center text-xs uppercase tracking-widest">Age</div>
+                                                                                                                    <div className="border border-amber-500 py-1.5 text-center font-bold text-lg text-[#08315F] bg-white">{profile.age || '—'}</div>
+                                                                                                                </div>
+                                                                                                                <table className="w-full text-sm border-collapse mt-10">
+                                                                                                                    <thead>
+                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Performance Rating</th></tr>
+                                                                                                                    </thead>
+                                                                                                                    <tbody className="text-slate-800">
+                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_1_rating || '—'}</td></tr>
+                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
+                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
+                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
+                                                                                                                    </tbody>
+                                                                                                                </table>
+                                                                                                                <table className="w-full text-sm border-collapse">
+                                                                                                                    <thead>
+                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Eligibility</th></tr>
+                                                                                                                    </thead>
+                                                                                                                    <tbody className="text-slate-800">
+                                                                                                                        <tr>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">{profile.ces_stage || 'CESE'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.ces_conferment_date || '—'}</td>
+                                                                                                                        </tr>
+                                                                                                                    </tbody>
+                                                                                                                </table>
+                                                                                                            </div>
                                                                                                         </div>
-                                                                                                        <table className="w-full text-sm border-collapse mt-10">
-                                                                                                            <thead>
-                                                                                                                <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Performance Rating</th></tr>
-                                                                                                            </thead>
-                                                                                                            <tbody className="text-slate-800">
-                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_1_rating || '—'}</td></tr>
-                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
-                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
-                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
-                                                                                                            </tbody>
-                                                                                                        </table>
-                                                                                                        <table className="w-full text-sm border-collapse">
-                                                                                                            <thead>
-                                                                                                                <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Eligibility</th></tr>
-                                                                                                            </thead>
-                                                                                                            <tbody className="text-slate-800">
-                                                                                                                <tr>
-                                                                                                                    <td className="border border-slate-400 px-3 py-2 font-medium">{profile.ces_stage || 'CESE'}</td>
-                                                                                                                    <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.ces_conferment_date || '—'}</td>
-                                                                                                                </tr>
-                                                                                                            </tbody>
-                                                                                                        </table>
                                                                                                     </div>
                                                                                                 </div>
                                                                                             </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
+                                                                                        )}
 
-                                                                                {selectedExportType === 'ppt' && (
-                                                                                        <div className="w-full flex justify-center custom-scrollbar overflow-auto pb-10">
-                                                                                            <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-sans transition-transform duration-200" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
-                                                                                                <div className="w-[1000px] h-[562.5px] p-10 relative">
-                                                                                                    <div className="absolute top-0 left-0 w-full h-2 bg-[#0038A8]"></div>
-                                                                                                    <div className="flex gap-4 items-center mb-6">
-                                                                                                        <img src={newLogo} alt="Logo" className="w-16 h-16 object-contain" />
-                                                                                                        <div>
-                                                                                                            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
-                                                                                                            <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
-                                                                                                                <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                {profile.office ? `, ${profile.office}` : ''}
-                                                                                                            </h2>
+                                                                                        {selectedExportType === 'ppt' && (
+                                                                                            <div className="overflow-hidden w-full rounded-2xl border-2 border-slate-200 bg-slate-50 relative flex items-start justify-center pt-8 pb-4" style={{ height: `${Math.max(350, 562.5 * previewScale + 64)}px` }}>
+                                                                                                <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Quicksand'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
+                                                                                                    <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
+                                                                                                        <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
+                                                                                                        <div className="flex gap-4 items-center mb-6">
+                                                                                                            <img src={newLogo} alt="Logo" className="w-16 h-16 object-contain" />
+                                                                                                            <div>
+                                                                                                                <h1 className="text-3xl font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
+                                                                                                                <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
+                                                                                                                    <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                    {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                </h2>
+                                                                                                            </div>
                                                                                                         </div>
-                                                                                                    </div>
-                                                                                                    <div className="flex gap-6 mt-8">
-                                                                                                        <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
-                                                                                                            <h3 className="text-sm font-black text-[#0038A8] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
-                                                                                                            {history.slice(0, 3).map((h, i) => (
-                                                                                                                <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
-                                                                                                            ))}
-                                                                                                        </div>
-                                                                                                        <div className="w-64 border-2 border-red-700 rounded-xl p-6">
-                                                                                                            <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
-                                                                                                            <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-black text-slate-900">{profile.cespes_1_rating || '—'}</span></p>
-                                                                                                            <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-black text-slate-900">{profile.performance_rating_1 || '—'}</span></p>
+                                                                                                        <div className="flex gap-6 mt-8">
+                                                                                                            <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
+                                                                                                                <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
+                                                                                                                {history.slice(0, 3).map((h, i) => (
+                                                                                                                    <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
+                                                                                                                ))}
+                                                                                                            </div>
+                                                                                                            <div className="w-64 border-2 border-red-700 rounded-xl p-6">
+                                                                                                                <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
+                                                                                                                <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Quicksand'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
+                                                                                                                <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Quicksand'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
+                                                                                                            </div>
                                                                                                         </div>
                                                                                                     </div>
                                                                                                 </div>
                                                                                             </div>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
+                                                                                        )}
+                                                                                    </div>
                                                                                 </motion.div>
                                                                             </motion.div>
                                                                         )}
@@ -2206,7 +2204,7 @@ const OfficialProfiling = () => {
                                                                             return (
                                                                                 <div className="flex items-center gap-2">
                                                                                     <span>{vac.position_title}</span>
-                                                                                    {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                    {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                 </div>
                                                                             );
                                                                         })()}
@@ -2223,7 +2221,7 @@ const OfficialProfiling = () => {
                                                                             profile.position_title ? (
                                                                                 <div className="flex items-center gap-2">
                                                                                     <span>{profile.position_title}</span>
-                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                 </div>
                                                                             ) : null
                                                                         }
@@ -2274,7 +2272,7 @@ const OfficialProfiling = () => {
                                                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Previous Positions ({prevPositions.length})</p>
                                                                     <div className="space-y-2">
                                                                         {prevPositions.map((p, i) => (
-                                                                            <div key={i} className="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl">
+                                                                            <div key={i} className="flex items-start gap-3 p-3 bg-transparent rounded-2xl">
                                                                                 <span className="text-[10px] font-black text-slate-400 mt-0.5 w-5 shrink-0">{i + 1}.</span>
                                                                                 <div>
                                                                                     <p className="text-sm font-bold text-slate-800">{p.position_name || '—'}</p>
@@ -2296,7 +2294,7 @@ const OfficialProfiling = () => {
                                                                         { key: 'profile_ppt_binary_id', label: 'Profile (PPT)' },
                                                                         { key: 'service_records_binary_id', label: 'Service Records' },
                                                                     ].map(d => (
-                                                                        <div key={d.key} className={`flex flex-col items-center gap-2 p-4 rounded-[1.5rem] border-2 text-center ${profile[d.key] ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
+                                                                        <div key={d.key} className={`flex flex-col items-center gap-2 p-4 rounded-[1.5rem] border-2 text-center ${profile[d.key] ? 'bg-emerald-50 border-emerald-200' : 'bg-transparent border-slate-100'}`}>
                                                                             <FiFileText size={20} className={profile[d.key] ? 'text-emerald-500' : 'text-slate-300'} />
                                                                             <span className="text-[9px] font-black uppercase tracking-wider leading-tight" style={{ color: profile[d.key] ? '#059669' : '#94a3b8' }}>{d.label}</span>
                                                                             <span className={`text-[8px] font-black uppercase tracking-widest ${profile[d.key] ? 'text-emerald-500' : 'text-slate-300'}`}>{profile[d.key] ? 'Uploaded' : 'Missing'}</span>
@@ -2315,13 +2313,13 @@ const OfficialProfiling = () => {
                                                         </div>
 
                                                         {/* ── Career Progression (Summary Tab) ── */}
-                                                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40">
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
                                                             <div className="flex items-center gap-3 mb-8">
-                                                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                                                <div className="w-10 h-10 bg-[#F4F8FB] text-[#075985] rounded-2xl flex items-center justify-center">
                                                                     <FiClock size={20} />
                                                                 </div>
                                                                 <div>
-                                                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight italic leading-none">Career Progression</h3>
+                                                                    <h3 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
                                                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Professional Journey</p>
                                                                 </div>
                                                             </div>
@@ -2332,22 +2330,22 @@ const OfficialProfiling = () => {
                                                                         <div className="w-6 h-6 border-2 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
                                                                     </div>
                                                                 ) : history.length === 0 ? (
-                                                                    <div className="py-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                                                    <div className="py-12 text-center bg-transparent rounded-3xl border border-dashed border-slate-200">
                                                                         <FiClock className="mx-auto text-slate-200 mb-2" size={24} />
                                                                         <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Initial Entry Record</p>
                                                                     </div>
                                                                 ) : (
                                                                     history.map((item, idx) => (
                                                                         <div key={idx} className="flex gap-6 relative z-10">
-                                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0 ${idx === 0 ? 'bg-blue-600 text-white shadow-blue-500/30' : 'bg-slate-200 text-slate-500'}`}>
+                                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0 ${idx === 0 ? 'bg-[#08315F] text-white shadow-blue-500/30' : 'bg-slate-200 text-slate-500'}`}>
                                                                                 {idx === 0 ? <FiAward size={14} /> : <FiActivity size={14} />}
                                                                             </div>
                                                                             <div className="flex-1 pt-1">
                                                                                 <div className="flex justify-between items-start">
-                                                                                    <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-tight leading-none italic">{item.position_title}</h4>
-                                                                                    <span className="text-[8px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
+                                                                                    <h4 className="text-[11px] font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
+                                                                                    <span className="text-[8px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
                                                                                 </div>
-                                                                                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
+                                                                                <p className="text-[10px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
                                                                                 {item.previous_incumbent && (
                                                                                     <p className="text-[9px] font-bold text-slate-400 mt-1 flex items-center gap-1">
                                                                                         <FiChevronLeft size={10} className="rotate-180" />
@@ -2377,7 +2375,7 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white rounded-[2.5rem] border-2 border-[#0038A8]/20 shadow-sm overflow-hidden">
 
                                                             {/* Header */}
-                                                            <div className="bg-[#0038A8] px-8 py-6 flex items-center gap-4">
+                                                            <div className="bg-[#08315F] px-8 py-6 flex items-center gap-4">
                                                                 <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
                                                                     <FiShield size={18} className="text-white" />
                                                                 </div>
@@ -2389,27 +2387,27 @@ const OfficialProfiling = () => {
 
                                                             <div className="p-8 space-y-6">
                                                                 {/* DepEd DPA Notice */}
-                                                                <div className="bg-slate-50 rounded-[2rem] p-6 text-[11px] font-bold text-slate-600 leading-relaxed border border-slate-100">
-                                                                    <p>Pursuant to <span className="text-[#0038A8] font-black">Republic Act No. 10173</span> or <span className="text-[#0038A8] font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
+                                                                <div className="bg-transparent rounded-[2rem] p-6 text-[11px] font-bold text-slate-600 leading-relaxed border border-slate-100">
+                                                                    <p>Pursuant to <span className="text-[#08315F] font-black">Republic Act No. 10173</span> or <span className="text-[#08315F] font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
                                                                 </div>
 
                                                                 {/* Certification Checkboxes */}
                                                                 <div className="space-y-4">
                                                                     <button
                                                                         onClick={() => setDpaConsent(v => !v)}
-                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-blue-50 border-[#0038A8]' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}
+                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-[#F4F8FB] border-[#0038A8]' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
                                                                     >
-                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-[#0038A8] border-[#0038A8]' : 'border-slate-300 bg-white'}`}>
+                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-[#08315F] border-[#0038A8]' : 'border-slate-300 bg-white'}`}>
                                                                             {dpaConsent && <FiCheckCircle size={14} className="text-white" />}
                                                                         </div>
                                                                         <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
-                                                                            I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-[#0038A8] font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
+                                                                            I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-[#08315F] font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
                                                                         </p>
                                                                     </button>
 
                                                                     <button
                                                                         onClick={() => setTruthConsent(v => !v)}
-                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}
+                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
                                                                     >
                                                                         <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${truthConsent ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 bg-white'}`}>
                                                                             {truthConsent && <FiCheckCircle size={14} className="text-white" />}
@@ -2428,7 +2426,7 @@ const OfficialProfiling = () => {
                                                                                 <button
                                                                                     onClick={() => handleCertify(false)}
                                                                                     disabled={!dpaConsent || !truthConsent || certifying}
-                                                                                    className="flex-1 py-5 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                                                    className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                                                                 >
                                                                                     {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiCheckCircle size={16} />}
                                                                                     {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
@@ -2447,7 +2445,7 @@ const OfficialProfiling = () => {
                                                                                         <button
                                                                                             onClick={targetVacancyId ? handleSubmitApplication : () => setTab('application')}
                                                                                             disabled={!dpaConsent || !truthConsent || saving}
-                                                                                            className="flex-1 py-5 bg-[#0038A8] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
+                                                                                            className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
                                                                                         >
                                                                                             {saving ? <FiLoader className="animate-spin" size={16} /> : <FiArrowRight size={16} />}
                                                                                             {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
@@ -2517,7 +2515,7 @@ const OfficialProfiling = () => {
                                                 <button
                                                     onClick={handleResubmit}
                                                     disabled={saving}
-                                                    className="px-12 py-4 bg-[#CE1126] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/35 hover:scale-[1.02] transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-4"
+                                                    className="px-12 py-4 bg-[#FBBF24] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/35 hover:scale-[1.02] transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-4"
                                                 >
                                                     {saving ? <FiLoader className="animate-spin" size={16} /> : <FiRefreshCw size={16} />}
                                                     {saving ? 'Submitting...' : 'Resubmit Application'}
@@ -2540,7 +2538,7 @@ const OfficialProfiling = () => {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="px-8 py-3 bg-[#0038A8] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                    className="px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
                                 >
                                     {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
                                     {saving ? 'Saving...' : 'Save Progress'}

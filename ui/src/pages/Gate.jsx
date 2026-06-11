@@ -29,7 +29,7 @@ const Gate = () => {
             </div>
 
             {/* Header */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-16 relative z-10"
@@ -101,14 +101,14 @@ const Gate = () => {
             </div>
 
             {/* Footer */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
                 className="mt-20 text-center"
             >
                 <div className="flex flex-col items-center gap-6">
-                    <img src="https://cdn.worldvectorlogo.com/logos/deped.svg" className="h-8 opacity-40 grayscale hover:grayscale-0 transition-all" alt="DepEd" />
+
                     <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
                         © 2026 Department of Education • InsightEd Nexus
                     </p>

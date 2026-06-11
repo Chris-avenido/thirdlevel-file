@@ -34,7 +34,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="app">
+    <div className="dashboard-theme app">
       <aside className="sidebar">
         <div className="brand">
           <div className="logo-card">
