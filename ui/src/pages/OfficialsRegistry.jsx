@@ -132,9 +132,11 @@ const OfficialsRegistry = () => {
     const [regionFilter, setRegionFilter] = useState('All');
     const [strandFilter, setStrandFilter] = useState('All');
     const [positionFilter, setPositionFilter] = useState('All');
+    const [designationFilter, setDesignationFilter] = useState('All');
     const [viewMode, setViewMode] = useState('table');
     const [strands, setStrands] = useState([]);
     const [tabPositions, setTabPositions] = useState([]); // Positions specifically for the active tab
+    const [designations, setDesignations] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
     const [tableFilters, setTableFilters] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
@@ -315,11 +317,11 @@ const OfficialsRegistry = () => {
 
     useEffect(() => {
         fetchOfficials();
-    }, [searchTerm, strandFilter, positionFilter]);
+    }, [searchTerm, strandFilter, positionFilter, designationFilter]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, activeTab, strandFilter, positionFilter, sortConfig, tableFilters]);
+    }, [searchTerm, activeTab, strandFilter, positionFilter, designationFilter, sortConfig, tableFilters]);
 
     const fetchStrands = async () => {
         try {
@@ -342,6 +344,8 @@ const OfficialsRegistry = () => {
                 });
 
                 setStrands(uniqueStrands);
+                let uniqueDesignations = [...new Set(data.data.map(o => o.designation).filter(Boolean))].sort();
+                setDesignations(uniqueDesignations);
             }
         } catch (err) {
             console.error('Failed to fetch strands:', err);
@@ -356,6 +360,7 @@ const OfficialsRegistry = () => {
             queryParams.append('status', 'All');
             if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
+            if (designationFilter !== 'All') queryParams.append('designation', designationFilter);
 
             const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
                 headers: {
@@ -596,6 +601,13 @@ const OfficialsRegistry = () => {
             filterValue: (item) => `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
         },
         {
+            key: 'designation_area',
+            label: 'Designation Area',
+            width: 'w-2/12',
+            value: (item) => `${item.position_title || ''} ${item.is_oic ? 'OIC' : ''}`,
+            filterValue: (item) => `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
+        },
+        {
             key: 'strand',
             label: 'Strand',
             width: 'w-2/12',
@@ -779,23 +791,23 @@ const OfficialsRegistry = () => {
             <div className="min-h-screen bg-transparent flex flex-col font-sans overflow-x-hidden">
 
                 {/* TOP NAVIGATION BAR */}
-                <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
+                <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-[#08315F] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
                             <FiUsers size={20} />
                         </div>
                         <div>
-                            <h1 className="text-lg font-['Quicksand'] font-black text-[#08315F] tracking-tight leading-none italic uppercase">Personnel <span className="text-[#08315F] not-italic">Registry</span></h1>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Official Leadership Management</p>
+                            <h1 className="text-lg font-['Quicksand'] font-black text-white tracking-tight leading-none italic uppercase">Personnel <span className="text-blue-300 not-italic">Registry</span></h1>
+                            <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">Official Leadership Management</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-xs font-['Quicksand'] font-black text-[#08315F] leading-none">{user?.first_name} {user?.last_name}</span>
+                            <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                             <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
                         </div>
-                        <button onClick={logout} className="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all border border-slate-100">
+                        <button onClick={logout} className="p-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition-all border border-white/20 hover:border-red-500 shadow-sm">
                             <FiLogOut size={18} />
                         </button>
                     </div>
@@ -809,8 +821,13 @@ const OfficialsRegistry = () => {
                             {/* Card 1: Third Level Officials */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level Officials' ? 'border-blue-500 shadow-md ring-4 ring-blue-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
+                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level Officials' ? 'border-blue-500 shadow-md ring-4 ring-blue-500/10' : 'border-blue-200 shadow-none hover:border-blue-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
+                                {activeTab === 'Third Level Officials' && (
+                                    <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
+                                        ACTIVE
+                                    </div>
+                                )}
                                 <div className="w-10 h-10 bg-blue-50 text-[#075985] rounded-xl flex items-center justify-center">
                                     <FiUsers size={18} />
                                 </div>
@@ -844,8 +861,13 @@ const OfficialsRegistry = () => {
                             {/* Card 2: Third Level (OIC) */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level (OIC)' ? 'border-amber-500 shadow-md ring-4 ring-amber-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
+                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level (OIC)' ? 'border-amber-500 shadow-md ring-4 ring-amber-500/10' : 'border-amber-200 shadow-none hover:border-amber-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
+                                {activeTab === 'Third Level (OIC)' && (
+                                    <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
+                                        ACTIVE
+                                    </div>
+                                )}
                                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
                                     <FiActivity size={18} />
                                 </div>
@@ -879,8 +901,13 @@ const OfficialsRegistry = () => {
                             {/* Card 3: Division Chiefs (OIC) */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs (OIC)' ? 'border-emerald-500 shadow-md ring-4 ring-emerald-500/10' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'} flex items-center gap-4 cursor-pointer transition-all`}
+                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs (OIC)' ? 'border-emerald-500 shadow-md ring-4 ring-emerald-500/10' : 'border-emerald-200 shadow-none hover:border-emerald-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
+                                {activeTab === 'Division Chiefs (OIC)' && (
+                                    <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
+                                        ACTIVE
+                                    </div>
+                                )}
                                 <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
                                     <FiActivity size={18} />
                                 </div>
@@ -914,7 +941,7 @@ const OfficialsRegistry = () => {
                     </div>
 
                     {/* FILTERS & SEARCH BAR */}
-                    <div className="bg-white rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/40 border border-slate-100 mb-8 space-y-6">
+                    <div className="bg-white rounded-[2.5rem] p-6 shadow-2xl shadow-sky-200/40 border border-sky-200 mb-8 space-y-6">
                         <div className="flex flex-col lg:flex-row gap-4 items-center">
                             {/* Category Dropdown */}
                             <div className="w-full lg:w-[240px]">
@@ -1008,6 +1035,20 @@ const OfficialsRegistry = () => {
                                 />
                             </div>
 
+                            {/* Designation Dropdown */}
+                            <div className="w-full lg:w-[280px]">
+                                <SearchableSelect
+                                    label=""
+                                    placeholder="All Designations"
+                                    value={designationFilter}
+                                    onChange={setDesignationFilter}
+                                    options={[
+                                        { value: 'All', label: 'All Designations' },
+                                        ...designations.map(d => ({ value: d, label: d }))
+                                    ]}
+                                />
+                            </div>
+
                             {/* Reset Filters */}
                             <button
                                 onClick={() => {
@@ -1018,6 +1059,7 @@ const OfficialsRegistry = () => {
                                     setRegionFilter('All');
                                     setStrandFilter('All');
                                     setPositionFilter('All');
+                                    setDesignationFilter('All');
                                 }}
                                 className="px-5 py-4 bg-rose-50/50 text-rose-500 rounded-2xl border border-rose-100 font-bold text-xs hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                                 title="Reset all filters"
@@ -1054,7 +1096,7 @@ const OfficialsRegistry = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search by name, position, or office..."
-                            className="w-full bg-white border border-slate-100 rounded-[2rem] py-5 pl-14 pr-6 text-slate-700 font-bold focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none shadow-xl shadow-slate-200/40"
+                            className="w-full bg-white border border-sky-200 rounded-[2rem] py-5 pl-14 pr-6 text-slate-700 font-bold focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 transition-all outline-none shadow-2xl shadow-sky-200/40"
                         />
                     </div>
 
@@ -1071,7 +1113,7 @@ const OfficialsRegistry = () => {
                                 <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                             </motion.div>
                         ) : viewMode === 'table' ? (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-blue-200">
                                 <div className="w-full">
                                     <table className="w-full text-left border-collapse table-fixed">
                                         <thead>
@@ -1122,6 +1164,12 @@ const OfficialsRegistry = () => {
                                                                 Since {item.date_of_assignment ? new Date(item.date_of_assignment).toLocaleDateString() : 'N/A'}
                                                             </div>
                                                         </button>
+                                                    </td>
+                                                    <td className="px-3 py-3 align-top">
+                                                        <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
+                                                            <span className="line-clamp-2">{item.position_title || 'Unassigned'}</span>
+                                                            {item.is_oic && <span className="px-1.5 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[7px] font-black uppercase tracking-widest shrink-0 mt-0.5">OIC</span>}
+                                                        </div>
                                                     </td>
                                                     <td className="px-3 py-3 align-top">
                                                         <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest line-clamp-2">{item.strand || 'No Strand'}</div>
@@ -1188,104 +1236,127 @@ const OfficialsRegistry = () => {
                                 </div>
                             </motion.div>
                         ) : (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {sortedRecords.map((item) => (
-                                    <motion.div
-                                        key={item.TLOid}
-                                        whileHover={{ y: -8 }}
-                                        onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
-                                        className={`bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
-                                    >
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                                        <div>
-                                            <div className="flex justify-between items-start mb-6 relative z-10">
-                                                <div className="w-20 h-20 rounded-[1.8rem] bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-300 font-black text-3xl border-2 border-white shadow-xl overflow-hidden">
-                                                    {item.photo_binary_id ? (
-                                                        <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
-                                                    ) : <FiUser size={32} />}
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {item.is_oic && <span className="px-3 py-1 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[9px] font-black uppercase tracking-widest">OIC</span>}
-                                                    <StatusBadge status={item.status} />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-1 relative z-10">
-                                                <h3 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic">
-                                                    {item.first_name ? <>{item.first_name} <br /> {item.last_name}</> : <span className="text-rose-500 text-lg">VACANT POSITION</span>}
-                                                </h3>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
-                                                    className="text-[10px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1"
-                                                >
-                                                    {item.position_title || 'Candidate'}
-                                                    <FiClock className="text-slate-400" size={10} />
-                                                </button>
-
-                                                {item.concurrent_positions && (
-                                                    <div className="mt-3 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm">
-                                                        <div className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                                                            Concurrent Role
-                                                        </div>
-                                                        <div className="text-[10px] font-bold text-emerald-800 leading-snug">
-                                                            {item.concurrent_positions.split(' | ').map((pos, idx) => (
-                                                                <div key={idx} className="mb-1 last:mb-0">
-                                                                    {pos}
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {pagedRecords.map((item) => (
+                                        <motion.div
+                                            key={item.TLOid}
+                                            whileHover={{ y: -8 }}
+                                            onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
+                                            className={`bg-white rounded-[2.5rem] p-8 border border-blue-200 shadow-xl shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
+                                        >
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                                            <div>
+                                                <div className="flex justify-between items-start mb-6 relative z-10">
+                                                    <div className="w-20 h-20 rounded-[1.8rem] bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-300 font-black text-3xl border-2 border-white shadow-xl overflow-hidden">
+                                                        {item.photo_binary_id ? (
+                                                            <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
+                                                        ) : <FiUser size={32} />}
                                                     </div>
-                                                )}
-                                            </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {item.is_oic && <span className="px-3 py-1 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[9px] font-black uppercase tracking-widest">OIC</span>}
+                                                        <StatusBadge status={item.status} />
+                                                    </div>
+                                                </div>
 
-                                            <div className="mt-8 pt-6 border-t border-slate-50 space-y-4">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
-                                                    <span className="text-[10px] font-bold text-slate-700">{item.strand || 'N/A'}</span>
+                                                <div className="space-y-1 relative z-10">
+                                                    <h3 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic">
+                                                        {item.first_name ? <>{item.first_name} <br /> {item.last_name}</> : <span className="text-rose-500 text-lg">VACANT POSITION</span>}
+                                                    </h3>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
+                                                        className="text-[10px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1"
+                                                    >
+                                                        {item.position_title || 'Candidate'}
+                                                        <FiClock className="text-slate-400" size={10} />
+                                                    </button>
+
+                                                    {item.concurrent_positions && (
+                                                        <div className="mt-3 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm">
+                                                            <div className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                                                                Concurrent Role
+                                                            </div>
+                                                            <div className="text-[10px] font-bold text-emerald-800 leading-snug">
+                                                                {item.concurrent_positions.split(' | ').map((pos, idx) => (
+                                                                    <div key={idx} className="mb-1 last:mb-0">
+                                                                        {pos}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Office</span>
-                                                    <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{item.office || 'Main Office'}</span>
-                                                </div>
-                                                {item.updated_at && (
+
+                                                <div className="mt-8 pt-6 border-t border-slate-50 space-y-4">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Updated</span>
-                                                        <span className="text-[10px] font-bold text-slate-700 truncate ml-4">
-                                                            {new Date(item.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                                                        </span>
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
+                                                        <span className="text-[10px] font-bold text-slate-700">{item.strand || 'N/A'}</span>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-8 pt-6 border-t border-slate-50 flex flex-col gap-4 relative z-20" onClick={e => e.stopPropagation()}>
-                                            <div className="flex flex-wrap gap-2">
-                                                <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
-                                                    <FiLayers size={12} /> Reassign
-                                                </button>
-                                                {item.first_name && (
-                                                    <>
-                                                        <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                            <FiTrash2 size={12} /> Vacate
-                                                        </button>
-                                                        <button onClick={() => openActionModal(item, 'succeed')} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
-                                                            <FiCheckCircle size={12} /> Succeed
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-[#075985] transition-colors">
-                                                    Full Profile <FiArrowRight size={14} />
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Office</span>
+                                                        <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{item.office || 'Main Office'}</span>
+                                                    </div>
+                                                    {item.updated_at && (
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Updated</span>
+                                                            <span className="text-[10px] font-bold text-slate-700 truncate ml-4">
+                                                                {new Date(item.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#08315F] hover:text-white transition-all" title="View History">
-                                                    <FiClock size={16} />
-                                                </button>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
+
+                                            <div className="mt-8 pt-6 border-t border-slate-50 flex flex-col gap-4 relative z-20" onClick={e => e.stopPropagation()}>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
+                                                        <FiLayers size={12} /> Reassign
+                                                    </button>
+                                                    {item.first_name && (
+                                                        <>
+                                                            <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                                <FiTrash2 size={12} /> Vacate
+                                                            </button>
+                                                            <button onClick={() => openActionModal(item, 'succeed')} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
+                                                                <FiCheckCircle size={12} /> Succeed
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-[#075985] transition-colors">
+                                                        Full Profile <FiArrowRight size={14} />
+                                                    </div>
+                                                    <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#08315F] hover:text-white transition-all" title="View History">
+                                                        <FiClock size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                                <div className="px-8 py-5 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        Showing {sortedRecords.length === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, sortedRecords.length)} of {sortedRecords.length} records
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
+                                        {pageButtons.map(page => typeof page === 'number' ? (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`w-9 h-9 rounded-xl text-[10px] font-black border transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ) : (
+                                            <span key={page} className="px-1 text-[10px] font-black text-slate-300">...</span>
+                                        ))}
+                                        <span className="px-2 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {pageCount}</span>
+                                        <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
+                                    </div>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>

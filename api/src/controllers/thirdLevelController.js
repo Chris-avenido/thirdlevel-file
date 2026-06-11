@@ -549,7 +549,7 @@ export const getOfficials = async (req, res) => {
     return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
   }
 
-  const { search, status, strand, category, position } = req.query;
+  const { search, status, strand, category, position, designation } = req.query;
   let query = `
     WITH RankedOfficials AS (
       SELECT 
@@ -609,6 +609,11 @@ export const getOfficials = async (req, res) => {
   if (position && position !== 'All') {
     params.push(position);
     conditions.push(`position_title = $${params.length}`);
+  }
+
+  if (designation && designation !== 'All') {
+    params.push(designation);
+    conditions.push(`designation = $${params.length}`);
   }
 
   if (category === 'Third Level') {
