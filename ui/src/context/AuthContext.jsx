@@ -26,31 +26,27 @@ export const AuthProvider = ({ children }) => {
 
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
-        
+
         // Sync secondary storage for main repo logic compatibility
         if (userData.uid) localStorage.setItem('uid', userData.uid);
         if (userData.email) localStorage.setItem('userEmail', userData.email);
         if (userData.role) localStorage.setItem('userRole', userData.role);
-        
+
         localStorage.setItem('remembered_user', JSON.stringify(userData));
-        
+
         setUser(userData);
         setToken(token);
     };
 
     const loginWithCredentials = async (email, password) => {
         const targetUrl = apiUrl('/api/auth/login');
-        console.log(`🚀 Attempting login at: ${targetUrl}`);
-        
         try {
             const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-            
-            console.log(`📡 Response Status: ${response.status} ${response.statusText}`);
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error(`❌ Server Error Detail:`, errorText);

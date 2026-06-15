@@ -201,20 +201,19 @@ export const uploadDocument = async (req, res) => {
   const { TLOid, docType } = req.params;
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
+  console.log(`[Upload] Start ${docType} for ${TLOid}`);
   const isMasterlist = !TLOid.startsWith('APP-') && !(TLOid.startsWith('TLO-') && TLOid.split('-').length > 2);
   const client = await pool.connect();
+  console.log(`[Upload] DB connected`);
   try {
     await client.query('BEGIN');
     let processedBuffer = req.file.buffer;
     let mimeType = req.file.mimetype;
+    console.log(`[Upload] File received: size=${processedBuffer.length}, type=${mimeType}`);
 
-    // Uncomment and implement compressBufferTo96Dpi if needed
-    // if (mimeType === 'application/pdf') {
-    //   const optimized = await compressBufferTo96Dpi(req.file.buffer);
-    //   processedBuffer = optimized.buffer;
-    // }
-
+    console.log(`[Upload] Calling upsertBinary...`);
     const { binary_id } = await upsertBinary(client, processedBuffer, mimeType, processedBuffer.length);
+    console.log(`[Upload] upsertBinary finished with ID: ${binary_id}`);
 
     const docMap = {
       'photo': 'photo_binary_id',
@@ -288,7 +287,7 @@ export const updateProfile = async (req, res) => {
     const allFields = [
       'strand', 'division', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
-      'position_title', 'designation', 'date_of_assignment', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
+      'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
       'relevant_trainings', 'notable_achievements', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
@@ -621,6 +620,9 @@ export const getOfficials = async (req, res) => {
     conditions.push(`position_title = ANY($${params.length}) AND COALESCE(is_oic, FALSE) = FALSE`);
   } else if (category === 'OIC / Chiefs') {
     conditions.push(`COALESCE(is_oic, FALSE) = TRUE`);
+  } else if (category === 'Division Chiefs') {
+    params.push(THIRD_LEVEL_POSITIONS);
+    conditions.push(`position_title != ALL($${params.length}) AND COALESCE(is_oic, FALSE) = FALSE`);
   }
 
   if (conditions.length > 0) {

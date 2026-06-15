@@ -150,13 +150,16 @@ export async function upsertBinary(pool, rawBuffer, mimeType, originalSize) {
         }
     }
 
+    console.log('[BinaryPipeline] Calling sha256');
     const hash = sha256(finalBuffer);
 
+    console.log('[BinaryPipeline] Checking existing deduplication...');
     // Deduplication check
     const existing = await pool.query(
         'SELECT id FROM unified_binaries WHERE hash = $1',
         [hash]
     );
+    console.log(`[BinaryPipeline] Deduplication check done, found: ${existing.rows.length}`);
 
     if (existing.rows.length > 0) {
         const existingId = existing.rows[0].id;

@@ -39,7 +39,7 @@ const SummaryRow = ({ label, value }) => (
 
 const COMPLETENESS_FIELDS = [
     'first_name', 'last_name', 'gender', 'date_of_birth', 'civil_status',
-    'position_title', 'date_of_assignment',
+    'position_title', 'appointment_date',
     'permanent_address', 'highest_education', 'education_program', 'education_year_graduated',
     'performance_rating_1', 'performance_rating_1_period', 'pending_admin_case', 'ombudsman_case'
 ];
@@ -191,6 +191,7 @@ const OfficialProfiling = () => {
     const [dataSource, setDataSource] = useState(null); // 'staging' | 'masterlist'
     const [tab, setTab] = useState('personal');
     const [saving, setSaving] = useState(false);
+    const [uploadingDocs, setUploadingDocs] = useState({});
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saved, setSaved] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -201,7 +202,7 @@ const OfficialProfiling = () => {
     const [profile, setProfile] = useState({
         last_name: '', first_name: '', middle_name: '', suffix: '',
         gender: '', date_of_birth: '', age: '', civil_status: '',
-        position_title: '', designation: '', is_oic: false, date_of_assignment: '',
+        position_title: '', designation: '', is_oic: false, appointment_date: '',
         emt_passer: null, emt_date: '', ces_stage: '', ces_conferment_date: '',
         total_years_third_level: '', permanent_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
@@ -306,7 +307,7 @@ const OfficialProfiling = () => {
             ];
             const row = [
                 profile.first_name, profile.last_name, profile.middle_name, profile.suffix, profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
-                profile.position_title, profile.designation, profile.date_of_assignment, profile.permanent_address,
+                profile.position_title, profile.designation, profile.appointment_date, profile.permanent_address,
                 profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date, profile.ces_stage, profile.ces_conferment_date,
                 profile.highest_education, profile.specific_degree, profile.education_program, profile.education_year_graduated,
                 profile.performance_rating_1, profile.performance_rating_2, profile.cespes_1_rating, profile.cespes_2_rating, profile.managerial_experience_total,
@@ -515,8 +516,8 @@ const OfficialProfiling = () => {
         let totalMonths = 0;
 
         // 1. Current Position
-        if (profile.date_of_assignment) {
-            const dur = calculateDuration(profile.date_of_assignment, null);
+        if (profile.appointment_date) {
+            const dur = calculateDuration(profile.appointment_date, null);
             totalYears += dur.years;
             totalMonths += dur.months;
         }
@@ -538,7 +539,7 @@ const OfficialProfiling = () => {
         if (profile.managerial_experience_total !== resultStr) {
             setProfile(prev => ({ ...prev, managerial_experience_total: resultStr }));
         }
-    }, [prevPositions, profile.date_of_assignment]);
+    }, [prevPositions, profile.appointment_date]);
 
     // Training Hours Auto-Computation
     useEffect(() => {
@@ -575,7 +576,7 @@ const OfficialProfiling = () => {
                     position_title: d.position_title || '',
                     designation: d.designation || '',
                     is_oic: d.is_oic ?? false,
-                    date_of_assignment: d.date_of_assignment ? d.date_of_assignment.split('T')[0] : '',
+                    appointment_date: d.appointment_date ? d.appointment_date.split('T')[0] : '',
                     emt_passer: d.emt_passer ?? null,
                     emt_date: d.emt_date ? d.emt_date.split('T')[0] : '',
                     ces_stage: d.ces_stage || '',
@@ -841,7 +842,7 @@ const OfficialProfiling = () => {
 
     const handleFileUpload = async (file, docType) => {
         if (!TLOid || !file) return;
-        setSaving(true);
+        setUploadingDocs(prev => ({ ...prev, [docType]: true }));
         try {
             let fileToUpload = file;
 
@@ -876,7 +877,7 @@ const OfficialProfiling = () => {
         } catch (err) {
             Swal.fire('Notice', 'Upload failed: ' + err.message, 'info');
         } finally {
-            setSaving(false);
+            setUploadingDocs(prev => ({ ...prev, [docType]: false }));
         }
     };
 
@@ -1230,9 +1231,9 @@ const OfficialProfiling = () => {
                                                                                     </>
                                                                                 ) : (
                                                                                     <div className="flex flex-col items-center justify-center p-4 text-slate-400 group-hover/upload:text-[#08315F] transition-colors">
-                                                                                        <FiUpload size={24} className={saving ? 'animate-bounce' : 'mb-3'} />
+                                                                                        <FiUpload size={24} className={uploadingDocs['photo'] ? 'animate-bounce' : 'mb-3'} />
                                                                                         <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight mt-1">
-                                                                                            {saving ? 'Processing...' : 'Upload Photo'}
+                                                                                            {uploadingDocs['photo'] ? 'Processing...' : 'Upload Photo'}
                                                                                         </span>
                                                                                         <span className="text-[8px] font-bold text-slate-400 italic mt-1.5 text-center">PNG or JPG</span>
                                                                                     </div>
@@ -1338,7 +1339,7 @@ const OfficialProfiling = () => {
                                                                     </Field>
                                                                     <Field label="Date of Present Position (Appointment Date)">
                                                                         <div className="relative">
-                                                                            <ModernDatePicker value={profile.date_of_assignment} onChange={val => setP('date_of_assignment', val)} className={inp} />
+                                                                            <ModernDatePicker value={profile.appointment_date} onChange={val => setP('appointment_date', val)} className={inp} />
 
                                                                         </div>
                                                                     </Field>
@@ -1803,9 +1804,9 @@ const OfficialProfiling = () => {
                                                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                                                         />
                                                                         <div className={`flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile[`${id}_binary_id`] ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
-                                                                            <FiUpload size={14} className={saving ? 'animate-bounce' : ''} />
+                                                                            <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce' : ''} />
                                                                             <span className="text-[10px] font-black uppercase tracking-widest">
-                                                                                {saving ? 'Processing...' : profile[`${id}_binary_id`] ? 'Replace Document' : 'Upload Document'}
+                                                                                {uploadingDocs[id] ? 'Processing...' : profile[`${id}_binary_id`] ? 'Replace Document' : 'Upload Document'}
                                                                             </span>
                                                                         </div>
                                                                     </div>
@@ -2226,7 +2227,7 @@ const OfficialProfiling = () => {
                                                                             ) : null
                                                                         }
                                                                     />
-                                                                    <SummaryRow label="Date of Present Position" value={profile.date_of_assignment} />
+                                                                    <SummaryRow label="Date of Present Position" value={profile.appointment_date} />
                                                                     <SummaryRow label="Permanent Address" value={profile.permanent_address} />
                                                                 </div>
                                                             </div>

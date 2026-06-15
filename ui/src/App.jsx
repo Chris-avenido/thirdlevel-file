@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import OfficialProfiling from './pages/OfficialProfiling';
 import OfficialsRegistry from './pages/OfficialsRegistry';
 import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
 import LoadingScreen from './components/LoadingScreen';
 
 // Protected Route Component
@@ -51,6 +52,14 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <Dashboard />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/home" 
+                element={
+                    <ProtectedRoute>
+                        <Home />
                     </ProtectedRoute>
                 } 
             />

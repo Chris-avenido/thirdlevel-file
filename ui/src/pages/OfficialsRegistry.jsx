@@ -154,6 +154,10 @@ const OfficialsRegistry = () => {
         return officials.filter(o => o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
     }, [officials]);
 
+    const divisionChiefs = useMemo(() => {
+        return officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+    }, [officials]);
+
     // Position breakdowns for hover cards
     const sortBreakdown = (counts) => {
         const order = [
@@ -227,6 +231,17 @@ const OfficialsRegistry = () => {
         return sortBreakdown(counts);
     }, [divisionChiefsOic]);
 
+    const divisionChiefsNotOicBreakdown = useMemo(() => {
+        const counts = {};
+        divisionChiefs.forEach(o => {
+            if (o.first_name && o.first_name !== 'VACANT') {
+                const pos = o.position_title || 'Unassigned';
+                counts[pos] = (counts[pos] || 0) + 1;
+            }
+        });
+        return sortBreakdown(counts);
+    }, [divisionChiefs]);
+
     const fetchTabPositions = async () => {
         try {
             // Fetch all positions for the current tab to keep the dropdown stable
@@ -236,6 +251,8 @@ const OfficialsRegistry = () => {
             let backendCategory = 'Third Level';
             if (activeTab === 'Third Level (OIC)' || activeTab === 'Division Chiefs (OIC)') {
                 backendCategory = 'OIC / Chiefs';
+            } else if (activeTab === 'Division Chiefs') {
+                backendCategory = 'Division Chiefs';
             } else if (activeTab === 'All') {
                 backendCategory = 'All';
             }
@@ -250,6 +267,8 @@ const OfficialsRegistry = () => {
                 if (activeTab === 'Third Level (OIC)') {
                     filteredData = data.data.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title));
                 } else if (activeTab === 'Division Chiefs (OIC)') {
+                    filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+                } else if (activeTab === 'Division Chiefs') {
                     filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
                 }
                 let uniquePositions = [...new Set(filteredData.map(o => o.position_title).filter(Boolean))].sort();
@@ -631,12 +650,13 @@ const OfficialsRegistry = () => {
     ]), []);
 
     const activeRecords = useMemo(() => {
-        if (activeTab === 'All') return [...thirdLevelOfficials, ...thirdLevelOic, ...divisionChiefsOic];
+        if (activeTab === 'All') return [...thirdLevelOfficials, ...thirdLevelOic, ...divisionChiefsOic, ...divisionChiefs];
         if (activeTab === 'Third Level Officials') return thirdLevelOfficials;
         if (activeTab === 'Third Level (OIC)') return thirdLevelOic;
         if (activeTab === 'Division Chiefs (OIC)') return divisionChiefsOic;
+        if (activeTab === 'Division Chiefs') return divisionChiefs;
         return thirdLevelOfficials;
-    }, [activeTab, thirdLevelOfficials, thirdLevelOic, divisionChiefsOic]);
+    }, [activeTab, thirdLevelOfficials, thirdLevelOic, divisionChiefsOic, divisionChiefs]);
 
     const getOfficialLevel = (item) => {
         const strand = item.strand || '';
@@ -937,6 +957,46 @@ const OfficialsRegistry = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Card 4: Division Chiefs */}
+                            <div
+                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs' ? 'All' : 'Division Chiefs'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs' ? 'border-purple-500 shadow-md ring-4 ring-purple-500/10' : 'border-purple-200 shadow-none hover:border-purple-300'} flex items-center gap-4 cursor-pointer transition-all`}
+                            >
+                                {activeTab === 'Division Chiefs' && (
+                                    <div className="absolute -top-2 -right-2 bg-purple-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
+                                        ACTIVE
+                                    </div>
+                                )}
+                                <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                                    <FiUsers size={18} />
+                                </div>
+                                <div>
+                                    <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
+                                        {divisionChiefs.length}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs</span>
+                                </div>
+
+                                {/* Hover Breakdown Tooltip */}
+                                <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
+                                        Position Breakdown
+                                    </div>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                        {Object.entries(divisionChiefsNotOicBreakdown).length > 0 ? (
+                                            Object.entries(divisionChiefsNotOicBreakdown).map(([position, count]) => (
+                                                <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
+                                                    <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
+                                                    <span className="text-slate-900 font-black px-2 py-0.5 bg-purple-50 text-purple-700 rounded-lg shrink-0">{count}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -954,7 +1014,8 @@ const OfficialsRegistry = () => {
                                         { value: 'All', label: 'All Categories' },
                                         { value: 'Third Level Officials', label: 'Third Level Officials' },
                                         { value: 'Third Level (OIC)', label: 'Third Level (OIC)' },
-                                        { value: 'Division Chiefs (OIC)', label: 'Division Chiefs (OIC)' }
+                                        { value: 'Division Chiefs (OIC)', label: 'Division Chiefs (OIC)' },
+                                        { value: 'Division Chiefs', label: 'Division Chiefs' }
                                     ]}
                                 />
                             </div>
@@ -1161,7 +1222,7 @@ const OfficialsRegistry = () => {
                                                                 {item.is_oic && <span className="px-1.5 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[7px] font-black uppercase tracking-widest shrink-0 mt-0.5">OIC</span>}
                                                             </div>
                                                             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                                                Since {item.date_of_assignment ? new Date(item.date_of_assignment).toLocaleDateString() : 'N/A'}
+                                                                Since {item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : 'N/A'}
                                                             </div>
                                                         </button>
                                                     </td>
