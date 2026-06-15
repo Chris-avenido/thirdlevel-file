@@ -100,7 +100,7 @@ const Login = () => {
 
                 // Role-based redirection
                 if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
-                    navigate('/officials-registry');
+                    navigate('/home');
                 } else {
                     navigate('/official-profiling');
                 }
@@ -135,7 +135,7 @@ const Login = () => {
 
                 // Role-based redirection
                 if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
-                    navigate('/officials-registry');
+                    navigate('/home');
                 } else {
                     navigate('/official-profiling');
                 }

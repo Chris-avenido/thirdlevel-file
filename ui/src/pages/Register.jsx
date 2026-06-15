@@ -133,7 +133,7 @@ const Register = () => {
                 setSuccess(true);
 
                 const redirectPath = (['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'].includes(data.user.role))
-                    ? '/officials-registry'
+                    ? '/home'
                     : '/official-profiling';
 
                 setTimeout(() => navigate(redirectPath), 2000);
