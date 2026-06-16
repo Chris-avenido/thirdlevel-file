@@ -14,10 +14,6 @@ const NexusGate = () => {
 
     // Central Office auth gate modal
     const [showCOGate, setShowCOGate] = useState(false);
-    const [coCode, setCoCode] = useState('');
-    const [coError, setCoError] = useState('');
-    const [coLoading, setCoLoading] = useState(false);
-    const [coVerified, setCoVerified] = useState(false); // shows login/register after valid code
 
     const cardVariants = {
         hidden: { opacity: 0, y: 30, scale: 0.9 },
@@ -25,33 +21,8 @@ const NexusGate = () => {
         hover: { y: -10, scale: 1.02, transition: { duration: 0.3 } }
     };
 
-    const handleCOVerify = async () => {
-        if (!coCode.trim()) return;
-        setCoLoading(true);
-        setCoError('');
-        try {
-            const res = await fetch(apiUrl(`/api/auth/check-auth-code?code=${encodeURIComponent(coCode.trim())}`));
-            const data = await res.json();
-            if (!data.valid) {
-                setCoError('Invalid or expired authorization code. Please contact your administrator.');
-            } else if (!['Personnel Admin', 'Central Office', 'Regional Office', 'School Division Office'].includes(data.role)) {
-                setCoError('This code is not authorized for administrative access.');
-            } else {
-                setCoVerified(true);
-            }
-        } catch {
-            setCoError('Network error. Please try again.');
-        } finally {
-            setCoLoading(false);
-        }
-    };
-
     const closeCOGate = () => {
         setShowCOGate(false);
-        setCoCode('');
-        setCoError('');
-        setCoLoading(false);
-        setCoVerified(false);
     };
 
     return (
@@ -219,55 +190,9 @@ const NexusGate = () => {
                                 <div className="p-10">
                                     <AnimatePresence mode="wait">
 
-                                        {/* Step 1 — Auth Code Entry */}
-                                        {!coVerified && (
-                                            <motion.div key="code-step" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                                                <div>
-                                                    <h2 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic uppercase">Authorization Required</h2>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Enter your Third Level access code to continue</p>
-                                                </div>
+                                        {/* Access Options */}
+                                        <motion.div key="access-step" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
 
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Authorization Code</label>
-                                                    <div className="relative">
-                                                        <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                                        <input
-                                                            type="text"
-                                                            value={coCode}
-                                                            onChange={e => { setCoCode(e.target.value.toUpperCase()); setCoError(''); }}
-                                                            onKeyDown={e => e.key === 'Enter' && handleCOVerify()}
-                                                            placeholder="Enter code"
-                                                            className="w-full bg-slate-50 border-2 border-slate-100 focus:border-[#0038A8] rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-black tracking-widest outline-none transition-all text-sm uppercase"
-                                                        />
-                                                    </div>
-                                                    {coError && (
-                                                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[10px] font-bold text-red-500 ml-1 mt-1">
-                                                            {coError}
-                                                        </motion.p>
-                                                    )}
-                                                </div>
-
-                                                <button
-                                                    onClick={handleCOVerify}
-                                                    disabled={coLoading || !coCode.trim()}
-                                                    className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-xl shadow-blue-900/20 hover:bg-blue-900 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                                >
-                                                    {coLoading ? <FiLoader className="animate-spin" size={16} /> : <FiShield size={16} />}
-                                                    {coLoading ? 'Verifying...' : 'Verify Access'}
-                                                </button>
-                                            </motion.div>
-                                        )}
-
-                                        {/* Step 2 — Access Granted */}
-                                        {coVerified && (
-                                            <motion.div key="access-step" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                                                <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                                                    <FiCheckCircle size={20} className="text-emerald-500 shrink-0" />
-                                                    <div>
-                                                        <p className="text-[11px] font-black text-emerald-700 uppercase tracking-widest">Access Authorized</p>
-                                                        <p className="text-[9px] font-bold text-emerald-500 mt-0.5">Central Office credentials verified.</p>
-                                                    </div>
-                                                </div>
 
                                                 <div>
                                                     <h2 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
@@ -289,7 +214,7 @@ const NexusGate = () => {
                                                     </button>
 
                                                     <button
-                                                        onClick={() => navigate('/register', { state: { isCO: true, authCode: coCode.trim() } })}
+                                                        onClick={() => navigate('/register', { state: { isCO: true } })}
                                                         className="group p-6 bg-slate-50 hover:bg-[#08315F] rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
                                                     >
                                                         <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
@@ -302,7 +227,6 @@ const NexusGate = () => {
                                                     </button>
                                                 </div>
                                             </motion.div>
-                                        )}
                                     </AnimatePresence>
                                 </div>
                             </motion.div>

@@ -100,13 +100,42 @@ const Register = () => {
                 setIsOtpVerified(true);
                 setOtpSent(false);
             } else {
-                Swal.fire('Error', "Invalid OTP codedfdsfdfdf", 'error');
+                Swal.fire('Error', "Invalid OTP code", 'error');
             }
         } catch (err) {
             Swal.fire('Error', "Verification error", 'error');
         } finally {
             setOtpLoading(false);
         }
+    };
+
+    const handleFinalStep = async () => {
+        if (!formData.authCode) {
+            return Swal.fire('Notice', "Please enter your Portal Auth Code", 'info');
+        }
+        try {
+            // Validate the auth code against the database
+            const res = await fetch(apiUrl(`/api/auth/check-auth-code?code=${encodeURIComponent(formData.authCode.trim())}`));
+            const data = await res.json();
+            if (!data.valid) {
+                return Swal.fire('Error', "Invalid or expired Portal Auth Code. Please contact your administrator.", 'error');
+            }
+
+            if (isCO) {
+                const adminRoles = ['Personnel Admin', 'Central Office', 'Regional Office', 'School Division Office'];
+                if (!adminRoles.includes(data.role)) {
+                    return Swal.fire('Error', "This code is not authorized for administrative access. Please use a Central Office code.", 'error');
+                }
+            } else {
+                if (data.role !== 'TLO Applicant' && data.role !== 'Third Level Applicant') {
+                    return Swal.fire('Error', "This code is not authorized for Applicant access.", 'error');
+                }
+            }
+        } catch (err) {
+            return Swal.fire('Error', "Network error while verifying Auth Code", 'error');
+        }
+        
+        setCurrentStep(3);
     };
 
     const handleSubmit = async (e) => {
@@ -252,7 +281,7 @@ const Register = () => {
                                 </div>
 
                                 {/* Phone & Auth Code (Moved here) */}
-                                <div className={`grid gap-4 ${isCO ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+                                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
                                         <div className="relative group">
@@ -260,16 +289,14 @@ const Register = () => {
                                             <input type="text" value={formData.contactNumber} onChange={handlePhoneChange} placeholder="09XXXXXXXXX" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
                                         </div>
                                     </div>
-                                    {/* Auth code is pre-verified for CO users — hide the field */}
-                                    {!isCO && (
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Portal Auth Code</label>
-                                            <div className="relative group">
-                                                <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                                <input type="text" value={formData.authCode} onChange={(e) => setFormData({ ...formData, authCode: e.target.value })} placeholder="Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
-                                            </div>
+                                    {/* Auth code is required for all registrations */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Portal Auth Code</label>
+                                        <div className="relative group">
+                                            <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
+                                            <input type="text" value={formData.authCode} onChange={(e) => setFormData({ ...formData, authCode: e.target.value })} placeholder="Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
 
                                 {otpSent && !isOtpVerified && (
@@ -307,7 +334,7 @@ const Register = () => {
 
                                 <div className="flex gap-4 pt-4">
                                     <button onClick={() => setCurrentStep(1)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
-                                    <button disabled={!isOtpVerified} onClick={() => setCurrentStep(3)} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl disabled:bg-slate-200 active:scale-95 transition-all text-xs uppercase italic tracking-widest">Final Step</button>
+                                    <button disabled={!isOtpVerified} onClick={handleFinalStep} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl disabled:bg-slate-200 active:scale-95 transition-all text-xs uppercase italic tracking-widest">Final Step</button>
                                 </div>
                             </div>
                         )}
