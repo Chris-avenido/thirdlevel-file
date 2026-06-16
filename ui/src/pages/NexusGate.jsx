@@ -58,7 +58,7 @@ const NexusGate = () => {
                         initial="hidden"
                         animate="visible"
                         whileHover="hover"
-                        onClick={() => setShowRecruitModal(true)}
+                        onClick={() => navigate('/login')}
                         className="cursor-pointer group relative overflow-hidden rounded-[22px] bg-white p-10 shadow-none border-2 border-[#08315F] flex flex-col justify-between min-h-[400px] transition-all duration-500"
                     >
                         <div className="absolute top-0 right-0 w-48 h-48 bg-[#075985] opacity-10 rounded-full -mr-24 -mt-24 blur-3xl transition-opacity group-hover:opacity-20"></div>
@@ -88,7 +88,7 @@ const NexusGate = () => {
                         initial="hidden"
                         animate="visible"
                         whileHover="hover"
-                        onClick={() => setShowCOGate(true)}
+                        onClick={() => navigate('/login', { state: { isCO: true } })}
                         className="cursor-pointer group relative overflow-hidden rounded-[22px] bg-white p-10 shadow-none border-2 border-[#08315F] flex flex-col justify-between min-h-[400px] transition-all duration-500"
                     >
                         <div className="absolute top-0 right-0 w-48 h-48 bg-[#FBBF24] opacity-10 rounded-full -mr-24 -mt-24 blur-3xl transition-opacity group-hover:opacity-20"></div>

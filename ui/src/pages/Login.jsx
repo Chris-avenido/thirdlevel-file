@@ -292,7 +292,7 @@ const Login = () => {
                         {/* FOOTER */}
                         <div className="mt-10 pt-8 border-t border-slate-100 text-center">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                Don't have an account? <Link to="/register" className="text-[#08315F] hover:text-blue-800 ml-1">Register Now</Link>
+                                Don't have an account? <Link to="/register" state={{ isCO }} className="text-[#08315F] hover:text-blue-800 ml-1">Register Now</Link>
                             </p>
                         </div>
                     </div>
