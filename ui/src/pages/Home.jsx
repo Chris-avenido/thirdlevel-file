@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import PageTransition from '../components/PageTransition';
-import { FiSearch, FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList } from 'react-icons/fi';
+import AdminSidebar from '../components/AdminSidebar';
+import { FiSearch, FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut } from 'react-icons/fi';
 
 const THIRD_LEVEL_POSITIONS = [
     'Secretary',
@@ -59,7 +60,7 @@ const getOfficialRegion = (item) => {
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   
   const [applications, setApplications] = useState([]);
   const [officials, setOfficials] = useState([]);
@@ -281,7 +282,31 @@ const Home = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[#f0f9ff] text-[#0f172a] font-['Quicksand',system-ui,sans-serif]">
+      <div className="flex min-h-screen bg-[#f0f9ff] text-[#0f172a] font-['Quicksand',system-ui,sans-serif]">
+        <AdminSidebar />
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+          {/* TOP NAVIGATION BAR */}
+          <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
+              <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
+                      <FiHome size={20} />
+                  </div>
+                  <div>
+                      <h1 className="text-lg font-['Quicksand'] font-black text-white tracking-tight leading-none italic uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
+                      <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">InsightED Top-Level Metrics</p>
+                  </div>
+              </div>
+
+              <div className="flex items-center gap-6">
+                  <div className="hidden md:flex flex-col items-end">
+                      <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
+                      <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
+                  </div>
+                  <button onClick={logout} className="p-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition-all border border-white/20 hover:border-red-500 shadow-sm">
+                      <FiLogOut size={18} />
+                  </button>
+              </div>
+          </header>
         <style>{`
           .dashboard-wrap { max-width:1180px; margin:auto; padding:28px; }
           .hero { background:#08315f; color:white; border-radius:28px; padding:28px; }
@@ -496,6 +521,7 @@ const Home = () => {
               </button>
             </aside>
           </section>
+        </div>
         </div>
       </div>
     </PageTransition>

@@ -655,6 +655,7 @@ export const getOfficials = async (req, res) => {
       }))
     });
   } catch (err) {
+    import('fs').then(fs => fs.writeFileSync('getOfficials_error.log', err.stack || err.message)).catch(() => {});
     res.status(500).json({ error: err.message });
   }
 };

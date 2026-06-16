@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
+import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 
@@ -808,9 +809,10 @@ const OfficialsRegistry = () => {
 
     return (
         <PageTransition>
-            <div className="min-h-screen bg-transparent flex flex-col font-sans overflow-x-hidden">
-
-                {/* TOP NAVIGATION BAR */}
+            <div className="flex h-screen bg-transparent font-sans overflow-hidden">
+                <AdminSidebar />
+                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+                    {/* TOP NAVIGATION BAR */}
                 <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
@@ -1001,10 +1003,10 @@ const OfficialsRegistry = () => {
                     </div>
 
                     {/* FILTERS & SEARCH BAR */}
-                    <div className="bg-white rounded-[2.5rem] p-6 shadow-2xl shadow-sky-200/40 border border-sky-200 mb-8 space-y-6">
-                        <div className="flex flex-col lg:flex-row gap-4 items-center">
+                    <div className="bg-white rounded-[2.5rem] p-6 shadow-2xl shadow-sky-200/40 border-2 border-[#08315F] mb-8 space-y-6">
+                        <div className="flex flex-col lg:flex-row flex-wrap gap-4 items-center">
                             {/* Category Dropdown */}
-                            <div className="w-full lg:w-[240px]">
+                            <div className="w-full flex-1 min-w-[200px]">
                                 <SearchableSelect
                                     label=""
                                     placeholder="Select Category"
@@ -1021,7 +1023,7 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Level Dropdown */}
-                            <div className="w-full lg:w-[240px]">
+                            <div className="w-full flex-1 min-w-[200px]">
                                 <SearchableSelect
                                     label=""
                                     placeholder="All Levels"
@@ -1037,7 +1039,7 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Region Dropdown */}
-                            <div className="w-full lg:w-[240px]">
+                            <div className="w-full flex-1 min-w-[200px]">
                                 <SearchableSelect
                                     label=""
                                     placeholder="All Regions"
@@ -1069,7 +1071,7 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Strand Dropdown */}
-                            <div className="w-full lg:w-[280px]">
+                            <div className="w-full flex-1 min-w-[240px]">
                                 <SearchableSelect
                                     label=""
                                     placeholder="All Strands"
@@ -1083,7 +1085,7 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Position Dropdown */}
-                            <div className="w-full lg:w-[280px]">
+                            <div className="w-full flex-1 min-w-[240px]">
                                 <SearchableSelect
                                     label=""
                                     placeholder="All Positions"
@@ -1097,7 +1099,7 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* Designation Dropdown */}
-                            <div className="w-full lg:w-[280px]">
+                            <div className="w-full flex-1 min-w-[240px]">
                                 <SearchableSelect
                                     label=""
                                     placeholder="All Designations"
@@ -1174,7 +1176,7 @@ const OfficialsRegistry = () => {
                                 <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                             </motion.div>
                         ) : viewMode === 'table' ? (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-blue-200">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-[#08315F]">
                                 <div className="w-full">
                                     <table className="w-full text-left border-collapse table-fixed">
                                         <thead>
@@ -1304,7 +1306,7 @@ const OfficialsRegistry = () => {
                                             key={item.TLOid}
                                             whileHover={{ y: -8 }}
                                             onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
-                                            className={`bg-white rounded-[2.5rem] p-8 border border-blue-200 shadow-xl shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
+                                            className={`bg-white rounded-[2.5rem] p-8 border-2 border-[#08315F] shadow-xl shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                         >
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                                             <div>
@@ -1651,12 +1653,12 @@ const OfficialsRegistry = () => {
                 )}
 
                 <footer className="mt-auto p-12 text-center bg-white border-t border-slate-100 flex flex-col items-center gap-6">
-                    <img src="https://cdn.worldvectorlogo.com/logos/deped.svg" className="h-8 opacity-40 grayscale" alt="DepEd" />
                     <div className="space-y-1">
                         <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em]">© 2026 Department of Education • InsightEd Nexus Portal</p>
                         <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest italic">Strictly for Personnel Division Administrative Use Only</p>
                     </div>
                 </footer>
+                </div>
             </div>
         </PageTransition>
     );
