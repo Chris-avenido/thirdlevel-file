@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import PageTransition from '../components/PageTransition';
 import AdminSidebar from '../components/AdminSidebar';
+import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import { FiSearch, FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut } from 'react-icons/fi';
 
 const THIRD_LEVEL_POSITIONS = [
@@ -22,41 +23,7 @@ const THIRD_LEVEL_POSITIONS = [
   'ASDS'
 ];
 
-const getOfficialLevel = (item) => {
-  const strand = item.strand || item.target_office || '';
-  const office = item.office || item.target_office || '';
-  const pos = item.position_title || item.target_position || '';
-
-  const isRegionStrand = /^(Region|NCR|CAR|NIR)/i.test(strand);
-  if (!isRegionStrand) return 'Central Office';
-
-  const isROOffice = !office || office.toLowerCase() === strand.toLowerCase() || office.toLowerCase().includes('regional office') || office.toLowerCase() === 'ro';
-  const isROPosition = /(Regional Director|RD|ARD)/i.test(pos);
-  const isSDOPosition = /(Schools Division Superintendent|SDS|ASDS)/i.test(pos);
-
-  if (isSDOPosition) return 'Schools Division Office';
-  if (isROOffice || isROPosition) return 'Regional Office';
-
-  return 'Schools Division Office';
-};
-
-const getOfficialRegion = (item) => {
-  if (getOfficialLevel(item) === 'Central Office') return 'Central Office';
-
-  const strand = (item.strand || item.target_office || '').trim();
-  if (strand.toUpperCase() === 'REGION XIII' || strand.toUpperCase() === 'CARAGA') return 'CARAGA';
-
-  const knownRegions = [
-    'Region I', 'Region II', 'Region III', 'Region IV-A', 'Region IV-B',
-    'Region V', 'Region VI', 'Region VII', 'Region VIII', 'Region IX',
-    'Region X', 'Region XI', 'Region XII', 'NCR', 'CAR', 'NIR', 'BARMM'
-  ];
-
-  const found = knownRegions.find(r => r.toLowerCase() === strand.toLowerCase() || strand.toLowerCase().includes(r.toLowerCase()));
-  if (found) return found;
-
-  return 'Central Office';
-};
+import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -67,6 +34,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeQueueFilter, setActiveQueueFilter] = useState('all');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,7 +63,7 @@ const Home = () => {
     };
 
     if (token) fetchData();
-  }, [token]);
+  }, [token, refreshTrigger]);
 
   // KPIs Logic
   const thirdLevelCount = useMemo(() => {
@@ -499,8 +468,8 @@ const Home = () => {
 
               <aside className="dash-card side">
                 <div className="h-px bg-slate-100 my-1"></div>
-                <button className="action-btn primary">
-                  <FiUserPlus /> Add New Personnel
+                <button className="action-btn primary" onClick={() => setIsUploadModalOpen(true)}>
+                  <FiUserPlus /> Add/Update Officials Directory
                 </button>
                 <button className="action-btn">
                   <FiUploadCloud /> Bulk Upload Roster
@@ -521,6 +490,11 @@ const Home = () => {
           </div>
         </div>
       </div>
+      <UploadDirectoryModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+        onSuccess={() => setRefreshTrigger(prev => prev + 1)} 
+      />
     </PageTransition>
   );
 };
