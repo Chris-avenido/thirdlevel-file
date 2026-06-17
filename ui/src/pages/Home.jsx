@@ -468,13 +468,13 @@ const Home = () => {
 
               <aside className="dash-card side">
                 <div className="h-px bg-slate-100 my-1"></div>
-                <button 
-                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} 
+                <button
+                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                   onClick={() => setIsUploadModalOpen(true)}
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can upload directory data.' : ''}
                 >
-                  <FiUserPlus />Upload Officials Directory Data
+                  <FiUserPlus />Upload Officials Directory Data test
                 </button>
                 <button className="action-btn">
                   <FiUploadCloud /> Bulk Upload Roster
