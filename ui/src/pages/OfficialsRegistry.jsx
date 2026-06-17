@@ -15,6 +15,25 @@ import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import { expandAcronym } from '../utils/officialsUtils';
+import ModernDatePicker from '../components/ModernDatePicker';
+const JustificationInput = ({ value, onChange, placeholder }) => {
+    const [local, setLocal] = useState(value);
+    
+    useEffect(() => {
+        setLocal(value);
+    }, [value]);
+
+    return (
+        <textarea
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={() => onChange(local)}
+            placeholder={placeholder}
+            rows={4}
+            className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
+        />
+    );
+};
 
 const THIRD_LEVEL_POSITIONS = [
     'Secretary',
@@ -133,10 +152,12 @@ const OfficialsRegistry = () => {
     const [levelFilter, setLevelFilter] = useState('All');
     const [regionFilter, setRegionFilter] = useState('All');
     const [strandFilter, setStrandFilter] = useState('All');
+    const [officeFilter, setOfficeFilter] = useState('All');
     const [positionFilter, setPositionFilter] = useState('All');
     const [designationFilter, setDesignationFilter] = useState('All');
     const [viewMode, setViewMode] = useState('table');
     const [strands, setStrands] = useState([]);
+    const [offices, setOffices] = useState([]);
     const [tabPositions, setTabPositions] = useState([]); // Positions specifically for the active tab
     const [designations, setDesignations] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
@@ -298,6 +319,7 @@ const OfficialsRegistry = () => {
     const [actionOfficial, setActionOfficial] = useState(null);
     const [adminAction, setAdminAction] = useState(''); // 'reassign' | 'succeed' | 'vacate'
     const [justification, setJustification] = useState('');
+    const [effectivityDate, setEffectivityDate] = useState('');
     const [targetSlot, setTargetSlot] = useState('');
     const [vacantSlots, setVacantSlots] = useState([]);
     const [activeOfficials, setActiveOfficials] = useState([]);
@@ -338,11 +360,11 @@ const OfficialsRegistry = () => {
 
     useEffect(() => {
         fetchOfficials();
-    }, [searchTerm, strandFilter, positionFilter, designationFilter]);
+    }, [searchTerm, strandFilter, officeFilter, positionFilter, designationFilter]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, activeTab, strandFilter, positionFilter, designationFilter, sortConfig, tableFilters]);
+    }, [searchTerm, activeTab, strandFilter, officeFilter, positionFilter, designationFilter, sortConfig, tableFilters]);
 
     const fetchStrands = async () => {
         try {
@@ -365,6 +387,8 @@ const OfficialsRegistry = () => {
                 });
 
                 setStrands(uniqueStrands);
+                let uniqueOffices = [...new Set(data.data.map(o => o.office).filter(Boolean))].sort();
+                setOffices(uniqueOffices);
                 let uniqueDesignations = [...new Set(data.data.map(o => o.designation).filter(Boolean))].sort();
                 setDesignations(uniqueDesignations);
             }
@@ -380,6 +404,7 @@ const OfficialsRegistry = () => {
             if (searchTerm) queryParams.append('search', searchTerm);
             queryParams.append('status', 'All');
             if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
+            if (officeFilter !== 'All') queryParams.append('office', officeFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
             if (designationFilter !== 'All') queryParams.append('designation', designationFilter);
 
@@ -530,6 +555,7 @@ const OfficialsRegistry = () => {
                     TLOid: actionOfficial.TLOid,
                     action: adminAction,
                     justification,
+                    effectivityDate,
                     target_TLOid: targetSlot || undefined,
                     successor_TLOid: successorSlot || undefined,
                     assignee_TLOid: assigneeSlot || undefined
@@ -560,6 +586,7 @@ const OfficialsRegistry = () => {
         setActionOfficial(official);
         setAdminAction(action);
         setJustification('');
+        setEffectivityDate('');
         setTargetSlot('');
         setSuccessorSlot('');
         setAssigneeSlot('');
@@ -843,7 +870,7 @@ const OfficialsRegistry = () => {
                         <div className="flex flex-wrap items-center justify-center gap-4">
                             {/* Card 1: Third Level Officials */}
                             <div
-                                onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level Officials' ? 'border-blue-500 shadow-md ring-4 ring-blue-500/10' : 'border-blue-200 shadow-none hover:border-blue-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
                                 {activeTab === 'Third Level Officials' && (
@@ -883,7 +910,7 @@ const OfficialsRegistry = () => {
 
                             {/* Card 2: Third Level (OIC) */}
                             <div
-                                onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level (OIC)' ? 'border-amber-500 shadow-md ring-4 ring-amber-500/10' : 'border-amber-200 shadow-none hover:border-amber-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
                                 {activeTab === 'Third Level (OIC)' && (
@@ -923,7 +950,7 @@ const OfficialsRegistry = () => {
 
                             {/* Card 3: Division Chiefs (OIC) */}
                             <div
-                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs (OIC)' ? 'border-emerald-500 shadow-md ring-4 ring-emerald-500/10' : 'border-emerald-200 shadow-none hover:border-emerald-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
                                 {activeTab === 'Division Chiefs (OIC)' && (
@@ -963,7 +990,7 @@ const OfficialsRegistry = () => {
 
                             {/* Card 4: Division Chiefs */}
                             <div
-                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs' ? 'All' : 'Division Chiefs'); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs' ? 'All' : 'Division Chiefs'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                 className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs' ? 'border-purple-500 shadow-md ring-4 ring-purple-500/10' : 'border-purple-200 shadow-none hover:border-purple-300'} flex items-center gap-4 cursor-pointer transition-all`}
                             >
                                 {activeTab === 'Division Chiefs' && (
@@ -1012,7 +1039,7 @@ const OfficialsRegistry = () => {
                                     label=""
                                     placeholder="Select Category"
                                     value={activeTab}
-                                    onChange={(val) => { setActiveTab(val); setPositionFilter('All'); setStrandFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                    onChange={(val) => { setActiveTab(val); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
                                     options={[
                                         { value: 'All', label: 'All Categories' },
                                         { value: 'Third Level Officials', label: 'Third Level Officials' },
@@ -1027,11 +1054,11 @@ const OfficialsRegistry = () => {
                             <div className="w-full flex-1 min-w-[200px]">
                                 <SearchableSelect
                                     label=""
-                                    placeholder="All Levels"
+                                    placeholder="All CO / RO / SDO"
                                     value={levelFilter}
                                     onChange={setLevelFilter}
                                     options={[
-                                        { value: 'All', label: 'All Levels' },
+                                        { value: 'All', label: 'All CO / RO / SDO' },
                                         { value: 'Central Office', label: 'Central Office' },
                                         { value: 'Regional Office', label: 'Regional Office' },
                                         { value: 'Schools Division Office', label: 'Schools Division Office' }
@@ -1085,6 +1112,20 @@ const OfficialsRegistry = () => {
                                 />
                             </div>
 
+                            {/* Office Dropdown */}
+                            <div className="w-full flex-1 min-w-[240px]">
+                                <SearchableSelect
+                                    label=""
+                                    placeholder="All Offices / SDOs"
+                                    value={officeFilter}
+                                    onChange={setOfficeFilter}
+                                    options={[
+                                        { value: 'All', label: 'All Offices / SDOs' },
+                                        ...offices.map(o => ({ value: o, label: o }))
+                                    ]}
+                                />
+                            </div>
+
                             {/* Position Dropdown */}
                             <div className="w-full flex-1 min-w-[240px]">
                                 <SearchableSelect
@@ -1122,6 +1163,7 @@ const OfficialsRegistry = () => {
                                     setLevelFilter('All');
                                     setRegionFilter('All');
                                     setStrandFilter('All');
+                                    setOfficeFilter('All');
                                     setPositionFilter('All');
                                     setDesignationFilter('All');
                                 }}
@@ -1625,14 +1667,23 @@ const OfficialsRegistry = () => {
                                                 />
                                             )}
 
+                                            {(adminAction === 'reassign' || adminAction === 'vacate') && (
+                                                <div className="mb-4">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Date of Effectivity</label>
+                                                    <ModernDatePicker
+                                                        value={effectivityDate}
+                                                        onChange={(val) => setEffectivityDate(val)}
+                                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                    />
+                                                </div>
+                                            )}
+
                                             <div>
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Reason</label>
-                                                <textarea
+                                                <JustificationInput
                                                     value={justification}
-                                                    onChange={(e) => setJustification(e.target.value)}
+                                                    onChange={setJustification}
                                                     placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide a detailed reason for this action...'}
-                                                    rows={4}
-                                                    className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
                                                 />
                                             </div>
 

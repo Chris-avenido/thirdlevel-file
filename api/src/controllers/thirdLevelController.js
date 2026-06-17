@@ -295,7 +295,7 @@ export const updateProfile = async (req, res) => {
       'performance_rating_ipcrf', 'performance_rating_cespes',
       'previous_positions', 'is_oic',
       'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-      'pending_admin_case', 'ombudsman_case', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
+      'pending_admin_case', 'ombudsman_case', 'sandiganbayan_case', 'nbi_case', 'csc_case', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
     ];
 
     const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings']);
@@ -548,7 +548,7 @@ export const getOfficials = async (req, res) => {
     return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
   }
 
-  const { search, status, strand, category, position, designation } = req.query;
+  const { search, status, strand, category, position, designation, office } = req.query;
   let query = `
     WITH RankedOfficials AS (
       SELECT 
@@ -603,6 +603,11 @@ export const getOfficials = async (req, res) => {
   if (strand && strand !== 'All') {
     params.push(strand);
     conditions.push(`strand = $${params.length}`);
+  }
+
+  if (office && office !== 'All') {
+    params.push(office);
+    conditions.push(`office = $${params.length}`);
   }
 
   if (position && position !== 'All') {
@@ -824,12 +829,14 @@ export const getUnassignedPersonnel = async (req, res) => {
 };
 
 export const adminAction = async (req, res) => {
-  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User') {
+  if (req.user.role !== 'Personnel Admin' && req.user.role !== 'Admin' && req.user.role !== 'Super User' && req.user.role !== 'Central Office') {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const { TLOid, action, justification, target_TLOid, successor_TLOid, assignee_TLOid } = req.body;
+  const { TLOid, action, justification, effectivityDate, target_TLOid, successor_TLOid, assignee_TLOid } = req.body;
   if (!TLOid || !action) return res.status(400).json({ error: 'TLOid and action are required' });
+
+  const effTs = effectivityDate && /^\d{4}-\d{2}-\d{2}$/.test(effectivityDate) ? `'${effectivityDate} 00:00:00'::timestamp` : 'NOW()';
 
   const client = await pool.connect();
   try {
@@ -844,7 +851,7 @@ export const adminAction = async (req, res) => {
       await client.query(`
         INSERT INTO third_level_officials_updates
           ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${effTs})
       `, [official.TLOid, official.first_name, official.last_name, official.position_title,
       official.office, official.strand, official.email,
       action === 'vacate' ? 'Vacated' : action === 'succeed' ? 'Succeeded' : 'Reassigned',
@@ -854,7 +861,7 @@ export const adminAction = async (req, res) => {
     if (action === 'vacate') {
       await client.query(`
         UPDATE third_level_official_masterlist
-        SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW()
+        SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = ${effTs}
         WHERE "TLOid" = $1
       `, [TLOid]);
 
@@ -867,33 +874,33 @@ export const adminAction = async (req, res) => {
         await client.query(`
           INSERT INTO third_level_officials_updates
             ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, NOW())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, ${effTs})
         `, [successor_TLOid, successor.first_name, successor.last_name, successor.position_title,
           successor.office, successor.strand, successor.email, `Succeeding ${official.first_name} ${official.last_name}`]);
 
         await client.query(`
           UPDATE third_level_official_masterlist
           SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL,
-              updated_at = NOW()
+              updated_at = ${effTs}
           WHERE "TLOid" = $1
         `, [successor_TLOid]);
 
         await client.query(`
           UPDATE third_level_official_masterlist
-          SET first_name = $1, last_name = $2, email = $3, status = 'Active', updated_at = NOW()
+          SET first_name = $1, last_name = $2, email = $3, status = 'Active', updated_at = ${effTs}
           WHERE "TLOid" = $4
         `, [successor.first_name, successor.last_name, successor.email, TLOid]);
 
         await client.query(`
           INSERT INTO third_level_officials_updates
             ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, ${effTs})
         `, [TLOid, successor.first_name, successor.last_name, official.position_title,
           official.office, official.strand, successor.email, `Succession from ${successor.position_title}`]);
       } else {
         await client.query(`
           UPDATE third_level_official_masterlist
-          SET status = 'Succeeded', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW()
+          SET status = 'Succeeded', first_name = NULL, last_name = NULL, email = NULL, updated_at = ${effTs}
           WHERE "TLOid" = $1
         `, [TLOid]);
       }
@@ -926,7 +933,7 @@ export const adminAction = async (req, res) => {
           await client.query(`
             INSERT INTO third_level_officials_updates
               ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, ${effTs})
           `, [TLOid, official.first_name, official.last_name, official.position_title,
             official.office, official.strand, official.email, justification || 'Reassigned position to another personnel']);
         }
@@ -934,14 +941,14 @@ export const adminAction = async (req, res) => {
         await client.query(`
           UPDATE third_level_official_masterlist
           SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
-              status = 'Active', updated_at = NOW()
+              status = 'Active', updated_at = ${effTs}
           WHERE "TLOid" = $5
         `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid]);
 
         await client.query(`
           INSERT INTO third_level_officials_updates
             ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, ${effTs})
         `, [TLOid, assignee.first_name, assignee.last_name, official.position_title,
           official.office, official.strand, assignee.email, justification || 'Assigned through reassignment']);
       } else
@@ -953,7 +960,7 @@ export const adminAction = async (req, res) => {
             await client.query(`
             INSERT INTO third_level_officials_updates
               ("TLOid", first_name, last_name, position_title, office, strand, email, status, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', ${effTs})
           `, [target_TLOid, targetSlot.first_name, targetSlot.last_name, targetSlot.position_title,
               targetSlot.office, targetSlot.strand, targetSlot.email]);
           }
@@ -961,14 +968,14 @@ export const adminAction = async (req, res) => {
           await client.query(`
           UPDATE third_level_official_masterlist
           SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
-              status = 'Active', updated_at = NOW()
+              status = 'Active', updated_at = ${effTs}
           WHERE "TLOid" = $5
         `, [official.first_name, official.last_name, official.email, official.contact_details, target_TLOid]);
 
           await client.query(`
           INSERT INTO third_level_officials_updates
             ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, ${effTs})
         `, [target_TLOid, official.first_name, official.last_name,
             targetSlot?.position_title || official.position_title,
             targetSlot?.office || official.office,
@@ -976,13 +983,13 @@ export const adminAction = async (req, res) => {
 
           await client.query(`
           UPDATE third_level_official_masterlist
-          SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW()
+          SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = ${effTs}
           WHERE "TLOid" = $1
         `, [TLOid]);
         } else {
           await client.query(`
           UPDATE third_level_official_masterlist
-          SET updated_at = NOW()
+          SET updated_at = ${effTs}
           WHERE "TLOid" = $1
         `, [TLOid]);
         }

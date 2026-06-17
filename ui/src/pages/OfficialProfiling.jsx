@@ -23,7 +23,9 @@ const TABS = [
     { id: 'eligibility', label: 'Eligibility', icon: FiAward },
     { id: 'experience', label: 'Experience', icon: FiBriefcase },
     { id: 'education', label: 'Education', icon: FiBook },
+    { id: 'performance', label: 'Performance Ratings', icon: FiActivity },
     { id: 'trainings', label: 'Prof. Dev. Trainings', icon: FiStar },
+    { id: 'achievements', label: 'Achievements', icon: FiTrendingUp },
     { id: 'documents', label: 'Documents', icon: FiFileText },
     { id: 'legal', label: 'Legal', icon: FiShield },
     { id: 'application', label: 'Apply for Position', icon: FiActivity },
@@ -213,6 +215,7 @@ const OfficialProfiling = () => {
         cespes_rating_1_period: '', cespes_rating_2_period: '',
         managerial_experience_total: '',
         pending_admin_case: '', ombudsman_case: '',
+        sandiganbayan_case: '', nbi_case: '', csc_case: '',
         updated_at: null,
     });
     const [prevPositions, setPrevPositions] = useState([]);
@@ -275,8 +278,14 @@ const OfficialProfiling = () => {
         if (tabId === 'education') {
             return !!(profile.highest_education && profile.education_program && profile.education_year_graduated);
         }
+        if (tabId === 'performance') {
+            return !!(profile.performance_rating_1 && profile.performance_rating_1_period);
+        }
         if (tabId === 'trainings') {
             return trainings.length > 0;
+        }
+        if (tabId === 'achievements') {
+            return !!profile.notable_achievements;
         }
         if (tabId === 'documents') {
             return !!profile.photo_binary_id;
@@ -300,7 +309,7 @@ const OfficialProfiling = () => {
             const header = [
                 'First Name', 'Last Name', 'Middle Name', 'Suffix', 'Gender', 'Date of Birth', 'Age', 'Civil Status',
                 'Position Title', 'Designation', 'Date of Present Position', 'Permanent Address',
-                'EMT Passer', 'EMT Date', 'CES Stage', 'CES Conferment Date',
+                'Career Executive Service (CES)', 'CES Conferment Date', 'Educational Management Test (EMT)', 'EMT Date',
                 'Highest Education', 'Specific Degree', 'Program / Course', 'Year Graduated',
                 'Latest Rating (1st)', 'Previous Rating (2nd)', 'CESPES 1st Sem', 'CESPES 2nd Sem', 'Total Managerial Experience',
                 'Notable Achievements', 'Previous Position 1', 'Documents 2x2 Photo', 'Administrative Cases', 'Ombudsman / CSC Cases'
@@ -308,7 +317,7 @@ const OfficialProfiling = () => {
             const row = [
                 profile.first_name, profile.last_name, profile.middle_name, profile.suffix, profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
                 profile.position_title, profile.designation, profile.appointment_date, profile.permanent_address,
-                profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date, profile.ces_stage, profile.ces_conferment_date,
+                profile.ces_stage, profile.ces_conferment_date, profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date,
                 profile.highest_education, profile.specific_degree, profile.education_program, profile.education_year_graduated,
                 profile.performance_rating_1, profile.performance_rating_2, profile.cespes_1_rating, profile.cespes_2_rating, profile.managerial_experience_total,
                 profile.notable_achievements, prevPositions[0]?.position_name || '', profile.photo_binary_id ? 'Uploaded' : 'Missing', profile.pending_admin_case, profile.ombudsman_case
@@ -424,9 +433,9 @@ const OfficialProfiling = () => {
             let eligRows = [
                 [{ text: 'Eligibility', options: { colspan: 2, fill: 'B91C1C', color: 'FFFFFF', bold: true, align: 'center', fontSize: 12 } }]
             ];
-            eligRows.push([{ text: profile.ces_stage || 'CESE', options: { fontSize: 10, color: '000000' } }, { text: profile.ces_conferment_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
-            slide.addTable(eligRows, { x: 6.2, y: 4.0, w: 3.6, colW: [1.6, 2.0], border: { pt: 1, color: 'B91C1C' }, fill: 'FFFFFF' });
-
+            eligRows.push([{ text: `CES: ${profile.ces_stage || 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.ces_conferment_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
+            eligRows.push([{ text: `EMT: ${profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.emt_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
+            slide.addTable(eligRows, { x: 6.2, y: 4.0, w: 3.6, colW: [2.0, 1.6], border: { pt: 1, color: 'B91C1C' }, fill: 'FFFFFF' });
             pres.writeFile({ fileName: `profile_${profile.last_name || 'export'}.pptx` }).then(() => setExporting(false));
         } catch (err) {
             console.error(err);
@@ -599,6 +608,9 @@ const OfficialProfiling = () => {
                     managerial_experience_total: d.managerial_experience_total || '',
                     pending_admin_case: d.pending_admin_case || '',
                     ombudsman_case: d.ombudsman_case || '',
+                    sandiganbayan_case: d.sandiganbayan_case || '',
+                    nbi_case: d.nbi_case || '',
+                    csc_case: d.csc_case || '',
                     alt_email_1: d.alt_email_1 || '',
                     alt_email_2: d.alt_email_2 || '',
                     alt_contact_details_1: d.alt_contact_details_1 || '',
@@ -886,9 +898,29 @@ const OfficialProfiling = () => {
         setPrevPositions(p => p.filter(x => x.position_id !== pos.position_id));
     };
 
-    const handleAddTraining = () => setTrainings(t => [...t, { training_id: `tmp-${Date.now()}`, training_name: '', date_completed: '', isNew: true }]);
+    const handleAddTraining = () => setTrainings(t => [...t, { training_id: `tmp-${Date.now()}`, training_name: '', date_from: '', date_to: '', hours_per_day: '8', hours: '', isNew: true }]);
     const handleRemoveTraining = (tr) => {
         setTrainings(t => t.filter(x => x.training_id !== tr.training_id));
+    };
+
+    const handleTrainingDateChange = (idx, field, val) => {
+        setTrainings(t => t.map((x, i) => {
+            if (i !== idx) return x;
+            const newX = { ...x, [field]: val };
+            const from = newX.date_from || newX.date_completed;
+            const to = newX.date_to || newX.date_completed;
+            const hrsPerDay = parseFloat(newX.hours_per_day) || 8;
+            if (from && to) {
+                const d1 = new Date(from);
+                const d2 = new Date(to);
+                if (d1 <= d2) {
+                    const diffTime = Math.abs(d2 - d1);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    newX.hours = String(diffDays * hrsPerDay);
+                }
+            }
+            return newX;
+        }));
     };
 
     // ── LOADING ──
@@ -1116,7 +1148,7 @@ const OfficialProfiling = () => {
                 {/* ── Body Content ── */}
                 <div className="w-full flex-1 flex flex-row lg:overflow-hidden bg-transparent">
                     {/* Sidebar (Desktop Only) */}
-                    <aside className="hidden lg:flex flex-col bg-transparent border-r border-slate-200/80 w-[260px] h-full shrink-0 overflow-y-auto pt-6">
+                    <aside className="hidden lg:flex flex-col bg-transparent border-r border-slate-200/80 w-[260px] h-full shrink-0 pt-6">
                         {/* Talent Portal Branding */}
                         <div className="px-5 pt-2 pb-4 border-b border-slate-100">
                             <div className="flex items-center gap-3">
@@ -1367,7 +1399,36 @@ const OfficialProfiling = () => {
                                                 {tab === 'eligibility' && (
                                                     <div className="space-y-6">
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
-                                                            <SectionLabel>EMT Eligibility</SectionLabel>
+                                                            <SectionLabel color="#0038A8">Career Executive Service (CES)</SectionLabel>
+                                                            <Field label="CES Eligibility / Rank Status">
+                                                                <select value={profile.ces_stage} onChange={e => setP('ces_stage', e.target.value)} className={sel}>
+                                                                    <option value="">Select Status</option>
+                                                                    {[
+                                                                        'Stage 1 (CES Written Examination)',
+                                                                        'Stage 2 (Assessment Center)',
+                                                                        'Stage 3 (Performance Validation)',
+                                                                        'Stage 4 (Board Interview)',
+                                                                        'CES Eligible',
+                                                                        'CESO Rank VI',
+                                                                        'CESO Rank V',
+                                                                        'CESO Rank IV',
+                                                                        'CESO Rank III',
+                                                                        'CESO Rank II',
+                                                                        'CESO Rank I',
+                                                                        'Not Applicable'
+                                                                    ].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                </select>
+                                                            </Field>
+                                                            <Field label="Date of Conferment (if applicable)">
+                                                                <div className="relative">
+                                                                    <ModernDatePicker value={profile.ces_conferment_date} onChange={val => setP('ces_conferment_date', val)} className={inp} />
+
+                                                                </div>
+                                                            </Field>
+                                                        </div>
+
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                            <SectionLabel>Educational Management Test (EMT)</SectionLabel>
                                                             <Field label="Are you an EMT Passer?">
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
                                                                     {[{ val: true, label: 'Yes' }, { val: false, label: 'No' }].map(opt => (
@@ -1398,35 +1459,6 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                 </Field>
                                                             )}
-                                                        </div>
-
-                                                        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 border border-slate-200/60 shadow-xl shadow-slate-100/30 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-100/40 hover:border-slate-300/60 space-y-6">
-                                                            <SectionLabel color="#0038A8">CES Eligibility</SectionLabel>
-                                                            <Field label="CES Eligibility / Rank Status">
-                                                                <select value={profile.ces_stage} onChange={e => setP('ces_stage', e.target.value)} className={sel}>
-                                                                    <option value="">Select Status</option>
-                                                                    {[
-                                                                        'Stage 1 (CES Written Examination)',
-                                                                        'Stage 2 (Assessment Center)',
-                                                                        'Stage 3 (Performance Validation)',
-                                                                        'Stage 4 (Board Interview)',
-                                                                        'CES Eligible',
-                                                                        'CESO Rank VI',
-                                                                        'CESO Rank V',
-                                                                        'CESO Rank IV',
-                                                                        'CESO Rank III',
-                                                                        'CESO Rank II',
-                                                                        'CESO Rank I',
-                                                                        'Not Applicable'
-                                                                    ].map(o => <option key={o} value={o}>{o}</option>)}
-                                                                </select>
-                                                            </Field>
-                                                            <Field label="Date of Conferment (if applicable)">
-                                                                <div className="relative">
-                                                                    <ModernDatePicker value={profile.ces_conferment_date} onChange={val => setP('ces_conferment_date', val)} className={inp} />
-
-                                                                </div>
-                                                            </Field>
                                                         </div>
                                                     </div>
                                                 )}
@@ -1595,10 +1627,15 @@ const OfficialProfiling = () => {
                                                                 </Field>
                                                             </div>
                                                         </div>
+                                                    </div>
+                                                )}
 
+                                                {/* ── PERFORMANCE RATINGS ── */}
+                                                {tab === 'performance' && (
+                                                    <div className="space-y-6">
                                                         {/* Performance Section */}
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
-                                                            <SectionLabel color="#0038A8">Performance Ratings</SectionLabel>
+                                                            <SectionLabel color="#0038A8">IPCRF / OPCRF</SectionLabel>
 
                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                                 {/* Rating 1 */}
@@ -1704,17 +1741,23 @@ const OfficialProfiling = () => {
                                                             </div>
                                                         </div>
 
-                                                        {/* Recognition Section */}
+                                                    </div>
+                                                )}
+
+                                                {/* ── ACHIEVEMENTS ── */}
+                                                {tab === 'achievements' && (
+                                                    <div className="space-y-6">
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <SectionLabel color="#FCD116">Notable Achievements</SectionLabel>
-                                                            <Field label="Awards / Recognitions / Notable Achievements (No Abbreviations)">
-                                                                <textarea
+                                                            <Field label="Awards / Recognitions / Notable Achievements">
+                                                                <select
                                                                     value={profile.notable_achievements}
                                                                     onChange={e => setP('notable_achievements', e.target.value)}
-                                                                    rows={5}
-                                                                    placeholder="Please list your most significant awards, recognitions, and professional milestones."
-                                                                    className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50"
-                                                                />
+                                                                    className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all shadow-sm shadow-slate-50 cursor-pointer"
+                                                                >
+                                                                    <option value="">-- Options to be provided by Personnel Division (PD) --</option>
+                                                                    {profile.notable_achievements && <option value={profile.notable_achievements}>{profile.notable_achievements}</option>}
+                                                                </select>
                                                             </Field>
                                                         </div>
                                                     </div>
@@ -1740,19 +1783,26 @@ const OfficialProfiling = () => {
 
                                                             {/* Trainings List */}
                                                             <div className="space-y-3">
-                                                                <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_160px_100px_44px] gap-3 px-2">
-                                                                    {['Training / Seminar Name', 'Date Completed', 'No. of Hours', ''].map(h => (
+                                                                <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 px-2">
+                                                                    {['Training / Seminar Name', 'Date From', 'Date To', 'Hrs/Day', 'Total Hrs', ''].map(h => (
                                                                         <span key={h} className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{h}</span>
                                                                     ))}
                                                                 </div>
                                                                 {trainings.map((tr, idx) => (
-                                                                    <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_160px_100px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
+                                                                    <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
                                                                         <input type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
                                                                         <div className="relative">
-                                                                            <ModernDatePicker value={tr.date_completed ? tr.date_completed.split('T')[0] : ''} onChange={val => setTrainings(t => t.map((x, i) => i === idx ? { ...x, date_completed: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-
+                                                                            <ModernDatePicker value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                         </div>
-                                                                        <input type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Hours" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
+                                                                        <div className="relative">
+                                                                            <ModernDatePicker value={tr.date_to ? tr.date_to.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_to', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                        </div>
+                                                                        <select value={tr.hours_per_day || '8'} onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)} className="bg-white border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0 cursor-pointer shadow-sm">
+                                                                            <option value="8">8 hrs</option>
+                                                                            <option value="4">4 hrs</option>
+                                                                            <option value="2">2 hrs</option>
+                                                                        </select>
+                                                                        <input type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
                                                                         <button onClick={() => handleRemoveTraining(tr)} className="w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
                                                                     </motion.div>
                                                                 ))}
@@ -1830,11 +1880,22 @@ const OfficialProfiling = () => {
                                                         </div>
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <Field label="Pending Administrative Case/s (Type 'Not Applicable' if none)">
-                                                                <textarea value={profile.pending_admin_case} onChange={e => setP('pending_admin_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none. Otherwise, describe the nature and status of the case." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
+                                                                <textarea value={profile.pending_admin_case || ''} onChange={e => setP('pending_admin_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none. Otherwise, describe the nature and status of the case." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
                                                             </Field>
-                                                            <Field label="Ombudsman / Sandiganbayan / CSC Case/s (Type 'Not Applicable' if none)">
-                                                                <textarea value={profile.ombudsman_case} onChange={e => setP('ombudsman_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
-                                                            </Field>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                <Field label="Sandiganbayan / Case/s">
+                                                                    <textarea value={profile.sandiganbayan_case || ''} onChange={e => setP('sandiganbayan_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                                </Field>
+                                                                <Field label="NBI Clearance / Case/s">
+                                                                    <textarea value={profile.nbi_case || ''} onChange={e => setP('nbi_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                                </Field>
+                                                                <Field label="CSC / Case/s">
+                                                                    <textarea value={profile.csc_case || ''} onChange={e => setP('csc_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                                </Field>
+                                                                <Field label="Ombudsman / Case/s">
+                                                                    <textarea value={profile.ombudsman_case || ''} onChange={e => setP('ombudsman_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                                </Field>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
@@ -2133,8 +2194,12 @@ const OfficialProfiling = () => {
                                                                                                                     </thead>
                                                                                                                     <tbody className="text-slate-800">
                                                                                                                         <tr>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">{profile.ces_stage || 'CESE'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Career Executive Service (CES): {profile.ces_stage || 'Not Applicable'}</td>
                                                                                                                             <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.ces_conferment_date || '—'}</td>
+                                                                                                                        </tr>
+                                                                                                                        <tr>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Educational Management Test (EMT): {profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.emt_date || '—'}</td>
                                                                                                                         </tr>
                                                                                                                     </tbody>
                                                                                                                 </table>
@@ -2235,10 +2300,10 @@ const OfficialProfiling = () => {
                                                             <div>
                                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Eligibility</p>
                                                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                                                                    <SummaryRow label="EMT Passer" value={profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : null} />
-                                                                    <SummaryRow label="EMT Date" value={profile.emt_date} />
-                                                                    <SummaryRow label="CES Stage" value={profile.ces_stage} />
+                                                                    <SummaryRow label="Career Executive Service (CES)" value={profile.ces_stage} />
                                                                     <SummaryRow label="CES Conferment Date" value={profile.ces_conferment_date} />
+                                                                    <SummaryRow label="Educational Management Test (EMT)" value={profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : null} />
+                                                                    <SummaryRow label="EMT Date" value={profile.emt_date} />
                                                                 </div>
                                                             </div>
 
