@@ -87,22 +87,25 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
     setCurrentPage(1);
   };
 
-  if (!isOpen) return null;
+  // Remove the early return so AnimatePresence stays mounted
+  // if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <motion.div 
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08315F]/60 backdrop-blur-sm p-4 font-['Quicksand',system-ui,sans-serif]"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
+      {isOpen && (
+        <motion.div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08315F]/60 backdrop-blur-sm p-4 font-['Quicksand',system-ui,sans-serif]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
         <motion.div 
           className="bg-white rounded-[28px] shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-blue-100"
-          initial={{ y: 50, opacity: 0, scale: 0.95 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 20, opacity: 0, scale: 0.95 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          initial={{ opacity: 0, rotateY: -90, scale: 0.95 }}
+          animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.5, rotateX: -20, rotateY: 20 }}
+          transition={{ duration: 0.6, type: 'spring', bounce: 0.35 }}
+          style={{ transformPerspective: 1200, transformOrigin: "center" }}
         >
           <div className="flex items-center justify-between p-6 border-b border-blue-50 bg-[#f8fafc]">
             <div>
@@ -416,6 +419,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         </motion.div>
       </motion.div>
+      )}
     </AnimatePresence>
   );
 };

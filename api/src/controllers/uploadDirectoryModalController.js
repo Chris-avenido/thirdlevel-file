@@ -27,6 +27,9 @@ export const bulkProcessDirectory = async (req, res) => {
     await client.query('BEGIN');
     await ensureColumns(client);
 
+    const allMasterRes = await client.query('SELECT * FROM third_level_official_masterlist');
+    const allMaster = allMasterRes.rows;
+
     const maxTloRes = await client.query(`
       SELECT "TLOid" FROM third_level_official_masterlist 
       WHERE "TLOid" LIKE 'TLO-%' 
@@ -52,6 +55,9 @@ export const bulkProcessDirectory = async (req, res) => {
     };
 
     const emptyEmails = [null, '', 'n/a', 'na'];
+    const toUpdate = [];
+    const toInsert = [];
+    const toHistory = [];
 
     for (const record of records) {
       try {
@@ -59,90 +65,87 @@ export const bulkProcessDirectory = async (req, res) => {
         const isNoEmail = emptyEmails.includes(emailStrRaw);
         const emailToInsert = isNoEmail ? null : record.email;
 
-        const tloid = `TLO-${String(nextTloIdNum).padStart(4, '0')}`;
+        let match = null;
 
         if (isNoEmail) {
-          const matchRes = await client.query(`
-            SELECT "TLOid" FROM third_level_official_masterlist 
-            WHERE 
-              (LOWER(first_name) = LOWER($1) AND LOWER(last_name) = LOWER($2) AND first_name != '')
-              OR
-              (COALESCE(strand, '') = COALESCE($3, '') 
-               AND COALESCE(office, '') = COALESCE($4, '') 
-               AND COALESCE(position_title, '') = COALESCE($5, '')
-               AND position_title != '')
-            LIMIT 1
-          `, [record.first_name, record.last_name, record.strand, record.office, record.position_title]);
+          match = allMaster.find(m => 
+            ((m.first_name || '').toLowerCase() === (record.first_name || '').toLowerCase() &&
+             (m.last_name || '').toLowerCase() === (record.last_name || '').toLowerCase() && record.first_name)
+            ||
+            ((m.strand || '') === (record.strand || '') &&
+             (m.office || '') === (record.office || '') &&
+             (m.position_title || '') === (record.position_title || '') && record.position_title)
+          );
+        } else {
+          match = allMaster.find(m => (m.email || '').toLowerCase() === emailStrRaw);
+        }
 
-          if (matchRes.rows.length > 0) {
-            const existingTloId = matchRes.rows[0].TLOid;
-            
-            await client.query(`
-              UPDATE third_level_official_masterlist 
-              SET first_name = $1, last_name = $2, position_title = $3, office = $4, strand = $5, designation = $6, contact_details = $7, updated_at = NOW()
-              WHERE "TLOid" = $8
-            `, [record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', record.contact_details || '', existingTloId]);
+        if (match) {
+          const existingTloId = match.TLOid;
+          toUpdate.push({
+            TLOid: existingTloId,
+            first_name: record.first_name || '',
+            last_name: record.last_name || '',
+            position_title: record.position_title || '',
+            office: record.office || '',
+            strand: record.strand || '',
+            designation: record.designation || '',
+            contact_details: record.contact_details || '',
+          });
 
-            await client.query(`
-              INSERT INTO third_level_officials_updates
-                ("TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, change_type, remarks, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', 'Update', 'Existing Record Updated (No Email)', NOW())
-            `, [existingTloId, record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', emailToInsert, record.contact_details || '']);
+          toHistory.push({
+            TLOid: existingTloId,
+            first_name: record.first_name || '',
+            last_name: record.last_name || '',
+            position_title: record.position_title || '',
+            office: record.office || '',
+            strand: record.strand || '',
+            designation: record.designation || '',
+            email: emailToInsert,
+            contact_details: record.contact_details || '',
+            change_type: 'Update',
+            remarks: isNoEmail ? 'Existing Record Updated (No Email)' : 'Update Record Inserted'
+          });
 
+          if (isNoEmail) {
             results.noEmailUpdated.push(record);
             results.summary.noEmailUpdated++;
           } else {
-            await client.query(`
-              INSERT INTO third_level_official_masterlist
-                ("TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, created_at, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', NOW(), NOW())
-            `, [tloid, record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', emailToInsert, record.contact_details || '']);
-
-            await client.query(`
-              INSERT INTO third_level_officials_updates
-                ("TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, change_type, remarks, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', 'Initial', 'New Record Inserted (No Email)', NOW())
-            `, [tloid, record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', emailToInsert, record.contact_details || '']);
-
-            nextTloIdNum++;
-            results.noEmailInserted.push(record);
-            results.summary.noEmailInserted++;
-          }
-        } else {
-          const masterCheck = await client.query('SELECT "TLOid" FROM third_level_official_masterlist WHERE LOWER(email) = $1', [emailStrRaw]);
-          const existsInMaster = masterCheck.rows.length > 0;
-
-          if (existsInMaster) {
-            const existingTloId = masterCheck.rows[0].TLOid;
-
-            await client.query(`
-              UPDATE third_level_official_masterlist
-              SET first_name = $1, last_name = $2, position_title = $3, office = $4, strand = $5, designation = $6, contact_details = $7, updated_at = NOW()
-              WHERE "TLOid" = $8
-            `, [record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', record.contact_details || '', existingTloId]);
-
-            await client.query(`
-              INSERT INTO third_level_officials_updates
-                ("TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, change_type, remarks, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', 'Update', 'Update Record Inserted', NOW())
-            `, [existingTloId, record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', record.email, record.contact_details || '']);
-
             results.updates.push(record);
             results.summary.updated++;
+          }
+        } else {
+          const newTloId = `TLO-${String(nextTloIdNum++).padStart(4, '0')}`;
+          toInsert.push({
+            TLOid: newTloId,
+            first_name: record.first_name || '',
+            last_name: record.last_name || '',
+            position_title: record.position_title || '',
+            office: record.office || '',
+            strand: record.strand || '',
+            designation: record.designation || '',
+            email: emailToInsert,
+            contact_details: record.contact_details || '',
+          });
+
+          toHistory.push({
+            TLOid: newTloId,
+            first_name: record.first_name || '',
+            last_name: record.last_name || '',
+            position_title: record.position_title || '',
+            office: record.office || '',
+            strand: record.strand || '',
+            designation: record.designation || '',
+            email: emailToInsert,
+            contact_details: record.contact_details || '',
+            change_type: 'Initial',
+            remarks: isNoEmail ? 'New Record Inserted (No Email)' : 'New Record Inserted'
+          });
+
+          if (isNoEmail) {
+            results.noEmailInserted.push(record);
+            results.summary.noEmailInserted++;
           } else {
-            await client.query(`
-              INSERT INTO third_level_official_masterlist
-                ("TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, created_at, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', NOW(), NOW())
-            `, [tloid, record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', record.email, record.contact_details || '']);
-
-            await client.query(`
-              INSERT INTO third_level_officials_updates
-                ("TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, change_type, remarks, updated_at)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Active', 'Initial', 'New Record Inserted', NOW())
-            `, [tloid, record.first_name || '', record.last_name || '', record.position_title || '', record.office || '', record.strand || '', record.designation || '', record.email, record.contact_details || '']);
-
-            nextTloIdNum++;
             results.newInserts.push(record);
             results.summary.new++;
           }
@@ -153,9 +156,57 @@ export const bulkProcessDirectory = async (req, res) => {
       }
     }
 
+    if (toUpdate.length > 0) {
+      await client.query(`
+        UPDATE third_level_official_masterlist AS m
+        SET 
+          first_name = c.first_name,
+          last_name = c.last_name,
+          position_title = c.position_title,
+          office = c.office,
+          strand = c.strand,
+          designation = c.designation,
+          contact_details = c.contact_details,
+          updated_at = NOW()
+        FROM json_to_recordset($1::json) AS c(
+          "TLOid" text, first_name text, last_name text, position_title text,
+          office text, strand text, designation text, contact_details text
+        )
+        WHERE m."TLOid" = c."TLOid"
+      `, [JSON.stringify(toUpdate)]);
+    }
+
+    if (toInsert.length > 0) {
+      await client.query(`
+        INSERT INTO third_level_official_masterlist (
+          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, created_at, updated_at
+        )
+        SELECT 
+          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, 'Active', NOW(), NOW()
+        FROM json_to_recordset($1::json) AS c(
+          "TLOid" text, first_name text, last_name text, position_title text,
+          office text, strand text, designation text, email text, contact_details text
+        )
+      `, [JSON.stringify(toInsert)]);
+    }
+
+    if (toHistory.length > 0) {
+      await client.query(`
+        INSERT INTO third_level_officials_updates (
+          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, change_type, remarks, updated_at
+        )
+        SELECT 
+          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, 'Active', change_type, remarks, NOW()
+        FROM json_to_recordset($1::json) AS c(
+          "TLOid" text, first_name text, last_name text, position_title text,
+          office text, strand text, designation text, email text, contact_details text,
+          change_type text, remarks text
+        )
+      `, [JSON.stringify(toHistory)]);
+    }
+
     await client.query('COMMIT');
     
-    // Server-side debugging logs
     console.log(`\n--- BULK UPLOAD SUMMARY ---`);
     console.log(`Total Uploaded Records: ${results.summary.total}`);
     console.log(`Total Inserted Records: ${results.summary.new + results.summary.noEmailInserted}`);
