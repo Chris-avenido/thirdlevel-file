@@ -474,7 +474,7 @@ const Home = () => {
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can upload directory data.' : ''}
                 >
-                  <FiUserPlus />Upload Officials Directory Data test
+                  <FiUserPlus />Upload Officials Directory Data
                 </button>
                 <button className="action-btn">
                   <FiUploadCloud /> Bulk Upload Roster
