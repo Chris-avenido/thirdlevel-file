@@ -33,3 +33,21 @@ export const getOfficialRegion = (item) => {
 
   return 'Central Office';
 };
+
+export const expandAcronym = (val) => {
+  if (!val) return val;
+  const upperVal = val.trim().toUpperCase();
+  const map = {
+    'ASDS': 'Assistant Schools Division Superintendent (ASDS)',
+    'ASDS²': 'Assistant Schools Division Superintendent (2)',
+    'ASDS³': 'Assistant Schools Division Superintendent (3)',
+    'SDS': 'Schools Division Superintendent (SDS)',
+    'RD': 'Regional Director (RD)',
+    'ARD': 'Assistant Regional Director (ARD)',
+    'OIC-ASDS': 'OIC - Assistant Schools Division Superintendent (ASDS)',
+    'OIC-SDS': 'OIC - Schools Division Superintendent (SDS)',
+    'OIC-RD': 'OIC - Regional Director (RD)',
+    'OIC-ARD': 'OIC - Assistant Regional Director (ARD)'
+  };
+  return map[upperVal] || val;
+};

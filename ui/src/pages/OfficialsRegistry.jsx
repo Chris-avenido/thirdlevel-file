@@ -14,6 +14,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
+import { expandAcronym } from '../utils/officialsUtils';
 
 const THIRD_LEVEL_POSITIONS = [
     'Secretary',
@@ -624,8 +625,8 @@ const OfficialsRegistry = () => {
             key: 'designation_area',
             label: 'Designation Area',
             width: 'w-2/12',
-            value: (item) => `${item.position_title || ''} ${item.is_oic ? 'OIC' : ''}`,
-            filterValue: (item) => `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
+            value: (item) => expandAcronym(item.designation) || '',
+            filterValue: (item) => expandAcronym(item.designation) || 'No Designation'
         },
         {
             key: 'strand',
@@ -1107,7 +1108,7 @@ const OfficialsRegistry = () => {
                                     onChange={setDesignationFilter}
                                     options={[
                                         { value: 'All', label: 'All Designations' },
-                                        ...designations.map(d => ({ value: d, label: d }))
+                                        ...designations.map(d => ({ value: d, label: expandAcronym(d) }))
                                     ]}
                                 />
                             </div>
@@ -1230,8 +1231,7 @@ const OfficialsRegistry = () => {
                                                     </td>
                                                     <td className="px-3 py-3 align-top">
                                                         <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
-                                                            <span className="line-clamp-2">{item.position_title || 'Unassigned'}</span>
-                                                            {item.is_oic && <span className="px-1.5 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[7px] font-black uppercase tracking-widest shrink-0 mt-0.5">OIC</span>}
+                                                            <span className="line-clamp-2">{expandAcronym(item.designation) || 'Unassigned'}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-3 py-3 align-top">
