@@ -5,7 +5,8 @@ import { apiUrl } from '../utils/api';
 import PageTransition from '../components/PageTransition';
 import AdminSidebar from '../components/AdminSidebar';
 import UploadDirectoryModal from '../components/UploadDirectoryModal';
-import { FiSearch, FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut } from 'react-icons/fi';
+import NotableAchievementsModal from '../components/NotableAchievementsModal';
+import { FiSearch, FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward } from 'react-icons/fi';
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -36,6 +37,7 @@ const Home = () => {
   const [activeQueueFilter, setActiveQueueFilter] = useState('all');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isNotableModalOpen, setIsNotableModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -277,7 +279,7 @@ const Home = () => {
             </div>
           </header>
           <style>{`
-          .dashboard-wrap { max-width:1180px; margin:auto; padding:28px; }
+          .dashboard-wrap { padding:28px; }
           .hero { background:#08315f; color:white; border-radius:28px; padding:28px; }
           .hero small { color:#fbbf24; font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
           .hero h1 { margin:10px 0 8px; font-size:42px; line-height:1; font-weight:900; }
@@ -476,6 +478,14 @@ const Home = () => {
                 >
                   <FiUserPlus />Upload Officials Directory Data
                 </button>
+                <button
+                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                  onClick={() => setIsNotableModalOpen(true)}
+                  disabled={user?.role !== 'Central Office'}
+                  title={user?.role !== 'Central Office' ? 'Only Central Office can upload directory data.' : ''}
+                >
+                  <FiAward />Notable Achievements
+                </button>
                 <button className="action-btn">
                   <FiUploadCloud /> Bulk Upload Roster
                 </button>
@@ -499,6 +509,11 @@ const Home = () => {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onSuccess={() => setRefreshTrigger(prev => prev + 1)}
+      />
+      <NotableAchievementsModal
+        isOpen={isNotableModalOpen}
+        onClose={() => setIsNotableModalOpen(false)}
+        onSuccess={() => {}}
       />
     </PageTransition>
   );

@@ -228,6 +228,7 @@ const OfficialProfiling = () => {
     const [vacancies, setVacancies] = useState([]);
     const [vacanciesLoading, setVacanciesLoading] = useState(false);
     const [targetVacancyId, setTargetVacancyId] = useState(null);
+    const [notableAchievementsOptions, setNotableAchievementsOptions] = useState([]);
 
     const [exportModalOpen, setExportModalOpen] = useState(false);
     const [selectedExportType, setSelectedExportType] = useState('csv');
@@ -829,6 +830,24 @@ const OfficialProfiling = () => {
             fetchVacancies();
         }
     }, [tab]);
+
+    const fetchNotableAchievements = async () => {
+        try {
+            const res = await fetch(apiUrl('/api/third-level/notable-achievements'), {
+                headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+            });
+            const data = await res.json();
+            if (data.success) setNotableAchievementsOptions(data.data);
+        } catch (err) {
+            console.error('Failed to fetch notable achievements:', err);
+        }
+    };
+
+    useEffect(() => {
+        if (tab === 'achievements' && notableAchievementsOptions.length === 0) {
+            fetchNotableAchievements();
+        }
+    }, [tab, notableAchievementsOptions.length]);
 
     const handleResubmit = async () => {
         if (!applicationId) return;
@@ -1755,8 +1774,13 @@ const OfficialProfiling = () => {
                                                                     onChange={e => setP('notable_achievements', e.target.value)}
                                                                     className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all shadow-sm shadow-slate-50 cursor-pointer"
                                                                 >
-                                                                    <option value="">-- Options to be provided by Personnel Division (PD) --</option>
-                                                                    {profile.notable_achievements && <option value={profile.notable_achievements}>{profile.notable_achievements}</option>}
+                                                                    <option value="">-- Select Achievement --</option>
+                                                                    {notableAchievementsOptions.map((ach, i) => (
+                                                                        <option key={`opt-${i}`} value={ach}>{ach}</option>
+                                                                    ))}
+                                                                    {profile.notable_achievements && !notableAchievementsOptions.includes(profile.notable_achievements) && (
+                                                                        <option value={profile.notable_achievements}>{profile.notable_achievements}</option>
+                                                                    )}
                                                                 </select>
                                                             </Field>
                                                         </div>

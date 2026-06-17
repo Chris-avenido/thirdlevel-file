@@ -9,7 +9,7 @@ import {
   getOfficials,
   getPositionIncumbents
 } from '../controllers/thirdLevelController.js';
-import { bulkProcessDirectory } from '../controllers/uploadDirectoryModalController.js';
+import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
 
 const router = express.Router();
 
@@ -21,5 +21,6 @@ router.get('/active-officials', authMiddleware, getActiveOfficials);
 router.get('/unassigned-personnel', authMiddleware, getUnassignedPersonnel);
 router.post('/admin-action', authMiddleware, adminAction);
 router.post('/bulk-process-directory', authMiddleware, bulkProcessDirectory);
+router.post('/bulk-process-achievements', authMiddleware, bulkProcessAchievements);
 
 export default router;

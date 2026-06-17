@@ -1005,3 +1005,12 @@ export const adminAction = async (req, res) => {
   }
 };
 
+export const getNotableAchievements = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT achievement FROM notable_achievements ORDER BY index_number ASC');
+    res.json({ success: true, data: result.rows.map(r => r.achievement) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

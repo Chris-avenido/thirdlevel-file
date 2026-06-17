@@ -9,7 +9,8 @@ import {
   initializeProfile,
   submitApplication,
   updateProfile,
-  uploadDocument
+  uploadDocument,
+  getNotableAchievements
 } from '../controllers/thirdLevelController.js';
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.get('/:TLOid/profile', authMiddleware, getProfile);
 router.put('/:TLOid/profile', authMiddleware, updateProfile);
 router.post('/submit-application', authMiddleware, submitApplication);
 router.get('/vacancies', authMiddleware, getVacancies);
+router.get('/notable-achievements', authMiddleware, getNotableAchievements);
 router.get('/:TLOid/career-path', authMiddleware, getCareerPath);
 
 export default router;

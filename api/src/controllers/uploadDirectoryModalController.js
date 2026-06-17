@@ -233,3 +233,56 @@ export const bulkProcessDirectory = async (req, res) => {
     client.release();
   }
 };
+
+export const bulkProcessAchievements = async (req, res) => {
+  const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office'];
+  if (!adminRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { records } = req.body;
+  if (!records || !Array.isArray(records)) {
+    return res.status(400).json({ error: 'Invalid records payload' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const results = {
+      summary: { total: records.length, inserted: 0, updated: 0, failed: 0 }
+    };
+
+    for (const record of records) {
+      try {
+        const index_number = parseInt(record.index_number, 10);
+        const achievement = record.achievements || record.achievement;
+
+        if (isNaN(index_number) || !achievement) {
+          throw new Error('Missing index_number or achievement');
+        }
+
+        const existingRes = await client.query('SELECT index_number FROM notable_achievements WHERE index_number = $1', [index_number]);
+        
+        if (existingRes.rows.length > 0) {
+          await client.query('UPDATE notable_achievements SET achievement = $1 WHERE index_number = $2', [achievement, index_number]);
+          results.summary.updated++;
+        } else {
+          await client.query('INSERT INTO notable_achievements (index_number, achievement) VALUES ($1, $2)', [index_number, achievement]);
+          results.summary.inserted++;
+        }
+      } catch (err) {
+        results.summary.failed++;
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, results });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+};
+
