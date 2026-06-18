@@ -1332,6 +1332,16 @@ const OfficialProfiling = () => {
                                                             <div className="border-t border-slate-100 pt-8">
                                                                 <SectionLabel>Designation & Appointment</SectionLabel>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                                                                    <Field label="Unique Number">
+                                                                        <input type="text" value={profile.unique_number || ''} onChange={e => setP('unique_number', e.target.value)} placeholder="e.g. 123456" className={inp} />
+                                                                    </Field>
+                                                                    <Field label="Employment Status">
+                                                                        <select value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
+                                                                            <option value="">Select Status</option>
+                                                                            <option value="Regular">Regular</option>
+                                                                            <option value="Coterminous">Coterminous</option>
+                                                                        </select>
+                                                                    </Field>
                                                                     <Field label="Position Title (As per Appointment)">
                                                                         <select value={profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                             <option value="">Select Position Title</option>

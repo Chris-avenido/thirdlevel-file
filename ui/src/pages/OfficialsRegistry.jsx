@@ -319,6 +319,7 @@ const OfficialsRegistry = () => {
     const [actionOfficial, setActionOfficial] = useState(null);
     const [adminAction, setAdminAction] = useState(''); // 'reassign' | 'succeed' | 'vacate'
     const [justification, setJustification] = useState('');
+    const [vacateReason, setVacateReason] = useState('');
     const [effectivityDate, setEffectivityDate] = useState('');
     const [targetSlot, setTargetSlot] = useState('');
     const [vacantSlots, setVacantSlots] = useState([]);
@@ -530,6 +531,8 @@ const OfficialsRegistry = () => {
 
     const handleAdminAction = async () => {
         if (!justification && adminAction !== 'reassign') return Swal.fire('Notice', 'Please provide a justification.', 'info');
+        if ((adminAction === 'vacate' || adminAction === 'reassign') && !effectivityDate) return Swal.fire('Notice', 'Please select a Date of Effectivity.', 'info');
+        if (adminAction === 'vacate' && !vacateReason) return Swal.fire('Notice', 'Please select a Reason for Vacating.', 'info');
 
         if (adminAction === 'reassign') {
             const isVacant = !actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT';
@@ -545,6 +548,7 @@ const OfficialsRegistry = () => {
         try {
             const personName = `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`.trim();
             const positionName = actionOfficial?.position_title || 'position';
+
             const res = await fetch(apiUrl('/api/third-level/admin-action'), {
                 method: 'POST',
                 headers: {
@@ -555,6 +559,7 @@ const OfficialsRegistry = () => {
                     TLOid: actionOfficial.TLOid,
                     action: adminAction,
                     justification,
+                    vacateReason: adminAction === 'vacate' ? vacateReason : undefined,
                     effectivityDate,
                     target_TLOid: targetSlot || undefined,
                     successor_TLOid: successorSlot || undefined,
@@ -582,16 +587,98 @@ const OfficialsRegistry = () => {
         }
     };
 
+    const handleCancelVacate = async () => {
+        const result = await Swal.fire({
+            title: 'Cancel Action?',
+            text: 'Are you sure you want to cancel this scheduled action and restore the official to Active status?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#08315F',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Yes, cancel it!'
+        });
+        if (!result.isConfirmed) return;
+        setActionLoading(true);
+        try {
+            const res = await fetch(apiUrl('/api/third-level/admin-action'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token || localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    TLOid: actionOfficial.TLOid,
+                    action: 'cancel-vacate',
+                    justification: 'Cancelled scheduled action'
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire('Notice', 'Action cancelled successfully. Official is now Active.', 'info');
+                setShowActionModal(false);
+                fetchOfficials();
+            } else {
+                Swal.fire('Notice', data.error || 'Action failed.', 'info');
+            }
+        } catch (err) {
+            Swal.fire('Notice', 'Action failed: ' + err.message, 'info');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const openActionModal = async (official, action) => {
         setActionOfficial(official);
         setAdminAction(action);
         setJustification('');
-        setEffectivityDate('');
-        setTargetSlot('');
+        setVacateReason('');
+        
+        if ((action === 'vacate' && ['Vacating', 'Resigning', 'Inactive'].includes(official.status)) ||
+            (action === 'reassign' && ['Reassigning', 'Pending Assignment'].includes(official.status))) {
+            
+            if (official.effectivity_date) {
+                const d = new Date(official.effectivity_date);
+                const offset = d.getTimezoneOffset();
+                const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+                setEffectivityDate(localDate.toISOString().split('T')[0]);
+            }
+            try {
+                const res = await fetch(apiUrl(`/api/third-level/officials/${official.TLOid}/last-vacate-update`), {
+                    headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+                });
+                const data = await res.json();
+                if (data.success && data.data) {
+                    setVacateReason(data.data.vacate_reason || '');
+                    setJustification(data.data.remarks || '');
+                }
+            } catch (err) {
+                console.error('Failed to fetch last update:', err);
+            }
+
+            if (action === 'reassign') {
+                if (official.reassign_target_tloid) {
+                    const targetRow = officials.find(o => o.TLOid === official.reassign_target_tloid);
+                    if (targetRow) {
+                        setSelectedOffice(targetRow.office || 'Main Office');
+                    }
+                    setTargetSlot(official.reassign_target_tloid);
+                }
+                if (official.reassign_assignee_tloid) {
+                    setAssigneeSlot(official.reassign_assignee_tloid);
+                }
+            } else {
+                setTargetSlot('');
+                setAssigneeSlot('');
+                setSelectedOffice('');
+            }
+        } else {
+            setEffectivityDate('');
+            setTargetSlot('');
+            setAssigneeSlot('');
+            setSelectedOffice('');
+        }
         setSuccessorSlot('');
-        setAssigneeSlot('');
         setUnassignedSearch('');
-        setSelectedOffice('');
         setVacantSlots([]);
         setShowActionModal(true);
         if (action === 'reassign') {
@@ -605,7 +692,14 @@ const OfficialsRegistry = () => {
                     });
                     const data = await res.json();
                     if (data.success) {
-                        setVacantSlots(data.data);
+                        let fetchedVacancies = data.data;
+                        if (official.reassign_target_tloid) {
+                            const targetRow = officials.find(o => o.TLOid === official.reassign_target_tloid);
+                            if (targetRow && !fetchedVacancies.some(v => v.TLOid === targetRow.TLOid)) {
+                                fetchedVacancies.push(targetRow);
+                            }
+                        }
+                        setVacantSlots(fetchedVacancies);
                     }
                 } catch (err) {
                     console.error('Failed to fetch vacancies:', err);
@@ -632,74 +726,6 @@ const OfficialsRegistry = () => {
         const timer = setTimeout(() => fetchUnassignedPersonnel(unassignedSearch), 350);
         return () => clearTimeout(timer);
     }, [unassignedSearch, showActionModal, adminAction, actionOfficial]);
-
-    const tableColumns = useMemo(() => ([
-        {
-            key: 'unique_number',
-            label: 'Unique Number',
-            width: 'w-2/12',
-            value: (item) => item.unique_number || item.TLOid || '',
-            filterValue: (item) => item.unique_number || item.TLOid || 'No Number'
-        },
-        {
-            key: 'name',
-            label: 'Official Profile',
-            width: 'w-3/12 lg:w-3/12',
-            value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''} ${item.email || ''}`,
-            filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
-        },
-        {
-            key: 'employment_status',
-            label: 'Employment Status',
-            width: 'w-2/12',
-            value: (item) => item.employment_status || 'Regular',
-            filterValue: (item) => item.employment_status || 'Regular'
-        },
-        {
-            key: 'position',
-            label: 'Current Position',
-            width: 'w-3/12 lg:w-2/12',
-            value: (item) => `${item.position_title || ''} ${item.is_oic ? 'OIC' : ''}`,
-            filterValue: (item) => `${item.position_title || 'Unassigned'}${item.is_oic ? ' - OIC' : ''}`
-        },
-        {
-            key: 'designation_area',
-            label: 'Designation Area',
-            width: 'w-2/12',
-            value: (item) => expandAcronym(item.designation) || '',
-            filterValue: (item) => expandAcronym(item.designation) || 'No Designation'
-        },
-        {
-            key: 'strand',
-            label: 'Strand',
-            width: 'w-2/12',
-            value: (item) => item.strand || '',
-            filterValue: (item) => item.strand || 'No Strand'
-        },
-        {
-            key: 'office',
-            label: 'Office',
-            width: 'w-2/12 lg:w-3/12',
-            value: (item) => item.office || '',
-            filterValue: (item) => item.office || 'Main Office'
-        },
-        {
-            key: 'status',
-            label: 'Status',
-            width: 'w-[80px]',
-            value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
-            filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
-        }
-    ]), []);
-
-    const activeRecords = useMemo(() => {
-        if (activeTab === 'All') return [...thirdLevelOfficials, ...thirdLevelOic, ...divisionChiefsOic, ...divisionChiefs];
-        if (activeTab === 'Third Level Officials') return thirdLevelOfficials;
-        if (activeTab === 'Third Level (OIC)') return thirdLevelOic;
-        if (activeTab === 'Division Chiefs (OIC)') return divisionChiefsOic;
-        if (activeTab === 'Division Chiefs') return divisionChiefs;
-        return thirdLevelOfficials;
-    }, [activeTab, thirdLevelOfficials, thirdLevelOic, divisionChiefsOic, divisionChiefs]);
 
     const getOfficialLevel = (item) => {
         const strand = item.strand || '';
@@ -736,6 +762,55 @@ const OfficialsRegistry = () => {
 
         return 'Central Office';
     };
+
+    const tableColumns = useMemo(() => ([
+        {
+            key: 'region',
+            label: 'Region',
+            width: 'w-1/12',
+            value: (item) => getOfficialRegion(item),
+            filterValue: (item) => getOfficialRegion(item)
+        },
+        {
+            key: 'division',
+            label: 'Division',
+            width: 'w-[12%]',
+            value: (item) => item.division || '',
+            filterValue: (item) => item.division || 'No Division'
+        },
+        {
+            key: 'name',
+            label: 'Official Profile',
+            width: 'w-6/12',
+            value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''}`,
+            filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
+        },
+        {
+            key: 'office',
+            label: 'Office',
+            width: 'w-2/12',
+            value: (item) => item.office || '',
+            filterValue: (item) => item.office || 'Main Office'
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            width: 'w-[100px]',
+            value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
+            filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
+        }
+    ]), []);
+
+    const activeRecords = useMemo(() => {
+        if (activeTab === 'All') return [...thirdLevelOfficials, ...thirdLevelOic, ...divisionChiefsOic, ...divisionChiefs];
+        if (activeTab === 'Third Level Officials') return thirdLevelOfficials;
+        if (activeTab === 'Third Level (OIC)') return thirdLevelOic;
+        if (activeTab === 'Division Chiefs (OIC)') return divisionChiefsOic;
+        if (activeTab === 'Division Chiefs') return divisionChiefs;
+        return thirdLevelOfficials;
+    }, [activeTab, thirdLevelOfficials, thirdLevelOic, divisionChiefsOic, divisionChiefs]);
+
+
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
             const values = activeRecords
@@ -1239,23 +1314,23 @@ const OfficialsRegistry = () => {
                                         <thead>
                                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                                 {tableColumns.map(column => <TableHeader key={column.key} column={column} />)}
-                                                <th className="px-3 py-3 align-middle w-[150px] lg:w-[180px] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
-                                                    Actions
-                                                </th>
+
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {pagedRecords.map((item) => (
-                                                <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors">
+                                                <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors relative">
                                                     <td className="px-3 py-3 align-top">
-                                                        <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
-                                                            <span className="line-clamp-2">{item.unique_number || item.TLOid || 'No Number'}</span>
+                                                        <div className="font-black text-[#08315F] text-[11px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
+                                                            <span className="line-clamp-2">{item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}</span>
                                                         </div>
                                                     </td>
-                                                    <td
-                                                        className={`px-3 py-3 align-top ${item.email ? 'cursor-pointer' : ''}`}
-                                                        onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
-                                                    >
+                                                    <td className="px-3 py-3 align-top">
+                                                        <div className="text-[11px] font-bold text-slate-700 uppercase tracking-widest line-clamp-2">
+                                                            {item.status === 'Inactive' ? 'N/A' : (item.division || 'No Division')}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-3 align-top">
                                                         <div className="flex items-start gap-3">
                                                             <div className="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-lg border border-white shadow-sm overflow-hidden shrink-0 mt-0.5">
                                                                 {item.photo_binary_id ? (
@@ -1263,80 +1338,58 @@ const OfficialsRegistry = () => {
                                                                 ) : <FiUser size={18} />}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <div className="font-['Quicksand'] font-black text-[#08315F] text-xs leading-none group-hover:text-[#08315F] group-hover:underline transition-colors truncate">
-                                                                    {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[9px]">VACANT POSITION</span>}
+                                                                <div className="font-['Quicksand'] font-black text-[#08315F] text-sm leading-none group-hover:text-[#08315F] transition-colors truncate">
+                                                                    {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
                                                                 </div>
-                                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1.5 truncate">
-                                                                    <FiArrowRight className="text-[#075985] shrink-0" size={8} />
+                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1.5 truncate">
+                                                                    <FiArrowRight className="text-[#075985] shrink-0" size={10} />
                                                                     <span className="truncate">{item.email}</span>
                                                                 </div>
-                                                                {item.updated_at && (
-                                                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                                                        Updated: {new Date(item.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-top">
-                                                        <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest line-clamp-2">
-                                                            {item.employment_status || 'Regular'}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-top">
-                                                        <button
-                                                            onClick={() => handlePositionClick(item)}
-                                                            className="text-left group/pos hover:translate-x-1 transition-transform w-full"
-                                                        >
-                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
-                                                                <span className="line-clamp-2">{item.position_title || 'Unassigned'}</span>
-                                                                {item.is_oic && <span className="px-1.5 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[7px] font-black uppercase tracking-widest shrink-0 mt-0.5">OIC</span>}
-                                                            </div>
-                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                                                Since {item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : 'N/A'}
-                                                            </div>
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-top">
-                                                        <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
-                                                            <span className="line-clamp-2">{expandAcronym(item.designation) || 'Unassigned'}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-top">
-                                                        <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest line-clamp-2">{item.strand || 'No Strand'}</div>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-top">
-                                                        <div className="text-[10px] font-bold text-slate-700 line-clamp-2">{item.office || 'Main Office'}</div>
-                                                    </td>
-                                                    <td className="px-3 py-3 align-top">
-                                                        <StatusBadge status={item.status} />
-                                                    </td>
-                                                    <td className="px-3 py-3 text-right align-top">
-                                                        <div className="flex items-start justify-end gap-1.5">
-                                                            {item.email && (
-                                                                <button
-                                                                    onClick={() => navigate(`/official-profiling?email=${item.email}`)}
-                                                                    title="View Profile"
-                                                                    className="p-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg hover:bg-[#08315F] hover:text-white hover:border-[#004A99] transition-all shadow-sm shrink-0"
-                                                                >
-                                                                    <FiExternalLink size={14} />
-                                                                </button>
-                                                            )}
-                                                            <div className="flex flex-wrap items-center justify-end gap-1 w-full max-w-[140px]">
-                                                                <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex-1 min-w-[60px] flex items-center justify-center gap-1 px-1.5 py-1 bg-amber-50 text-amber-600 rounded-md text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
-                                                                    <FiLayers size={10} /> Reassign
-                                                                </button>
-                                                                {item.first_name && (
+                                                                {item.status !== 'Inactive' && (
                                                                     <>
-                                                                        <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex-1 min-w-[60px] flex items-center justify-center gap-1 px-1.5 py-1 bg-rose-50 text-rose-600 rounded-md text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
-                                                                            <FiTrash2 size={10} /> Vacate
-                                                                        </button>
-                                                                        <button onClick={() => openActionModal(item, 'succeed')} title="Succeed" className="w-full flex items-center justify-center gap-1 px-1.5 py-1 bg-emerald-50 text-emerald-600 rounded-md text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm shrink-0">
-                                                                            <FiCheckCircle size={10} /> Succeed
-                                                                        </button>
+                                                                        <div className="mt-2 inline-flex flex-wrap items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50/80 border border-amber-200/60 text-amber-700 text-[9px] font-black uppercase tracking-widest shadow-sm truncate max-w-full">
+                                                                            <span className="truncate flex items-center gap-1">{item.position_title || 'Unassigned'} {item.is_oic && <span className="px-1 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest shrink-0">OIC</span>}</span>
+                                                                        </div>
+                                                                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 truncate">
+                                                                            {expandAcronym(item.designation) || 'No Designation'}
+                                                                        </div>
+                                                                        <div className="mt-3 flex items-center gap-2">
+                                                                            <button
+                                                                                onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
+                                                                                disabled={!item.email}
+                                                                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#08315F] text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#004A99] transition-all shadow-sm border border-[#08315F] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            >
+                                                                                <FiUser size={12} /> Official Profile
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handlePositionClick(item)}
+                                                                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm border border-slate-200"
+                                                                            >
+                                                                                <FiLayers size={12} /> Positional History
+                                                                            </button>
+                                                                        </div>
                                                                     </>
                                                                 )}
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-3 align-top">
+                                                        <div className="text-[11px] font-bold text-slate-700 line-clamp-2">{item.status === 'Inactive' ? 'N/A' : (item.office || 'Main Office')}</div>
+                                                    </td>
+                                                    <td className="px-3 py-3 align-top static md:relative">
+                                                        <StatusBadge status={item.status} />
+                                                        
+                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-slate-200 pointer-events-none group-hover:pointer-events-auto">
+                                                            {item.status !== 'Inactive' && (
+                                                                <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
+                                                                    <FiLayers size={12} />
+                                                                </button>
+                                                            )}
+                                                            {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
+                                                                <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
+                                                                    <FiTrash2 size={12} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </motion.tr>
@@ -1394,13 +1447,15 @@ const OfficialsRegistry = () => {
                                                     <h3 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic">
                                                         {item.first_name ? <>{item.first_name} <br /> {item.last_name}</> : <span className="text-rose-500 text-lg">VACANT POSITION</span>}
                                                     </h3>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
-                                                        className="text-[10px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1"
-                                                    >
-                                                        {item.position_title || 'Candidate'}
-                                                        <FiClock className="text-slate-400" size={10} />
-                                                    </button>
+                                                    {item.status !== 'Inactive' && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
+                                                            className="text-[10px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1"
+                                                        >
+                                                            {item.position_title || 'Candidate'}
+                                                            <FiClock className="text-slate-400" size={10} />
+                                                        </button>
+                                                    )}
 
                                                     {item.concurrent_positions && (
                                                         <div className="mt-3 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm">
@@ -1422,11 +1477,11 @@ const OfficialsRegistry = () => {
                                                 <div className="mt-8 pt-6 border-t border-slate-50 space-y-4">
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
-                                                        <span className="text-[10px] font-bold text-slate-700">{item.strand || 'N/A'}</span>
+                                                        <span className="text-[10px] font-bold text-slate-700">{item.status === 'Inactive' ? 'N/A' : (item.strand || 'N/A')}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Office</span>
-                                                        <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{item.office || 'Main Office'}</span>
+                                                        <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{item.status === 'Inactive' ? 'N/A' : (item.office || 'Main Office')}</span>
                                                     </div>
                                                     {item.updated_at && (
                                                         <div className="flex items-center justify-between">
@@ -1440,29 +1495,28 @@ const OfficialsRegistry = () => {
                                             </div>
 
                                             <div className="mt-8 pt-6 border-t border-slate-50 flex flex-col gap-4 relative z-20" onClick={e => e.stopPropagation()}>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
-                                                        <FiLayers size={12} /> Reassign
-                                                    </button>
-                                                    {item.first_name && (
-                                                        <>
-                                                            <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                                <FiTrash2 size={12} /> Vacate
-                                                            </button>
-                                                            <button onClick={() => openActionModal(item, 'succeed')} className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
-                                                                <FiCheckCircle size={12} /> Succeed
-                                                            </button>
-                                                        </>
+                                                <div className="flex flex-wrap justify-center gap-2">
+                                                    {item.status !== 'Inactive' && (
+                                                        <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
+                                                            <FiLayers size={12} /> Reassign
+                                                        </button>
+                                                    )}
+                                                    {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
+                                                        <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                            <FiTrash2 size={12} /> Vacate
+                                                        </button>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-[#075985] transition-colors">
-                                                        Full Profile <FiArrowRight size={14} />
+                                                {item.status !== 'Inactive' && (
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-[#075985] transition-colors">
+                                                            Full Profile <FiArrowRight size={14} />
+                                                        </div>
+                                                        <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#08315F] hover:text-white transition-all" title="View History">
+                                                            <FiClock size={16} />
+                                                        </button>
                                                     </div>
-                                                    <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#08315F] hover:text-white transition-all" title="View History">
-                                                        <FiClock size={16} />
-                                                    </button>
-                                                </div>
+                                                )}
                                             </div>
                                         </motion.div>
                                     ))}
@@ -1592,7 +1646,7 @@ const OfficialsRegistry = () => {
                                                 <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
                                                     {adminAction === 'reassign'
                                                         ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
-                                                        : `${adminAction}ING OFFICIAL`}
+                                                        : `${adminAction === 'vacate' ? 'VACATING' : `${adminAction.toUpperCase()}ING`} OFFICIAL`}
                                                 </h2>
                                                 <p className="text-slate-400 font-bold mt-2">
                                                     {adminAction === 'reassign'
@@ -1704,22 +1758,52 @@ const OfficialsRegistry = () => {
                                                 </div>
                                             )}
 
+                                            {adminAction === 'vacate' && (
+                                                <div className="mb-4">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Reason for Vacating</label>
+                                                    <select
+                                                        value={vacateReason}
+                                                        onChange={(e) => setVacateReason(e.target.value)}
+                                                        className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                    >
+                                                        <option value="">Select a reason...</option>
+                                                        <option value="Resignation">Resignation</option>
+                                                        <option value="Retirement">Retirement</option>
+                                                        <option value="Reassignment">Reassignment</option>
+                                                        <option value="Promotion">Promotion</option>
+                                                        <option value="Demotion">Demotion</option>
+                                                        <option value="Dismissal">Dismissal</option>
+                                                    </select>
+                                                </div>
+                                            )}
+
                                             <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Reason</label>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Remarks</label>
                                                 <JustificationInput
                                                     value={justification}
                                                     onChange={setJustification}
-                                                    placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide a detailed reason for this action...'}
+                                                    placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide additional remarks...'}
                                                 />
                                             </div>
 
-                                            <button
-                                                disabled={actionLoading}
-                                                onClick={handleAdminAction}
-                                                className="w-full py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
-                                            >
-                                                {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
-                                            </button>
+                                            <div className="flex gap-4">
+                                                <button
+                                                    disabled={actionLoading}
+                                                    onClick={handleAdminAction}
+                                                    className="flex-1 py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
+                                                >
+                                                    {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
+                                                </button>
+                                                {['Vacating', 'Resigning', 'Inactive', 'Reassigning', 'Pending Assignment'].includes(actionOfficial?.status) && (adminAction === 'vacate' || adminAction === 'reassign') && (
+                                                    <button
+                                                        disabled={actionLoading}
+                                                        onClick={handleCancelVacate}
+                                                        className="flex-1 py-5 bg-rose-50 text-rose-600 border-2 border-rose-100 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-sm hover:bg-rose-100 hover:border-rose-200 transition-all active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        {actionLoading ? 'Processing...' : 'Cancel Action'}
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>

@@ -293,7 +293,7 @@ export const updateProfile = async (req, res) => {
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
-      'previous_positions', 'is_oic',
+      'previous_positions', 'is_oic', 'unique_number', 'employment_status',
       'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
       'pending_admin_case', 'ombudsman_case', 'sandiganbayan_case', 'nbi_case', 'csc_case', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
     ];
@@ -542,11 +542,156 @@ export const processApplication = async (req, res) => {
   }
 };
 
+const executeReassignment = async (client, official, effTs, justification, assignee_TLOid, target_TLOid) => {
+  const TLOid = official.TLOid;
+  if (assignee_TLOid) {
+    const assigneeRes = await client.query(`
+      SELECT app_TLOid AS "TLOid", first_name, last_name, email, contact_details
+      FROM third_level_officials_profiling_application
+      WHERE app_TLOid = $1
+      UNION ALL
+      SELECT uid AS "TLOid", first_name, last_name, email, contact_number AS contact_details
+      FROM users
+      WHERE uid = $1
+      LIMIT 1
+    `, [assignee_TLOid]);
+    const assignee = assigneeRes.rows[0];
+    if (!assignee) throw new Error('Assignee not found');
+
+    const existingAssignmentRes = await client.query(`
+      SELECT 1
+      FROM third_level_official_masterlist
+      WHERE LOWER(email) = LOWER($1)
+        AND status = 'Active'
+      LIMIT 1
+    `, [assignee.email]);
+    if (existingAssignmentRes.rows.length > 0) throw new Error('Selected personnel already has an assigned position');
+
+    if (official.first_name && official.first_name !== 'VACANT') {
+      await client.query(`
+        INSERT INTO third_level_officials_updates
+          ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, NOW(), ${effTs}, $9)
+      `, [TLOid, official.first_name, official.last_name, official.position_title,
+        official.office, official.strand, official.email, justification || 'Reassigned position to another personnel', null]);
+    }
+
+    await client.query(`
+      UPDATE third_level_official_masterlist
+      SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
+          status = 'Active', updated_at = NOW(), effectivity_date = ${effTs}
+      WHERE "TLOid" = $5
+    `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid]);
+
+    await client.query(`
+      INSERT INTO third_level_officials_updates
+        ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), ${effTs}, $9)
+    `, [TLOid, assignee.first_name, assignee.last_name, official.position_title,
+      official.office, official.strand, assignee.email, justification || 'Assigned through reassignment', null]);
+  } else if (target_TLOid) {
+    const targetRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [target_TLOid]);
+    const targetSlot = targetRes.rows[0];
+
+    if (targetSlot && targetSlot.first_name && targetSlot.first_name !== 'VACANT') {
+      await client.query(`
+      INSERT INTO third_level_officials_updates
+        ("TLOid", first_name, last_name, position_title, office, strand, email, status, updated_at, effectivity_date, vacate_reason)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', NOW(), ${effTs}, $8)
+    `, [target_TLOid, targetSlot.first_name, targetSlot.last_name, targetSlot.position_title,
+        targetSlot.office, targetSlot.strand, targetSlot.email, null]);
+    }
+
+    await client.query(`
+    UPDATE third_level_official_masterlist
+    SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
+        status = 'Active', updated_at = NOW(), effectivity_date = ${effTs}
+    WHERE "TLOid" = $5
+  `, [official.first_name, official.last_name, official.email, official.contact_details, target_TLOid]);
+
+    await client.query(`
+    INSERT INTO third_level_officials_updates
+      ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), ${effTs}, $9)
+  `, [target_TLOid, official.first_name, official.last_name,
+      targetSlot?.position_title || official.position_title,
+      targetSlot?.office || official.office,
+      targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`, null]);
+
+    await client.query(`
+    UPDATE third_level_official_masterlist
+    SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
+    WHERE "TLOid" = $1
+  `, [TLOid]);
+  } else {
+    await client.query(`
+    UPDATE third_level_official_masterlist
+    SET updated_at = NOW(), effectivity_date = ${effTs}
+    WHERE "TLOid" = $1
+  `, [TLOid]);
+  }
+};
+
+export const processScheduledVacancies = async (client) => {
+  try {
+    await client.query(`
+      UPDATE third_level_official_masterlist
+      SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW()
+      WHERE status = 'Vacating' AND effectivity_date <= NOW()
+    `);
+    await client.query(`
+      UPDATE third_level_official_masterlist
+      SET status = 'Inactive', updated_at = NOW()
+      WHERE status = 'Resigning' AND effectivity_date <= NOW()
+    `);
+
+    const pendingReassignments = await client.query(`
+      SELECT * FROM third_level_official_masterlist
+      WHERE (status = 'Reassigning' OR status = 'Pending Assignment') AND effectivity_date <= NOW()
+    `);
+
+    for (const official of pendingReassignments.rows) {
+      try {
+        const effTsStr = official.effectivity_date ? `'${official.effectivity_date.toISOString()}'::timestamp` : 'NOW()';
+        await executeReassignment(client, official, effTsStr, 'Scheduled reassignment executed', official.reassign_assignee_tloid, official.reassign_target_tloid);
+
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET reassign_target_tloid = NULL, reassign_assignee_tloid = NULL
+          WHERE "TLOid" = $1
+        `, [official.TLOid]);
+      } catch (err) {
+        console.error('Failed scheduled reassignment for', official.TLOid, err);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to process scheduled vacancies:', err);
+  }
+};
+
+// HTTP Endpoint for Vercel Cron
+export const triggerCron = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ error: 'Unauthorized cron trigger' });
+    }
+    
+    await processScheduledVacancies(pool);
+    res.json({ success: true, message: 'Cron job executed successfully' });
+  } catch (err) {
+    console.error('Vercel Cron Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const getOfficials = async (req, res) => {
   const allowedRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'RO HRMO', 'SDO HRMO'];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
   }
+
+  await processScheduledVacancies(pool);
 
   const { search, status, strand, category, position, designation, office } = req.query;
   let query = `
@@ -660,7 +805,22 @@ export const getOfficials = async (req, res) => {
       }))
     });
   } catch (err) {
-    import('fs').then(fs => fs.writeFileSync('getOfficials_error.log', err.stack || err.message)).catch(() => {});
+    import('fs').then(fs => fs.writeFileSync('getOfficials_error.log', err.stack || err.message)).catch(() => { });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getLastVacateUpdate = async (req, res) => {
+  try {
+    const { TLOid } = req.params;
+    const result = await pool.query(`
+      SELECT vacate_reason, remarks 
+      FROM third_level_officials_updates 
+      WHERE "TLOid" = $1 AND status IN ('Vacating', 'Resigning', 'Inactive', 'Vacated', 'Reassigning', 'Pending Assignment')
+      ORDER BY updated_at DESC LIMIT 1
+    `, [TLOid]);
+    res.json({ success: true, data: result.rows[0] || null });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
@@ -833,10 +993,26 @@ export const adminAction = async (req, res) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const { TLOid, action, justification, effectivityDate, target_TLOid, successor_TLOid, assignee_TLOid } = req.body;
+  const { TLOid, action, justification, effectivityDate, target_TLOid, successor_TLOid, assignee_TLOid, vacateReason } = req.body;
   if (!TLOid || !action) return res.status(400).json({ error: 'TLOid and action are required' });
 
-  const effTs = effectivityDate && /^\d{4}-\d{2}-\d{2}$/.test(effectivityDate) ? `'${effectivityDate} 00:00:00'::timestamp` : 'NOW()';
+  let effTs = 'NOW()';
+  let isFuture = false;
+
+  if (effectivityDate) {
+    const parsedDate = new Date(effectivityDate);
+    if (!isNaN(parsedDate.getTime())) {
+      effTs = `'${parsedDate.toISOString()}'::timestamp`;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const effDateObj = new Date(parsedDate);
+      effDateObj.setHours(0, 0, 0, 0);
+
+      isFuture = effDateObj > today;
+    }
+  }
 
   const client = await pool.connect();
   try {
@@ -850,20 +1026,51 @@ export const adminAction = async (req, res) => {
     if (official.first_name && official.first_name !== 'VACANT' && action !== 'reassign') {
       await client.query(`
         INSERT INTO third_level_officials_updates
-          ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${effTs})
+          ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), ${effTs}, $10)
       `, [official.TLOid, official.first_name, official.last_name, official.position_title,
       official.office, official.strand, official.email,
-      action === 'vacate' ? 'Vacated' : action === 'succeed' ? 'Succeeded' : 'Reassigned',
-      justification || 'Administrative action']);
+      action === 'vacate' ? 'Vacated' : action === 'succeed' ? 'Succeeded' : action === 'cancel-vacate' ? 'Active' : 'Reassigned',
+      justification || 'Administrative action', vacateReason || null]);
     }
 
-    if (action === 'vacate') {
+    if (action === 'cancel-vacate') {
       await client.query(`
         UPDATE third_level_official_masterlist
-        SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = ${effTs}
+        SET status = 'Active', updated_at = NOW(), effectivity_date = NULL, reassign_target_tloid = NULL, reassign_assignee_tloid = NULL
         WHERE "TLOid" = $1
       `, [TLOid]);
+
+    } else if (action === 'vacate') {
+      if (isFuture) {
+        if (vacateReason === 'Resignation') {
+          await client.query(`
+            UPDATE third_level_official_masterlist
+            SET status = 'Resigning', updated_at = NOW(), effectivity_date = ${effTs}
+            WHERE "TLOid" = $1
+          `, [TLOid]);
+        } else {
+          await client.query(`
+            UPDATE third_level_official_masterlist
+            SET status = 'Vacating', updated_at = NOW(), effectivity_date = ${effTs}
+            WHERE "TLOid" = $1
+          `, [TLOid]);
+        }
+      } else {
+        if (vacateReason === 'Resignation') {
+          await client.query(`
+            UPDATE third_level_official_masterlist
+            SET status = 'Inactive', updated_at = NOW(), effectivity_date = ${effTs}
+            WHERE "TLOid" = $1
+          `, [TLOid]);
+        } else {
+          await client.query(`
+            UPDATE third_level_official_masterlist
+            SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
+            WHERE "TLOid" = $1
+          `, [TLOid]);
+        }
+      }
 
     } else if (action === 'succeed') {
       if (successor_TLOid) {
@@ -873,126 +1080,69 @@ export const adminAction = async (req, res) => {
 
         await client.query(`
           INSERT INTO third_level_officials_updates
-            ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, ${effTs})
+            ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, NOW(), ${effTs}, $9)
         `, [successor_TLOid, successor.first_name, successor.last_name, successor.position_title,
-          successor.office, successor.strand, successor.email, `Succeeding ${official.first_name} ${official.last_name}`]);
+          successor.office, successor.strand, successor.email, `Succeeding ${official.first_name} ${official.last_name}`, null]);
 
         await client.query(`
           UPDATE third_level_official_masterlist
           SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL,
-              updated_at = ${effTs}
+              updated_at = NOW(), effectivity_date = ${effTs}
           WHERE "TLOid" = $1
         `, [successor_TLOid]);
 
         await client.query(`
           UPDATE third_level_official_masterlist
-          SET first_name = $1, last_name = $2, email = $3, status = 'Active', updated_at = ${effTs}
+          SET first_name = $1, last_name = $2, email = $3, status = 'Active', updated_at = NOW(), effectivity_date = ${effTs}
           WHERE "TLOid" = $4
         `, [successor.first_name, successor.last_name, successor.email, TLOid]);
 
         await client.query(`
           INSERT INTO third_level_officials_updates
-            ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, ${effTs})
+            ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), ${effTs}, $9)
         `, [TLOid, successor.first_name, successor.last_name, official.position_title,
-          official.office, official.strand, successor.email, `Succession from ${successor.position_title}`]);
+          official.office, official.strand, successor.email, `Succession from ${successor.position_title}`, null]);
       } else {
         await client.query(`
           UPDATE third_level_official_masterlist
-          SET status = 'Succeeded', first_name = NULL, last_name = NULL, email = NULL, updated_at = ${effTs}
+          SET status = 'Succeeded', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
           WHERE "TLOid" = $1
         `, [TLOid]);
       }
 
     } else if (action === 'reassign') {
-      if (assignee_TLOid) {
-        const assigneeRes = await client.query(`
-          SELECT app_TLOid AS "TLOid", first_name, last_name, email, contact_details
-          FROM third_level_officials_profiling_application
-          WHERE app_TLOid = $1
-          UNION ALL
-          SELECT uid AS "TLOid", first_name, last_name, email, contact_number AS contact_details
-          FROM users
-          WHERE uid = $1
-          LIMIT 1
-        `, [assignee_TLOid]);
-        const assignee = assigneeRes.rows[0];
-        if (!assignee) throw new Error('Assignee not found');
+      if (isFuture) {
+        if (assignee_TLOid) {
+          await client.query(`
+            UPDATE third_level_official_masterlist
+            SET status = 'Pending Assignment', updated_at = NOW(), effectivity_date = ${effTs}, reassign_assignee_tloid = $2
+            WHERE "TLOid" = $1
+          `, [TLOid, assignee_TLOid]);
 
-        const existingAssignmentRes = await client.query(`
-          SELECT 1
-          FROM third_level_official_masterlist
-          WHERE LOWER(email) = LOWER($1)
-            AND status = 'Active'
-          LIMIT 1
-        `, [assignee.email]);
-        if (existingAssignmentRes.rows.length > 0) throw new Error('Selected personnel already has an assigned position');
-
-        if (official.first_name && official.first_name !== 'VACANT') {
           await client.query(`
             INSERT INTO third_level_officials_updates
-              ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', $8, ${effTs})
-          `, [TLOid, official.first_name, official.last_name, official.position_title,
-            official.office, official.strand, official.email, justification || 'Reassigned position to another personnel']);
-        }
+              ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Pending Assignment', $8, NOW(), ${effTs})
+          `, [TLOid, official.first_name, official.last_name, official.position_title, official.office, official.strand, official.email, justification || null]);
 
-        await client.query(`
-          UPDATE third_level_official_masterlist
-          SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
-              status = 'Active', updated_at = ${effTs}
-          WHERE "TLOid" = $5
-        `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid]);
+        } else if (target_TLOid) {
+          await client.query(`
+            UPDATE third_level_official_masterlist
+            SET status = 'Reassigning', updated_at = NOW(), effectivity_date = ${effTs}, reassign_target_tloid = $2
+            WHERE "TLOid" = $1
+          `, [TLOid, target_TLOid]);
 
-        await client.query(`
-          INSERT INTO third_level_officials_updates
-            ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, ${effTs})
-        `, [TLOid, assignee.first_name, assignee.last_name, official.position_title,
-          official.office, official.strand, assignee.email, justification || 'Assigned through reassignment']);
-      } else
-        if (target_TLOid) {
-          const targetRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [target_TLOid]);
-          const targetSlot = targetRes.rows[0];
-
-          if (targetSlot && targetSlot.first_name && targetSlot.first_name !== 'VACANT') {
-            await client.query(`
+          await client.query(`
             INSERT INTO third_level_officials_updates
-              ("TLOid", first_name, last_name, position_title, office, strand, email, status, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Vacated', ${effTs})
-          `, [target_TLOid, targetSlot.first_name, targetSlot.last_name, targetSlot.position_title,
-              targetSlot.office, targetSlot.strand, targetSlot.email]);
-          }
-
-          await client.query(`
-          UPDATE third_level_official_masterlist
-          SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
-              status = 'Active', updated_at = ${effTs}
-          WHERE "TLOid" = $5
-        `, [official.first_name, official.last_name, official.email, official.contact_details, target_TLOid]);
-
-          await client.query(`
-          INSERT INTO third_level_officials_updates
-            ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, ${effTs})
-        `, [target_TLOid, official.first_name, official.last_name,
-            targetSlot?.position_title || official.position_title,
-            targetSlot?.office || official.office,
-            targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`]);
-
-          await client.query(`
-          UPDATE third_level_official_masterlist
-          SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = ${effTs}
-          WHERE "TLOid" = $1
-        `, [TLOid]);
-        } else {
-          await client.query(`
-          UPDATE third_level_official_masterlist
-          SET updated_at = ${effTs}
-          WHERE "TLOid" = $1
-        `, [TLOid]);
+              ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'Reassigning', $8, NOW(), ${effTs})
+          `, [TLOid, official.first_name, official.last_name, official.position_title, official.office, official.strand, official.email, justification || null]);
         }
+      } else {
+        await executeReassignment(client, official, effTs, justification, assignee_TLOid, target_TLOid);
+      }
     }
 
     await client.query('COMMIT');
