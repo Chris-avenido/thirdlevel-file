@@ -635,11 +635,25 @@ const OfficialsRegistry = () => {
 
     const tableColumns = useMemo(() => ([
         {
+            key: 'unique_number',
+            label: 'Unique Number',
+            width: 'w-2/12',
+            value: (item) => item.unique_number || item.TLOid || '',
+            filterValue: (item) => item.unique_number || item.TLOid || 'No Number'
+        },
+        {
             key: 'name',
             label: 'Official Profile',
             width: 'w-3/12 lg:w-3/12',
             value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''} ${item.email || ''}`,
             filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
+        },
+        {
+            key: 'employment_status',
+            label: 'Employment Status',
+            width: 'w-2/12',
+            value: (item) => item.employment_status || 'Regular',
+            filterValue: (item) => item.employment_status || 'Regular'
         },
         {
             key: 'position',
@@ -785,7 +799,7 @@ const OfficialsRegistry = () => {
             <div className="flex flex-col gap-2">
                 <button
                     onClick={() => handleSort(column.key)}
-                    className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors w-full"
+                    className="flex items-start justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors w-full min-h-[36px] text-left"
                 >
                     <span>{column.label}</span>
                     <span className="text-slate-300 text-sm">
@@ -1225,12 +1239,19 @@ const OfficialsRegistry = () => {
                                         <thead>
                                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                                 {tableColumns.map(column => <TableHeader key={column.key} column={column} />)}
-                                                <th className="px-3 py-3 w-[150px] lg:w-[180px] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                                                <th className="px-3 py-3 align-middle w-[150px] lg:w-[180px] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+                                                    Actions
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {pagedRecords.map((item) => (
                                                 <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors">
+                                                    <td className="px-3 py-3 align-top">
+                                                        <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
+                                                            <span className="line-clamp-2">{item.unique_number || item.TLOid || 'No Number'}</span>
+                                                        </div>
+                                                    </td>
                                                     <td
                                                         className={`px-3 py-3 align-top ${item.email ? 'cursor-pointer' : ''}`}
                                                         onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
@@ -1255,6 +1276,11 @@ const OfficialsRegistry = () => {
                                                                     </div>
                                                                 )}
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-3 align-top">
+                                                        <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest line-clamp-2">
+                                                            {item.employment_status || 'Regular'}
                                                         </div>
                                                     </td>
                                                     <td className="px-3 py-3 align-top">
