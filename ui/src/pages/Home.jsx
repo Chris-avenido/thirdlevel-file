@@ -6,6 +6,7 @@ import PageTransition from '../components/PageTransition';
 import AdminSidebar from '../components/AdminSidebar';
 import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
+import RetireesModal from '../components/RetireesModal';
 import { FiSearch, FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward } from 'react-icons/fi';
 
 const THIRD_LEVEL_POSITIONS = [
@@ -32,12 +33,14 @@ const Home = () => {
 
   const [applications, setApplications] = useState([]);
   const [officials, setOfficials] = useState([]);
+  const [allOfficials, setAllOfficials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeQueueFilter, setActiveQueueFilter] = useState('all');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isNotableModalOpen, setIsNotableModalOpen] = useState(false);
+  const [isRetireesModalOpen, setIsRetireesModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +50,7 @@ const Home = () => {
           fetch(apiUrl('/api/third-level/applications'), {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(apiUrl('/api/third-level/officials?status=Active'), {
+          fetch(apiUrl('/api/third-level/officials?status=All'), {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -56,7 +59,10 @@ const Home = () => {
         const offData = await offRes.json();
 
         if (appsData.success) setApplications(appsData.data);
-        if (offData.success) setOfficials(offData.data);
+        if (offData.success) {
+          setAllOfficials(offData.data);
+          setOfficials(offData.data.filter(o => o.status === 'Active'));
+        }
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
       } finally {
@@ -66,6 +72,77 @@ const Home = () => {
 
     if (token) fetchData();
   }, [token, refreshTrigger]);
+
+  const retireesThisMonth = useMemo(() => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const retirees = [];
+    allOfficials.forEach(o => {
+      if (!o.first_name || o.first_name === 'VACANT') return;
+
+      let isTurning65 = false;
+      if (o.date_of_birth) {
+        const dob = new Date(o.date_of_birth);
+        if (!isNaN(dob.getTime())) {
+          isTurning65 = (dob.getFullYear() === currentYear - 65) && (dob.getMonth() === currentMonth);
+        }
+      }
+
+      let isInactiveThisMonth = false;
+      let effDate = null;
+      const inactiveStatuses = ['Inactive', 'Resigning', 'Vacated'];
+      if (inactiveStatuses.includes(o.status) || inactiveStatuses.includes(o.employment_status)) {
+        effDate = new Date(o.effectivity_date || o.updated_at);
+        if (!isNaN(effDate.getTime())) {
+           isInactiveThisMonth = effDate.getFullYear() === currentYear && effDate.getMonth() === currentMonth;
+        }
+      }
+      
+      if (isTurning65 || isInactiveThisMonth) {
+        let reason = 'Mandatory Retirement';
+        let displayDate = null;
+
+        if (isTurning65 && o.date_of_birth) {
+          const dob = new Date(o.date_of_birth);
+          displayDate = new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate());
+        }
+        
+        if (isInactiveThisMonth) {
+          let baseStatus = o.status;
+          if (o.status === 'Active') {
+            baseStatus = o.employment_status || 'Inactive';
+          }
+          
+          if (o.vacate_reason) {
+            reason = `${baseStatus} - ${o.vacate_reason}`;
+          } else {
+            reason = baseStatus;
+          }
+          
+          if (effDate) displayDate = effDate;
+        }
+
+        retirees.push({
+          ...o,
+          separationReason: reason,
+          separationDate: displayDate,
+          isTurning65
+        });
+      }
+    });
+    
+    return retirees;
+  }, [allOfficials]);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!sessionStorage.getItem('hasSeenRetireesPrompt')) {
+        setIsRetireesModalOpen(true);
+        sessionStorage.setItem('hasSeenRetireesPrompt', 'true');
+      }
+    }
+  }, [loading]);
 
   // KPIs Logic
   const thirdLevelCount = useMemo(() => {
@@ -514,6 +591,11 @@ const Home = () => {
         isOpen={isNotableModalOpen}
         onClose={() => setIsNotableModalOpen(false)}
         onSuccess={() => {}}
+      />
+      <RetireesModal
+        isOpen={isRetireesModalOpen}
+        onClose={() => setIsRetireesModalOpen(false)}
+        retirees={retireesThisMonth}
       />
     </PageTransition>
   );

@@ -698,6 +698,7 @@ export const getOfficials = async (req, res) => {
     WITH RankedOfficials AS (
       SELECT 
         m.*,
+        (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         ROW_NUMBER() OVER (
           PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
           ORDER BY m."TLOid" ASC

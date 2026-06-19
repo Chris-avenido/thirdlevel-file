@@ -24,6 +24,8 @@ export const AuthProvider = ({ children }) => {
         if (userData.role) userData.role = normalizeRole(userData.role);
         if (userData.account_category) userData.account_category = normalizeRole(userData.account_category);
 
+        sessionStorage.removeItem('hasSeenRetireesPrompt');
+
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
 
@@ -96,6 +98,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        sessionStorage.removeItem('hasSeenRetireesPrompt');
         setUser(null);
         setToken(null);
     };
