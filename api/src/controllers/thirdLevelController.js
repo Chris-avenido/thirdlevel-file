@@ -404,6 +404,11 @@ export const getApplications = async (req, res) => {
     await ensureOicColumn();
     const { search, strand, position } = req.query;
     let query = `
+      WITH ActivePositions AS (
+        SELECT LOWER(email) as low_email, position_title, office
+        FROM third_level_official_masterlist
+        WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+      )
       SELECT 
         a.*, 
         COALESCE(NULLIF(a.first_name, ''), m.first_name) as first_name,
@@ -413,9 +418,9 @@ export const getApplications = async (req, res) => {
         v.office AS target_office, 
         v.strand AS target_strand,
         (
-          SELECT string_agg(position_title || ' (' || office || ')', ' | ') 
-          FROM third_level_official_masterlist 
-          WHERE LOWER(email) = LOWER(a.email) AND status = 'Active'
+          SELECT string_agg(position_title || ' (' || COALESCE(office, '') || ')', ' | ') 
+          FROM ActivePositions ap
+          WHERE ap.low_email = LOWER(a.email)
         ) as concurrent_positions
       FROM third_level_officials_profiling_application a
       LEFT JOIN third_level_official_masterlist m ON LOWER(a.email) = LOWER(m.email)
@@ -691,7 +696,7 @@ export const getOfficials = async (req, res) => {
     return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
   }
 
-  await processScheduledVacancies(pool);
+  processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
 
   const { search, status, strand, category, position, designation, office } = req.query;
   let query = `
@@ -781,15 +786,18 @@ export const getOfficials = async (req, res) => {
   }
 
   query += ` 
-    ) 
+    ), ActivePositions AS (
+      SELECT LOWER(email) as low_email, "TLOid", position_title, office
+      FROM third_level_official_masterlist
+      WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+    )
     SELECT 
       f.*,
       (
          SELECT string_agg(t2.position_title || ' (' || COALESCE(t2.office, '') || ')', ' | ')
-         FROM third_level_official_masterlist t2 
-         WHERE LOWER(t2.email) = LOWER(f.email)
+         FROM ActivePositions t2 
+         WHERE t2.low_email = LOWER(f.email)
            AND t2."TLOid" != f."TLOid" 
-           AND t2.status = 'Active'
       ) as concurrent_positions
     FROM RankedOfficials f 
     WHERE f.rn = 1 
