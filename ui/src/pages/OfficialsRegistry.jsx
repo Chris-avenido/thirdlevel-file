@@ -850,10 +850,21 @@ const OfficialsRegistry = () => {
             if (left > right) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
         });
-    }, [filteredRecords, tableColumns, sortConfig]);
+    }, [filteredRecords, sortConfig, tableColumns]);
+
+    const directoryGroups = useMemo(() => {
+        if (viewMode !== 'directory') return {};
+        const groups = {};
+        sortedRecords.forEach(item => {
+            const key = item.office || item.region || 'Unassigned Office';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+        });
+        return groups;
+    }, [sortedRecords, viewMode]);
 
     const pageSize = 20;
-    const pageCount = Math.max(1, Math.ceil(sortedRecords.length / pageSize));
+    const pageCount = Math.ceil(sortedRecords.length / pageSize);
     const pagedRecords = sortedRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     const pageButtons = useMemo(() => {
         const visible = new Set([1, pageCount, currentPage - 1, currentPage, currentPage + 1].filter(page => page >= 1 && page <= pageCount));
@@ -953,9 +964,6 @@ const OfficialsRegistry = () => {
                             <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                             <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
                         </div>
-                        <button onClick={logout} className="p-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition-all border border-white/20 hover:border-red-500 shadow-sm">
-                            <FiLogOut size={18} />
-                        </button>
                     </div>
                 </header>
 
@@ -1287,6 +1295,13 @@ const OfficialsRegistry = () => {
                                 >
                                     <FiGrid size={18} />
                                 </button>
+                                <button
+                                    onClick={() => setViewMode('directory')}
+                                    className={`p-3 rounded-xl transition-all ${viewMode === 'directory' ? 'bg-white text-[#075985] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    title="Organizational Directory"
+                                >
+                                    <FiLayers size={18} />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1463,53 +1478,56 @@ const OfficialsRegistry = () => {
                                     </div>
                                 </div>
                             </motion.div>
-                        ) : (
+                        ) : viewMode === 'grid' ? (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                     {pagedRecords.map((item) => (
                                         <motion.div
                                             key={item.TLOid}
-                                            whileHover={{ y: -8 }}
+                                            whileHover={{ y: -4 }}
                                             onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
-                                            className={`bg-white rounded-[2.5rem] p-8 border-2 border-[#08315F] shadow-xl shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
+                                            className={`bg-white rounded-[1.5rem] p-5 border border-[#08315F] shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                         >
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                                             <div>
-                                                <div className="flex justify-between items-start mb-6 relative z-10">
-                                                    <div className="w-20 h-20 rounded-[1.8rem] bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-300 font-black text-3xl border-2 border-white shadow-xl overflow-hidden">
+                                                <div className="flex justify-between items-start mb-4 relative z-10">
+                                                    <div className="w-12 h-12 rounded-[1rem] bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-300 font-black text-xl border-2 border-white shadow-md overflow-hidden shrink-0">
                                                         {item.photo_binary_id ? (
                                                             <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
-                                                        ) : <FiUser size={32} />}
+                                                        ) : <FiUser size={20} />}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {item.is_oic && <span className="px-3 py-1 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[9px] font-black uppercase tracking-widest">OIC</span>}
-                                                        <StatusBadge status={item.status} />
+                                                    <div className="flex items-center gap-1">
+                                                        {item.is_oic && <span className="px-2 py-0.5 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[7px] font-black uppercase tracking-widest">OIC</span>}
+                                                        <div className="scale-75 origin-top-right">
+                                                            <StatusBadge status={item.status} />
+                                                        </div>
                                                     </div>
                                                 </div>
 
                                                 <div className="space-y-1 relative z-10">
-                                                    <h3 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic">
-                                                        {item.first_name ? <>{item.first_name} <br /> {item.last_name}</> : <span className="text-rose-500 text-lg">VACANT POSITION</span>}
+                                                    <h3 className="text-sm font-['Quicksand'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic line-clamp-2">
+                                                        {item.first_name ? <>{item.first_name} {item.last_name}</> : <span className="text-rose-500">VACANT POSITION</span>}
                                                     </h3>
                                                     {item.status !== 'Inactive' && (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
-                                                            className="text-[10px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1"
+                                                            className="text-[8px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1 w-full"
+                                                            title="Positional History"
                                                         >
-                                                            {item.position_title || 'Candidate'}
-                                                            <FiClock className="text-slate-400" size={10} />
+                                                            <span className="truncate">{item.position_title || 'Candidate'}</span>
+                                                            <FiClock className="text-slate-400 shrink-0" size={8} />
                                                         </button>
                                                     )}
 
                                                     {item.concurrent_positions && (
-                                                        <div className="mt-3 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm">
-                                                            <div className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                                                        <div className="mt-2 bg-emerald-50 rounded-xl p-2.5 border border-emerald-100 shadow-sm">
+                                                            <div className="text-[6px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1 flex items-center gap-1">
+                                                                <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></div>
                                                                 Concurrent Role
                                                             </div>
-                                                            <div className="text-[10px] font-bold text-emerald-800 leading-snug">
+                                                            <div className="text-[8px] font-bold text-emerald-800 leading-snug line-clamp-2">
                                                                 {item.concurrent_positions.split(' | ').map((pos, idx) => (
-                                                                    <div key={idx} className="mb-1 last:mb-0">
+                                                                    <div key={idx} className="mb-0.5 last:mb-0 truncate">
                                                                         {pos}
                                                                     </div>
                                                                 ))}
@@ -1518,19 +1536,19 @@ const OfficialsRegistry = () => {
                                                     )}
                                                 </div>
 
-                                                <div className="mt-8 pt-6 border-t border-slate-50 space-y-4">
+                                                <div className="mt-4 pt-3 border-t border-slate-50 space-y-2">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
-                                                        <span className="text-[10px] font-bold text-slate-700">{item.status === 'Inactive' ? 'N/A' : (item.strand || 'N/A')}</span>
+                                                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
+                                                        <span className="text-[8px] font-bold text-slate-700 truncate max-w-[60%] text-right">{item.status === 'Inactive' ? 'N/A' : (item.strand || 'N/A')}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Office</span>
-                                                        <span className="text-[10px] font-bold text-slate-700 truncate ml-4">{item.status === 'Inactive' ? 'N/A' : (item.office || 'Main Office')}</span>
+                                                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Office</span>
+                                                        <span className="text-[8px] font-bold text-slate-700 truncate ml-2 text-right">{item.status === 'Inactive' ? 'N/A' : (item.office || 'Main Office')}</span>
                                                     </div>
                                                     {item.updated_at && (
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Updated</span>
-                                                            <span className="text-[10px] font-bold text-slate-700 truncate ml-4">
+                                                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Updated</span>
+                                                            <span className="text-[8px] font-bold text-slate-700 truncate ml-2 text-right">
                                                                 {new Date(item.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                             </span>
                                                         </div>
@@ -1538,26 +1556,26 @@ const OfficialsRegistry = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="mt-8 pt-6 border-t border-slate-50 flex flex-col gap-4 relative z-20" onClick={e => e.stopPropagation()}>
-                                                <div className="flex flex-wrap justify-center gap-2">
+                                            <div className="mt-4 pt-3 border-t border-slate-50 flex flex-col gap-3 relative z-20" onClick={e => e.stopPropagation()}>
+                                                <div className="flex flex-wrap justify-center gap-1.5">
                                                     {item.status !== 'Inactive' && (
-                                                        <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
-                                                            <FiLayers size={12} /> Reassign
+                                                        <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
+                                                            <FiLayers size={10} /> Reassign
                                                         </button>
                                                     )}
                                                     {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
-                                                        <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                            <FiTrash2 size={12} /> Vacate
+                                                        <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                            <FiTrash2 size={10} /> Vacate
                                                         </button>
                                                     )}
                                                 </div>
                                                 {item.status !== 'Inactive' && (
                                                     <div className="flex items-center justify-between">
-                                                        <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-2 group-hover:text-[#075985] transition-colors">
-                                                            Full Profile <FiArrowRight size={14} />
+                                                        <div className="text-[7px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-1 group-hover:text-[#075985] transition-colors">
+                                                            Full Profile <FiArrowRight size={10} />
                                                         </div>
-                                                        <button onClick={() => handlePositionClick(item)} className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-[#08315F] hover:text-white transition-all" title="View History">
-                                                            <FiClock size={16} />
+                                                        <button onClick={() => handlePositionClick(item)} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-[#08315F] hover:text-white transition-all" title="Positional History">
+                                                            <FiClock size={12} />
                                                         </button>
                                                     </div>
                                                 )}
@@ -1586,6 +1604,39 @@ const OfficialsRegistry = () => {
                                         <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
                                     </div>
                                 </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
+                                {Object.entries(directoryGroups).map(([groupName, members]) => (
+                                    <div key={groupName} className="bg-slate-50/50 p-8 rounded-[3rem] border border-slate-200">
+                                        <h3 className="text-center font-black text-2xl text-[#08315F] tracking-tighter mb-8 uppercase">{groupName}</h3>
+                                        
+                                        <div className="flex flex-wrap justify-center gap-6">
+                                            {members.map(item => (
+                                                <div key={item.TLOid} className="bg-white border-2 border-slate-200 rounded-3xl p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-[#075985] transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}>
+                                                    <div className="absolute -top-4 bg-[#075985] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md w-[90%] truncate">
+                                                        {item.position_title || 'Position Unknown'}
+                                                    </div>
+                                                    <div className="mt-4 font-black text-lg text-slate-800 leading-tight uppercase italic min-h-[50px] flex items-center justify-center">
+                                                        {item.first_name ? `${item.first_name} ${item.last_name}` : <span className="text-rose-500 not-italic">VACANT</span>}
+                                                    </div>
+                                                    <div className="text-[10px] font-bold text-slate-500 mt-2 min-h-[30px] flex items-center justify-center">{item.designation || 'No Designation'}</div>
+                                                    <div className="w-full h-px bg-slate-100 my-4"></div>
+                                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                        Appointed: <span className="text-[#075985] ml-1">{item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : item.effectivity_date ? new Date(item.effectivity_date).toLocaleDateString() : 'N/A'}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                {Object.keys(directoryGroups).length === 0 && (
+                                    <div className="py-20 text-center">
+                                        <FiLayers className="mx-auto text-slate-200 mb-6" size={64} />
+                                        <h2 className="text-2xl font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tighter mb-2">No Directory Data</h2>
+                                        <p className="text-slate-500 font-bold max-w-md mx-auto">No records found matching the current filters.</p>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -1630,24 +1681,47 @@ const OfficialsRegistry = () => {
                                                     <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">No historical data recorded</p>
                                                 </div>
                                             ) : (
-                                                <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                                    {incumbents.map((inc, i) => (
-                                                        <div key={i} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-lg hover:shadow-blue-900/5 transition-all">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 rounded-xl bg-[#08315F] text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-500/20">
-                                                                    {inc.first_name ? inc.first_name[0] : 'V'}{inc.last_name ? inc.last_name[0] : ''}
-                                                                </div>
-                                                                <div>
-                                                                    <div className="font-['Quicksand'] font-black text-[#08315F] text-sm italic uppercase">{inc.first_name || 'VACANT'} {inc.last_name || ''}</div>
-                                                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Incumbent Tenure ID: {inc.TLOid}</div>
+                                                <div className="relative border-l-2 border-slate-100 ml-4 pl-6 space-y-5 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar">
+                                                    {incumbents.map((inc, i) => {
+                                                        const startYear = inc.appointment_date ? new Date(inc.appointment_date).getFullYear() : 'Unknown';
+                                                        const endYear = inc.is_current == 1 ? 'Present' : new Date(inc.tenure_date).getFullYear();
+                                                        const yearDisplay = startYear === endYear ? startYear : `${startYear} - ${endYear}`;
+                                                        
+                                                        return (
+                                                            <div key={i} className="relative group">
+                                                                <div className={`absolute -left-[31px] top-5 w-4 h-4 rounded-full border-4 border-white shadow-sm ${inc.is_current == 1 ? 'bg-emerald-400' : 'bg-slate-300 group-hover:bg-blue-400'} transition-colors z-10`}></div>
+                                                                
+                                                                <div className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border transition-all ${inc.is_current == 1 ? 'bg-emerald-50/50 border-emerald-100 shadow-sm' : 'bg-white border-slate-100 hover:shadow-lg hover:shadow-blue-900/5 hover:border-blue-100'}`}>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg shadow-sm ${inc.is_current == 1 ? 'bg-emerald-500 text-white' : 'bg-[#08315F] text-white group-hover:bg-[#075985]'} transition-colors`}>
+                                                                            {inc.first_name ? inc.first_name[0] : 'V'}{inc.last_name ? inc.last_name[0] : ''}
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <h4 className="font-['Quicksand'] font-black text-[#08315F] text-base italic uppercase leading-none">
+                                                                                    {inc.first_name || 'VACANT'} {inc.last_name || ''}
+                                                                                </h4>
+                                                                                {inc.is_current == 1 && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[8px] font-black uppercase tracking-widest">Active</span>}
+                                                                            </div>
+                                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {inc.TLOid}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <div className="mt-4 md:mt-0 text-left md:text-right bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-xl">
+                                                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1 md:justify-end">
+                                                                            <FiCalendar size={10} /> Tenure Period
+                                                                        </div>
+                                                                        <div className={`font-black uppercase tracking-tight ${inc.is_current == 1 ? 'text-emerald-600 text-sm' : 'text-slate-600 text-sm'}`}>
+                                                                            {yearDisplay}
+                                                                        </div>
+                                                                        <div className="text-[8px] font-bold text-slate-400 uppercase mt-1">
+                                                                            Updated: {new Date(inc.tenure_date).toLocaleDateString()}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="text-right">
-                                                                <div className="text-[10px] font-black text-[#FBBF24] uppercase tracking-widest leading-none mb-1">Updated</div>
-                                                                <div className="text-[9px] font-bold text-slate-400 uppercase">{new Date(inc.tenure_date).toLocaleDateString()}</div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>

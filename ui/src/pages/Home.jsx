@@ -7,7 +7,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
-import { FiSearch, FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward } from 'react-icons/fi';
+import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward } from 'react-icons/fi';
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -35,7 +35,10 @@ const Home = () => {
   const [officials, setOfficials] = useState([]);
   const [allOfficials, setAllOfficials] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [filterRegion, setFilterRegion] = useState('All regions');
+  const [filterLevel, setFilterLevel] = useState('All levels');
+  const [filterOffice, setFilterOffice] = useState('All');
+  const [filterSearch, setFilterSearch] = useState('');
   const [activeQueueFilter, setActiveQueueFilter] = useState('all');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -316,7 +319,9 @@ const Home = () => {
         desc: `Recent profile application · ${app.target_office || 'Unassigned'}`,
         status: 'For Review',
         badgeClass: 'warn',
-        type: 'pending'
+        type: 'pending',
+        region: getOfficialRegion(app),
+        level: getOfficialLevel(app)
       });
     });
 
@@ -329,7 +334,9 @@ const Home = () => {
         desc: `Missing valid PDS/Photo/Contact · ${o.office || 'Unassigned'}`,
         status: 'Action Required',
         badgeClass: 'risk',
-        type: 'incomplete'
+        type: 'incomplete',
+        region: getOfficialRegion(o),
+        level: getOfficialLevel(o)
       });
     });
 
@@ -342,7 +349,9 @@ const Home = () => {
         desc: `Administrative/Ombudsman Case Pending`,
         status: 'Flagged',
         badgeClass: 'risk',
-        type: 'expiring'
+        type: 'expiring',
+        region: getOfficialRegion(o),
+        level: getOfficialLevel(o)
       });
     });
 
@@ -355,7 +364,9 @@ const Home = () => {
         desc: `${o.separationReason} · ${o.office || 'Unassigned'}`,
         status: o.isTurning65 ? 'Retiring' : 'Separated',
         badgeClass: 'warn',
-        type: 'retirees'
+        type: 'retirees',
+        region: getOfficialRegion(o),
+        level: getOfficialLevel(o)
       });
     });
 
@@ -364,24 +375,33 @@ const Home = () => {
       queue = queue.filter(q => q.type === activeQueueFilter);
     }
 
-    // Filter by search
-    if (search) {
-      queue = queue.filter(q => q.name.toLowerCase().includes(search.toLowerCase()) || q.desc.toLowerCase().includes(search.toLowerCase()));
+    // Filter by Region
+    if (filterRegion !== 'All regions') {
+      queue = queue.filter(q => q.region === filterRegion);
+    }
+
+    // Filter by Level
+    if (filterLevel !== 'All levels') {
+      queue = queue.filter(q => q.level === filterLevel);
+    }
+
+    // Filter by Office
+    if (filterOffice !== 'All') {
+      queue = queue.filter(q => {
+        // Find corresponding official
+        const official = officials.find(o => o.TLOid === q.id);
+        return official && official.office === filterOffice;
+      });
+    }
+
+    // Filter by Search Name
+    if (filterSearch.trim() !== '') {
+      const lowerSearch = filterSearch.toLowerCase();
+      queue = queue.filter(q => q.name.toLowerCase().includes(lowerSearch) || (q.email && q.email.toLowerCase().includes(lowerSearch)));
     }
 
     return queue.slice(0, 8);
-  }, [applications, officials, search, activeQueueFilter]);
-
-  const searchResults = useMemo(() => {
-    if (!search || search.length < 2) return [];
-    const lowerSearch = search.toLowerCase();
-    return officials.filter(o =>
-      (o.first_name && o.first_name.toLowerCase().includes(lowerSearch)) ||
-      (o.last_name && o.last_name.toLowerCase().includes(lowerSearch)) ||
-      (o.TLOid && o.TLOid.toLowerCase().includes(lowerSearch)) ||
-      (o.email && o.email.toLowerCase().includes(lowerSearch))
-    ).slice(0, 5);
-  }, [officials, search]);
+  }, [applications, officials, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth]);
 
   const toggleFilter = (filter) => {
     setActiveQueueFilter(prev => prev === filter ? 'all' : filter);
@@ -409,9 +429,6 @@ const Home = () => {
                 <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                 <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
               </div>
-              <button onClick={logout} className="p-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition-all border border-white/20 hover:border-red-500 shadow-sm">
-                <FiLogOut size={18} />
-              </button>
             </div>
           </header>
           <style>{`
@@ -419,10 +436,13 @@ const Home = () => {
           .hero { background:#08315f; color:white; border-radius:28px; padding:28px; }
           .hero small { color:#fbbf24; font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
           .hero h1 { margin:10px 0 8px; font-size:42px; line-height:1; font-weight:900; }
-          .search-bar { margin:-24px auto 22px; max-width:850px; background:white; border:2px solid #bae6fd; border-radius:22px; padding:14px; display:flex; gap:10px; box-shadow:0 18px 40px #08315f22; position:relative; z-index:20; }
-          .search-bar input { width:100%; border:0; outline:0; font-size:16px; font-weight:700; color:#0f172a; background:transparent; }
-          .search-bar button { border:0; background:#075985; color:white; border-radius:14px; padding:12px 18px; font-weight:900; cursor:pointer; transition:background 0.2s; }
-          .search-bar button:hover { background:#0369a1; }
+          .filter-bar-layout { margin:-24px auto 22px; width:100%; max-width:1200px; background:white; border:2px solid #075985; border-radius:28px; padding:16px 20px; display:flex; gap:16px; box-shadow:0 18px 40px #08315f11; align-items:flex-end; position:relative; z-index:20; flex-wrap:wrap; }
+          .filter-bar-group { flex:1; min-width:140px; display:flex; flex-direction:column; gap:6px; }
+          .filter-bar-label { font-size:10px; font-weight:900; color:#64748b; text-transform:uppercase; letter-spacing:0.1em; padding-left:4px; }
+          .filter-bar-select { width:100%; border:1px solid #bae6fd; border-radius:14px; padding:10px 14px; font-size:13px; font-weight:700; color:#08315f; outline:none; transition:border-color 0.2s; background:#f0f9ff; -webkit-appearance:none; appearance:none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2308315f%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 14px top 50%; background-size: 10px auto; }
+          .filter-bar-select:focus { border-color:#075985; }
+          .filter-bar-clear { background:#075985; color:white; border:none; border-radius:14px; padding:0 24px; font-size:13px; font-weight:900; cursor:pointer; transition:background 0.2s; height:40px; }
+          .filter-bar-clear:hover { background:#0369a1; }
           .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
           .kpi { position:relative; background:white; border:2px solid #bae6fd; border-radius:22px; padding:18px; border-left-width:8px; transition:all 0.2s; }
           .kpi:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
@@ -462,9 +482,9 @@ const Home = () => {
           .action-btn.primary { background:#075985; color:white; border-color:#075985; }
           .action-btn.primary:hover { background:#0369a1; border-color:#0369a1; }
           @media(max-width:800px){ 
+            .filter-bar-layout { flex-direction:column; align-items:stretch; }
             .kpis { grid-template-columns:repeat(2,1fr); }
             .grid-layout { grid-template-columns:1fr; } 
-            .search-bar { flex-direction:column; } 
             .hero h1 { font-size:32px; } 
           }
           @media(max-width:500px){ 
@@ -472,39 +492,74 @@ const Home = () => {
           }
         `}</style>
 
-          <div className="dashboard-wrap">
-            <form className="search-bar" onSubmit={e => {
-              e.preventDefault();
-              if (search) navigate('/officials-registry');
-            }}>
-              <div className="w-full relative flex flex-1">
+          <div className="dashboard-wrap mt-6">
+            <div className="filter-bar-layout">
+              <div className="filter-bar-group" style={{ flex: '1.5' }}>
+                <label className="filter-bar-label">Search Personnel</label>
                 <input
-                  placeholder="Search name, personnel ID, department, email…"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  type="text"
+                  placeholder="Search name or email..."
+                  className="filter-bar-select bg-white"
+                  style={{ cursor: 'text' }}
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
                 />
-                {search && search.length >= 2 && (
-                  <div className="absolute top-full left-0 right-0 mt-4 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50">
-                    {searchResults.length > 0 ? searchResults.map(o => (
-                      <div
-                        key={o.TLOid}
-                        className="px-6 py-4 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 flex justify-between items-center transition-colors"
-                        onClick={() => navigate(`/official-profiling?email=${encodeURIComponent(o.email)}`)}
-                      >
-                        <div>
-                          <div className="font-bold text-slate-800">{o.first_name} {o.last_name}</div>
-                          <div className="text-xs text-slate-500 font-medium">{o.position_title || 'Unassigned'} • {o.office || 'No Office'}</div>
-                        </div>
-                        <div className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg uppercase tracking-widest">{o.TLOid}</div>
-                      </div>
-                    )) : (
-                      <div className="px-6 py-4 text-sm font-bold text-slate-400 uppercase tracking-widest text-center">No matching personnel found</div>
-                    )}
-                  </div>
-                )}
               </div>
-              <button type="submit">Search</button>
-            </form>
+
+              <div className="filter-bar-group">
+                <label className="filter-bar-label">Region</label>
+                <select
+                  className="filter-bar-select"
+                  value={filterRegion}
+                  onChange={(e) => setFilterRegion(e.target.value)}
+                >
+                  <option value="All regions">All Regions</option>
+                  {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-bar-group">
+                <label className="filter-bar-label">Level</label>
+                <select
+                  className="filter-bar-select"
+                  value={filterLevel}
+                  onChange={(e) => setFilterLevel(e.target.value)}
+                >
+                  <option value="All levels">All Levels</option>
+                  <option value="Third Level">Third Level</option>
+                  <option value="Division Chief">Division Chief</option>
+                </select>
+              </div>
+
+              <div className="filter-bar-group">
+                <label className="filter-bar-label">Office</label>
+                <select
+                  className="filter-bar-select"
+                  value={filterOffice}
+                  onChange={(e) => setFilterOffice(e.target.value)}
+                >
+                  <option value="All">All Offices</option>
+                  {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                className="filter-bar-clear"
+                onClick={() => {
+                  setFilterSearch('');
+                  setActiveQueueFilter('all');
+                  setFilterRegion('All regions');
+                  setFilterLevel('All levels');
+                  setFilterOffice('All');
+                }}
+              >
+                Clear
+              </button>
+            </div>
 
             <section className="kpis">
               <div className={`kpi active-filter`} style={{ cursor: 'default', outlineColor: '#bae6fd' }}>

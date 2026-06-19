@@ -135,9 +135,6 @@ const Settings = () => {
                             <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                             <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
                         </div>
-                        <button onClick={logout} className="p-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition-all border border-white/20 hover:border-red-500 shadow-sm">
-                            <FiLogOut size={18} />
-                        </button>
                     </div>
                 </header>
                 

@@ -881,16 +881,17 @@ export const getPositionIncumbents = async (req, res) => {
         UNION ALL
         
         SELECT 
-          0 as id, "TLOid", first_name, last_name, strand, office, remarks, updated_at as tenure_date,
+          0 as id, u."TLOid", u.first_name, u.last_name, u.strand, u.office, u.remarks, u.updated_at as tenure_date,
           0 as is_current
-        FROM third_level_officials_updates
-        WHERE position_title = ANY($1) ${officeCondition}
-          AND first_name IS NOT NULL AND first_name != 'VACANT'
+        FROM third_level_officials_updates u
+        WHERE u.position_title = ANY($1) ${officeCondition}
+          AND u.first_name IS NOT NULL AND u.first_name != 'VACANT'
       ),
       RankedIncumbents AS (
-        SELECT *,
-          ROW_NUMBER() OVER (PARTITION BY LOWER(first_name), LOWER(last_name) ORDER BY is_current DESC, tenure_date DESC) as rn
-        FROM AllIncumbents
+        SELECT ai.*, m.appointment_date,
+          ROW_NUMBER() OVER (PARTITION BY LOWER(ai.first_name), LOWER(ai.last_name) ORDER BY ai.is_current DESC, ai.tenure_date DESC) as rn
+        FROM AllIncumbents ai
+        LEFT JOIN third_level_official_masterlist m ON ai."TLOid" = m."TLOid"
       )
       SELECT * FROM RankedIncumbents
       WHERE rn = 1

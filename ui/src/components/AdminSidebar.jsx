@@ -117,6 +117,14 @@ const AdminSidebar = () => {
                 </nav>
 
                 <div className={`border-t border-blue-800/50 mt-auto flex flex-col gap-4 ${sidebarCollapsed ? 'lg:p-4' : 'p-8'}`}>
+                    <button
+                        onClick={logout}
+                        title="Sign Out"
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} text-rose-200 hover:bg-white/10 hover:text-rose-400`}
+                    >
+                        <FiLogOut size={18} className="shrink-0" />
+                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Sign Out</span>
+                    </button>
                     <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:h-0 lg:opacity-0' : 'h-6 opacity-100'}`}>
                         <p className="text-[9px] font-black text-blue-400/50 uppercase tracking-[0.2em] text-center whitespace-nowrap">Department of Education</p>
                     </div>
