@@ -676,7 +676,7 @@ export const triggerCron = async (req, res) => {
     if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return res.status(401).json({ error: 'Unauthorized cron trigger' });
     }
-    
+
     await processScheduledVacancies(pool);
     res.json({ success: true, message: 'Cron job executed successfully' });
   } catch (err) {
@@ -927,6 +927,61 @@ export const getActiveOfficials = async (req, res) => {
   }
 };
 
+export const createUnassignedPersonnel = async (req, res) => {
+  const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
+  if (!adminRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { first_name, last_name, email, employee_number } = req.body;
+  if (!email || !first_name || !last_name) return res.json({ success: false, error: 'Missing required fields' });
+
+  const client = await pool.connect();
+  try {
+    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1)', [email]);
+    const appCheck = await client.query('SELECT 1 FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1)', [email]);
+    const userCheck = await client.query('SELECT 1 FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+
+    if (masterCheck.rows.length > 0 || appCheck.rows.length > 0 || userCheck.rows.length > 0) {
+      return res.json({ success: false, error: 'Email already exists. Please use a different email address.' });
+    }
+
+    const countRes = await client.query('SELECT COUNT(*) FROM third_level_officials_profiling_application');
+    const count = parseInt(countRes.rows[0].count) + 1;
+    const appTloId = `APP-2026-${String(count).padStart(4, '0')}`;
+    const normalizedEmailInit = email.toLowerCase().trim();
+
+    await client.query('BEGIN');
+
+    // Check if employee_number column exists
+    const colsRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name='third_level_officials_profiling_application'`);
+    const cols = colsRes.rows.map(r => r.column_name.toLowerCase());
+    const empCol = cols.find(c => c === 'employee_number' || c === 'employee_no' || c === 'emp_no');
+
+    if (empCol && employee_number) {
+      await client.query(`
+        INSERT INTO third_level_officials_profiling_application (
+            application_id, app_TLOid, first_name, last_name, email, "${empCol}", application_status, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, NOW(), NOW())
+      `, [appTloId, first_name, last_name, normalizedEmailInit, employee_number]);
+    } else {
+      await client.query(`
+        INSERT INTO third_level_officials_profiling_application (
+            application_id, app_TLOid, first_name, last_name, email, application_status, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, NOW(), NOW())
+      `, [appTloId, first_name, last_name, normalizedEmailInit]);
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, TLOid: appTloId, message: 'Personnel added successfully', newPersonnel: { TLOid: appTloId, first_name, last_name, email: normalizedEmailInit, employee_number } });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+};
+
 export const getUnassignedPersonnel = async (req, res) => {
   const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
   if (!adminRoles.includes(req.user.role)) {
@@ -977,6 +1032,7 @@ export const getUnassignedPersonnel = async (req, res) => {
         OR COALESCE(a.last_name, u.last_name) ILIKE $${params.length}
         OR CONCAT_WS(' ', COALESCE(NULLIF(a.first_name, ''), u.first_name), COALESCE(NULLIF(a.last_name, ''), u.last_name)) ILIKE $${params.length}
         OR COALESCE(a.app_TLOid, u.uid) ILIKE $${params.length}
+        OR COALESCE(a.email, u.email) ILIKE $${params.length}
         OR COALESCE(${appEmployeeExpr}, ${userEmployeeExpr}) ILIKE $${params.length}
       )`;
     }

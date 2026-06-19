@@ -9,7 +9,8 @@ import {
   getOfficials,
   getPositionIncumbents,
   getLastVacateUpdate,
-  triggerCron
+  triggerCron,
+  createUnassignedPersonnel
 } from '../controllers/thirdLevelController.js';
 import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
 
@@ -22,6 +23,7 @@ router.get('/officials/:TLOid/last-vacate-update', authMiddleware, getLastVacate
 router.get('/position-incumbents', authMiddleware, getPositionIncumbents);
 router.get('/active-officials', authMiddleware, getActiveOfficials);
 router.get('/unassigned-personnel', authMiddleware, getUnassignedPersonnel);
+router.post('/add-unassigned-personnel', authMiddleware, createUnassignedPersonnel);
 router.post('/admin-action', authMiddleware, adminAction);
 router.post('/bulk-process-directory', authMiddleware, bulkProcessDirectory);
 router.post('/bulk-process-achievements', authMiddleware, bulkProcessAchievements);
