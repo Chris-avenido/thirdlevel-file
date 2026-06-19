@@ -6,7 +6,7 @@ import {
     FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight,
     FiMoreVertical, FiDownload, FiPlus, FiGrid, FiList,
     FiCheckCircle, FiAlertCircle, FiClock, FiActivity, FiArrowRight,
-    FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2, FiRefreshCw
+    FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2, FiRefreshCw, FiCalendar
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
@@ -148,6 +148,7 @@ const OfficialsRegistry = () => {
     const [officials, setOfficials] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusTab, setStatusTab] = useState('All');
     const [activeTab, setActiveTab] = useState('All');
     const [levelFilter, setLevelFilter] = useState('All');
     const [regionFilter, setRegionFilter] = useState('All');
@@ -823,6 +824,10 @@ const OfficialsRegistry = () => {
 
     const filteredRecords = useMemo(() => {
         return activeRecords.filter(item => {
+            if (statusTab !== 'All') {
+                const itemStatus = item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown');
+                if (itemStatus !== statusTab) return false;
+            }
             if (levelFilter !== 'All' && getOfficialLevel(item) !== levelFilter) return false;
             if (regionFilter !== 'All' && getOfficialRegion(item) !== regionFilter) return false;
 
@@ -833,7 +838,7 @@ const OfficialsRegistry = () => {
                 return value === filter;
             });
         });
-    }, [activeRecords, tableColumns, tableFilters, levelFilter, regionFilter]);
+    }, [activeRecords, tableColumns, tableFilters, levelFilter, regionFilter, statusTab]);
 
     const sortedRecords = useMemo(() => {
         const column = tableColumns.find(c => c.key === sortConfig.key);
@@ -883,16 +888,18 @@ const OfficialsRegistry = () => {
                             : '↕'}
                     </span>
                 </button>
-                <select
-                    value={tableFilters[column.key] || ''}
-                    onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300 shadow-sm"
-                >
-                    <option value="">All</option>
-                    {(tableFilterOptions[column.key] || []).map(option => (
-                        <option key={option} value={option}>{option}</option>
-                    ))}
-                </select>
+                {column.key !== 'status' && (
+                    <select
+                        value={tableFilters[column.key] || ''}
+                        onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300 shadow-sm"
+                    >
+                        <option value="">All</option>
+                        {(tableFilterOptions[column.key] || []).map(option => (
+                            <option key={option} value={option}>{option}</option>
+                        ))}
+                    </select>
+                )}
             </div>
         </th>
     );
@@ -1248,6 +1255,7 @@ const OfficialsRegistry = () => {
                                 onClick={() => {
                                     setSearchTerm('');
                                     setTableFilters({});
+                                    setStatusTab('All');
                                     setActiveTab('All');
                                     setLevelFilter('All');
                                     setRegionFilter('All');
@@ -1296,6 +1304,18 @@ const OfficialsRegistry = () => {
                     </div>
 
                     {/* MAIN CONTENT AREA */}
+                    <div className="flex gap-2 mb-6 overflow-x-auto custom-scrollbar pb-2">
+                        {['All', 'Active', 'Inactive', 'Pending Assignment', 'Resigning', 'Vacant'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setStatusTab(tab)}
+                                className={`px-5 py-3 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${statusTab === tab ? 'bg-[#08315F] text-white border-[#08315F] shadow-lg shadow-[#08315F]/20' : 'bg-white text-slate-400 border-transparent hover:border-slate-200 hover:text-slate-600'}`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+
                     <AnimatePresence mode="wait">
                         {loading ? (
                             <div className="h-96 flex items-center justify-center">
@@ -1353,6 +1373,30 @@ const OfficialsRegistry = () => {
                                                                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 truncate">
                                                                             {expandAcronym(item.designation) || 'No Designation'}
                                                                         </div>
+                                                                        {item.effectivity_date && (
+                                                                            <div className="text-[9px] font-bold mt-1 uppercase tracking-widest flex items-center gap-1.5 truncate">
+                                                                                <FiCalendar className="text-slate-400" size={10} />
+                                                                                {(() => {
+                                                                                    const effDate = new Date(item.effectivity_date);
+                                                                                    if (isNaN(effDate.getTime())) return <span className="text-slate-400">Invalid Date</span>;
+                                                                                    
+                                                                                    const today = new Date();
+                                                                                    // Strip time for accurate day calculation
+                                                                                    effDate.setHours(0,0,0,0);
+                                                                                    today.setHours(0,0,0,0);
+                                                                                    
+                                                                                    const diffTime = today.getTime() - effDate.getTime();
+                                                                                    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                                                                    
+                                                                                    if (item.status === 'Inactive' || item.status === 'Resigning' || item.status === 'Vacated') {
+                                                                                        return <span className="text-rose-500">Vacated {days >= 0 ? `${days} days ago` : `in ${Math.abs(days)} days`}</span>;
+                                                                                    }
+                                                                                    return <span className={days >= 0 ? 'text-emerald-600' : 'text-blue-500'}>
+                                                                                        {days >= 0 ? `${days} Days in Position` : `Starts in ${Math.abs(days)} Days`}
+                                                                                    </span>;
+                                                                                })()}
+                                                                            </div>
+                                                                        )}
                                                                         <div className="mt-3 flex items-center gap-2">
                                                                             <button
                                                                                 onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}

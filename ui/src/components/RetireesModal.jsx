@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiAward, FiLogOut, FiAlertCircle, FiCalendar, FiChevronDown, FiUser } from 'react-icons/fi';
+import { FiX, FiAward, FiLogOut, FiAlertCircle, FiCalendar, FiChevronDown, FiUser, FiUsers, FiFileText } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 
-const RetireesModal = ({ isOpen, onClose, retirees }) => {
+const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth = [], elementsThisMonth = [] }) => {
   const navigate = useNavigate();
   const { token } = useAuth();
   const [selectedOfficial, setSelectedOfficial] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [loadingRemarks, setLoadingRemarks] = useState(false);
+  const [activeTab, setActiveTab] = useState('retirees');
 
   useEffect(() => {
     if (selectedOfficial && selectedOfficial.separationReason !== 'Mandatory Retirement') {
@@ -56,15 +57,37 @@ const RetireesModal = ({ isOpen, onClose, retirees }) => {
           </button>
         </div>
 
+        <div className="bg-slate-50 border-b border-slate-100 px-6 py-2 flex gap-2 overflow-x-auto">
+          <button 
+            onClick={() => setActiveTab('retirees')}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'retirees' ? 'bg-blue-100 text-blue-800 shadow-sm' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+          >
+            Separations & Retirees <span className="ml-1 bg-white/50 px-1.5 py-0.5 rounded-md">{retirees.length}</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('applicants')}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'applicants' ? 'bg-blue-100 text-blue-800 shadow-sm' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+          >
+            Pool of Applicants <span className="ml-1 bg-white/50 px-1.5 py-0.5 rounded-md">{applicationsThisMonth.length}</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('elements')}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'elements' ? 'bg-blue-100 text-blue-800 shadow-sm' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+          >
+            Directory Elements <span className="ml-1 bg-white/50 px-1.5 py-0.5 rounded-md">{elementsThisMonth.length}</span>
+          </button>
+        </div>
+
         <div className="p-6 max-h-[60vh] overflow-y-auto">
-          {retirees.length > 0 ? (
-            <div className="space-y-3">
-              {retirees.map(official => (
-                <div 
-                  key={official.TLOid} 
-                  className="p-4 rounded-2xl border-2 border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center gap-4 cursor-pointer"
-                  onClick={() => setSelectedOfficial(official)}
-                >
+          {activeTab === 'retirees' && (
+            retirees.length > 0 ? (
+              <div className="space-y-3">
+                {retirees.map(official => (
+                  <div 
+                    key={official.TLOid} 
+                    className="p-4 rounded-2xl border-2 border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center gap-4 cursor-pointer"
+                    onClick={() => setSelectedOfficial(official)}
+                  >
                   <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black text-lg border-2 border-white shadow-sm flex-shrink-0">
                     {official.first_name?.[0] || ''}{official.last_name?.[0] || ''}
                   </div>
@@ -101,15 +124,96 @@ const RetireesModal = ({ isOpen, onClose, retirees }) => {
                        )}
                      </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-12 text-center text-slate-500">
-              <FiAward size={48} className="mx-auto mb-4 text-slate-300" />
-              <p className="text-lg font-bold text-slate-800">No Separations This Month</p>
-              <p className="text-sm">There are no personnel reaching mandatory retirement age or marked inactive this month.</p>
-            </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-3xl">
+                <FiAward className="mx-auto text-slate-300 mb-4" size={48} />
+                <h3 className="text-xl font-black text-[#08315F] uppercase tracking-tighter">No Retirees This Month</h3>
+                <p className="text-sm font-bold text-slate-400 mt-2">There are no personnel reaching the mandatory retirement age (65) or marked as vacating this month.</p>
+              </div>
+            )
+          )}
+
+          {activeTab === 'applicants' && (
+            applicationsThisMonth.length > 0 ? (
+              <div className="space-y-3">
+                {applicationsThisMonth.map(app => (
+                  <div 
+                    key={app.app_TLOid || app.uid} 
+                    className="p-4 rounded-2xl border-2 border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center gap-4 cursor-pointer"
+                    onClick={() => {
+                      onClose();
+                      if (app.email) navigate(`/official-profiling?email=${encodeURIComponent(app.email)}`);
+                    }}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black text-lg border-2 border-white shadow-sm flex-shrink-0">
+                      {app.first_name?.[0] || ''}{app.last_name?.[0] || ''}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-800 truncate text-lg leading-tight">
+                          {app.first_name} {app.last_name}
+                        </h3>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 uppercase tracking-widest flex-shrink-0">
+                          Applicant
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-500 font-medium truncate mt-0.5">
+                        {app.position_title || 'Unassigned'} • {app.office || 'No Office'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-3xl">
+                <FiUsers className="mx-auto text-slate-300 mb-4" size={48} />
+                <h3 className="text-xl font-black text-[#08315F] uppercase tracking-tighter">No Applicants This Month</h3>
+                <p className="text-sm font-bold text-slate-400 mt-2">There are no new applications submitted for the current month.</p>
+              </div>
+            )
+          )}
+
+          {activeTab === 'elements' && (
+            elementsThisMonth.length > 0 ? (
+              <div className="space-y-3">
+                {elementsThisMonth.map(element => (
+                  <div 
+                    key={element.TLOid} 
+                    className="p-4 rounded-2xl border-2 border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center gap-4 cursor-pointer"
+                    onClick={() => {
+                      onClose();
+                      if (element.email) navigate(`/official-profiling?email=${encodeURIComponent(element.email)}`);
+                    }}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-black text-lg border-2 border-white shadow-sm flex-shrink-0">
+                      {element.first_name?.[0] || ''}{element.last_name?.[0] || ''}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-800 truncate text-lg leading-tight">
+                          {element.first_name} {element.last_name}
+                        </h3>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-widest flex-shrink-0">
+                          Updated
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-500 font-medium truncate mt-0.5">
+                        {element.position_title || 'Unassigned'} • {element.office || 'No Office'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-3xl">
+                <FiFileText className="mx-auto text-slate-300 mb-4" size={48} />
+                <h3 className="text-xl font-black text-[#08315F] uppercase tracking-tighter">No New Elements</h3>
+                <p className="text-sm font-bold text-slate-400 mt-2">There are no officials added or updated in the directory this month.</p>
+              </div>
+            )
           )}
         </div>
         

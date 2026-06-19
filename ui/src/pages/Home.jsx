@@ -95,10 +95,10 @@ const Home = () => {
       if (inactiveStatuses.includes(o.status) || inactiveStatuses.includes(o.employment_status)) {
         effDate = new Date(o.effectivity_date || o.updated_at);
         if (!isNaN(effDate.getTime())) {
-           isInactiveThisMonth = effDate.getFullYear() === currentYear && effDate.getMonth() === currentMonth;
+          isInactiveThisMonth = effDate.getFullYear() === currentYear && effDate.getMonth() === currentMonth;
         }
       }
-      
+
       if (isTurning65 || isInactiveThisMonth) {
         let reason = 'Mandatory Retirement';
         let displayDate = null;
@@ -107,19 +107,19 @@ const Home = () => {
           const dob = new Date(o.date_of_birth);
           displayDate = new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate());
         }
-        
+
         if (isInactiveThisMonth) {
           let baseStatus = o.status;
           if (o.status === 'Active') {
             baseStatus = o.employment_status || 'Inactive';
           }
-          
+
           if (o.vacate_reason) {
             reason = `${baseStatus} - ${o.vacate_reason}`;
           } else {
             reason = baseStatus;
           }
-          
+
           if (effDate) displayDate = effDate;
         }
 
@@ -131,9 +131,25 @@ const Home = () => {
         });
       }
     });
-    
+
     return retirees;
   }, [allOfficials]);
+
+  const applicationsThisMonth = useMemo(() => {
+    const today = new Date();
+    return applications.filter(app => {
+      const d = new Date(app.created_at || app.updated_at);
+      return !isNaN(d) && d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+    });
+  }, [applications]);
+
+  const elementsThisMonth = useMemo(() => {
+    const today = new Date();
+    return officials.filter(o => {
+      const d = new Date(o.created_at || o.updated_at);
+      return !isNaN(d) && d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+    });
+  }, [officials]);
 
   useEffect(() => {
     if (!loading) {
@@ -257,6 +273,36 @@ const Home = () => {
     );
   }, [officials]);
 
+  const elementsRegionBreakdown = useMemo(() => {
+    const counts = {};
+    officials.forEach(o => {
+      const region = getOfficialRegion(o);
+      counts[region] = (counts[region] || 0) + 1;
+    });
+
+    return Object.fromEntries(
+      Object.entries(counts).sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        return a[0].localeCompare(b[0]);
+      })
+    );
+  }, [officials]);
+
+  const retireesRegionBreakdown = useMemo(() => {
+    const counts = {};
+    retireesThisMonth.forEach(o => {
+      const region = getOfficialRegion(o);
+      counts[region] = (counts[region] || 0) + 1;
+    });
+
+    return Object.fromEntries(
+      Object.entries(counts).sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        return a[0].localeCompare(b[0]);
+      })
+    );
+  }, [officials]);
+
   // Action Queue: combining pending apps and incomplete profiles for display
   const actionQueue = useMemo(() => {
     let queue = [];
@@ -297,6 +343,19 @@ const Home = () => {
         status: 'Flagged',
         badgeClass: 'risk',
         type: 'expiring'
+      });
+    });
+
+    // Separations and Retirements
+    retireesThisMonth.forEach(o => {
+      queue.push({
+        id: o.TLOid,
+        email: o.email,
+        name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
+        desc: `${o.separationReason} · ${o.office || 'Unassigned'}`,
+        status: o.isTurning65 ? 'Retiring' : 'Separated',
+        badgeClass: 'warn',
+        type: 'retirees'
       });
     });
 
@@ -364,12 +423,13 @@ const Home = () => {
           .search-bar input { width:100%; border:0; outline:0; font-size:16px; font-weight:700; color:#0f172a; background:transparent; }
           .search-bar button { border:0; background:#075985; color:white; border-radius:14px; padding:12px 18px; font-weight:900; cursor:pointer; transition:background 0.2s; }
           .search-bar button:hover { background:#0369a1; }
-          .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+          .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
           .kpi { position:relative; background:white; border:2px solid #bae6fd; border-radius:22px; padding:18px; border-left-width:8px; transition:all 0.2s; }
           .kpi:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
           .kpi.amber { border-left-color:#f59e0b; } 
           .kpi.red { border-left-color:#dc2626; } 
           .kpi.blue { border-left-color:#0284c7; }
+          .kpi.purple { border-left-color:#a855f7; }
           .kpi.active-filter { background:#f8fafc; outline: 3px solid #bae6fd; outline-offset: -2px; }
           .kpi p { margin:0; color:#64748b; font-size:12px; font-weight:900; text-transform:uppercase; }
           .kpi h2 { margin:8px 0 0; font-size:34px; color:#08315f; }
@@ -413,12 +473,6 @@ const Home = () => {
         `}</style>
 
           <div className="dashboard-wrap">
-            <section className="hero">
-              <small>InsightED Third Level</small>
-              <h1>Executive Registry Dashboard</h1>
-              <p>Monitor official credentials, review profiling applications, and manage the administrative masterlist.</p>
-            </section>
-
             <form className="search-bar" onSubmit={e => {
               e.preventDefault();
               if (search) navigate('/officials-registry');
@@ -453,8 +507,23 @@ const Home = () => {
             </form>
 
             <section className="kpis">
+              <div className={`kpi active-filter`} style={{ cursor: 'default', outlineColor: '#bae6fd' }}>
+                <p>Elements for the Directory</p>
+                <h2>{loading ? '-' : officials.length}</h2>
+                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+                  <h4>Region Breakdown</h4>
+                  {Object.keys(elementsRegionBreakdown).length > 0 ? Object.entries(elementsRegionBreakdown).map(([region, count]) => (
+                    <div key={region} className="kpi-tooltip-row">
+                      <span className="label" title={region}>{region}</span>
+                      <span className="count">{count}</span>
+                    </div>
+                  )) : (
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
+                  )}
+                </div>
+              </div>
               <div className={`kpi amber ${activeQueueFilter === 'pending' ? 'active-filter' : ''}`} onClick={() => toggleFilter('pending')} style={{ cursor: 'pointer' }}>
-                <p>Pending Verifications</p>
+                <p>Pool of Applicants</p>
                 <h2>{loading ? '-' : pendingVerifications}</h2>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
@@ -498,6 +567,21 @@ const Home = () => {
                   )}
                 </div>
               </div>
+              <div className={`kpi purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}`} onClick={() => toggleFilter('retirees')} style={{ cursor: 'pointer' }}>
+                <p>Separations & Retirees</p>
+                <h2>{loading ? '-' : retireesThisMonth.length}</h2>
+                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+                  <h4>Region Breakdown</h4>
+                  {Object.keys(retireesRegionBreakdown).length > 0 ? Object.entries(retireesRegionBreakdown).map(([region, count]) => (
+                    <div key={region} className="kpi-tooltip-row">
+                      <span className="label" title={region}>{region}</span>
+                      <span className="count">{count}</span>
+                    </div>
+                  )) : (
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
+                  )}
+                </div>
+              </div>
             </section>
 
             <section className="grid-layout">
@@ -507,9 +591,10 @@ const Home = () => {
                     <h3>Action Queue</h3>
                     <p>
                       {activeQueueFilter === 'all' && "Records requiring review or correction."}
-                      {activeQueueFilter === 'pending' && "Showing only pending verification records."}
+                      {activeQueueFilter === 'pending' && "Showing only pool of applicants."}
                       {activeQueueFilter === 'incomplete' && "Showing only incomplete profiles."}
                       {activeQueueFilter === 'expiring' && "Showing only profiles with pending cases/expiring IDs."}
+                      {activeQueueFilter === 'retirees' && "Showing separations and retirees for this month."}
                     </p>
                   </div>
                   {activeQueueFilter !== 'all' && (
@@ -590,12 +675,14 @@ const Home = () => {
       <NotableAchievementsModal
         isOpen={isNotableModalOpen}
         onClose={() => setIsNotableModalOpen(false)}
-        onSuccess={() => {}}
+        onSuccess={() => { }}
       />
       <RetireesModal
         isOpen={isRetireesModalOpen}
         onClose={() => setIsRetireesModalOpen(false)}
         retirees={retireesThisMonth}
+        applicationsThisMonth={applicationsThisMonth}
+        elementsThisMonth={elementsThisMonth}
       />
     </PageTransition>
   );
