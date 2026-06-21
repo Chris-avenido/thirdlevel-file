@@ -6,7 +6,7 @@ import { apiUrl } from '../utils/api';
 
 const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth = [], elementsThisMonth = [] }) => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [selectedOfficial, setSelectedOfficial] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [loadingRemarks, setLoadingRemarks] = useState(false);
@@ -30,7 +30,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
     }
   }, [selectedOfficial, token]);
 
-  if (!isOpen) return null;
+  if (!isOpen || user?.role !== 'Central Office') return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-['Quicksand']">

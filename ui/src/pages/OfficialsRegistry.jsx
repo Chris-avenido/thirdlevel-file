@@ -1885,7 +1885,9 @@ const OfficialsRegistry = () => {
                                                                     <div>
                                                                         <div className="flex justify-between items-end mb-3">
                                                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0">Search Personnel Without Position</label>
-                                                                            <button onClick={() => setIsAddingPersonnel(true)} className="text-[10px] font-black text-[#08315F] hover:text-[#004A99] uppercase tracking-widest transition-colors">+ Add New</button>
+                                                                            {user?.role === 'Central Office' && (
+                                                                                <button onClick={() => setIsAddingPersonnel(true)} className="text-[10px] font-black text-[#08315F] hover:text-[#004A99] uppercase tracking-widest transition-colors">+ Add New</button>
+                                                                            )}
                                                                         </div>
                                                                         <div className="relative">
                                                                             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />

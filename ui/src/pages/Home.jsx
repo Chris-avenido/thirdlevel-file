@@ -155,13 +155,13 @@ const Home = () => {
   }, [officials]);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && user?.role === 'Central Office') {
       if (!sessionStorage.getItem('hasSeenRetireesPrompt')) {
         setIsRetireesModalOpen(true);
         sessionStorage.setItem('hasSeenRetireesPrompt', 'true');
       }
     }
-  }, [loading]);
+  }, [loading, user]);
 
   // KPIs Logic
   const thirdLevelCount = useMemo(() => {
