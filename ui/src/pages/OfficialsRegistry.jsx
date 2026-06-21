@@ -1505,12 +1505,12 @@ const OfficialsRegistry = () => {
                                                             <StatusBadge status={item.status} />
 
                                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-slate-200 pointer-events-none group-hover:pointer-events-auto">
-                                                                {item.status !== 'Inactive' && (
+                                                                {item.status !== 'Inactive' && user?.role === 'Central Office' && (
                                                                     <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
                                                                         <FiLayers size={12} />
                                                                     </button>
                                                                 )}
-                                                                {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
+                                                                {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && user?.role === 'Central Office' && (
                                                                     <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
                                                                         <FiTrash2 size={12} />
                                                                     </button>
@@ -1624,12 +1624,12 @@ const OfficialsRegistry = () => {
 
                                                 <div className="mt-4 pt-3 border-t border-slate-50 flex flex-col gap-3 relative z-20" onClick={e => e.stopPropagation()}>
                                                     <div className="flex flex-wrap justify-center gap-1.5">
-                                                        {item.status !== 'Inactive' && (
+                                                        {item.status !== 'Inactive' && user?.role === 'Central Office' && (
                                                             <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
                                                                 <FiLayers size={10} /> Reassign
                                                             </button>
                                                         )}
-                                                        {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
+                                                        {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && user?.role === 'Central Office' && (
                                                             <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
                                                                 <FiTrash2 size={10} /> Vacate
                                                             </button>
