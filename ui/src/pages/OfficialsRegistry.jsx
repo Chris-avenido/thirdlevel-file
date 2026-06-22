@@ -36,6 +36,94 @@ const JustificationInput = ({ value, onChange, placeholder }) => {
     );
 };
 
+const AddNewPersonnelForm = ({ onCancel, onSuccess, token }) => {
+    const [newPersonnelData, setNewPersonnelData] = useState({ first_name: '', last_name: '', email: '', employee_number: '' });
+    const [addPersonnelLoading, setAddPersonnelLoading] = useState(false);
+
+    const handleAddPersonnel = async () => {
+        setAddPersonnelLoading(true);
+        try {
+            const res = await fetch(apiUrl('/api/third-level/add-unassigned-personnel'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token || localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(newPersonnelData)
+            });
+            const data = await res.json();
+            if (data.success) {
+                onSuccess(data.newPersonnel.TLOid);
+            } else {
+                Swal.fire('Error', data.error || 'Failed to add personnel', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Failed to add personnel: ' + err.message, 'error');
+        } finally {
+            setAddPersonnelLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem] border-2 border-[#08315F]/10">
+            <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Add New Personnel</h3>
+                <button onClick={onCancel} className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors">Cancel</button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">First Name <span className="text-red-500">*</span></label>
+                    <input type="text" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Last Name <span className="text-red-500">*</span></label>
+                    <input type="text" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                </div>
+            </div>
+            <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Email Address <span className="text-red-500">*</span></label>
+                <input type="email" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+            </div>
+            <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Employee Number</label>
+                <input type="text" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+            </div>
+            <button
+                onClick={handleAddPersonnel}
+                disabled={addPersonnelLoading || !newPersonnelData.first_name || !newPersonnelData.last_name || !newPersonnelData.email}
+                className="w-full mt-2 bg-[#08315F] hover:bg-[#004A99] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+            >
+                {addPersonnelLoading && <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                Save Personnel
+            </button>
+        </div>
+    );
+};
+
+const DebouncedSearchInput = ({ value, onChange, placeholder }) => {
+    const [local, setLocal] = useState(value);
+
+    useEffect(() => {
+        setLocal(value);
+    }, [value]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onChange(local);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [local, onChange]);
+
+    return (
+        <input
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            placeholder={placeholder}
+            className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
+        />
+    );
+};
+
 const THIRD_LEVEL_POSITIONS = [
     'Secretary',
     'Undersecretary',
@@ -150,8 +238,6 @@ const OfficialsRegistry = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddingPersonnel, setIsAddingPersonnel] = useState(false);
-    const [newPersonnelData, setNewPersonnelData] = useState({ first_name: '', last_name: '', email: '', employee_number: '' });
-    const [addPersonnelLoading, setAddPersonnelLoading] = useState(false);
     const [statusTab, setStatusTab] = useState('All');
     const [activeTab, setActiveTab] = useState('All');
     const [levelFilter, setLevelFilter] = useState('All');
@@ -430,6 +516,12 @@ const OfficialsRegistry = () => {
         }
     };
 
+    useEffect(() => {
+        if (!showActionModal) {
+            setIsAddingPersonnel(false);
+        }
+    }, [showActionModal]);
+
     const fetchIncumbents = async (position, office) => {
         setIncumbentsLoading(true);
         setIncumbents([]);
@@ -534,33 +626,7 @@ const OfficialsRegistry = () => {
         }
     };
 
-    const handleAddPersonnel = async () => {
-        setAddPersonnelLoading(true);
-        try {
-            const res = await fetch(apiUrl('/api/third-level/add-unassigned-personnel'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token || localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(newPersonnelData)
-            });
-            const data = await res.json();
-            if (data.success) {
-                unassignedCacheRef.current.clear();
-                await fetchUnassignedPersonnel();
-                setAssigneeSlot(data.newPersonnel.TLOid);
-                setIsAddingPersonnel(false);
-                setNewPersonnelData({ first_name: '', last_name: '', email: '', employee_number: '' });
-            } else {
-                Swal.fire('Error', data.error || 'Failed to add personnel', 'error');
-            }
-        } catch (err) {
-            Swal.fire('Error', 'Failed to add personnel: ' + err.message, 'error');
-        } finally {
-            setAddPersonnelLoading(false);
-        }
-    };
+
 
     const handleAdminAction = async () => {
         if (!justification && adminAction !== 'reassign') return Swal.fire('Notice', 'Please provide a justification.', 'info');
@@ -1821,9 +1887,10 @@ const OfficialsRegistry = () => {
                                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                                        className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border border-white/50"
+                                        className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border border-white/50 overflow-hidden flex flex-col max-h-[90vh]"
                                     >
-                                        <div className="p-10">
+                                        <div className="overflow-y-auto custom-scrollbar w-full h-full">
+                                            <div className="p-10">
                                             <div className="flex justify-between items-start mb-8">
                                                 <div>
                                                     <span className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
@@ -1848,38 +1915,16 @@ const OfficialsRegistry = () => {
                                                     <div className="space-y-4">
                                                         {(!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? (
                                                             isAddingPersonnel ? (
-                                                                <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem] border-2 border-[#08315F]/10">
-                                                                    <div className="flex justify-between items-center mb-2">
-                                                                        <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Add New Personnel</h3>
-                                                                        <button onClick={() => setIsAddingPersonnel(false)} className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors">Cancel</button>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div>
-                                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">First Name <span className="text-red-500">*</span></label>
-                                                                            <input type="text" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Last Name <span className="text-red-500">*</span></label>
-                                                                            <input type="text" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Email Address <span className="text-red-500">*</span></label>
-                                                                        <input type="email" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Employee Number</label>
-                                                                        <input type="text" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={handleAddPersonnel}
-                                                                        disabled={addPersonnelLoading || !newPersonnelData.first_name || !newPersonnelData.last_name || !newPersonnelData.email}
-                                                                        className="w-full mt-2 bg-[#08315F] hover:bg-[#004A99] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2"
-                                                                    >
-                                                                        {addPersonnelLoading && <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
-                                                                        Save Personnel
-                                                                    </button>
-                                                                </div>
+                                                                <AddNewPersonnelForm 
+                                                                    token={token || localStorage.getItem('token')}
+                                                                    onCancel={() => setIsAddingPersonnel(false)}
+                                                                    onSuccess={async (newId) => {
+                                                                        unassignedCacheRef.current.clear();
+                                                                        await fetchUnassignedPersonnel();
+                                                                        setAssigneeSlot(newId);
+                                                                        setIsAddingPersonnel(false);
+                                                                    }}
+                                                                />
                                                             ) : (
                                                                 <>
                                                                     <div>
@@ -1891,11 +1936,10 @@ const OfficialsRegistry = () => {
                                                                         </div>
                                                                         <div className="relative">
                                                                             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                                                            <input
+                                                                            <DebouncedSearchInput
                                                                                 value={unassignedSearch}
-                                                                                onChange={(e) => setUnassignedSearch(e.target.value)}
+                                                                                onChange={setUnassignedSearch}
                                                                                 placeholder="Search by name or employee number..."
-                                                                                className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
                                                                             />
                                                                         </div>
                                                                     </div>
@@ -2029,6 +2073,7 @@ const OfficialsRegistry = () => {
                                                     )}
                                                 </div>
                                             </div>
+                                        </div>
                                         </div>
                                     </motion.div>
                                 </div>
