@@ -409,7 +409,7 @@ const Home = () => {
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen bg-[#f0f9ff] text-[#0f172a] font-['Quicksand',system-ui,sans-serif]">
+      <div className="flex min-h-screen bg-transparent text-[#0f172a] font-['Quicksand',system-ui,sans-serif]">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
           {/* TOP NAVIGATION BAR */}
@@ -697,7 +697,7 @@ const Home = () => {
                 </button>
                 <button
                   className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
-                  onClick={() => setIsNotableModalOpen(true)}
+                  onClick={() => navigate('/notable-achievements')}
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can upload directory data.' : ''}
                 >

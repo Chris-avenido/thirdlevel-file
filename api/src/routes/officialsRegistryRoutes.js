@@ -13,8 +13,14 @@ import {
   createUnassignedPersonnel
 } from '../controllers/thirdLevelController.js';
 import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
+import { getAllNotableAchievements, createNotableAchievement, updateNotableAchievement, deleteNotableAchievement } from '../controllers/notableAchievementsController.js';
 
 const router = express.Router();
+
+router.get('/notable-achievements-full', authMiddleware, getAllNotableAchievements);
+router.post('/notable-achievements', authMiddleware, createNotableAchievement);
+router.put('/notable-achievements/:index_number', authMiddleware, updateNotableAchievement);
+router.delete('/notable-achievements/:index_number', authMiddleware, deleteNotableAchievement);
 
 router.get('/applications', authMiddleware, getApplications);
 router.post('/process-application', authMiddleware, processApplication);

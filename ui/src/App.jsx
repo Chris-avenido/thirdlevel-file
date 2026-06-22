@@ -11,6 +11,7 @@ import OfficialsRegistry from './pages/OfficialsRegistry';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
+import NotableAchievements from './pages/NotableAchievements';
 import LoadingScreen from './components/LoadingScreen';
 
 // Protected Route Component
@@ -61,6 +62,14 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <Home />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/notable-achievements" 
+                element={
+                    <ProtectedRoute>
+                        <NotableAchievements />
                     </ProtectedRoute>
                 } 
             />

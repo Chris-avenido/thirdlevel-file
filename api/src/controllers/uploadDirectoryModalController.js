@@ -265,10 +265,10 @@ export const bulkProcessAchievements = async (req, res) => {
         const existingRes = await client.query('SELECT index_number FROM notable_achievements WHERE index_number = $1', [index_number]);
         
         if (existingRes.rows.length > 0) {
-          await client.query('UPDATE notable_achievements SET achievement = $1 WHERE index_number = $2', [achievement, index_number]);
+          await client.query('UPDATE notable_achievements SET achievement = $1, delete_flg = 0, edit_date = CURRENT_TIMESTAMP WHERE index_number = $2', [achievement, index_number]);
           results.summary.updated++;
         } else {
-          await client.query('INSERT INTO notable_achievements (index_number, achievement) VALUES ($1, $2)', [index_number, achievement]);
+          await client.query('INSERT INTO notable_achievements (index_number, achievement, delete_flg, create_date, edit_date) VALUES ($1, $2, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [index_number, achievement]);
           results.summary.inserted++;
         }
       } catch (err) {
