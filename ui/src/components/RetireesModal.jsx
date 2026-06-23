@@ -3,6 +3,7 @@ import { FiX, FiAward, FiLogOut, FiAlertCircle, FiCalendar, FiChevronDown, FiUse
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth = [], elementsThisMonth = [] }) => {
   const navigate = useNavigate();
@@ -30,13 +31,22 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
     }
   }, [selectedOfficial, token]);
 
-  if (!isOpen || user?.role !== 'Central Office') return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-['Quicksand']">
-      <div 
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200"
-      >
+    <AnimatePresence>
+      {(isOpen && user?.role === 'Central Office') && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-['Quicksand']"
+        >
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden"
+          >
         <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-6 flex justify-between items-center text-white">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-xl">
@@ -225,12 +235,24 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
             Acknowledge
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* INNER MODAL FOR DETAILS */}
-      {selectedOfficial && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
-            <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border border-white/50 animate-in zoom-in-95 duration-200">
+      <AnimatePresence>
+        {selectedOfficial && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"
+          >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border border-white/50"
+              >
                 <div className="p-10">
                     <div className="flex justify-between items-start mb-8">
                         <div>
@@ -272,10 +294,13 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+              </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   );
 };
 

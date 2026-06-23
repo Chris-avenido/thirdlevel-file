@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "aos": "^2.3.4",
     "axios": "^1.6.8",
     "date-fns": "^4.4.0",
     "esbuild": "^0.28.0",

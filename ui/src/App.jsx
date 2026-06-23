@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 // Pages
 import NexusGate from './pages/NexusGate';
@@ -23,6 +25,10 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
+    useEffect(() => {
+        AOS.init();
+    }, []);
+
     return (
         <Routes>
             {/* Entry Point: Nexus Gate */}

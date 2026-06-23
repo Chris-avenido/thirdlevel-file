@@ -137,7 +137,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                     <h4 className="font-bold text-blue-900">Sample Template</h4>
                     <p className="text-sm text-blue-700">Ensure your file has exactly these headers: Strand/Region, Office/Division, Name, Position, Designation, Email, Alternative Email 1, Alternative Email 2, Contact Details, Alternative Contact Details 1, Alternative Contact Details 2</p>
                   </div>
-                  <a href="/src/assets/Third Level Officials Directory_as of June 16, 2026.csv" download className="text-sm font-bold text-[#075985] bg-white px-4 py-2 rounded-xl border border-blue-200 shadow-sm flex items-center gap-2 hover:bg-blue-100 transition-colors">
+                  <a href="/src/assets/layout_exported_v2.csv" download="layout_exported.csv" className="text-sm font-bold text-[#075985] bg-white px-4 py-2 rounded-xl border border-blue-200 shadow-sm flex items-center gap-2 hover:bg-blue-100 transition-colors">
                     <FiDownload /> Download Sample
                   </a>
                 </div>
