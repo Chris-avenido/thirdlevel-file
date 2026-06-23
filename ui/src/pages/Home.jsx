@@ -7,7 +7,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
-import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward } from 'react-icons/fi';
+import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward, FiClock } from 'react-icons/fi';
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -480,6 +480,110 @@ const Home = () => {
     return queue.slice(0, 8);
   }, [applications, officials, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth]);
 
+  const activityLogs = useMemo(() => {
+    let filtered = [...allOfficials];
+
+    // Category Filter
+    if (activeQueueFilter !== 'all') {
+      if (activeQueueFilter === 'incomplete') {
+        filtered = filtered.filter(o => o.status === 'Active' && (!o.photo_binary_id || !o.pds_binary_id || !o.contact_details));
+      } else if (activeQueueFilter === 'expiring') {
+        filtered = filtered.filter(o => o.status === 'Active' && (o.pending_admin_case || o.ombudsman_case));
+      } else if (activeQueueFilter === 'retirees') {
+        const retireeIds = retireesThisMonth.map(r => r.TLOid);
+        filtered = filtered.filter(o => retireeIds.includes(o.TLOid));
+      } else if (activeQueueFilter === 'vacant') {
+        filtered = filtered.filter(o => o.status === 'Vacated' || o.first_name === 'VACANT' || !o.first_name);
+      } else if (activeQueueFilter === 'inactive') {
+        filtered = filtered.filter(o => o.status === 'Inactive');
+      } else if (activeQueueFilter === 'thirdLevel') {
+        filtered = filtered.filter(o => o.status === 'Active' && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+      } else if (activeQueueFilter === 'pending') {
+        filtered = []; // only apps
+      }
+    }
+
+    // Region Filter
+    if (filterRegion !== 'All regions') {
+      filtered = filtered.filter(o => getOfficialRegion(o) === filterRegion);
+    }
+
+    // Level Filter
+    if (filterLevel !== 'All levels') {
+      filtered = filtered.filter(o => getOfficialLevel(o) === filterLevel);
+    }
+
+    // Office Filter
+    if (filterOffice !== 'All') {
+      filtered = filtered.filter(o => o.office === filterOffice);
+    }
+
+    // Search Filter
+    if (filterSearch.trim() !== '') {
+      const lowerSearch = filterSearch.toLowerCase();
+      filtered = filtered.filter(o => {
+        const name = `${o.first_name || ''} ${o.last_name || ''}`.trim().toLowerCase();
+        const email = (o.email || '').toLowerCase();
+        return name.includes(lowerSearch) || email.includes(lowerSearch);
+      });
+    }
+
+    // Include applications
+    let appsToInclude = [];
+    if (activeQueueFilter === 'all' || activeQueueFilter === 'pending') {
+      appsToInclude = [...applications];
+      
+      if (filterRegion !== 'All regions') {
+        appsToInclude = appsToInclude.filter(a => getOfficialRegion(a) === filterRegion);
+      }
+      if (filterLevel !== 'All levels') {
+        appsToInclude = appsToInclude.filter(a => getOfficialLevel(a) === filterLevel);
+      }
+      if (filterOffice !== 'All') {
+        appsToInclude = appsToInclude.filter(a => a.target_office === filterOffice || a.office === filterOffice); 
+      }
+      if (filterSearch.trim() !== '') {
+        const lowerSearch = filterSearch.toLowerCase();
+        appsToInclude = appsToInclude.filter(a => {
+          const name = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+          const email = (a.email || '').toLowerCase();
+          return name.includes(lowerSearch) || email.includes(lowerSearch);
+        });
+      }
+    }
+
+    const combined = [
+      ...filtered.map(o => ({ ...o, isApp: false })),
+      ...appsToInclude.map(a => ({ ...a, isApp: true }))
+    ];
+
+    return combined
+      .filter(o => o.updated_at)
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      .slice(0, 8)
+      .map(o => {
+        const date = new Date(o.updated_at);
+        const isNew = o.created_at === o.updated_at;
+        let logName = `${o.first_name || ''} ${o.last_name || ''}`.trim();
+        if (!logName || logName === 'VACANT') {
+          if (o.previous_incumbent) {
+            logName = `Previous Holder: ${o.previous_incumbent}`;
+          } else {
+            logName = o.isApp ? 'New Applicant' : 'Vacant Position';
+          }
+        }
+
+        return {
+          id: o.TLOid,
+          email: o.email,
+          name: logName,
+          action: o.isApp ? 'Application Submitted' : (o.status === 'Vacated' ? 'Position Vacated' : (isNew ? 'Profile Created' : 'Profile Updated')),
+          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        };
+      });
+  }, [allOfficials, applications, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth]);
+
   const toggleFilter = (filter) => {
     setActiveQueueFilter(prev => prev === filter ? 'all' : filter);
   };
@@ -540,8 +644,8 @@ const Home = () => {
           .kpi-tooltip-row:last-child { border-bottom:0; }
           .kpi-tooltip-row span.label { color:#475569; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px; }
           .kpi-tooltip-row span.count { color:#0f172a; font-weight:900; background:#e0f2fe; padding:2px 8px; border-radius:8px; }
-          .grid-layout { display:grid; grid-template-columns:1fr 300px; gap:16px; margin-top:16px; }
-          .dash-card { background:white; border:2px solid #bae6fd; border-radius:24px; overflow:hidden; }
+          .grid-layout { display:grid; grid-template-columns:1.2fr 1fr 280px; gap:16px; margin-top:16px; }
+          .dash-card { background:white; border:2px solid #bae6fd; border-radius:24px; overflow:hidden; display:flex; flex-direction:column; }
           .dash-head { padding:18px 20px; border-bottom:1px solid #e2e8f0; }
           .dash-head h3 { margin:0; color:#08315f; font-size:1.25rem; font-weight:800; }
           .dash-head p { margin:4px 0 0; color:#64748b; font-size:0.875rem; }
@@ -560,10 +664,24 @@ const Home = () => {
           .action-btn:hover { background:#e0f2fe; border-color:#7dd3fc; }
           .action-btn.primary { background:#075985; color:white; border-color:#075985; }
           .action-btn.primary:hover { background:#0369a1; border-color:#0369a1; }
+          .log-row { padding:16px 20px; border-bottom:1px solid #f1f5f9; display:flex; flex-direction:column; gap:6px; cursor:pointer; transition:background 0.2s; }
+          .log-row:hover { background:#f8fafc; }
+          .log-row:last-child { border-bottom:none; }
+          .log-row strong { color:#0f172a; font-size:1rem; }
+          .log-row .meta { display:flex; justify-content:space-between; align-items:center; }
+          .log-row .time { color:#64748b; font-size:11px; font-weight:700; display:flex; align-items:center; gap:4px; }
+          .log-row .action { font-size:11px; padding:4px 8px; border-radius:6px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; }
+          .log-row .action.updated { background:#e0f2fe; color:#0284c7; }
+          .log-row .action.created { background:#dcfce7; color:#166534; }
+          @media(max-width:1024px){
+            .grid-layout { grid-template-columns:1fr 1fr; }
+            .grid-layout > aside { grid-column: span 2; }
+          }
           @media(max-width:800px){ 
             .filter-bar-layout { flex-direction:column; align-items:stretch; }
             .kpis { grid-template-columns:repeat(2,1fr); }
             .grid-layout { grid-template-columns:1fr; } 
+            .grid-layout > aside { grid-column: span 1; }
             .hero h1 { font-size:32px; } 
           }
           @media(max-width:500px){ 
@@ -744,9 +862,15 @@ const Home = () => {
                       {activeQueueFilter === 'retirees' && "Showing separations and retirees for this month."}
                     </p>
                   </div>
-                  {activeQueueFilter !== 'all' && (
+                  {(activeQueueFilter !== 'all' || filterRegion !== 'All regions' || filterLevel !== 'All levels' || filterOffice !== 'All' || filterSearch !== '') && (
                     <button
-                      onClick={() => setActiveQueueFilter('all')}
+                      onClick={() => {
+                        setActiveQueueFilter('all');
+                        setFilterRegion('All regions');
+                        setFilterLevel('All levels');
+                        setFilterOffice('All');
+                        setFilterSearch('');
+                      }}
                       className="text-[10px] font-black text-slate-400 hover:text-slate-700 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-xl transition-colors"
                     >
                       Clear Filter
@@ -775,6 +899,54 @@ const Home = () => {
                 ) : (
                   <div className="p-8 text-center text-slate-400 font-bold text-sm">No pending actions</div>
                 )}
+              </main>
+
+              <main className="dash-card">
+                <div className="dash-head flex justify-between items-center">
+                  <div>
+                    <h3>Activity Logs</h3>
+                    <p>
+                      {activeQueueFilter === 'all' && filterRegion === 'All regions' && filterLevel === 'All levels' && filterOffice === 'All' && filterSearch === '' 
+                        ? "Recent profile updates and creations." 
+                        : "Showing filtered recent activity."}
+                    </p>
+                  </div>
+                  {(activeQueueFilter !== 'all' || filterRegion !== 'All regions' || filterLevel !== 'All levels' || filterOffice !== 'All' || filterSearch !== '') && (
+                    <button
+                      onClick={() => {
+                        setActiveQueueFilter('all');
+                        setFilterRegion('All regions');
+                        setFilterLevel('All levels');
+                        setFilterOffice('All');
+                        setFilterSearch('');
+                      }}
+                      className="text-[10px] font-black text-slate-400 hover:text-slate-700 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-xl transition-colors"
+                    >
+                      Clear Filter
+                    </button>
+                  )}
+                </div>
+                <div className="chips">
+                  <span className="chip">Personnel</span>
+                  <span className="chip">Timestamp</span>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {loading ? (
+                    <div className="p-8 text-center text-slate-400 font-bold text-sm">Loading logs...</div>
+                  ) : activityLogs.length > 0 ? (
+                    activityLogs.map((log, idx) => (
+                      <div key={idx} className="log-row" onClick={() => navigate(log.email ? `/official-profiling?email=${encodeURIComponent(log.email)}` : '/officials-registry')}>
+                        <strong>{log.name}</strong>
+                        <div className="meta">
+                          <span className={`action ${log.action === 'Profile Created' ? 'created' : 'updated'}`}>{log.action}</span>
+                          <span className="time"><FiClock /> {log.date} at {log.time}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-slate-400 font-bold text-sm">No recent activity</div>
+                  )}
+                </div>
               </main>
 
               <aside className="dash-card side">

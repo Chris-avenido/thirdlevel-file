@@ -881,14 +881,14 @@ const OfficialsRegistry = () => {
         {
             key: 'name',
             label: 'Official Profile',
-            width: 'w-4/12',
+            width: 'w-[30%]',
             value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''}`,
             filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
         },
         {
             key: 'position_title',
             label: 'Position',
-            width: 'w-2/12',
+            width: 'w-[24%]',
             value: (item) => item.position_title || '',
             filterValue: (item) => item.position_title || 'Unassigned'
         },
@@ -902,7 +902,7 @@ const OfficialsRegistry = () => {
         {
             key: 'status',
             label: 'Status',
-            width: 'w-[100px]',
+            width: 'w-[80px]',
             value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
             filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
         }
@@ -1110,8 +1110,7 @@ const OfficialsRegistry = () => {
                     <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
 
                         {/* STATS CARDS */}
-                        <div className="flex justify-center mb-8">
-                            <div className="flex flex-wrap items-center justify-center gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
                                 {/* Card 1: Third Level Officials */}
                                 <div
                                     onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
@@ -1272,13 +1271,12 @@ const OfficialsRegistry = () => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
                         {/* FILTERS & SEARCH BAR */}
-                        <div className="bg-white rounded-[2.5rem] p-6 shadow-2xl shadow-sky-200/40 border-2 border-[#08315F] mb-8 space-y-6">
-                            <div className="flex flex-col lg:flex-row flex-wrap gap-4 items-center">
+                        <div className="bg-white rounded-[2.5rem] p-4 md:p-6 shadow-2xl shadow-sky-200/40 border-2 border-[#08315F] mb-8 space-y-6">
+                            <div className="flex flex-col lg:flex-row flex-wrap lg:flex-nowrap gap-3 items-center w-full">
                                 {/* Level Dropdown */}
-                                <div className="w-full flex-1 min-w-[200px]">
+                                <div className="w-full lg:w-auto flex-1 min-w-[140px] shrink-0">
                                     <SearchableSelect
                                         label=""
                                         placeholder="All CO / RO / SDO"
@@ -1294,7 +1292,7 @@ const OfficialsRegistry = () => {
                                 </div>
 
                                 {/* Region Dropdown */}
-                                <div className="w-full flex-1 min-w-[200px]">
+                                <div className="w-full lg:w-auto flex-1 min-w-[130px] shrink-0">
                                     <SearchableSelect
                                         label=""
                                         placeholder="All Regions"
@@ -1326,7 +1324,7 @@ const OfficialsRegistry = () => {
                                 </div>
 
                                 {/* Designation Dropdown */}
-                                <div className="w-full flex-1 min-w-[240px]">
+                                <div className="w-full lg:w-auto flex-1 min-w-[140px] shrink-0">
                                     <SearchableSelect
                                         label=""
                                         placeholder="All Designations"
@@ -1339,13 +1337,27 @@ const OfficialsRegistry = () => {
                                     />
                                 </div>
 
+                                {/* Position Dropdown */}
+                                <div className="w-full lg:w-auto flex-1 min-w-[140px] shrink-0">
+                                    <SearchableSelect
+                                        label=""
+                                        placeholder="All Positions"
+                                        value={positionFilter}
+                                        onChange={setPositionFilter}
+                                        options={[
+                                            { value: 'All', label: 'All Positions' },
+                                            ...tabPositions.map(p => ({ value: p, label: p }))
+                                        ]}
+                                    />
+                                </div>
+
                                 {/* OIC Toggle */}
                                 <button
                                     onClick={() => setOicOnly(!oicOnly)}
-                                    className={`px-5 py-4 rounded-2xl border-2 font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 whitespace-nowrap ${oicOnly ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-inner' : 'bg-slate-50 border-transparent text-slate-400 hover:border-slate-200 hover:text-slate-600'}`}
+                                    className={`px-4 py-3 rounded-2xl border-2 font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${oicOnly ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-inner' : 'bg-slate-50 border-transparent text-slate-400 hover:border-slate-200 hover:text-slate-600'}`}
                                 >
-                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${oicOnly ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-300'}`}>
-                                        {oicOnly && <FiCheckCircle size={10} />}
+                                    <div className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${oicOnly ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-300'}`}>
+                                        {oicOnly && <FiCheckCircle size={8} />}
                                     </div>
                                     OIC Only
                                 </button>
@@ -1365,75 +1377,50 @@ const OfficialsRegistry = () => {
                                         setDesignationFilter('All');
                                         setOicOnly(false);
                                     }}
-                                    className="px-5 py-4 bg-rose-50/50 text-rose-500 rounded-2xl border border-rose-100 font-bold text-xs hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                                    className="px-4 py-3 bg-rose-50/50 text-rose-500 rounded-2xl border border-rose-100 font-bold text-[10px] hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
                                     title="Reset all filters"
                                 >
-                                    <FiRefreshCw size={16} /> Reset
+                                    <FiRefreshCw size={14} /> Reset
                                 </button>
-
-                                {/* View Switcher */}
-                                <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 lg:ml-auto">
-                                    <button
-                                        onClick={() => setViewMode('table')}
-                                        className={`p-3 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-[#075985] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                                        title="Table view"
-                                    >
-                                        <ListRowsIcon />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('grid')}
-                                        className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-[#075985] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                                    >
-                                        <FiGrid size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('directory')}
-                                        className={`p-3 rounded-xl transition-all ${viewMode === 'directory' ? 'bg-white text-[#075985] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                                        title="Organizational Directory"
-                                    >
-                                        <FiLayers size={18} />
-                                    </button>
-                                </div>
                             </div>
-                        </div>
 
-                        {/* SEARCH BAR */}
-                        <div className="relative w-full mb-8">
-                            <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search by name, position, or office..."
-                                className="w-full bg-white border border-sky-200 rounded-[2rem] py-5 pl-14 pr-6 text-slate-700 font-bold focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 transition-all outline-none shadow-2xl shadow-sky-200/40"
-                            />
+                            {/* SEARCH BAR */}
+                            <div className="relative w-full">
+                                <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search by name, position, or office..."
+                                    className="w-full bg-white border border-sky-200 rounded-[2rem] py-5 pl-14 pr-6 text-slate-700 font-bold focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 transition-all outline-none shadow-2xl shadow-sky-200/40"
+                                />
+                            </div>
                         </div>
 
                         {/* MAIN CONTENT AREA */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 w-full">
-                            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 md:pb-0 flex-1">
-                                {['All', 'Active', 'Inactive', 'Pending Assignment', 'Resigning', 'Vacant'].map(tab => (
-                                    <button
-                                        key={tab}
-                                        onClick={() => setStatusTab(tab)}
-                                        className={`px-5 py-3 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${statusTab === tab ? 'bg-[#08315F] text-white border-[#08315F] shadow-lg shadow-[#08315F]/20' : 'bg-white text-slate-400 border-transparent hover:border-slate-200 hover:text-slate-600'}`}
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="flex">
-                                <SearchableSelect
-                                    label=""
-                                    placeholder="Sort by Position"
-                                    value={positionFilter}
-                                    onChange={setPositionFilter}
-                                    options={[
-                                        { value: 'All', label: 'All Positions' },
-                                        ...tabPositions.map(p => ({ value: p, label: p }))
-                                    ]}
-                                />
+                        <div className="flex justify-end mb-4">
+                            {/* View Switcher */}
+                            <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm shrink-0">
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                                    title="Table view"
+                                >
+                                    <ListRowsIcon />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                                >
+                                    <FiGrid size={16} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('directory')}
+                                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                                    title="Organizational Directory"
+                                >
+                                    <FiLayers size={16} />
+                                </button>
                             </div>
                         </div>
 
@@ -1461,89 +1448,81 @@ const OfficialsRegistry = () => {
                                             <tbody className="divide-y divide-slate-50">
                                                 {pagedRecords.map((item) => (
                                                     <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors relative">
-                                                        <td className="px-3 py-3 align-top">
-                                                            <div className="font-black text-[#08315F] text-[11px] uppercase tracking-tight flex flex-wrap items-start gap-1.5">
+                                                        <td className="px-3 py-2 align-middle">
+                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-center gap-1.5">
                                                                 <span className="line-clamp-2">{item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-3 align-top">
-                                                            <div className="text-[11px] font-bold text-slate-700 uppercase tracking-widest line-clamp-2">
+                                                        <td className="px-3 py-2 align-middle">
+                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest line-clamp-2">
                                                                 {item.status === 'Inactive' ? 'N/A' : (item.office || 'No Division')}
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-3 align-top">
-                                                            <div className="flex items-start gap-3">
-                                                                <div className="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-lg border border-white shadow-sm overflow-hidden shrink-0 mt-0.5">
+                                                        <td className="px-3 py-2 align-middle">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border border-white shadow-sm overflow-hidden shrink-0">
                                                                     {item.photo_binary_id ? (
                                                                         <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
-                                                                    ) : <FiUser size={18} />}
+                                                                    ) : <FiUser size={14} />}
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <div className="font-['Quicksand'] font-black text-[#08315F] text-sm leading-none group-hover:text-[#08315F] transition-colors truncate">
+                                                                    <div 
+                                                                        onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
+                                                                        className={`font-['Quicksand'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                        title={item.email ? "View Official Profile" : ""}
+                                                                    >
                                                                         {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
                                                                     </div>
-                                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1.5 truncate">
-                                                                        <FiArrowRight className="text-[#075985] shrink-0" size={10} />
+                                                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 truncate">
+                                                                        <FiArrowRight className="text-[#075985] shrink-0" size={8} />
                                                                         <span className="truncate">{item.email}</span>
+                                                                        {item.status !== 'Inactive' && item.effectivity_date && (
+                                                                            <>
+                                                                                <span className="mx-1">•</span>
+                                                                                <FiCalendar className="text-slate-300 shrink-0" size={8} />
+                                                                                {(() => {
+                                                                                    const effDate = new Date(item.effectivity_date);
+                                                                                    if (isNaN(effDate.getTime())) return <span className="text-slate-400">Invalid</span>;
+
+                                                                                    const today = new Date();
+                                                                                    effDate.setHours(0, 0, 0, 0);
+                                                                                    today.setHours(0, 0, 0, 0);
+
+                                                                                    const diffTime = today.getTime() - effDate.getTime();
+                                                                                    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                                                                                    if (item.status === 'Resigning' || item.status === 'Vacated') {
+                                                                                        return <span className="text-rose-500">Vacated {days >= 0 ? `${days}d ago` : `in ${Math.abs(days)}d`}</span>;
+                                                                                    }
+                                                                                    return <span className={days >= 0 ? 'text-emerald-600' : 'text-blue-500'}>
+                                                                                        {days >= 0 ? `${days}d in Pos` : `Starts in ${Math.abs(days)}d`}
+                                                                                    </span>;
+                                                                                })()}
+                                                                            </>
+                                                                        )}
                                                                     </div>
-                                                                    {item.status !== 'Inactive' && (
-                                                                        <>
-
-                                                                            {item.effectivity_date && (
-                                                                                <div className="text-[9px] font-bold mt-1 uppercase tracking-widest flex items-center gap-1.5 truncate">
-                                                                                    <FiCalendar className="text-slate-400" size={10} />
-                                                                                    {(() => {
-                                                                                        const effDate = new Date(item.effectivity_date);
-                                                                                        if (isNaN(effDate.getTime())) return <span className="text-slate-400">Invalid Date</span>;
-
-                                                                                        const today = new Date();
-                                                                                        // Strip time for accurate day calculation
-                                                                                        effDate.setHours(0, 0, 0, 0);
-                                                                                        today.setHours(0, 0, 0, 0);
-
-                                                                                        const diffTime = today.getTime() - effDate.getTime();
-                                                                                        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-                                                                                        if (item.status === 'Inactive' || item.status === 'Resigning' || item.status === 'Vacated') {
-                                                                                            return <span className="text-rose-500">Vacated {days >= 0 ? `${days} days ago` : `in ${Math.abs(days)} days`}</span>;
-                                                                                        }
-                                                                                        return <span className={days >= 0 ? 'text-emerald-600' : 'text-blue-500'}>
-                                                                                            {days >= 0 ? `${days} Days in Position` : `Starts in ${Math.abs(days)} Days`}
-                                                                                        </span>;
-                                                                                    })()}
-                                                                                </div>
-                                                                            )}
-                                                                            <div className="mt-3 flex items-center gap-2">
-                                                                                <button
-                                                                                    onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
-                                                                                    disabled={!item.email}
-                                                                                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#08315F] text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#004A99] transition-all shadow-sm border border-[#08315F] disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                                >
-                                                                                    <FiUser size={12} /> Official Profile
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => handlePositionClick(item)}
-                                                                                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm border border-slate-200"
-                                                                                >
-                                                                                    <FiLayers size={12} /> Positional History
-                                                                                </button>
-                                                                            </div>
-                                                                        </>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-3 align-top">
-                                                            <div className="inline-flex flex-wrap items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50/80 border border-amber-200/60 text-amber-700 text-[10px] font-black uppercase tracking-widest shadow-sm truncate max-w-full">
+                                                        <td className="px-3 py-2 align-middle">
+                                                            <div 
+                                                                onClick={() => handlePositionClick(item)}
+                                                                title="View Positional History"
+                                                                className="inline-flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50/80 border border-amber-200/60 text-amber-700 text-[10px] font-black uppercase tracking-widest shadow-sm truncate max-w-full cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
+                                                            >
                                                                 <span className="truncate flex items-center gap-1">{item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')} {item.status !== 'Inactive' && item.is_oic && <span className="px-1 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest shrink-0">OIC</span>}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-3 align-top">
-                                                            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest line-clamp-2">
+                                                        <td className="px-3 py-2 align-middle">
+                                                            <div 
+                                                                onClick={() => handlePositionClick(item)}
+                                                                title="View Positional History"
+                                                                className="text-[10px] font-bold text-slate-600 uppercase tracking-widest line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors w-fit"
+                                                            >
                                                                 {item.status === 'Inactive' ? 'N/A' : (expandAcronym(item.designation) || 'No Designation')}
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-3 align-top static md:relative">
+                                                        <td className="px-3 py-2 align-middle static md:relative">
                                                             <StatusBadge status={item.status} />
 
                                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-slate-200 pointer-events-none group-hover:pointer-events-auto">
