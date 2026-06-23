@@ -1,3 +1,4 @@
+// Force HMR
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward } from 'react-icons/fi';
@@ -9,23 +10,14 @@ const AdminSidebar = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
 
-    // Desktop Collapse State
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        const saved = localStorage.getItem('adminSidebarCollapsed');
-        // Default to true (collapsed) if not explicitly saved as 'false'
-        return saved !== 'false';
-    });
-
-    // Mobile Open State
+    // Hover State
     const [isHovered, setIsHovered] = useState(false);
-    const sidebarCollapsed = isCollapsed && !isHovered;
+    const sidebarCollapsed = !isHovered;
 
     // Mobile Open State
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-    useEffect(() => {
-        localStorage.setItem('adminSidebarCollapsed', isCollapsed);
-    }, [isCollapsed]);
+
 
     // Close mobile menu when navigating
     useEffect(() => {
@@ -34,6 +26,9 @@ const AdminSidebar = () => {
 
     return (
         <>
+            {/* Desktop Spacer */}
+            <div className="hidden lg:block w-[96px] shrink-0" />
+
             {/* Mobile Hamburger Button (Floating) */}
             <button
                 onClick={() => setIsMobileOpen(true)}
@@ -51,22 +46,16 @@ const AdminSidebar = () => {
             )}
 
             {/* Sidebar Container */}
-            <div 
+            <div
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className={`fixed lg:sticky top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-[#08315F] border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
+                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-[#08315F] border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:translate-x-0 
-                ${sidebarCollapsed ? 'lg:w-[96px]' : 'lg:w-[280px]'} w-[280px]`
-            }>
+                ${sidebarCollapsed ? 'w-[280px] lg:w-[96px]' : 'w-[280px]'}`
+                }>
 
-                {/* Desktop Toggle Button */}
-                <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="hidden lg:flex absolute -right-3 top-8 w-6 h-6 bg-white border border-slate-200 rounded-full items-center justify-center text-[#08315F] shadow-md hover:bg-slate-50 transition-colors z-[70]"
-                >
-                    {isCollapsed ? <FiChevronRight size={14} /> : <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="14" width="14" xmlns="http://www.w3.org/2000/svg"><polyline points="15 18 9 12 15 6"></polyline></svg>}
-                </button>
+
 
                 {/* Mobile Close Button */}
                 <button

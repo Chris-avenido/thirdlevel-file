@@ -254,6 +254,7 @@ const OfficialsRegistry = () => {
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
     const [tableFilters, setTableFilters] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
+    const [oicOnly, setOicOnly] = useState(false);
 
     // Filter officials on the client side
     const thirdLevelOfficials = useMemo(() => {
@@ -874,22 +875,29 @@ const OfficialsRegistry = () => {
             key: 'division',
             label: 'Division',
             width: 'w-[12%]',
-            value: (item) => item.division || '',
-            filterValue: (item) => item.division || 'No Division'
+            value: (item) => item.office || '',
+            filterValue: (item) => item.office || 'No Division'
         },
         {
             key: 'name',
             label: 'Official Profile',
-            width: 'w-6/12',
+            width: 'w-4/12',
             value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''}`,
             filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
         },
         {
-            key: 'office',
-            label: 'Office',
+            key: 'position_title',
+            label: 'Position',
             width: 'w-2/12',
-            value: (item) => item.office || '',
-            filterValue: (item) => item.office || 'Main Office'
+            value: (item) => item.position_title || '',
+            filterValue: (item) => item.position_title || 'Unassigned'
+        },
+        {
+            key: 'designation',
+            label: 'Designation',
+            width: 'w-2/12',
+            value: (item) => item.designation || '',
+            filterValue: (item) => item.designation || 'No Designation'
         },
         {
             key: 'status',
@@ -922,6 +930,7 @@ const OfficialsRegistry = () => {
 
     const filteredRecords = useMemo(() => {
         return activeRecords.filter(item => {
+            if (oicOnly && !item.is_oic) return false;
             if (statusTab !== 'All') {
                 const itemStatus = item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown');
                 if (itemStatus !== statusTab) return false;
@@ -936,7 +945,7 @@ const OfficialsRegistry = () => {
                 return value === filter;
             });
         });
-    }, [activeRecords, tableColumns, tableFilters, levelFilter, regionFilter, statusTab]);
+    }, [activeRecords, tableColumns, tableFilters, levelFilter, regionFilter, statusTab, oicOnly]);
 
     const sortedRecords = useMemo(() => {
         const column = tableColumns.find(c => c.key === sortConfig.key);
@@ -1032,8 +1041,7 @@ const OfficialsRegistry = () => {
                             : '↕'}
                     </span>
                 </button>
-                {column.key !== 'status' && (
-                    <select
+                <select
                         value={tableFilters[column.key] || ''}
                         onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300 shadow-sm"
@@ -1043,7 +1051,6 @@ const OfficialsRegistry = () => {
                             <option key={option} value={option}>{option}</option>
                         ))}
                     </select>
-                )}
             </div>
         </th>
     );
@@ -1270,23 +1277,6 @@ const OfficialsRegistry = () => {
                         {/* FILTERS & SEARCH BAR */}
                         <div className="bg-white rounded-[2.5rem] p-6 shadow-2xl shadow-sky-200/40 border-2 border-[#08315F] mb-8 space-y-6">
                             <div className="flex flex-col lg:flex-row flex-wrap gap-4 items-center">
-                                {/* Category Dropdown */}
-                                <div className="w-full flex-1 min-w-[200px]">
-                                    <SearchableSelect
-                                        label=""
-                                        placeholder="Select Category"
-                                        value={activeTab}
-                                        onChange={(val) => { setActiveTab(val); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                        options={[
-                                            { value: 'All', label: 'All Categories' },
-                                            { value: 'Third Level Officials', label: 'Third Level Officials' },
-                                            { value: 'Third Level (OIC)', label: 'Third Level (OIC)' },
-                                            { value: 'Division Chiefs (OIC)', label: 'Division Chiefs (OIC)' },
-                                            { value: 'Division Chiefs', label: 'Division Chiefs' }
-                                        ]}
-                                    />
-                                </div>
-
                                 {/* Level Dropdown */}
                                 <div className="w-full flex-1 min-w-[200px]">
                                     <SearchableSelect
@@ -1335,34 +1325,6 @@ const OfficialsRegistry = () => {
                                     />
                                 </div>
 
-                                {/* Strand Dropdown */}
-                                <div className="w-full flex-1 min-w-[240px]">
-                                    <SearchableSelect
-                                        label=""
-                                        placeholder="All Strands"
-                                        value={strandFilter}
-                                        onChange={setStrandFilter}
-                                        options={[
-                                            { value: 'All', label: 'All Strands' },
-                                            ...strands.map(s => ({ value: s, label: s }))
-                                        ]}
-                                    />
-                                </div>
-
-                                {/* Office Dropdown */}
-                                <div className="w-full flex-1 min-w-[240px]">
-                                    <SearchableSelect
-                                        label=""
-                                        placeholder="All Offices / SDOs"
-                                        value={officeFilter}
-                                        onChange={setOfficeFilter}
-                                        options={[
-                                            { value: 'All', label: 'All Offices / SDOs' },
-                                            ...offices.map(o => ({ value: o, label: o }))
-                                        ]}
-                                    />
-                                </div>
-
                                 {/* Designation Dropdown */}
                                 <div className="w-full flex-1 min-w-[240px]">
                                     <SearchableSelect
@@ -1377,6 +1339,17 @@ const OfficialsRegistry = () => {
                                     />
                                 </div>
 
+                                {/* OIC Toggle */}
+                                <button
+                                    onClick={() => setOicOnly(!oicOnly)}
+                                    className={`px-5 py-4 rounded-2xl border-2 font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 whitespace-nowrap ${oicOnly ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-inner' : 'bg-slate-50 border-transparent text-slate-400 hover:border-slate-200 hover:text-slate-600'}`}
+                                >
+                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${oicOnly ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-300'}`}>
+                                        {oicOnly && <FiCheckCircle size={10} />}
+                                    </div>
+                                    OIC Only
+                                </button>
+
                                 {/* Reset Filters */}
                                 <button
                                     onClick={() => {
@@ -1390,6 +1363,7 @@ const OfficialsRegistry = () => {
                                         setOfficeFilter('All');
                                         setPositionFilter('All');
                                         setDesignationFilter('All');
+                                        setOicOnly(false);
                                     }}
                                     className="px-5 py-4 bg-rose-50/50 text-rose-500 rounded-2xl border border-rose-100 font-bold text-xs hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                                     title="Reset all filters"
@@ -1494,7 +1468,7 @@ const OfficialsRegistry = () => {
                                                         </td>
                                                         <td className="px-3 py-3 align-top">
                                                             <div className="text-[11px] font-bold text-slate-700 uppercase tracking-widest line-clamp-2">
-                                                                {item.status === 'Inactive' ? 'N/A' : (item.division || 'No Division')}
+                                                                {item.status === 'Inactive' ? 'N/A' : (item.office || 'No Division')}
                                                             </div>
                                                         </td>
                                                         <td className="px-3 py-3 align-top">
@@ -1514,12 +1488,7 @@ const OfficialsRegistry = () => {
                                                                     </div>
                                                                     {item.status !== 'Inactive' && (
                                                                         <>
-                                                                            <div className="mt-2 inline-flex flex-wrap items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50/80 border border-amber-200/60 text-amber-700 text-[9px] font-black uppercase tracking-widest shadow-sm truncate max-w-full">
-                                                                                <span className="truncate flex items-center gap-1">{item.position_title || 'Unassigned'} {item.is_oic && <span className="px-1 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest shrink-0">OIC</span>}</span>
-                                                                            </div>
-                                                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 truncate">
-                                                                                {expandAcronym(item.designation) || 'No Designation'}
-                                                                            </div>
+
                                                                             {item.effectivity_date && (
                                                                                 <div className="text-[9px] font-bold mt-1 uppercase tracking-widest flex items-center gap-1.5 truncate">
                                                                                     <FiCalendar className="text-slate-400" size={10} />
@@ -1565,7 +1534,14 @@ const OfficialsRegistry = () => {
                                                             </div>
                                                         </td>
                                                         <td className="px-3 py-3 align-top">
-                                                            <div className="text-[11px] font-bold text-slate-700 line-clamp-2">{item.status === 'Inactive' ? 'N/A' : (item.office || 'Main Office')}</div>
+                                                            <div className="inline-flex flex-wrap items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50/80 border border-amber-200/60 text-amber-700 text-[10px] font-black uppercase tracking-widest shadow-sm truncate max-w-full">
+                                                                <span className="truncate flex items-center gap-1">{item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')} {item.status !== 'Inactive' && item.is_oic && <span className="px-1 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest shrink-0">OIC</span>}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-3 py-3 align-top">
+                                                            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest line-clamp-2">
+                                                                {item.status === 'Inactive' ? 'N/A' : (expandAcronym(item.designation) || 'No Designation')}
+                                                            </div>
                                                         </td>
                                                         <td className="px-3 py-3 align-top static md:relative">
                                                             <StatusBadge status={item.status} />

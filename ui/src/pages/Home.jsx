@@ -229,6 +229,36 @@ const Home = () => {
     return officials.filter(o => o.pending_admin_case || o.ombudsman_case).length;
   }, [officials]);
 
+  const vacantOfficials = useMemo(() => {
+    return allOfficials.filter(o => o.status === 'Vacated' || o.first_name === 'VACANT' || !o.first_name);
+  }, [allOfficials]);
+
+  const inactiveOfficials = useMemo(() => {
+    return allOfficials.filter(o => o.status === 'Inactive');
+  }, [allOfficials]);
+
+  const vacantRegionBreakdown = useMemo(() => {
+    const counts = {};
+    vacantOfficials.forEach(o => {
+      const region = getOfficialRegion(o);
+      counts[region] = (counts[region] || 0) + 1;
+    });
+    return Object.fromEntries(
+      Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    );
+  }, [vacantOfficials]);
+
+  const inactiveRegionBreakdown = useMemo(() => {
+    const counts = {};
+    inactiveOfficials.forEach(o => {
+      const region = getOfficialRegion(o);
+      counts[region] = (counts[region] || 0) + 1;
+    });
+    return Object.fromEntries(
+      Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    );
+  }, [inactiveOfficials]);
+
   const incompleteRegionBreakdown = useMemo(() => {
     const counts = {};
     const incompleteOfficials = officials.filter(o => !o.photo_binary_id || !o.pds_binary_id || !o.contact_details);
@@ -370,6 +400,53 @@ const Home = () => {
       });
     });
 
+    // Vacant Positions
+    vacantOfficials.forEach(o => {
+      queue.push({
+        id: o.TLOid,
+        email: o.email,
+        name: `${o.first_name || ''} ${o.last_name || ''}`.trim() || 'VACANT POSITION',
+        desc: `Vacant Position · ${o.office || 'Unassigned'}`,
+        status: 'Vacant',
+        badgeClass: 'risk',
+        type: 'vacant',
+        region: getOfficialRegion(o),
+        level: getOfficialLevel(o)
+      });
+    });
+
+    // Inactive Personnel
+    inactiveOfficials.forEach(o => {
+      queue.push({
+        id: o.TLOid,
+        email: o.email,
+        name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
+        desc: `Inactive Personnel · ${o.office || 'Unassigned'}`,
+        status: 'Inactive',
+        badgeClass: 'warn',
+        type: 'inactive',
+        region: getOfficialRegion(o),
+        level: getOfficialLevel(o)
+      });
+    });
+
+    // Third Level Officials (Only show when explicitly filtered so it doesn't flood the 'All' queue)
+    if (activeQueueFilter === 'thirdLevel') {
+      officials.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+        queue.push({
+          id: o.TLOid,
+          email: o.email,
+          name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
+          desc: `${o.position_title || 'Unassigned'} · ${o.office || 'Unassigned'}`,
+          status: 'Active',
+          badgeClass: 'neutral',
+          type: 'thirdLevel',
+          region: getOfficialRegion(o),
+          level: getOfficialLevel(o)
+        });
+      });
+    }
+
     // Filter by category
     if (activeQueueFilter !== 'all') {
       queue = queue.filter(q => q.type === activeQueueFilter);
@@ -453,7 +530,8 @@ const Home = () => {
           .kpi.active-filter { background:#f8fafc; outline: 3px solid #bae6fd; outline-offset: -2px; }
           .kpi p { margin:0; color:#64748b; font-size:12px; font-weight:900; text-transform:uppercase; }
           .kpi h2 { margin:8px 0 0; font-size:34px; color:#08315f; }
-          .kpi-tooltip { position:absolute; right:0; top:100%; margin-top:8px; width:280px; background:rgba(255,255,255,0.95); backdrop-filter:blur(8px); border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding:16px; opacity:0; pointer-events:none; transition:all 0.2s; z-index:60; max-height:240px; overflow-y:auto; }
+          .kpi-tooltip { position:absolute; right:0; top:100%; margin-top:8px; width:280px; background:rgba(255,255,255,0.95); backdrop-filter:blur(8px); border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding:16px; opacity:0; pointer-events:none; transition:all 0.2s; z-index:60; max-height:400px; overflow-y:auto; }
+          .kpi:first-child .kpi-tooltip { right:auto; left:0; }
           .kpi-tooltip::-webkit-scrollbar { width: 4px; }
           .kpi-tooltip::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
           .kpi:hover .kpi-tooltip { opacity:1; pointer-events:auto; }
@@ -476,6 +554,7 @@ const Home = () => {
           .queue-badge { border-radius:999px; padding:8px 10px; font-size:11px; font-weight:900; height:max-content; white-space:nowrap; }
           .queue-badge.warn { background:#fef3c7; color:#92400e; } 
           .queue-badge.risk { background:#fee2e2; color:#991b1b; }
+          .queue-badge.neutral { background:#f1f5f9; color:#475569; }
           .side { padding:18px; display:grid; gap:10px; align-content:start; }
           .action-btn { border:1px solid #bae6fd; background:#f8fafc; border-radius:16px; padding:14px; font-weight:900; color:#08315f; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:8px; justify-content:center; }
           .action-btn:hover { background:#e0f2fe; border-color:#7dd3fc; }
@@ -562,14 +641,16 @@ const Home = () => {
             </div>
 
             <section className="kpis">
-              <div className={`kpi active-filter`} style={{ cursor: 'default', outlineColor: '#bae6fd' }}>
-                <p>Elements for the Directory</p>
-                <h2>{loading ? '-' : officials.length}</h2>
+              <div className={`kpi ${activeQueueFilter === 'thirdLevel' ? 'active-filter' : ''}`} onClick={() => toggleFilter('thirdLevel')} style={{ cursor: 'pointer', outlineColor: '#bae6fd' }}>
+                <p>Total Third Level Officials</p>
+                <h2>{loading ? '-' : thirdLevelCount}</h2>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
-                  <h4>Region Breakdown</h4>
-                  {Object.keys(elementsRegionBreakdown).length > 0 ? Object.entries(elementsRegionBreakdown).map(([region, count]) => (
-                    <div key={region} className="kpi-tooltip-row">
-                      <span className="label" title={region}>{region}</span>
+                  <h4>Position Breakdown</h4>
+                  {Object.keys(thirdLevelBreakdown).length > 0 ? Object.entries(thirdLevelBreakdown).map(([position, count], idx) => (
+                    <div key={position} className="kpi-tooltip-row">
+                      <span className="label" title={position}>
+                        <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {position}
+                      </span>
                       <span className="count">{count}</span>
                     </div>
                   )) : (
@@ -577,59 +658,70 @@ const Home = () => {
                   )}
                 </div>
               </div>
-              <div className={`kpi amber ${activeQueueFilter === 'pending' ? 'active-filter' : ''}`} onClick={() => toggleFilter('pending')} style={{ cursor: 'pointer' }}>
-                <p>Pool of Applicants</p>
-                <h2>{loading ? '-' : pendingVerifications}</h2>
-                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
-                  <h4>Region Breakdown</h4>
-                  {Object.keys(pendingRegionBreakdown).length > 0 ? Object.entries(pendingRegionBreakdown).map(([region, count]) => (
-                    <div key={region} className="kpi-tooltip-row">
-                      <span className="label" title={region}>{region}</span>
-                      <span className="count">{count}</span>
-                    </div>
-                  )) : (
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
-                  )}
+              <div className={`kpi amber ${activeQueueFilter === 'incomplete' ? 'active-filter' : ''}`} onClick={() => toggleFilter('incomplete')} style={{ cursor: 'pointer' }}>
+                <p>Complete Profiles</p>
+                <div className="flex items-center gap-3 mt-2">
+                  <h2 className="!mt-0">{loading ? '-' : (officials.length - incompleteProfiles)}</h2>
+                  <span className="text-rose-500 text-[10px] font-black uppercase tracking-widest bg-rose-50 px-2 py-1 rounded-md border border-rose-100">-{incompleteProfiles} Deficit</span>
                 </div>
-              </div>
-              <div className={`kpi red ${activeQueueFilter === 'incomplete' ? 'active-filter' : ''}`} onClick={() => toggleFilter('incomplete')} style={{ cursor: 'pointer' }}>
-                <p>Incomplete Profiles</p>
-                <h2>{loading ? '-' : incompleteProfiles}</h2>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
-                  <h4>Region Breakdown</h4>
-                  {Object.keys(incompleteRegionBreakdown).length > 0 ? Object.entries(incompleteRegionBreakdown).map(([region, count]) => (
+                  <h4>Incomplete Profiles by Region</h4>
+                  {Object.keys(incompleteRegionBreakdown).length > 0 ? Object.entries(incompleteRegionBreakdown).map(([region, count], idx) => (
                     <div key={region} className="kpi-tooltip-row">
-                      <span className="label" title={region}>{region}</span>
-                      <span className="count">{count}</span>
+                      <span className="label" title={region}>
+                        <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
+                      </span>
+                      <span className="count bg-rose-50 text-rose-600">{count}</span>
                     </div>
                   )) : (
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
-                  )}
-                </div>
-              </div>
-              <div className={`kpi blue ${activeQueueFilter === 'expiring' ? 'active-filter' : ''}`} onClick={() => toggleFilter('expiring')} style={{ cursor: 'pointer' }}>
-                <p>Expiring IDs</p>
-                <h2>{loading ? '-' : flaggedProfiles}</h2>
-                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
-                  <h4>Region Breakdown</h4>
-                  {Object.keys(flaggedRegionBreakdown).length > 0 ? Object.entries(flaggedRegionBreakdown).map(([region, count]) => (
-                    <div key={region} className="kpi-tooltip-row">
-                      <span className="label" title={region}>{region}</span>
-                      <span className="count">{count}</span>
-                    </div>
-                  )) : (
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">All complete</div>
                   )}
                 </div>
               </div>
               <div className={`kpi purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}`} onClick={() => toggleFilter('retirees')} style={{ cursor: 'pointer' }}>
-                <p>Separations & Retirees</p>
+                <p>Upcoming Resignations & Retirees</p>
                 <h2>{loading ? '-' : retireesThisMonth.length}</h2>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
-                  {Object.keys(retireesRegionBreakdown).length > 0 ? Object.entries(retireesRegionBreakdown).map(([region, count]) => (
+                  {Object.keys(retireesRegionBreakdown).length > 0 ? Object.entries(retireesRegionBreakdown).map(([region, count], idx) => (
                     <div key={region} className="kpi-tooltip-row">
-                      <span className="label" title={region}>{region}</span>
+                      <span className="label" title={region}>
+                        <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
+                      </span>
+                      <span className="count">{count}</span>
+                    </div>
+                  )) : (
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
+                  )}
+                </div>
+              </div>
+              <div className={`kpi red ${activeQueueFilter === 'vacant' ? 'active-filter' : ''}`} onClick={() => toggleFilter('vacant')} style={{ cursor: 'pointer' }}>
+                <p>Total Vacant Positions</p>
+                <h2>{loading ? '-' : vacantOfficials.length}</h2>
+                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+                  <h4>Region Breakdown</h4>
+                  {Object.keys(vacantRegionBreakdown).length > 0 ? Object.entries(vacantRegionBreakdown).map(([region, count], idx) => (
+                    <div key={region} className="kpi-tooltip-row">
+                      <span className="label" title={region}>
+                        <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
+                      </span>
+                      <span className="count">{count}</span>
+                    </div>
+                  )) : (
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
+                  )}
+                </div>
+              </div>
+              <div className={`kpi blue ${activeQueueFilter === 'inactive' ? 'active-filter' : ''}`} onClick={() => toggleFilter('inactive')} style={{ cursor: 'pointer' }}>
+                <p>Total Inactive Personnel</p>
+                <h2>{loading ? '-' : inactiveOfficials.length}</h2>
+                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+                  <h4>Region Breakdown</h4>
+                  {Object.keys(inactiveRegionBreakdown).length > 0 ? Object.entries(inactiveRegionBreakdown).map(([region, count], idx) => (
+                    <div key={region} className="kpi-tooltip-row">
+                      <span className="label" title={region}>
+                        <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
+                      </span>
                       <span className="count">{count}</span>
                     </div>
                   )) : (
