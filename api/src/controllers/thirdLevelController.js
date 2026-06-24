@@ -787,10 +787,10 @@ export const getOfficials = async (req, res) => {
   let activeOffice = filterOffice || filterDivision;
   if (activeOffice && activeOffice !== 'All') {
     if (activeOffice === 'No Division') {
-       conditions.push(`(office IS NULL OR office = '')`);
+      conditions.push(`(office IS NULL OR office = '')`);
     } else {
-       params.push(activeOffice);
-       conditions.push(`office = $${params.length}`);
+      params.push(activeOffice);
+      conditions.push(`office = $${params.length}`);
     }
   }
 
@@ -799,30 +799,30 @@ export const getOfficials = async (req, res) => {
   let activePosition = filterPos1 || filterPos2;
   if (activePosition && activePosition !== 'All') {
     if (activePosition === 'Unassigned') {
-       conditions.push(`(position_title IS NULL OR position_title = '')`);
+      conditions.push(`(position_title IS NULL OR position_title = '')`);
     } else {
-       params.push(activePosition);
-       conditions.push(`position_title = $${params.length}`);
+      params.push(activePosition);
+      conditions.push(`position_title = $${params.length}`);
     }
   }
 
   let filterDesignation = Array.isArray(designation) ? designation[designation.length - 1] : designation;
   if (filterDesignation && filterDesignation !== 'All') {
     if (filterDesignation === 'No Designation') {
-       conditions.push(`(designation IS NULL OR designation = '')`);
+      conditions.push(`(designation IS NULL OR designation = '')`);
     } else {
-       params.push(filterDesignation);
-       conditions.push(`designation = $${params.length}`);
+      params.push(filterDesignation);
+      conditions.push(`designation = $${params.length}`);
     }
   }
 
   let filterName = Array.isArray(name) ? name[name.length - 1] : name;
   if (filterName && filterName !== 'All') {
     if (filterName === 'VACANT POSITION') {
-       conditions.push(`(first_name IS NULL OR first_name = 'VACANT')`);
+      conditions.push(`(first_name IS NULL OR first_name = 'VACANT')`);
     } else {
-       params.push(`%${filterName}%`);
-       conditions.push(`CONCAT_WS(' ', first_name, last_name) ILIKE $${params.length}`);
+      params.push(`%${filterName}%`);
+      conditions.push(`CONCAT_WS(' ', first_name, last_name) ILIKE $${params.length}`);
     }
   }
 
@@ -895,11 +895,6 @@ export const getOfficials = async (req, res) => {
 
   try {
     const result = await pool.query(query, params);
-<<<<<<< HEAD
-    
-=======
-
->>>>>>> 1bf606b35f40ec5ad5a63e5d97372a96a1f410c3
     // DEBUG: Check if payload actually contains the binary IDs
     const sample = result.rows.find(r => r.photo_binary_id);
     console.log('DEBUG getOfficials - Sample row photo:', sample ? sample.photo_binary_id : 'NO PHOTO ID FOUND IN ANY ROW');
