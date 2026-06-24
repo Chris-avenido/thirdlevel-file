@@ -698,7 +698,7 @@ export const getOfficials = async (req, res) => {
 
   processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
 
-  const { search, status, strand, category, position, designation, office } = req.query;
+  const { search, status, strand, category, position, designation, office, page, limit, sortColumn, sortDirection, is_oic } = req.query;
   let query = `
     WITH RankedOfficials AS (
       SELECT 
@@ -775,11 +775,21 @@ export const getOfficials = async (req, res) => {
   if (category === 'Third Level') {
     params.push(THIRD_LEVEL_POSITIONS);
     conditions.push(`position_title = ANY($${params.length}) AND COALESCE(is_oic, FALSE) = FALSE`);
-  } else if (category === 'OIC / Chiefs') {
-    conditions.push(`COALESCE(is_oic, FALSE) = TRUE`);
+  } else if (category === 'Third Level (OIC)') {
+    params.push(THIRD_LEVEL_POSITIONS);
+    conditions.push(`position_title = ANY($${params.length}) AND COALESCE(is_oic, FALSE) = TRUE`);
   } else if (category === 'Division Chiefs') {
     params.push(THIRD_LEVEL_POSITIONS);
     conditions.push(`position_title != ALL($${params.length}) AND COALESCE(is_oic, FALSE) = FALSE`);
+  } else if (category === 'Division Chiefs (OIC)') {
+    params.push(THIRD_LEVEL_POSITIONS);
+    conditions.push(`position_title != ALL($${params.length}) AND COALESCE(is_oic, FALSE) = TRUE`);
+  } else if (category === 'OIC / Chiefs') {
+    conditions.push(`COALESCE(is_oic, FALSE) = TRUE`);
+  }
+
+  if (is_oic === 'true') {
+    conditions.push(`COALESCE(is_oic, FALSE) = TRUE`);
   }
 
   if (conditions.length > 0) {
@@ -794,6 +804,7 @@ export const getOfficials = async (req, res) => {
     )
     SELECT 
       f.*,
+      COUNT(*) OVER() AS total_count,
       (
          SELECT string_agg(t2.position_title || ' (' || COALESCE(t2.office, '') || ')', ' | ')
          FROM ActivePositions t2 
@@ -802,12 +813,35 @@ export const getOfficials = async (req, res) => {
       ) as concurrent_positions
     FROM RankedOfficials f 
     WHERE f.rn = 1 
-    ORDER BY f."TLOid" ASC
   `;
+
+  // Server-side sorting
+  const sortMap = {
+    'status': 'f.status',
+    'office': 'f.office',
+    'position_title': 'f.position_title',
+    'first_name': 'f.first_name'
+  };
+  if (sortColumn && sortMap[sortColumn]) {
+    query += ` ORDER BY ${sortMap[sortColumn]} ${sortDirection === 'desc' ? 'DESC' : 'ASC'} NULLS LAST`;
+  } else {
+    query += ` ORDER BY f."TLOid" ASC`;
+  }
+
+  // Server-side pagination
+  if (page && limit) {
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+    params.push(limitNum);
+    query += ` LIMIT $${params.length}`;
+    params.push(offset);
+    query += ` OFFSET $${params.length}`;
+  }
 
   try {
     const result = await pool.query(query, params);
-    
+
     // DEBUG: Check if payload actually contains the binary IDs
     const sample = result.rows.find(r => r.photo_binary_id);
     console.log('DEBUG getOfficials - Sample row photo:', sample ? sample.photo_binary_id : 'NO PHOTO ID FOUND IN ANY ROW');
@@ -815,6 +849,7 @@ export const getOfficials = async (req, res) => {
 
     res.json({
       success: true,
+      total: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0,
       data: result.rows.map(row => ({
         ...row,
         position_title: displayPositionTitle(row.position_title)
@@ -822,6 +857,28 @@ export const getOfficials = async (req, res) => {
     });
   } catch (err) {
     import('fs').then(fs => fs.writeFileSync('getOfficials_error.log', err.stack || err.message)).catch(() => { });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getKpiSummary = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      WITH RankedOfficials AS (
+        SELECT m.status, m.is_oic, m.position_title, m.first_name, m.office, m.strand, m.designation, m.effectivity_date,
+          ROW_NUMBER() OVER (
+            PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
+            ORDER BY m."TLOid" ASC
+          ) as rn
+        FROM third_level_official_masterlist m
+      )
+      SELECT status, is_oic, position_title, first_name, office, strand, designation, effectivity_date
+      FROM RankedOfficials 
+      WHERE rn = 1
+    `);
+
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };

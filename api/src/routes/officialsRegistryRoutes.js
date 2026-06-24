@@ -10,7 +10,8 @@ import {
   getPositionIncumbents,
   getLastVacateUpdate,
   triggerCron,
-  createUnassignedPersonnel
+  createUnassignedPersonnel,
+  getKpiSummary
 } from '../controllers/thirdLevelController.js';
 import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
 import { getAllNotableAchievements, createNotableAchievement, updateNotableAchievement, deleteNotableAchievement } from '../controllers/notableAchievementsController.js';
@@ -25,6 +26,7 @@ router.delete('/notable-achievements/:index_number', authMiddleware, deleteNotab
 router.get('/applications', authMiddleware, getApplications);
 router.post('/process-application', authMiddleware, processApplication);
 router.get('/officials', authMiddleware, getOfficials);
+router.get('/officials-kpi-summary', authMiddleware, getKpiSummary);
 router.get('/officials/:TLOid/last-vacate-update', authMiddleware, getLastVacateUpdate);
 router.get('/position-incumbents', authMiddleware, getPositionIncumbents);
 router.get('/active-officials', authMiddleware, getActiveOfficials);
