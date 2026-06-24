@@ -255,23 +255,31 @@ const OfficialsRegistry = () => {
     const [tableFilters, setTableFilters] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
     const [oicOnly, setOicOnly] = useState(false);
+    const [kpiSummary, setKpiSummary] = useState([]);
+    const [totalRecords, setTotalRecords] = useState(0);
 
     // Filter officials on the client side
     const thirdLevelOfficials = useMemo(() => {
-        return officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
-    }, [officials]);
+        return kpiSummary.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+    }, [kpiSummary]);
 
     const thirdLevelOic = useMemo(() => {
-        return officials.filter(o => o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
-    }, [officials]);
+        return kpiSummary.filter(o => o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+    }, [kpiSummary]);
 
     const divisionChiefsOic = useMemo(() => {
-        return officials.filter(o => o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
-    }, [officials]);
+        return kpiSummary.filter(o => o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+    }, [kpiSummary]);
 
     const divisionChiefs = useMemo(() => {
-        return officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
-    }, [officials]);
+        return kpiSummary.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+    }, [kpiSummary]);
+
+    // Active counts for KPI cards (to match Home page logic which only counts Active)
+    const thirdLevelActiveCount = useMemo(() => thirdLevelOfficials.filter(o => o.status === 'Active').length, [thirdLevelOfficials]);
+    const thirdLevelOicActiveCount = useMemo(() => thirdLevelOic.filter(o => o.status === 'Active').length, [thirdLevelOic]);
+    const divisionChiefsOicActiveCount = useMemo(() => divisionChiefsOic.filter(o => o.status === 'Active').length, [divisionChiefsOic]);
+    const divisionChiefsActiveCount = useMemo(() => divisionChiefs.filter(o => o.status === 'Active').length, [divisionChiefs]);
 
     // Position breakdowns for hover cards
     const sortBreakdown = (counts) => {
@@ -316,7 +324,7 @@ const OfficialsRegistry = () => {
     const thirdLevelBreakdown = useMemo(() => {
         const counts = {};
         thirdLevelOfficials.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -327,7 +335,7 @@ const OfficialsRegistry = () => {
     const thirdLevelOicBreakdown = useMemo(() => {
         const counts = {};
         thirdLevelOic.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -338,7 +346,7 @@ const OfficialsRegistry = () => {
     const divisionChiefsBreakdown = useMemo(() => {
         const counts = {};
         divisionChiefsOic.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -349,7 +357,7 @@ const OfficialsRegistry = () => {
     const divisionChiefsNotOicBreakdown = useMemo(() => {
         const counts = {};
         divisionChiefs.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -448,16 +456,17 @@ const OfficialsRegistry = () => {
     );
 
     useEffect(() => {
+        fetchKpiSummary();
         fetchStrands();
     }, []);
 
     useEffect(() => {
         fetchOfficials();
-    }, [searchTerm, strandFilter, officeFilter, positionFilter, designationFilter]);
+    }, [searchTerm, strandFilter, officeFilter, positionFilter, designationFilter, currentPage, activeTab, statusTab, oicOnly, sortConfig, tableFilters, viewMode, levelFilter, regionFilter]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, activeTab, strandFilter, officeFilter, positionFilter, designationFilter, sortConfig, tableFilters]);
+    }, [searchTerm, activeTab, strandFilter, officeFilter, positionFilter, designationFilter, sortConfig, tableFilters, statusTab, oicOnly, viewMode, levelFilter, regionFilter]);
 
     const fetchStrands = async () => {
         try {
@@ -490,16 +499,53 @@ const OfficialsRegistry = () => {
         }
     };
 
+
+    const fetchKpiSummary = async () => {
+        try {
+            const res = await fetch(apiUrl('/api/third-level/officials-kpi-summary'), {
+                headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setKpiSummary(data.data);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const fetchOfficials = async () => {
         setLoading(true);
         try {
             const queryParams = new URLSearchParams();
             if (searchTerm) queryParams.append('search', searchTerm);
-            queryParams.append('status', 'All');
+            if (statusTab !== 'All') {
+                queryParams.append('status', statusTab === 'Vacant' ? 'Vacated' : statusTab);
+            } else {
+                queryParams.append('status', 'All');
+            }
+            if (activeTab !== 'All') queryParams.append('category', activeTab);
             if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
             if (officeFilter !== 'All') queryParams.append('office', officeFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
             if (designationFilter !== 'All') queryParams.append('designation', designationFilter);
+            if (levelFilter !== 'All') queryParams.append('level', levelFilter);
+            if (regionFilter !== 'All') queryParams.append('region', regionFilter);
+            if (oicOnly) queryParams.append('is_oic', 'true');
+            if (sortConfig.key) {
+                queryParams.append('sortColumn', sortConfig.key);
+                queryParams.append('sortDirection', sortConfig.direction);
+            }
+            // Column filters
+            Object.keys(tableFilters).forEach(key => {
+                if (tableFilters[key]) queryParams.set(key, tableFilters[key]);
+            });
+
+            if (viewMode !== 'directory') {
+                const pageSize = 20;
+                queryParams.append('page', currentPage);
+                queryParams.append('limit', pageSize);
+            }
 
             const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
                 headers: {
@@ -509,6 +555,7 @@ const OfficialsRegistry = () => {
             const data = await res.json();
             if (data.success) {
                 setOfficials(data.data);
+                setTotalRecords(data.total);
             }
         } catch (err) {
             console.error('Failed to fetch officials:', err);
@@ -848,17 +895,25 @@ const OfficialsRegistry = () => {
     const getOfficialRegion = (item) => {
         if (getOfficialLevel(item) === 'Central Office') return 'Central Office';
 
-        const strand = (item.strand || '').trim();
-        if (strand.toUpperCase() === 'REGION XIII' || strand.toUpperCase() === 'CARAGA') return 'CARAGA';
+        const strand = (item.strand || '').trim().toUpperCase();
+        if (strand.includes('REGION XIII') || strand.includes('CARAGA')) return 'CARAGA';
 
         const knownRegions = [
-            'Region I', 'Region II', 'Region III', 'Region IV-A', 'Region IV-B',
-            'Region V', 'Region VI', 'Region VII', 'Region VIII', 'Region IX',
-            'Region X', 'Region XI', 'Region XII', 'NCR', 'CAR', 'NIR', 'BARMM'
+            'REGION I', 'REGION II', 'REGION III', 'REGION IV-A', 'REGION IV-B',
+            'REGION V', 'REGION VI', 'REGION VII', 'REGION VIII', 'REGION IX',
+            'REGION X', 'REGION XI', 'REGION XII', 'NCR', 'CAR', 'NIR', 'BARMM'
         ];
 
-        const found = knownRegions.find(r => r.toLowerCase() === strand.toLowerCase());
-        if (found) return found;
+        const found = knownRegions.find(r => strand.startsWith(r));
+        if (found) {
+            // Convert back to proper case for display
+            if (found === 'NCR') return 'NCR';
+            if (found === 'CAR') return 'CAR';
+            if (found === 'NIR') return 'NIR';
+            if (found === 'BARMM') return 'BARMM';
+            // Title case the Region format
+            return found.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+        }
 
         return 'Central Office';
     };
@@ -908,76 +963,22 @@ const OfficialsRegistry = () => {
         }
     ]), []);
 
-    const activeRecords = useMemo(() => {
-        if (activeTab === 'All') return [...thirdLevelOfficials, ...thirdLevelOic, ...divisionChiefsOic, ...divisionChiefs];
-        if (activeTab === 'Third Level Officials') return thirdLevelOfficials;
-        if (activeTab === 'Third Level (OIC)') return thirdLevelOic;
-        if (activeTab === 'Division Chiefs (OIC)') return divisionChiefsOic;
-        if (activeTab === 'Division Chiefs') return divisionChiefs;
-        return thirdLevelOfficials;
-    }, [activeTab, thirdLevelOfficials, thirdLevelOic, divisionChiefsOic, divisionChiefs]);
-
-
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
-            const values = activeRecords
-                .map(item => (column.filterValue ? column.filterValue(item) : column.value(item)).trim())
+            const values = kpiSummary
+                .map(item => (column.filterValue ? column.filterValue(item) : column.value(item))?.trim())
                 .filter(Boolean);
             options[column.key] = [...new Set(values)].sort((a, b) => a.localeCompare(b));
             return options;
         }, {});
-    }, [activeRecords, tableColumns]);
+    }, [kpiSummary, tableColumns]);
 
-    const filteredRecords = useMemo(() => {
-        return activeRecords.filter(item => {
-            if (oicOnly && !item.is_oic) return false;
-            if (statusTab !== 'All') {
-                const itemStatus = item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown');
-                if (itemStatus !== statusTab) return false;
-            }
-            if (levelFilter !== 'All' && getOfficialLevel(item) !== levelFilter) return false;
-            if (regionFilter !== 'All' && getOfficialRegion(item) !== regionFilter) return false;
 
-            return tableColumns.every(column => {
-                const filter = tableFilters[column.key];
-                if (!filter) return true;
-                const value = column.filterValue ? column.filterValue(item) : column.value(item);
-                return value === filter;
-            });
-        });
-    }, [activeRecords, tableColumns, tableFilters, levelFilter, regionFilter, statusTab, oicOnly]);
-
-    const sortedRecords = useMemo(() => {
-        const column = tableColumns.find(c => c.key === sortConfig.key);
-        if (!column && sortConfig.key !== 'position_title') return filteredRecords;
-        return [...filteredRecords].sort((a, b) => {
-            if (sortConfig.key === 'position_title') {
-                const cleanPosA = (a.position_title || '').replace(/^(OIC-?\s*)|(\s*\(OIC\))$/ig, '').trim();
-                const cleanPosB = (b.position_title || '').replace(/^(OIC-?\s*)|(\s*\(OIC\))$/ig, '').trim();
-                const sgA = sgMap[cleanPosA] || sgMap[a.position_title] || 0;
-                const sgB = sgMap[cleanPosB] || sgMap[b.position_title] || 0;
-
-                // If SGs are equal, sort alphabetically by position title
-                if (sgA === sgB) {
-                    const titleA = a.position_title || '';
-                    const titleB = b.position_title || '';
-                    return sortConfig.direction === 'asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
-                }
-
-                return sortConfig.direction === 'asc' ? sgA - sgB : sgB - sgA;
-            }
-            const left = column.value(a).toLowerCase();
-            const right = column.value(b).toLowerCase();
-            if (left < right) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (left > right) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-    }, [filteredRecords, sortConfig, tableColumns]);
 
     const directoryGroups = useMemo(() => {
         if (viewMode !== 'directory') return {};
         const groups = {};
-        sortedRecords.forEach(item => {
+        officials.forEach(item => {
             const key = item.office || item.region || 'Unassigned Office';
             if (!groups[key]) groups[key] = [];
             groups[key].push(item);
@@ -1003,11 +1004,11 @@ const OfficialsRegistry = () => {
         });
 
         return groups;
-    }, [sortedRecords, viewMode]);
+    }, [officials, viewMode]);
 
     const pageSize = 20;
-    const pageCount = Math.ceil(sortedRecords.length / pageSize);
-    const pagedRecords = sortedRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const pageCount = Math.ceil(totalRecords / pageSize);
+    const pagedRecords = officials;
     const pageButtons = useMemo(() => {
         const visible = new Set([1, pageCount, currentPage - 1, currentPage, currentPage + 1].filter(page => page >= 1 && page <= pageCount));
         const pages = [];
@@ -1027,33 +1028,6 @@ const OfficialsRegistry = () => {
         }));
     };
 
-    const TableHeader = ({ column }) => (
-        <th className={`px-3 py-3 text-left align-top ${column.width || ''}`}>
-            <div className="flex flex-col gap-2">
-                <button
-                    onClick={() => handleSort(column.key)}
-                    className="flex items-start justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors w-full min-h-[36px] text-left"
-                >
-                    <span>{column.label}</span>
-                    <span className="text-slate-300 text-sm">
-                        {sortConfig.key === column.key
-                            ? (sortConfig.direction === 'asc' ? '↑' : '↓')
-                            : '↕'}
-                    </span>
-                </button>
-                <select
-                        value={tableFilters[column.key] || ''}
-                        onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300 shadow-sm"
-                    >
-                        <option value="">All</option>
-                        {(tableFilterOptions[column.key] || []).map(option => (
-                            <option key={option} value={option}>{option}</option>
-                        ))}
-                    </select>
-            </div>
-        </th>
-    );
 
     const handleProcessApplication = async (app_TLOid, action, denial_reason = '') => {
         if (!window.confirm(`Are you sure you want to ${action} this application?`)) return;
@@ -1126,7 +1100,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {thirdLevelOfficials.length}
+                                            {thirdLevelActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level Officials</span>
                                     </div>
@@ -1166,7 +1140,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {thirdLevelOic.length}
+                                            {thirdLevelOicActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level (OIC)</span>
                                     </div>
@@ -1206,7 +1180,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {divisionChiefsOic.length}
+                                            {divisionChiefsOicActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs (OIC)</span>
                                     </div>
@@ -1246,7 +1220,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {divisionChiefs.length}
+                                            {divisionChiefsActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs</span>
                                     </div>
@@ -1429,7 +1403,7 @@ const OfficialsRegistry = () => {
                                 <div className="h-96 flex items-center justify-center">
                                     <div className="w-12 h-12 border-4 border-[#004A99]/10 border-t-[#004A99] rounded-full animate-spin"></div>
                                 </div>
-                            ) : sortedRecords.length === 0 ? (
+                            ) : officials.length === 0 ? (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
                                     <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
                                     <h3 className="text-xl font-['Quicksand'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
@@ -1441,13 +1415,39 @@ const OfficialsRegistry = () => {
                                         <table className="w-full text-left border-collapse table-fixed">
                                             <thead>
                                                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                                                    {tableColumns.map(column => <TableHeader key={column.key} column={column} />)}
+                                                    {tableColumns.map(column => (
+                                                        <th key={column.key} className={`px-3 py-3 text-left align-top ${column.width || ''}`}>
+                                                            <div className="flex flex-col gap-2">
+                                                                <button
+                                                                    onClick={() => handleSort(column.key)}
+                                                                    className="flex items-start justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors w-full min-h-[36px] text-left"
+                                                                >
+                                                                    <span>{column.label}</span>
+                                                                    <span className="text-slate-300 text-sm">
+                                                                        {sortConfig.key === column.key
+                                                                            ? (sortConfig.direction === 'asc' ? '↑' : '↓')
+                                                                            : '↕'}
+                                                                    </span>
+                                                                </button>
+                                                                <select
+                                                                        value={tableFilters[column.key] || ''}
+                                                                        onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
+                                                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300 shadow-sm"
+                                                                    >
+                                                                        <option value="">All</option>
+                                                                        {(tableFilterOptions[column.key] || []).map(option => (
+                                                                            <option key={option} value={option}>{option}</option>
+                                                                        ))}
+                                                                    </select>
+                                                            </div>
+                                                        </th>
+                                                    ))}
 
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-50">
                                                 {pagedRecords.map((item) => (
-                                                    <motion.tr key={item.TLOid} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors relative">
+                                                    <tr key={item.TLOid} className="group transition-colors relative hover:bg-slate-50/80">
                                                         <td className="px-3 py-2 align-middle">
                                                             <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-center gap-1.5">
                                                                 <span className="line-clamp-2">{item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}</span>
@@ -1538,14 +1538,14 @@ const OfficialsRegistry = () => {
                                                                 )}
                                                             </div>
                                                         </td>
-                                                    </motion.tr>
+                                                    </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     </div>
                                     <div className="px-8 py-5 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            Showing {sortedRecords.length === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, sortedRecords.length)} of {sortedRecords.length} records
+                                            Showing {totalRecords === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
@@ -1672,7 +1672,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div className="px-8 py-5 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            Showing {sortedRecords.length === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, sortedRecords.length)} of {sortedRecords.length} records
+                                            Showing {totalRecords === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
