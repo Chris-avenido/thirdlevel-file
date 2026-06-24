@@ -165,11 +165,11 @@ const Home = () => {
 
   // KPIs Logic
   const thirdLevelCount = useMemo(() => {
-    return officials.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
+    return officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
   }, [officials]);
 
   const divisionChiefsCount = useMemo(() => {
-    return officials.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
+    return officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
   }, [officials]);
 
   const sortBreakdown = (counts) => {
@@ -199,7 +199,7 @@ const Home = () => {
 
   const thirdLevelBreakdown = useMemo(() => {
     const counts = {};
-    officials.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+    officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
       if (o.first_name && o.first_name !== 'VACANT') {
         const pos = o.position_title || 'Unassigned';
         counts[pos] = (counts[pos] || 0) + 1;
@@ -210,7 +210,7 @@ const Home = () => {
 
   const divisionChiefsBreakdown = useMemo(() => {
     const counts = {};
-    officials.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+    officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
       if (o.first_name && o.first_name !== 'VACANT') {
         const pos = o.position_title || 'Unassigned';
         counts[pos] = (counts[pos] || 0) + 1;

@@ -273,6 +273,12 @@ const OfficialsRegistry = () => {
         return officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
     }, [officials]);
 
+    // Active counts for KPI cards (to match Home page logic which only counts Active)
+    const thirdLevelActiveCount = useMemo(() => thirdLevelOfficials.filter(o => o.status === 'Active').length, [thirdLevelOfficials]);
+    const thirdLevelOicActiveCount = useMemo(() => thirdLevelOic.filter(o => o.status === 'Active').length, [thirdLevelOic]);
+    const divisionChiefsOicActiveCount = useMemo(() => divisionChiefsOic.filter(o => o.status === 'Active').length, [divisionChiefsOic]);
+    const divisionChiefsActiveCount = useMemo(() => divisionChiefs.filter(o => o.status === 'Active').length, [divisionChiefs]);
+
     // Position breakdowns for hover cards
     const sortBreakdown = (counts) => {
         const order = [
@@ -316,7 +322,7 @@ const OfficialsRegistry = () => {
     const thirdLevelBreakdown = useMemo(() => {
         const counts = {};
         thirdLevelOfficials.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -327,7 +333,7 @@ const OfficialsRegistry = () => {
     const thirdLevelOicBreakdown = useMemo(() => {
         const counts = {};
         thirdLevelOic.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -338,7 +344,7 @@ const OfficialsRegistry = () => {
     const divisionChiefsBreakdown = useMemo(() => {
         const counts = {};
         divisionChiefsOic.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -349,7 +355,7 @@ const OfficialsRegistry = () => {
     const divisionChiefsNotOicBreakdown = useMemo(() => {
         const counts = {};
         divisionChiefs.forEach(o => {
-            if (o.first_name && o.first_name !== 'VACANT') {
+            if (o.status === 'Active' && o.first_name && o.first_name !== 'VACANT') {
                 const pos = o.position_title || 'Unassigned';
                 counts[pos] = (counts[pos] || 0) + 1;
             }
@@ -1126,7 +1132,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {thirdLevelOfficials.length}
+                                            {thirdLevelActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level Officials</span>
                                     </div>
@@ -1166,7 +1172,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {thirdLevelOic.length}
+                                            {thirdLevelOicActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level (OIC)</span>
                                     </div>
@@ -1206,7 +1212,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {divisionChiefsOic.length}
+                                            {divisionChiefsOicActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs (OIC)</span>
                                     </div>
@@ -1246,7 +1252,7 @@ const OfficialsRegistry = () => {
                                     </div>
                                     <div>
                                         <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {divisionChiefs.length}
+                                            {divisionChiefsActiveCount}
                                         </span>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs</span>
                                     </div>
