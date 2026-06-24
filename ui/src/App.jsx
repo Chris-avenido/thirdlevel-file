@@ -16,6 +16,21 @@ import Settings from './pages/Settings';
 import NotableAchievements from './pages/NotableAchievements';
 import LoadingScreen from './components/LoadingScreen';
 
+// Public Route Component
+const PublicRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+    if (loading) return <LoadingScreen />;
+    if (user) {
+        const roleLower = user.role?.toLowerCase() || '';
+        if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
+            return <Navigate to="/home" replace />;
+        } else {
+            return <Navigate to="/official-profiling" replace />;
+        }
+    }
+    return children;
+};
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useAuth();
@@ -32,11 +47,11 @@ const App = () => {
     return (
         <Routes>
             {/* Entry Point: Nexus Gate */}
-            <Route path="/" element={<NexusGate />} />
+            <Route path="/" element={<PublicRoute><NexusGate /></PublicRoute>} />
             
             {/* Auth Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             
             {/* Protected Routes */}
             <Route 
