@@ -23,9 +23,16 @@ export const login = async (req, res) => {
     }
 
     const masterRes = await pool.query(
-      'SELECT "TLOid", first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND status != \'Inactive\'',
+      'SELECT "TLOid", first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
+
+    if (masterRes.rows.length > 0) {
+      const userStatus = (masterRes.rows[0].status || '').toLowerCase();
+      if (['inactive', 'resigned'].includes(userStatus)) {
+        return res.status(403).json({ error: `Account login disabled. Your status is currently: ${masterRes.rows[0].status}` });
+      }
+    }
 
     const stagingRes = await pool.query(
       'SELECT app_TLOid AS "TLOid", first_name, last_name FROM third_level_officials_profiling_application WHERE LOWER(email) = $1',
@@ -119,13 +126,17 @@ export const masterLogin = async (req, res) => {
 
   try {
     let userQuery = await pool.query(
-      'SELECT "TLOid", email, first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 OR LOWER("TLOid") = $1',
+      'SELECT "TLOid", email, first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1 OR LOWER("TLOid") = $1',
       [identifier]
     );
 
     let user = null;
     if (userQuery.rows.length > 0) {
       user = userQuery.rows[0];
+      const userStatus = (user.status || '').toLowerCase();
+      if (['inactive', 'resigned'].includes(userStatus)) {
+        return res.status(403).json({ error: `Account login disabled. Your status is currently: ${user.status}` });
+      }
       user.role = 'Third Level Official';
     } else {
       userQuery = await pool.query(
@@ -180,9 +191,16 @@ export const pinLogin = async (req, res) => {
     if (!centralUser) return res.status(404).json({ error: 'Account not found' });
 
     const masterRes = await pool.query(
-      'SELECT "TLOid", first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND status != \'Inactive\'',
+      'SELECT "TLOid", first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
+
+    if (masterRes.rows.length > 0) {
+      const userStatus = (masterRes.rows[0].status || '').toLowerCase();
+      if (['inactive', 'resigned'].includes(userStatus)) {
+        return res.status(403).json({ error: `Account login disabled. Your status is currently: ${masterRes.rows[0].status}` });
+      }
+    }
     const stagingRes = await pool.query(
       'SELECT app_TLOid AS "TLOid", first_name, last_name FROM third_level_officials_profiling_application WHERE LOWER(email) = $1',
       [normalizedEmail]

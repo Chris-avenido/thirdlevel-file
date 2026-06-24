@@ -702,7 +702,7 @@ export const getOfficials = async (req, res) => {
   let query = `
     WITH RankedOfficials AS (
       SELECT 
-        m.*,
+        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.ombudsman_case, m.date_of_birth,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         ROW_NUMBER() OVER (
@@ -807,6 +807,12 @@ export const getOfficials = async (req, res) => {
 
   try {
     const result = await pool.query(query, params);
+    
+    // DEBUG: Check if payload actually contains the binary IDs
+    const sample = result.rows.find(r => r.photo_binary_id);
+    console.log('DEBUG getOfficials - Sample row photo:', sample ? sample.photo_binary_id : 'NO PHOTO ID FOUND IN ANY ROW');
+    console.log('DEBUG getOfficials - Total rows:', result.rows.length);
+
     res.json({
       success: true,
       data: result.rows.map(row => ({
