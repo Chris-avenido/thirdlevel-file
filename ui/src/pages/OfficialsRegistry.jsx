@@ -462,11 +462,11 @@ const OfficialsRegistry = () => {
 
     useEffect(() => {
         fetchOfficials();
-    }, [searchTerm, strandFilter, officeFilter, positionFilter, designationFilter, currentPage, activeTab, statusTab, oicOnly, sortConfig, tableFilters, viewMode]);
+    }, [searchTerm, strandFilter, officeFilter, positionFilter, designationFilter, currentPage, activeTab, statusTab, oicOnly, sortConfig, tableFilters, viewMode, levelFilter, regionFilter]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, activeTab, strandFilter, officeFilter, positionFilter, designationFilter, sortConfig, tableFilters, statusTab, oicOnly, viewMode]);
+    }, [searchTerm, activeTab, strandFilter, officeFilter, positionFilter, designationFilter, sortConfig, tableFilters, statusTab, oicOnly, viewMode, levelFilter, regionFilter]);
 
     const fetchStrands = async () => {
         try {
@@ -529,6 +529,8 @@ const OfficialsRegistry = () => {
             if (officeFilter !== 'All') queryParams.append('office', officeFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
             if (designationFilter !== 'All') queryParams.append('designation', designationFilter);
+            if (levelFilter !== 'All') queryParams.append('level', levelFilter);
+            if (regionFilter !== 'All') queryParams.append('region', regionFilter);
             if (oicOnly) queryParams.append('is_oic', 'true');
             if (sortConfig.key) {
                 queryParams.append('sortColumn', sortConfig.key);
@@ -536,7 +538,7 @@ const OfficialsRegistry = () => {
             }
             // Column filters
             Object.keys(tableFilters).forEach(key => {
-                if (tableFilters[key]) queryParams.append(key, tableFilters[key]);
+                if (tableFilters[key]) queryParams.set(key, tableFilters[key]);
             });
 
             if (viewMode !== 'directory') {
@@ -893,17 +895,25 @@ const OfficialsRegistry = () => {
     const getOfficialRegion = (item) => {
         if (getOfficialLevel(item) === 'Central Office') return 'Central Office';
 
-        const strand = (item.strand || '').trim();
-        if (strand.toUpperCase() === 'REGION XIII' || strand.toUpperCase() === 'CARAGA') return 'CARAGA';
+        const strand = (item.strand || '').trim().toUpperCase();
+        if (strand.includes('REGION XIII') || strand.includes('CARAGA')) return 'CARAGA';
 
         const knownRegions = [
-            'Region I', 'Region II', 'Region III', 'Region IV-A', 'Region IV-B',
-            'Region V', 'Region VI', 'Region VII', 'Region VIII', 'Region IX',
-            'Region X', 'Region XI', 'Region XII', 'NCR', 'CAR', 'NIR', 'BARMM'
+            'REGION I', 'REGION II', 'REGION III', 'REGION IV-A', 'REGION IV-B',
+            'REGION V', 'REGION VI', 'REGION VII', 'REGION VIII', 'REGION IX',
+            'REGION X', 'REGION XI', 'REGION XII', 'NCR', 'CAR', 'NIR', 'BARMM'
         ];
 
-        const found = knownRegions.find(r => r.toLowerCase() === strand.toLowerCase());
-        if (found) return found;
+        const found = knownRegions.find(r => strand.startsWith(r));
+        if (found) {
+            // Convert back to proper case for display
+            if (found === 'NCR') return 'NCR';
+            if (found === 'CAR') return 'CAR';
+            if (found === 'NIR') return 'NIR';
+            if (found === 'BARMM') return 'BARMM';
+            // Title case the Region format
+            return found.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+        }
 
         return 'Central Office';
     };
