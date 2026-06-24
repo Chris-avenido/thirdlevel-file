@@ -637,7 +637,16 @@ const executeReassignment = async (client, official, effTs, justification, assig
   }
 };
 
+let isProcessingVacancies = false;
+let lastProcessTime = 0;
+
 export const processScheduledVacancies = async (client) => {
+  const now = Date.now();
+  if (isProcessingVacancies || now - lastProcessTime < 60000) return; // Only run once per minute
+  
+  isProcessingVacancies = true;
+  lastProcessTime = now;
+
   try {
     await client.query(`
       UPDATE third_level_official_masterlist
@@ -671,6 +680,8 @@ export const processScheduledVacancies = async (client) => {
     }
   } catch (err) {
     console.error('Failed to process scheduled vacancies:', err);
+  } finally {
+    isProcessingVacancies = false;
   }
 };
 
@@ -919,13 +930,16 @@ export const getKpiSummary = async (req, res) => {
     const result = await pool.query(`
       WITH RankedOfficials AS (
         SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.designation, m.effectivity_date,
+          m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
+          m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case, m.ombudsman_case,
+          (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
           ROW_NUMBER() OVER (
             PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
             ORDER BY m."TLOid" ASC
           ) as rn
         FROM third_level_official_masterlist m
       )
-      SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, designation, effectivity_date
+      SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, designation, effectivity_date, date_of_birth, created_at, updated_at, "TLOid", vacate_reason, photo_binary_id, pds_binary_id, contact_details, pending_admin_case, ombudsman_case
       FROM RankedOfficials 
       WHERE rn = 1
     `);

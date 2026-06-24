@@ -53,7 +53,7 @@ const Home = () => {
           fetch(apiUrl('/api/third-level/applications'), {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(apiUrl('/api/third-level/officials?status=All'), {
+          fetch(apiUrl('/api/third-level/officials-kpi-summary'), {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
