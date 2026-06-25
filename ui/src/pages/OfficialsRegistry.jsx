@@ -1099,26 +1099,26 @@ const OfficialsRegistry = () => {
                                         className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                                     />
                                 </div>
-                                <div className="flex xl:hidden items-center gap-1 bg-sky-50 p-1 rounded-full border border-sky-100 shadow-sm shrink-0">
+                                <div className="flex xl:hidden items-center gap-2 shrink-0">
                                     <button
                                         onClick={() => setViewMode('table')}
-                                        className={`p-1.5 rounded-full transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                         title="Table view"
                                     >
-                                        <FiList size={12} />
+                                        <FiList size={14} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('grid')}
-                                        className={`p-1.5 rounded-full transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                     >
-                                        <FiGrid size={12} />
+                                        <FiGrid size={14} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('directory')}
-                                        className={`p-1.5 rounded-full transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                         title="Organizational Directory"
                                     >
-                                        <FiLayers size={12} />
+                                        <FiLayers size={14} />
                                     </button>
                                 </div>
                             </div>
@@ -1126,19 +1126,19 @@ const OfficialsRegistry = () => {
                             {/* DROPDOWNS */}
                             <div className="grid grid-cols-2 md:grid-cols-4 xl:flex xl:flex-[3] gap-2">
                                 {/* Level Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px]">
-                                    <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
                                         <option value="All">All CO / RO / SDO</option>
                                         <option value="Central Office">Central Office</option>
                                         <option value="Regional Office">Regional Office</option>
                                         <option value="Schools Division Office">Schools Division Office</option>
                                     </select>
-                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Region Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px]">
-                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
                                         <option value="All">All Regions</option>
                                         <option value="Central Office">Central Office</option>
                                         <option value="Region I">Region I</option>
@@ -1160,29 +1160,29 @@ const OfficialsRegistry = () => {
                                         <option value="NIR">NIR</option>
                                         <option value="BARMM">BARMM</option>
                                     </select>
-                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Designation Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px]">
-                                    <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
                                         <option value="All">All Designations</option>
                                         {designations.map(d => (
                                             <option key={d} value={d}>{expandAcronym(d)}</option>
                                         ))}
                                     </select>
-                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Position Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px]">
-                                    <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
                                         <option value="All">All Positions</option>
                                         {tabPositions.map(p => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
                                     </select>
-                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                             </div>
@@ -1221,26 +1221,26 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* DESKTOP VIEW TOGGLES */}
-                            <div className="hidden xl:flex items-center gap-1 bg-sky-50 p-1 rounded-full border border-sky-100 shadow-sm shrink-0 ml-auto">
+                            <div className="hidden xl:flex items-center gap-2 shrink-0 ml-auto">
                                 <button
                                     onClick={() => setViewMode('table')}
-                                    className={`p-1.5 rounded-full transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                     title="Table view"
                                 >
-                                    <FiList size={12} />
+                                    <FiList size={14} />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`p-1.5 rounded-full transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                 >
-                                    <FiGrid size={12} />
+                                    <FiGrid size={14} />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('directory')}
-                                    className={`p-1.5 rounded-full transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                     title="Organizational Directory"
                                 >
-                                    <FiLayers size={12} />
+                                    <FiLayers size={14} />
                                 </button>
                             </div>
                         </div>
