@@ -1067,7 +1067,7 @@ const OfficialsRegistry = () => {
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <div className="dashboard-theme !bg-transparent pt-8 px-8 max-w-[1600px] mx-auto w-full">
+                    <div className="dashboard-theme !bg-transparent pt-8 px-8 lg:px-12 max-w-[1600px] mx-auto w-full">
                         <header className="topbar w-full">
                             <div className="page-title">
                                 <div className="text-[10px] font-black text-amber-500 uppercase tracking-[0.15em] mb-1">OFFICIAL LEADERSHIP MANAGEMENT</div>
