@@ -6,6 +6,7 @@ import binaryRoutes from './routes/binaryRoutes.js';
 import { initDB } from './config/db.js';
 import pool from './config/db.js';
 import compression from 'compression';
+import './cron.js'; // Start the native background cron scheduler
 
 const app = express();
 const port = process.env.THIRD_LEVEL_PORT || process.env.PORT || 3008;
