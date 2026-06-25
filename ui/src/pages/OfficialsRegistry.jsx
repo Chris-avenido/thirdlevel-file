@@ -1127,18 +1127,18 @@ const OfficialsRegistry = () => {
                             <div className="grid grid-cols-2 md:grid-cols-4 xl:flex xl:flex-[3] gap-2">
                                 {/* Level Dropdown */}
                                 <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
+                                    <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                         <option value="All">All CO / RO / SDO</option>
                                         <option value="Central Office">Central Office</option>
                                         <option value="Regional Office">Regional Office</option>
                                         <option value="Schools Division Office">Schools Division Office</option>
                                     </select>
-                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Region Dropdown */}
                                 <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
+                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                         <option value="All">All Regions</option>
                                         <option value="Central Office">Central Office</option>
                                         <option value="Region I">Region I</option>
@@ -1160,29 +1160,29 @@ const OfficialsRegistry = () => {
                                         <option value="NIR">NIR</option>
                                         <option value="BARMM">BARMM</option>
                                     </select>
-                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Designation Dropdown */}
                                 <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
+                                    <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                         <option value="All">All Designations</option>
                                         {designations.map(d => (
                                             <option key={d} value={d}>{expandAcronym(d)}</option>
                                         ))}
                                     </select>
-                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Position Dropdown */}
                                 <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-3 pr-6 pt-[1px] pb-auto text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis flex items-start">
+                                    <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                         <option value="All">All Positions</option>
                                         {tabPositions.map(p => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
                                     </select>
-                                    <FiChevronRight className="absolute right-2 top-[2px] text-sky-500 pointer-events-none" size={12} />
+                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                             </div>
@@ -1192,10 +1192,13 @@ const OfficialsRegistry = () => {
                                 {/* OIC Toggle */}
                                 <button
                                     onClick={() => setOicOnly(!oicOnly)}
-                                    className={`h-[38px] px-4 flex-1 xl:flex-none rounded-full text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center whitespace-nowrap shrink-0 border ${oicOnly ? 'bg-[#08315F] text-white border-[#08315F]' : 'bg-[#F0F9FF] text-[#08315F] border-[#BAE6FD] hover:bg-sky-100'}`}
-                                    title="Show SGO (OIC) only"
+                                    className={`h-[38px] px-4 flex-1 xl:flex-none rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 border ${oicOnly ? 'bg-[#08315F] border-[#08315F]' : 'bg-[#F0F9FF] border-[#BAE6FD] hover:bg-sky-100'}`}
+                                    title="Toggle OIC only"
                                 >
-                                    SGO Only
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${oicOnly ? 'text-white' : 'text-[#08315F]'}`}>OIC ONLY</span>
+                                    <div className={`w-8 h-4 rounded-full relative transition-colors shrink-0 ${oicOnly ? 'bg-amber-400' : 'bg-slate-300'}`}>
+                                        <div className={`absolute top-[2px] left-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${oicOnly ? 'translate-x-[16px]' : 'translate-x-0'}`} />
+                                    </div>
                                 </button>
 
                                 {/* Reset Filters */}
@@ -1256,7 +1259,7 @@ const OfficialsRegistry = () => {
                                     <LuChefHat size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{thirdLevelActiveCount}</div>
+                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{thirdLevelActiveCount}</div>
                                     <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level Officials</div>
                                 </div>
                             </div>
@@ -1270,7 +1273,7 @@ const OfficialsRegistry = () => {
                                     <GoArrowUpRight size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{thirdLevelOicActiveCount}</div>
+                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{thirdLevelOicActiveCount}</div>
                                     <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level (SGO)</div>
                                 </div>
                             </div>
@@ -1284,7 +1287,7 @@ const OfficialsRegistry = () => {
                                     <FiActivity size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsOicActiveCount}</div>
+                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsOicActiveCount}</div>
                                     <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs (SGO)</div>
                                 </div>
                             </div>
@@ -1298,7 +1301,7 @@ const OfficialsRegistry = () => {
                                     <MdOutlineToggleOff size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsActiveCount}</div>
+                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsActiveCount}</div>
                                     <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs</div>
                                 </div>
                             </div>
