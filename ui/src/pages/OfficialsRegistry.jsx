@@ -3,11 +3,15 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight,
+    FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight, FiChevronDown,
     FiMoreVertical, FiDownload, FiPlus, FiGrid, FiList,
     FiCheckCircle, FiAlertCircle, FiClock, FiActivity, FiArrowRight,
     FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2, FiRefreshCw, FiCalendar
 } from 'react-icons/fi';
+import { GoArrowUpRight } from "react-icons/go";
+import { FaIdBadge } from "react-icons/fa";
+import { LuChefHat } from "react-icons/lu";
+import { MdOutlineToggleOff } from "react-icons/md";
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
@@ -17,6 +21,7 @@ import { apiUrl } from '../utils/api';
 import { expandAcronym } from '../utils/officialsUtils';
 import ModernDatePicker from '../components/ModernDatePicker';
 import sgMap from '../utils/sgMap.json';
+import newLogo from '../assets/new_logo.png';
 const JustificationInput = ({ value, onChange, placeholder }) => {
     const [local, setLocal] = useState(value);
 
@@ -922,42 +927,42 @@ const OfficialsRegistry = () => {
         {
             key: 'region',
             label: 'Region',
-            width: 'w-1/12',
+            width: 'w-[10%]',
             value: (item) => getOfficialRegion(item),
             filterValue: (item) => getOfficialRegion(item)
         },
         {
             key: 'division',
             label: 'Division',
-            width: 'w-[12%]',
+            width: 'w-[15%]',
             value: (item) => item.office || '',
             filterValue: (item) => item.office || 'No Division'
         },
         {
             key: 'name',
             label: 'Official Profile',
-            width: 'w-[30%]',
+            width: 'w-[25%]',
             value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''}`,
             filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
         },
         {
             key: 'position_title',
             label: 'Position',
-            width: 'w-[24%]',
+            width: 'w-[22%]',
             value: (item) => item.position_title || '',
             filterValue: (item) => item.position_title || 'Unassigned'
         },
         {
             key: 'designation',
             label: 'Designation',
-            width: 'w-2/12',
+            width: 'w-[16%]',
             value: (item) => item.designation || '',
             filterValue: (item) => item.designation || 'No Designation'
         },
         {
             key: 'status',
             label: 'Status',
-            width: 'w-[80px]',
+            width: 'w-[12%]',
             value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
             filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
         }
@@ -1060,280 +1065,137 @@ const OfficialsRegistry = () => {
         <PageTransition>
             <div className="flex h-screen bg-transparent font-sans overflow-hidden">
                 <AdminSidebar />
-                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                                <FiUsers size={20} />
+                    <div className="dashboard-theme !bg-transparent pt-8 px-8 max-w-[1600px] mx-auto w-full">
+                        <header className="topbar w-full">
+                            <div className="page-title">
+                                <div className="text-[10px] font-black text-amber-500 uppercase tracking-[0.15em] mb-1">OFFICIAL LEADERSHIP MANAGEMENT</div>
+                                <h1>Personnel Registry</h1>
+                                <p>Third Level Officials command dashboard</p>
                             </div>
-                            <div>
-                                <h1 className="text-lg font-['Quicksand'] font-black text-white tracking-tight leading-none italic uppercase">Personnel <span className="text-blue-300 not-italic">Registry</span></h1>
-                                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">Official Leadership Management</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-6">
-                            <div className="hidden md:flex flex-col items-end">
-                                <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
-                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
-                            </div>
-                        </div>
-                    </header>
-
-                    <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
-
-                        {/* STATS CARDS */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
-                                {/* Card 1: Third Level Officials */}
-                                <div
-                                    onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                    className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level Officials' ? 'border-blue-500 shadow-md ring-4 ring-blue-500/10' : 'border-blue-200 shadow-none hover:border-blue-300'} flex items-center gap-4 cursor-pointer transition-all`}
-                                >
-                                    {activeTab === 'Third Level Officials' && (
-                                        <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
-                                            ACTIVE
-                                        </div>
-                                    )}
-                                    <div className="w-10 h-10 bg-blue-50 text-[#075985] rounded-xl flex items-center justify-center">
-                                        <FiUsers size={18} />
-                                    </div>
-                                    <div>
-                                        <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {thirdLevelActiveCount}
-                                        </span>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level Officials</span>
-                                    </div>
-
-                                    {/* Hover Breakdown Tooltip */}
-                                    <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
-                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
-                                            Position Breakdown
-                                        </div>
-                                        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                            {Object.entries(thirdLevelBreakdown).length > 0 ? (
-                                                Object.entries(thirdLevelBreakdown).map(([position, count]) => (
-                                                    <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
-                                                        <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
-                                                        <span className="text-slate-900 font-black px-2 py-0.5 bg-blue-50 text-blue-700 rounded-lg shrink-0">{count}</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Card 2: Third Level (OIC) */}
-                                <div
-                                    onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                    className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Third Level (OIC)' ? 'border-amber-500 shadow-md ring-4 ring-amber-500/10' : 'border-amber-200 shadow-none hover:border-amber-300'} flex items-center gap-4 cursor-pointer transition-all`}
-                                >
-                                    {activeTab === 'Third Level (OIC)' && (
-                                        <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
-                                            ACTIVE
-                                        </div>
-                                    )}
-                                    <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-                                        <FiActivity size={18} />
-                                    </div>
-                                    <div>
-                                        <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {thirdLevelOicActiveCount}
-                                        </span>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Third Level (OIC)</span>
-                                    </div>
-
-                                    {/* Hover Breakdown Tooltip */}
-                                    <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
-                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
-                                            Position Breakdown
-                                        </div>
-                                        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                            {Object.entries(thirdLevelOicBreakdown).length > 0 ? (
-                                                Object.entries(thirdLevelOicBreakdown).map(([position, count]) => (
-                                                    <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
-                                                        <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
-                                                        <span className="text-slate-900 font-black px-2 py-0.5 bg-amber-50 text-amber-700 rounded-lg shrink-0">{count}</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Card 3: Division Chiefs (OIC) */}
-                                <div
-                                    onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                    className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs (OIC)' ? 'border-emerald-500 shadow-md ring-4 ring-emerald-500/10' : 'border-emerald-200 shadow-none hover:border-emerald-300'} flex items-center gap-4 cursor-pointer transition-all`}
-                                >
-                                    {activeTab === 'Division Chiefs (OIC)' && (
-                                        <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
-                                            ACTIVE
-                                        </div>
-                                    )}
-                                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                                        <FiActivity size={18} />
-                                    </div>
-                                    <div>
-                                        <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {divisionChiefsOicActiveCount}
-                                        </span>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs (OIC)</span>
-                                    </div>
-
-                                    {/* Hover Breakdown Tooltip */}
-                                    <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
-                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
-                                            Position Breakdown
-                                        </div>
-                                        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                            {Object.entries(divisionChiefsBreakdown).length > 0 ? (
-                                                Object.entries(divisionChiefsBreakdown).map(([position, count]) => (
-                                                    <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
-                                                        <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
-                                                        <span className="text-slate-900 font-black px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-lg shrink-0">{count}</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Card 4: Division Chiefs */}
-                                <div
-                                    onClick={() => { setActiveTab(prev => prev === 'Division Chiefs' ? 'All' : 'Division Chiefs'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                    className={`relative group bg-white p-4 rounded-2xl border ${activeTab === 'Division Chiefs' ? 'border-purple-500 shadow-md ring-4 ring-purple-500/10' : 'border-purple-200 shadow-none hover:border-purple-300'} flex items-center gap-4 cursor-pointer transition-all`}
-                                >
-                                    {activeTab === 'Division Chiefs' && (
-                                        <div className="absolute -top-2 -right-2 bg-purple-500 text-white text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full shadow-sm">
-                                            ACTIVE
-                                        </div>
-                                    )}
-                                    <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                                        <FiUsers size={18} />
-                                    </div>
-                                    <div>
-                                        <span className="block text-2xl font-['Quicksand'] font-black text-[#08315F] leading-none tracking-tight">
-                                            {divisionChiefsActiveCount}
-                                        </span>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Division Chiefs</span>
-                                    </div>
-
-                                    {/* Hover Breakdown Tooltip */}
-                                    <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[60]">
-                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">
-                                            Position Breakdown
-                                        </div>
-                                        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                            {Object.entries(divisionChiefsNotOicBreakdown).length > 0 ? (
-                                                Object.entries(divisionChiefsNotOicBreakdown).map(([position, count]) => (
-                                                    <div key={position} className="flex justify-between items-center text-xs py-1 border-b border-slate-50 last:border-0">
-                                                        <span className="text-slate-600 font-bold truncate pr-2" title={position}>{position}</span>
-                                                        <span className="text-slate-900 font-black px-2 py-0.5 bg-purple-50 text-purple-700 rounded-lg shrink-0">{count}</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center py-2">No officials</div>
-                                            )}
-                                        </div>
-                                    </div>
+                            <div className="topbar-actions">
+                                <div className="hidden md:flex flex-col justify-center items-end bg-white border-2 border-[#BAE6FD] rounded-full px-6 h-[52px] min-w-[170px] shadow-sm">
+                                    <span className="text-[14px] font-['Quicksand'] font-black text-[#08315F] leading-none mb-1">{user?.first_name} {user?.last_name}</span>
+                                    <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest leading-none">{user?.role}</span>
                                 </div>
                             </div>
+                        </header>
+                    </div>
 
+                    <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* FILTERS & SEARCH BAR */}
-                        <div className="bg-white rounded-[2.5rem] p-4 md:p-6 shadow-2xl shadow-sky-200/40 border-2 border-[#08315F] mb-8 space-y-6">
-                            <div className="flex flex-col lg:flex-row flex-wrap lg:flex-nowrap gap-3 items-center w-full">
-                                {/* Level Dropdown */}
-                                <div className="w-full lg:w-auto flex-1 min-w-[140px] shrink-0">
-                                    <SearchableSelect
-                                        label=""
-                                        placeholder="All CO / RO / SDO"
-                                        value={levelFilter}
-                                        onChange={setLevelFilter}
-                                        options={[
-                                            { value: 'All', label: 'All CO / RO / SDO' },
-                                            { value: 'Central Office', label: 'Central Office' },
-                                            { value: 'Regional Office', label: 'Regional Office' },
-                                            { value: 'Schools Division Office', label: 'Schools Division Office' }
-                                        ]}
+                        <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm">
+
+                            {/* SEARCH BAR & MOBILE VIEW TOGGLES */}
+                            <div className="flex items-center gap-2 w-full xl:w-auto xl:flex-[1.5]">
+                                <div className="relative flex-1 min-w-[120px] h-[38px]">
+                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
+                                    <input
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="Search by name, position, or office..."
+                                        className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                                     />
+                                </div>
+                                <div className="flex xl:hidden items-center gap-1 bg-sky-50 p-1 rounded-full border border-sky-100 shadow-sm shrink-0">
+                                    <button
+                                        onClick={() => setViewMode('table')}
+                                        className={`p-1.5 rounded-full transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                        title="Table view"
+                                    >
+                                        <FiList size={12} />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        className={`p-1.5 rounded-full transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                    >
+                                        <FiGrid size={12} />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('directory')}
+                                        className={`p-1.5 rounded-full transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                        title="Organizational Directory"
+                                    >
+                                        <FiLayers size={12} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* DROPDOWNS */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 xl:flex xl:flex-[3] gap-2">
+                                {/* Level Dropdown */}
+                                <div className="relative w-full xl:flex-1 h-[38px]">
+                                    <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                        <option value="All">All CO / RO / SDO</option>
+                                        <option value="Central Office">Central Office</option>
+                                        <option value="Regional Office">Regional Office</option>
+                                        <option value="Schools Division Office">Schools Division Office</option>
+                                    </select>
+                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Region Dropdown */}
-                                <div className="w-full lg:w-auto flex-1 min-w-[130px] shrink-0">
-                                    <SearchableSelect
-                                        label=""
-                                        placeholder="All Regions"
-                                        value={regionFilter}
-                                        onChange={setRegionFilter}
-                                        options={[
-                                            { value: 'All', label: 'All Regions' },
-                                            { value: 'Central Office', label: 'Central Office' },
-                                            { value: 'Region I', label: 'Region I' },
-                                            { value: 'Region II', label: 'Region II' },
-                                            { value: 'Region III', label: 'Region III' },
-                                            { value: 'Region IV-A', label: 'Region IV-A' },
-                                            { value: 'Region IV-B', label: 'Region IV-B' },
-                                            { value: 'Region V', label: 'Region V' },
-                                            { value: 'Region VI', label: 'Region VI' },
-                                            { value: 'Region VII', label: 'Region VII' },
-                                            { value: 'Region VIII', label: 'Region VIII' },
-                                            { value: 'Region IX', label: 'Region IX' },
-                                            { value: 'Region X', label: 'Region X' },
-                                            { value: 'Region XI', label: 'Region XI' },
-                                            { value: 'Region XII', label: 'Region XII' },
-                                            { value: 'CARAGA', label: 'CARAGA' },
-                                            { value: 'NCR', label: 'NCR' },
-                                            { value: 'CAR', label: 'CAR' },
-                                            { value: 'NIR', label: 'NIR' },
-                                            { value: 'BARMM', label: 'BARMM' }
-                                        ]}
-                                    />
+                                <div className="relative w-full xl:flex-1 h-[38px]">
+                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                        <option value="All">All Regions</option>
+                                        <option value="Central Office">Central Office</option>
+                                        <option value="Region I">Region I</option>
+                                        <option value="Region II">Region II</option>
+                                        <option value="Region III">Region III</option>
+                                        <option value="Region IV-A">Region IV-A</option>
+                                        <option value="Region IV-B">Region IV-B</option>
+                                        <option value="Region V">Region V</option>
+                                        <option value="Region VI">Region VI</option>
+                                        <option value="Region VII">Region VII</option>
+                                        <option value="Region VIII">Region VIII</option>
+                                        <option value="Region IX">Region IX</option>
+                                        <option value="Region X">Region X</option>
+                                        <option value="Region XI">Region XI</option>
+                                        <option value="Region XII">Region XII</option>
+                                        <option value="CARAGA">CARAGA</option>
+                                        <option value="NCR">NCR</option>
+                                        <option value="CAR">CAR</option>
+                                        <option value="NIR">NIR</option>
+                                        <option value="BARMM">BARMM</option>
+                                    </select>
+                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Designation Dropdown */}
-                                <div className="w-full lg:w-auto flex-1 min-w-[140px] shrink-0">
-                                    <SearchableSelect
-                                        label=""
-                                        placeholder="All Designations"
-                                        value={designationFilter}
-                                        onChange={setDesignationFilter}
-                                        options={[
-                                            { value: 'All', label: 'All Designations' },
-                                            ...designations.map(d => ({ value: d, label: expandAcronym(d) }))
-                                        ]}
-                                    />
+                                <div className="relative w-full xl:flex-1 h-[38px]">
+                                    <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                        <option value="All">All Designations</option>
+                                        {designations.map(d => (
+                                            <option key={d} value={d}>{expandAcronym(d)}</option>
+                                        ))}
+                                    </select>
+                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
                                 {/* Position Dropdown */}
-                                <div className="w-full lg:w-auto flex-1 min-w-[140px] shrink-0">
-                                    <SearchableSelect
-                                        label=""
-                                        placeholder="All Positions"
-                                        value={positionFilter}
-                                        onChange={setPositionFilter}
-                                        options={[
-                                            { value: 'All', label: 'All Positions' },
-                                            ...tabPositions.map(p => ({ value: p, label: p }))
-                                        ]}
-                                    />
+                                <div className="relative w-full xl:flex-1 h-[38px]">
+                                    <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer focus:border-sky-400 transition-colors text-ellipsis">
+                                        <option value="All">All Positions</option>
+                                        {tabPositions.map(p => (
+                                            <option key={p} value={p}>{p}</option>
+                                        ))}
+                                    </select>
+                                    <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
+                            </div>
+
+                            {/* BUTTONS */}
+                            <div className="flex items-center gap-2 w-full xl:w-auto">
                                 {/* OIC Toggle */}
                                 <button
                                     onClick={() => setOicOnly(!oicOnly)}
-                                    className={`px-4 py-3 rounded-2xl border-2 font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${oicOnly ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-inner' : 'bg-slate-50 border-transparent text-slate-400 hover:border-slate-200 hover:text-slate-600'}`}
+                                    className={`h-[38px] px-4 flex-1 xl:flex-none rounded-full text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center whitespace-nowrap shrink-0 border ${oicOnly ? 'bg-[#08315F] text-white border-[#08315F]' : 'bg-[#F0F9FF] text-[#08315F] border-[#BAE6FD] hover:bg-sky-100'}`}
+                                    title="Show SGO (OIC) only"
                                 >
-                                    <div className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${oicOnly ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-300'}`}>
-                                        {oicOnly && <FiCheckCircle size={8} />}
-                                    </div>
-                                    OIC Only
+                                    SGO Only
                                 </button>
 
                                 {/* Reset Filters */}
@@ -1351,122 +1213,169 @@ const OfficialsRegistry = () => {
                                         setDesignationFilter('All');
                                         setOicOnly(false);
                                     }}
-                                    className="px-4 py-3 bg-rose-50/50 text-rose-500 rounded-2xl border border-rose-100 font-bold text-[10px] hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
+                                    className="h-[38px] px-5 flex-1 xl:flex-none bg-transparent text-rose-400 rounded-full border border-rose-200 font-black text-[10px] tracking-widest uppercase hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
                                     title="Reset all filters"
                                 >
-                                    <FiRefreshCw size={14} /> Reset
+                                    Reset
                                 </button>
                             </div>
 
-                            {/* SEARCH BAR */}
-                            <div className="relative w-full">
-                                <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search by name, position, or office..."
-                                    className="w-full bg-white border border-sky-200 rounded-[2rem] py-5 pl-14 pr-6 text-slate-700 font-bold focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 transition-all outline-none shadow-2xl shadow-sky-200/40"
-                                />
+                            {/* DESKTOP VIEW TOGGLES */}
+                            <div className="hidden xl:flex items-center gap-1 bg-sky-50 p-1 rounded-full border border-sky-100 shadow-sm shrink-0 ml-auto">
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={`p-1.5 rounded-full transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                    title="Table view"
+                                >
+                                    <FiList size={12} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-1.5 rounded-full transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                >
+                                    <FiGrid size={12} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('directory')}
+                                    className={`p-1.5 rounded-full transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white shadow-md' : 'text-slate-400 hover:bg-white hover:text-slate-600'}`}
+                                    title="Organizational Directory"
+                                >
+                                    <FiLayers size={12} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* STATS CARDS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
+                            {/* Card 1: Third Level Officials */}
+                            <div
+                                onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Third Level Officials' ? 'ring-2 ring-blue-500 shadow-md' : 'hover:border-blue-400'}`}
+                            >
+                                <div className="w-9 h-9 bg-[#E0F2FE] text-[#08315F] rounded-full flex items-center justify-center shrink-0 mr-3">
+                                    <LuChefHat size={16} />
+                                </div>
+                                <div className="flex flex-col justify-center">
+                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{thirdLevelActiveCount}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level Officials</div>
+                                </div>
+                            </div>
+
+                            {/* Card 2: Third Level (OIC) */}
+                            <div
+                                onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Third Level (OIC)' ? 'ring-2 ring-amber-500 shadow-md' : 'hover:border-amber-400'}`}
+                            >
+                                <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center shrink-0 mr-3">
+                                    <GoArrowUpRight size={16} />
+                                </div>
+                                <div className="flex flex-col justify-center">
+                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{thirdLevelOicActiveCount}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level (SGO)</div>
+                                </div>
+                            </div>
+
+                            {/* Card 3: Division Chiefs (OIC) */}
+                            <div
+                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Division Chiefs (OIC)' ? 'ring-2 ring-emerald-500 shadow-md' : 'hover:border-emerald-400'}`}
+                            >
+                                <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0 mr-3">
+                                    <FiActivity size={16} />
+                                </div>
+                                <div className="flex flex-col justify-center">
+                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsOicActiveCount}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs (SGO)</div>
+                                </div>
+                            </div>
+
+                            {/* Card 4: Division Chiefs */}
+                            <div
+                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs' ? 'All' : 'Division Chiefs'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Division Chiefs' ? 'ring-2 ring-purple-500 shadow-md' : 'hover:border-purple-400'}`}
+                            >
+                                <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center shrink-0 mr-3">
+                                    <MdOutlineToggleOff size={16} />
+                                </div>
+                                <div className="flex flex-col justify-center">
+                                    <div className="text-[18px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsActiveCount}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs</div>
+                                </div>
                             </div>
                         </div>
 
                         {/* MAIN CONTENT AREA */}
-                        <div className="flex justify-end mb-4">
-                            {/* View Switcher */}
-                            <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm shrink-0">
-                                <button
-                                    onClick={() => setViewMode('table')}
-                                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
-                                    title="Table view"
-                                >
-                                    <ListRowsIcon />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
-                                >
-                                    <FiGrid size={16} />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('directory')}
-                                    className={`p-2.5 rounded-xl transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
-                                    title="Organizational Directory"
-                                >
-                                    <FiLayers size={16} />
-                                </button>
-                            </div>
-                        </div>
 
                         <AnimatePresence mode="wait">
                             {loading ? (
                                 <div className="h-96 flex items-center justify-center">
-                                    <div className="w-12 h-12 border-4 border-[#004A99]/10 border-t-[#004A99] rounded-full animate-spin"></div>
+                                    <div className="w-12 h-12 border-4 border-[var(--navy)]/10 border-t-[var(--navy)] rounded-full animate-spin"></div>
                                 </div>
                             ) : officials.length === 0 ? (
-                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-20 text-center">
                                     <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
-                                    <h3 className="text-xl font-['Quicksand'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
+                                    <h3 className="text-xl font-[var(--font-heading)] font-black text-[var(--navy)] uppercase italic tracking-tight">No Records Found</h3>
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                                 </motion.div>
                             ) : viewMode === 'table' ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-[#08315F]">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-[2.5px] !border-[#08315F] overflow-hidden">
                                     <div className="w-full">
-                                        <table className="w-full text-left border-collapse table-fixed">
+                                        <table className="hidden md:table w-full text-left border-collapse table-fixed">
                                             <thead>
-                                                <tr className="bg-slate-50/50 border-b border-slate-100">
-                                                    {tableColumns.map(column => (
-                                                        <th key={column.key} className={`px-3 py-3 text-left align-top ${column.width || ''}`}>
-                                                            <div className="flex flex-col gap-2">
+                                                <tr className="bg-white border-b border-slate-200">
+                                                    {tableColumns.map((column, index) => (
+                                                        <th key={column.key} className={`px-2 py-4 text-left align-top relative ${column.width || ''}`}>
+
+                                                            <div className="flex flex-col gap-3 mt-1 pr-4">
                                                                 <button
                                                                     onClick={() => handleSort(column.key)}
-                                                                    className="flex items-start justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors w-full min-h-[36px] text-left"
+                                                                    className="flex items-center justify-between h-5 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left"
                                                                 >
                                                                     <span>{column.label}</span>
-                                                                    <span className="text-slate-300 text-sm">
+                                                                    <span className="text-slate-300 text-sm leading-none flex items-center w-3 justify-end">
                                                                         {sortConfig.key === column.key
                                                                             ? (sortConfig.direction === 'asc' ? '↑' : '↓')
-                                                                            : '↕'}
+                                                                            : ''}
                                                                     </span>
                                                                 </button>
                                                                 <select
-                                                                        value={tableFilters[column.key] || ''}
-                                                                        onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                                                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:border-blue-300 shadow-sm"
-                                                                    >
-                                                                        <option value="">All</option>
-                                                                        {(tableFilterOptions[column.key] || []).map(option => (
-                                                                            <option key={option} value={option}>{option}</option>
-                                                                        ))}
-                                                                    </select>
+                                                                    value={tableFilters[column.key] || ''}
+                                                                    onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
+                                                                    className="w-full bg-white border border-sky-200 rounded-lg px-3 py-1.5 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors"
+                                                                >
+                                                                    <option value="">All</option>
+                                                                    {(tableFilterOptions[column.key] || []).map(option => (
+                                                                        <option key={option} value={option}>{option}</option>
+                                                                    ))}
+                                                                </select>
                                                             </div>
                                                         </th>
                                                     ))}
 
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-50">
+                                            <tbody className="divide-y divide-slate-200/60 bg-white">
                                                 {pagedRecords.map((item) => (
                                                     <tr key={item.TLOid} className="group transition-colors relative hover:bg-slate-50/80">
-                                                        <td className="px-3 py-2 align-middle">
-                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight flex flex-wrap items-center gap-1.5">
-                                                                <span className="line-clamp-2">{item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}</span>
+                                                        <td className="px-3 py-4 align-middle max-w-[120px]">
+                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}>
+                                                                <span>{item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-2 align-middle">
-                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest line-clamp-2">
+                                                        <td className="px-2 py-4 align-middle max-w-[200px]">
+                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : (item.office || 'No Division')}>
                                                                 {item.status === 'Inactive' ? 'N/A' : (item.office || 'No Division')}
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-2 align-middle">
+                                                        <td className="px-2 py-4 align-middle">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border border-white shadow-sm overflow-hidden shrink-0">
+                                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border border-white shadow-sm overflow-hidden shrink-0">
                                                                     {item.photo_binary_id ? (
                                                                         <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
                                                                     ) : <FiUser size={14} />}
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <div 
+                                                                    <div
                                                                         onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
                                                                         className={`font-['Quicksand'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                         title={item.email ? "View Official Profile" : ""}
@@ -1504,25 +1413,26 @@ const OfficialsRegistry = () => {
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-2 align-middle">
-                                                            <div 
+                                                        <td className="px-1 py-4 align-middle max-w-[220px]">
+                                                            <div
                                                                 onClick={() => handlePositionClick(item)}
-                                                                title="View Positional History"
-                                                                className="inline-flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50/80 border border-amber-200/60 text-amber-700 text-[10px] font-black uppercase tracking-widest shadow-sm truncate max-w-full cursor-pointer hover:bg-amber-100 hover:border-amber-300 transition-colors"
+                                                                title={item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')}
+                                                                className="flex w-fit max-w-full items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50/80 border border-amber-300 text-amber-600 text-[9px] font-black uppercase tracking-widest shadow-sm cursor-pointer hover:bg-amber-100 hover:border-amber-400 transition-colors"
                                                             >
-                                                                <span className="truncate flex items-center gap-1">{item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')} {item.status !== 'Inactive' && item.is_oic && <span className="px-1 py-0.5 rounded-md bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest shrink-0">OIC</span>}</span>
+                                                                <span className="truncate">{item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')}</span>
+                                                                {item.status !== 'Inactive' && item.is_oic && <span className="px-1.5 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest shrink-0">OIC</span>}
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-2 align-middle">
-                                                            <div 
+                                                        <td className="px-1 py-4 align-middle max-w-[150px]">
+                                                            <div
                                                                 onClick={() => handlePositionClick(item)}
-                                                                title="View Positional History"
-                                                                className="text-[10px] font-bold text-slate-600 uppercase tracking-widest line-clamp-2 cursor-pointer hover:text-blue-600 hover:underline transition-colors w-fit"
+                                                                title={item.status === 'Inactive' ? 'N/A' : (expandAcronym(item.designation) || 'No Designation')}
+                                                                className="text-[10px] font-black text-[#08315F] uppercase tracking-widest truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
                                                             >
                                                                 {item.status === 'Inactive' ? 'N/A' : (expandAcronym(item.designation) || 'No Designation')}
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-2 align-middle static md:relative">
+                                                        <td className="px-1 py-4 align-middle static md:relative">
                                                             <StatusBadge status={item.status} />
 
                                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-slate-200 pointer-events-none group-hover:pointer-events-auto">
@@ -1542,6 +1452,60 @@ const OfficialsRegistry = () => {
                                                 ))}
                                             </tbody>
                                         </table>
+
+                                        {/* MOBILE CARD VIEW */}
+                                        <div className="md:hidden flex flex-col divide-y divide-slate-100">
+                                            {pagedRecords.map((item) => (
+                                                <div key={item.TLOid} className="p-4 bg-white hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border border-white shadow-sm overflow-hidden shrink-0">
+                                                                {item.photo_binary_id ? (
+                                                                    <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
+                                                                ) : <FiUser size={16} />}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)} className="font-['Quicksand'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
+                                                                    {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                                </div>
+                                                                <div className="text-[10px] font-bold text-slate-400 mt-1 truncate">{item.email || 'No Email'}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="shrink-0"><StatusBadge status={item.status} /></div>
+                                                    </div>
+
+                                                    <div className="flex flex-col gap-2 mt-1 bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                                                        <div className="flex justify-between items-center text-[10px] gap-2">
+                                                            <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Office</span>
+                                                            <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">{getOfficialRegion(item)} • {item.office || 'No Division'}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-[10px] gap-2">
+                                                            <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Position</span>
+                                                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50/80 border border-amber-300 text-amber-600 font-black uppercase tracking-widest shrink-0 max-w-[65%] truncate">
+                                                                <span className="truncate">{item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')}</span>
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-[10px] gap-2">
+                                                            <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Designation</span>
+                                                            <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">{expandAcronym(item.designation) || 'No Designation'}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {item.status !== 'Inactive' && user?.role === 'Central Office' && (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <button onClick={() => openActionModal(item, 'reassign')} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-500 hover:text-white transition-all">
+                                                                <FiLayers size={12} /> Reassign
+                                                            </button>
+                                                            {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
+                                                                <button onClick={() => openActionModal(item, 'vacate')} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                                                                    <FiTrash2 size={12} /> Vacate
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="px-8 py-5 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -1846,189 +1810,189 @@ const OfficialsRegistry = () => {
                                     >
                                         <div className="overflow-y-auto custom-scrollbar w-full h-full">
                                             <div className="p-10">
-                                            <div className="flex justify-between items-start mb-8">
-                                                <div>
-                                                    <span className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                                    <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
-                                                        {adminAction === 'reassign'
-                                                            ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
-                                                            : `${adminAction === 'vacate' ? 'VACATING' : `${adminAction.toUpperCase()}ING`} OFFICIAL`}
-                                                    </h2>
-                                                    <p className="text-slate-400 font-bold mt-2">
-                                                        {adminAction === 'reassign'
-                                                            ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`)
-                                                            : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}
-                                                    </p>
+                                                <div className="flex justify-between items-start mb-8">
+                                                    <div>
+                                                        <span className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
+                                                        <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
+                                                            {adminAction === 'reassign'
+                                                                ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
+                                                                : `${adminAction === 'vacate' ? 'VACATING' : `${adminAction.toUpperCase()}ING`} OFFICIAL`}
+                                                        </h2>
+                                                        <p className="text-slate-400 font-bold mt-2">
+                                                            {adminAction === 'reassign'
+                                                                ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`)
+                                                                : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}
+                                                        </p>
+                                                    </div>
+                                                    <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all">
+                                                        <FiX size={20} />
+                                                    </button>
                                                 </div>
-                                                <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all">
-                                                    <FiX size={20} />
-                                                </button>
-                                            </div>
 
-                                            <div className="space-y-6">
-                                                {adminAction === 'reassign' && (
-                                                    <div className="space-y-4">
-                                                        {(!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? (
-                                                            isAddingPersonnel ? (
-                                                                <AddNewPersonnelForm 
-                                                                    token={token || localStorage.getItem('token')}
-                                                                    onCancel={() => setIsAddingPersonnel(false)}
-                                                                    onSuccess={async (newId) => {
-                                                                        unassignedCacheRef.current.clear();
-                                                                        await fetchUnassignedPersonnel();
-                                                                        setAssigneeSlot(newId);
-                                                                        setIsAddingPersonnel(false);
-                                                                    }}
-                                                                />
+                                                <div className="space-y-6">
+                                                    {adminAction === 'reassign' && (
+                                                        <div className="space-y-4">
+                                                            {(!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? (
+                                                                isAddingPersonnel ? (
+                                                                    <AddNewPersonnelForm
+                                                                        token={token || localStorage.getItem('token')}
+                                                                        onCancel={() => setIsAddingPersonnel(false)}
+                                                                        onSuccess={async (newId) => {
+                                                                            unassignedCacheRef.current.clear();
+                                                                            await fetchUnassignedPersonnel();
+                                                                            setAssigneeSlot(newId);
+                                                                            setIsAddingPersonnel(false);
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <>
+                                                                        <div>
+                                                                            <div className="flex justify-between items-end mb-3">
+                                                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0">Search Personnel Without Position</label>
+                                                                                {user?.role === 'Central Office' && (
+                                                                                    <button onClick={() => setIsAddingPersonnel(true)} className="text-[10px] font-black text-[#08315F] hover:text-[#004A99] uppercase tracking-widest transition-colors">+ Add New</button>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="relative">
+                                                                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                                                                <DebouncedSearchInput
+                                                                                    value={unassignedSearch}
+                                                                                    onChange={setUnassignedSearch}
+                                                                                    placeholder="Search by name or employee number..."
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                        <SearchableSelect
+                                                                            label="Reassign To"
+                                                                            info={unassignedLoading ? 'Loading available personnel...' : 'Showing personnel without an active position. Search to narrow the list.'}
+                                                                            placeholder={unassignedLoading ? 'Loading personnel...' : 'Choose personnel...'}
+                                                                            value={assigneeSlot}
+                                                                            onChange={setAssigneeSlot}
+                                                                            options={unassignedPersonnel.map(p => ({
+                                                                                value: p.TLOid,
+                                                                                label: `${p.first_name} ${p.last_name || ''}`.trim(),
+                                                                                sublabel: [p.employee_number || p.TLOid, p.email].filter(Boolean).join(' - ')
+                                                                            }))}
+                                                                        />
+                                                                        {!unassignedLoading && unassignedPersonnel.length === 0 && (
+                                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )
                                                             ) : (
                                                                 <>
-                                                                    <div>
-                                                                        <div className="flex justify-between items-end mb-3">
-                                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0">Search Personnel Without Position</label>
-                                                                            {user?.role === 'Central Office' && (
-                                                                                <button onClick={() => setIsAddingPersonnel(true)} className="text-[10px] font-black text-[#08315F] hover:text-[#004A99] uppercase tracking-widest transition-colors">+ Add New</button>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="relative">
-                                                                            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                                                            <DebouncedSearchInput
-                                                                                value={unassignedSearch}
-                                                                                onChange={setUnassignedSearch}
-                                                                                placeholder="Search by name or employee number..."
-                                                                            />
-                                                                        </div>
-                                                                    </div>
                                                                     <SearchableSelect
-                                                                        label="Reassign To"
-                                                                        info={unassignedLoading ? 'Loading available personnel...' : 'Showing personnel without an active position. Search to narrow the list.'}
-                                                                        placeholder={unassignedLoading ? 'Loading personnel...' : 'Choose personnel...'}
-                                                                        value={assigneeSlot}
-                                                                        onChange={setAssigneeSlot}
-                                                                        options={unassignedPersonnel.map(p => ({
-                                                                            value: p.TLOid,
-                                                                            label: `${p.first_name} ${p.last_name || ''}`.trim(),
-                                                                            sublabel: [p.employee_number || p.TLOid, p.email].filter(Boolean).join(' - ')
-                                                                        }))}
+                                                                        label="Select Target Office"
+                                                                        placeholder="Choose Office..."
+                                                                        value={selectedOffice}
+                                                                        onChange={(val) => {
+                                                                            setSelectedOffice(val);
+                                                                            setTargetSlot('');
+                                                                        }}
+                                                                        options={uniqueOffices.map(o => ({ value: o, label: o }))}
                                                                     />
-                                                                    {!unassignedLoading && unassignedPersonnel.length === 0 && (
+
+                                                                    {selectedOffice ? (
+                                                                        <SearchableSelect
+                                                                            label="Select Vacant Position"
+                                                                            placeholder="Choose vacant position..."
+                                                                            value={targetSlot}
+                                                                            onChange={setTargetSlot}
+                                                                            options={filteredVacantSlots.map(slot => ({
+                                                                                value: slot.TLOid,
+                                                                                label: slot.is_oic ? `${slot.position_title} (OIC)` : slot.position_title,
+                                                                                sublabel: slot.strand ? `Strand: ${slot.strand}` : 'No Strand'
+                                                                            }))}
+                                                                        />
+                                                                    ) : (
                                                                         <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
+                                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Please select an office first to view vacant positions</p>
                                                                         </div>
                                                                     )}
                                                                 </>
-                                                            )
-                                                        ) : (
-                                                            <>
-                                                                <SearchableSelect
-                                                                    label="Select Target Office"
-                                                                    placeholder="Choose Office..."
-                                                                    value={selectedOffice}
-                                                                    onChange={(val) => {
-                                                                        setSelectedOffice(val);
-                                                                        setTargetSlot('');
-                                                                    }}
-                                                                    options={uniqueOffices.map(o => ({ value: o, label: o }))}
-                                                                />
+                                                            )}
+                                                        </div>
+                                                    )}
 
-                                                                {selectedOffice ? (
-                                                                    <SearchableSelect
-                                                                        label="Select Vacant Position"
-                                                                        placeholder="Choose vacant position..."
-                                                                        value={targetSlot}
-                                                                        onChange={setTargetSlot}
-                                                                        options={filteredVacantSlots.map(slot => ({
-                                                                            value: slot.TLOid,
-                                                                            label: slot.is_oic ? `${slot.position_title} (OIC)` : slot.position_title,
-                                                                            sublabel: slot.strand ? `Strand: ${slot.strand}` : 'No Strand'
-                                                                        }))}
-                                                                    />
-                                                                ) : (
-                                                                    <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Please select an office first to view vacant positions</p>
-                                                                    </div>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                    {adminAction === 'succeed' && (
+                                                        <SearchableSelect
+                                                            label="Select Successor"
+                                                            info="If selected, the successor will take this position and their old slot becomes vacant."
+                                                            placeholder="No successor (leave vacant)..."
+                                                            value={successorSlot}
+                                                            onChange={setSuccessorSlot}
+                                                            options={[
+                                                                { value: '', label: 'No successor', sublabel: 'Position will stay vacant' },
+                                                                ...activeOfficials.map(o => ({
+                                                                    value: o.TLOid,
+                                                                    label: `${o.first_name} ${o.last_name}`,
+                                                                    sublabel: `${o.position_title} — ${o.office}`
+                                                                }))
+                                                            ]}
+                                                        />
+                                                    )}
 
-                                                {adminAction === 'succeed' && (
-                                                    <SearchableSelect
-                                                        label="Select Successor"
-                                                        info="If selected, the successor will take this position and their old slot becomes vacant."
-                                                        placeholder="No successor (leave vacant)..."
-                                                        value={successorSlot}
-                                                        onChange={setSuccessorSlot}
-                                                        options={[
-                                                            { value: '', label: 'No successor', sublabel: 'Position will stay vacant' },
-                                                            ...activeOfficials.map(o => ({
-                                                                value: o.TLOid,
-                                                                label: `${o.first_name} ${o.last_name}`,
-                                                                sublabel: `${o.position_title} — ${o.office}`
-                                                            }))
-                                                        ]}
-                                                    />
-                                                )}
+                                                    {(adminAction === 'reassign' || adminAction === 'vacate') && (
+                                                        <div className="mb-4">
+                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Date of Effectivity</label>
+                                                            <ModernDatePicker
+                                                                value={effectivityDate}
+                                                                onChange={(val) => setEffectivityDate(val)}
+                                                                className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                            />
+                                                        </div>
+                                                    )}
 
-                                                {(adminAction === 'reassign' || adminAction === 'vacate') && (
-                                                    <div className="mb-4">
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Date of Effectivity</label>
-                                                        <ModernDatePicker
-                                                            value={effectivityDate}
-                                                            onChange={(val) => setEffectivityDate(val)}
-                                                            className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                    {adminAction === 'vacate' && (
+                                                        <div className="mb-4">
+                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Reason for Vacating</label>
+                                                            <select
+                                                                value={vacateReason}
+                                                                onChange={(e) => setVacateReason(e.target.value)}
+                                                                className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                            >
+                                                                <option value="">Select a reason...</option>
+                                                                <option value="Resignation">Resignation</option>
+                                                                <option value="Retirement">Retirement</option>
+                                                                <option value="Reassignment">Reassignment</option>
+                                                                <option value="Promotion">Promotion</option>
+                                                                <option value="Demotion">Demotion</option>
+                                                                <option value="Dismissal">Dismissal</option>
+                                                            </select>
+                                                        </div>
+                                                    )}
+
+                                                    <div>
+                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Remarks</label>
+                                                        <JustificationInput
+                                                            value={justification}
+                                                            onChange={setJustification}
+                                                            placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide additional remarks...'}
                                                         />
                                                     </div>
-                                                )}
 
-                                                {adminAction === 'vacate' && (
-                                                    <div className="mb-4">
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Reason for Vacating</label>
-                                                        <select
-                                                            value={vacateReason}
-                                                            onChange={(e) => setVacateReason(e.target.value)}
-                                                            className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
-                                                        >
-                                                            <option value="">Select a reason...</option>
-                                                            <option value="Resignation">Resignation</option>
-                                                            <option value="Retirement">Retirement</option>
-                                                            <option value="Reassignment">Reassignment</option>
-                                                            <option value="Promotion">Promotion</option>
-                                                            <option value="Demotion">Demotion</option>
-                                                            <option value="Dismissal">Dismissal</option>
-                                                        </select>
-                                                    </div>
-                                                )}
-
-                                                <div>
-                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Remarks</label>
-                                                    <JustificationInput
-                                                        value={justification}
-                                                        onChange={setJustification}
-                                                        placeholder={adminAction === 'reassign' ? 'Optional reassignment note...' : 'Please provide additional remarks...'}
-                                                    />
-                                                </div>
-
-                                                <div className="flex gap-4">
-                                                    <button
-                                                        disabled={actionLoading}
-                                                        onClick={handleAdminAction}
-                                                        className="flex-1 py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
-                                                    >
-                                                        {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
-                                                    </button>
-                                                    {['Vacating', 'Resigning', 'Inactive', 'Reassigning', 'Pending Assignment'].includes(actionOfficial?.status) && (adminAction === 'vacate' || adminAction === 'reassign') && (
+                                                    <div className="flex gap-4">
                                                         <button
                                                             disabled={actionLoading}
-                                                            onClick={handleCancelVacate}
-                                                            className="flex-1 py-5 bg-rose-50 text-rose-600 border-2 border-rose-100 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-sm hover:bg-rose-100 hover:border-rose-200 transition-all active:scale-95 disabled:opacity-50"
+                                                            onClick={handleAdminAction}
+                                                            className="flex-1 py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
                                                         >
-                                                            {actionLoading ? 'Processing...' : 'Cancel Action'}
+                                                            {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
                                                         </button>
-                                                    )}
+                                                        {['Vacating', 'Resigning', 'Inactive', 'Reassigning', 'Pending Assignment'].includes(actionOfficial?.status) && (adminAction === 'vacate' || adminAction === 'reassign') && (
+                                                            <button
+                                                                disabled={actionLoading}
+                                                                onClick={handleCancelVacate}
+                                                                className="flex-1 py-5 bg-rose-50 text-rose-600 border-2 border-rose-100 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-sm hover:bg-rose-100 hover:border-rose-200 transition-all active:scale-95 disabled:opacity-50"
+                                                            >
+                                                                {actionLoading ? 'Processing...' : 'Cancel Action'}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
                                         </div>
                                     </motion.div>
                                 </div>

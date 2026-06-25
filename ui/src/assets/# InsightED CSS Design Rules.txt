@@ -1,0 +1,793 @@
+# InsightED CSS Design Rules
+
+These rules are the canonical styling standard for InsightED dashboards. They combine the base InsightED visual system from InsightED Screenshot UI Setup Prompt with the dashboard rules and standards from Project Questions.
+
+## 1. Rule precedence
+
+1. **Preserve dashboard content and business logic first.**
+    - Do not overwrite, rename, remove, hard-code, or replace current data, labels, filters, cards, chart categories, routes, tabs, modules, or event handlers.
+    - Apply the design system as a styling and interaction pass only unless the dashboard rule explicitly requires behavior.
+2. **Use the InsightED CSS Design Rules as the starting point.**
+    - Typography, palette, card treatment, background, header style, nav treatment, and responsive layout should follow the InsightED visual system.
+3. **Dashboard rules and standards override any conflicting base styling.**
+    - If a base design rule conflicts with the dashboard rules, follow the dashboard rule.
+    - Examples:
+        - Sidebar auto-hide overrides the fixed 260px desktop sidebar rule.
+        - Stacked bar labels should show numbers only, not category names.
+        - Tables must prioritize containment and pagination over decorative spacing.
+
+## 2. Core visual identity
+
+1. **Use the Academic Blue palette.**
+    - Navy: `#08315F`
+    - Blue: `#075985`
+    - Bright blue: `#0284C7`
+    - Sky blue: `#7DD3FC`
+    - Pale blue: `#E0F2FE`
+    - Background blue: `#F0F9FF`
+    - Gold: `#FBBF24`
+    - Amber: `#D97706`
+    - Red: `#B91C1C`
+    - Green: `#16A34A`
+    - Purple: `#7C3AED`
+    - Text: `#0F172A`
+    - Muted text: `#64748B`
+    - Line/border accent: `#BAE6FD`
+2. **Use fixed InsightED typography.**
+    - Headings and high-emphasis UI: `Quicksand`
+    - Body, labels, filters, nav labels, supporting text: `Comic Neue`
+3. **Use shared CSS tokens.**
+
+```css
+:root {
+  --navy: #08315F;
+  --blue: #075985;
+  --blue-600: #0284C7;
+  --blue-400: #7DD3FC;
+  --blue-100: #E0F2FE;
+  --blue-50: #F0F9FF;
+  --gold: #FBBF24;
+  --amber: #D97706;
+  --red: #B91C1C;
+  --green: #16A34A;
+  --purple: #7C3AED;
+  --card: #FFFFFF;
+  --text: #0F172A;
+  --muted: #64748B;
+  --line: #BAE6FD;
+  --font-heading: Quicksand, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "Comic Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --radius: 22px;
+}
+```
+
+## 3. Background
+
+1. **Use a light Academic Blue background, not plain white.**
+2. **Use the Bold Blobs background treatment.**
+    - Blue blob upper-left
+    - Gold/yellow blob upper-right
+    - Sky-blue blob lower-right
+    - Optional amber/gold blob lower-left
+3. **Keep blobs behind content and preserve readability.**
+
+```css
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-body);
+  background-color: var(--blue-50);
+  background-attachment: fixed;
+  background-image:
+    radial-gradient(43.5% 49.5% at 10% 12%, rgba(7, 89, 133, .30) 0 34%, transparent 78%),
+    radial-gradient(46.5% 54% at 92% 10%, rgba(251, 191, 36, .42) 0 36%, transparent 80%),
+    radial-gradient(40.5% 48% at 84% 92%, rgba(125, 211, 252, .30) 0 34%, transparent 78%),
+    radial-gradient(45% 52.5% at 8% 92%, rgba(217, 119, 6, .26) 0 28%, rgba(251, 191, 36, .18) 42%, transparent 80%);
+}
+```
+
+## 4. Dashboard shell and sidebar
+
+1. **Use a two-zone dashboard shell.**
+    - Desktop: sidebar + main content.
+    - Mobile/tablet: main content + fixed bottom navigation.
+2. **Use sidebar auto-hide for active dashboards.**
+    - The base design may describe a fixed `260px` sidebar.
+    - For implementation dashboards, use a collapsed `72px` desktop sidebar that expands to `260px` on hover.
+    - This prevents layout conflict between the base sidebar width and the dashboard standard requiring auto-hide.
+3. **Desktop app grid should match the sidebar behavior.**
+    - If sidebar auto-hide is enabled: `.app { grid-template-columns: 72px 1fr; }`
+    - If sidebar auto-hide is intentionally disabled for another product page: `.app { grid-template-columns: 260px 1fr; }`
+4. **The sidebar must auto-appear on hover only.**
+    - Use `:hover` for expansion.
+    - Do **not** use `:focus-within` to keep the sidebar open.
+    - Clicking a sidebar tab must not disable or lock the auto-hide behavior.
+5. **Blur clicked nav links after switching tabs.**
+
+```jsx
+document.querySelectorAll(".nav a").forEach(a =>
+  a.addEventListener("click", e => {
+    e.preventDefault();
+    switchView(a.dataset.view);
+    a.blur();
+  })
+);
+```
+
+1. **Recommended desktop auto-hide sidebar CSS.**
+
+```css
+.app {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: relative;
+  color: white;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--navy) 92%, transparent), color-mix(in srgb, var(--blue) 72%, var(--navy) 28%));
+  border-right: 1px solid rgba(255,255,255,.24);
+  box-shadow: 18px 0 42px rgba(11,31,77,.16);
+  overflow: hidden;
+}
+
+@media (min-width: 1001px) {
+  .sidebar {
+    width: 72px;
+    transition: width .18s ease;
+    z-index: 50;
+  }
+
+  .sidebar:hover {
+    width: 260px;
+  }
+
+  .sidebar:not(:hover) {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sidebar:not(:hover) .brand {
+    width: 44px;
+    height: 44px;
+    overflow: hidden;
+    font-size: 0;
+    padding: 10px;
+  }
+
+  .sidebar:not(:hover) .brand::before {
+    content: "IE";
+    font-size: 16px;
+    color: var(--blue);
+  }
+
+  .sidebar:not(:hover) .nav a {
+    font-size: 0;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .sidebar:not(:hover) .nav a::before {
+    margin: 0;
+  }
+
+  .sidebar .nav a:focus {
+    outline: none;
+  }
+
+  .sidebar .nav a:focus-visible {
+    outline: 2px solid rgba(255,255,255,.75);
+    outline-offset: 2px;
+  }
+}
+```
+
+## 5. Navigation style
+
+1. **Use matte-blue command-dashboard styling.**
+    - Official, compact, institutional.
+    - Avoid glassy, playful, bouncing, or scaling nav effects.
+2. **Use Soft Glow active navigation.**
+
+```css
+.nav a.active {
+  background: rgba(255,255,255,.16);
+  color: white;
+  border-color: rgba(255,255,255,.28);
+  box-shadow:
+    inset 0 -3px 0 var(--gold),
+    0 0 18px color-mix(in srgb, var(--blue-400) 26%, transparent);
+}
+```
+
+1. **Preserve actual dashboard nav labels.**
+    - Do not replace existing tabs with sample labels such as Overview, Regions, Schools, Resources, Reports unless those are already the real app labels.
+
+## 6. Mobile and tablet navigation
+
+1. **Below around `1000px`, convert the sidebar into a fixed bottom navigation.**
+2. **Add bottom padding to body so content is not covered.**
+3. **Use equal nav columns based on actual tab count.**
+    - Use `repeat(5, 1fr)` only if the dashboard has five tabs.
+    - Use `repeat(6, 1fr)` if the dashboard has six tabs.
+    - Do not force five columns if the dashboard has more tabs.
+
+```css
+@media (max-width: 1000px) {
+  body {
+    padding-bottom: 82px;
+    background-attachment: scroll;
+  }
+
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 40;
+    display: block;
+    padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+    border: 0;
+    border-top: 1px solid rgba(255,255,255,.46);
+    background:
+      radial-gradient(ellipse at 18% 0%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 48%),
+      radial-gradient(ellipse at 84% 0%, color-mix(in srgb, var(--red) 10%, transparent), transparent 46%),
+      linear-gradient(90deg, color-mix(in srgb, var(--blue) 80%, var(--navy) 20%), var(--blue-600));
+    box-shadow:
+      0 -18px 44px rgba(11,31,77,.26),
+      inset 0 1px 0 rgba(255,255,255,.18);
+    overflow: hidden;
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .nav {
+    display: grid;
+    grid-template-columns: repeat(var(--nav-count, 6), 1fr);
+    gap: 4px;
+    width: min(760px, 100%);
+    margin: 0 auto;
+  }
+
+  .nav a {
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    min-height: 48px;
+    padding: 6px 2px;
+    border-radius: 16px;
+    font-size: 8px;
+    line-height: 1;
+    text-align: center;
+  }
+}
+```
+
+## 7. Header / topbar
+
+1. **Use the exact InsightED command-card header background.**
+    - Header is a rounded rectangular command card with a thin navy/blue outline.
+    - The **blue field must be wider than the white field**.
+    - The blue field occupies roughly the left **70%** of the header.
+    - The white field occupies roughly the right **30%** of the header.
+    - A sharp diagonal boundary separates the blue and white fields.
+    - A darker navy diagonal wedge appears near the blue/white boundary.
+    - Pale gold circular glow shapes sit behind the right-side actions or metric area.
+    - Header text sits on the blue field and must be white or pale blue.
+    - Right-side pills/buttons sit on the white field.
+2. **Keep the header compact and content-safe.**
+    - Desktop minimum height: around `118px` to `130px`.
+    - Desktop padding: around `28px 44px`.
+    - Mobile minimum height: around `98px` to `104px`.
+    - Mobile padding: around `15px 23px`.
+    - Do not allow decorative shapes to cover, dim, or obscure the title.
+    - Use `isolation: isolate` and negative z-index pseudo-elements only when needed.
+3. **Preserve actual dashboard title text.**
+    - Do not replace app-specific titles with sample titles from the visual prompt.
+    - Apply the visual treatment to the current title.
+4. **Use this canonical header CSS unless a page requires a documented exception.**
+
+```css
+.topbar {
+  position: relative;
+  isolation: isolate;
+  min-height: 118px;
+  margin: 24px 28px 0;
+  padding: 28px 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  overflow: hidden;
+  border: 2.5px solid color-mix(in srgb, var(--blue) 64%, var(--navy) 36%);
+  border-radius: calc(var(--radius) + 6px);
+  box-shadow: none;
+  background:
+    radial-gradient(circle at 92% 50%, rgba(251,191,36,.18) 0 7%, rgba(251,191,36,.08) 7.2% 13%, transparent 13.2%),
+    radial-gradient(circle at 98% 46%, rgba(251,191,36,.28) 0 10%, transparent 10.5%),
+    linear-gradient(112deg, var(--navy) 0 70%, rgba(255,255,255,.96) 70.2% 100%);
+}
+
+.topbar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 70%;
+  background: linear-gradient(135deg, var(--navy), var(--blue));
+  clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+  z-index: -2;
+  pointer-events: none;
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 61%;
+  width: 13%;
+  background: color-mix(in srgb, var(--navy) 88%, #000 12%);
+  clip-path: polygon(0 0, 58% 0, 100% 100%, 42% 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.page-title {
+  max-width: min(70%, 860px);
+  min-width: 0;
+}
+
+.page-title h1 {
+  margin: 0;
+  color: #E0F2FE;
+  font-family: var(--font-heading);
+  font-size: clamp(24px, 2.2vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-shadow: 0 2px 0 rgba(15,23,42,.28);
+}
+
+.page-title p {
+  max-width: 720px;
+  margin: 5px 0 0;
+  color: #DFF6FF;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.topbar-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1000px) {
+  .topbar {
+    min-height: 104px;
+    margin: 15px 16px 0;
+    padding: 15px 23px;
+  }
+
+  .topbar::before {
+    width: 68%;
+  }
+
+  .topbar::after {
+    left: 59%;
+    width: 14%;
+  }
+
+  .page-title {
+    max-width: 68%;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    display: grid;
+    gap: 12px;
+  }
+
+  .topbar::before {
+    width: 100%;
+    clip-path: none;
+  }
+
+  .topbar::after {
+    display: none;
+  }
+
+  .page-title {
+    max-width: 100%;
+  }
+
+  .topbar-actions {
+    width: 100%;
+  }
+}
+```
+
+## 8. Filter bar
+
+1. **Place the filter bar directly below the header.**
+2. **Use a card-like container matching the card outline system.**
+3. **Preserve actual dashboard filters.**
+    - Do not force sample filter names if the dashboard uses different filters.
+4. **Use compact labels and 42px desktop controls.**
+5. **On mobile, filters should wrap into 1–2 columns and the button should span full width when needed.**
+
+## 9. Card outline system
+
+1. **All cards must share the same visual language.**
+    - KPI cards
+    - Chart cards
+    - Table cards
+    - Donut cards
+    - Histogram cards
+    - Filter cards
+
+```css
+.card {
+  background: var(--card);
+  border: 2.5px solid color-mix(in srgb, var(--blue) 64%, var(--navy) 36%);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+```
+
+1. **Avoid conflicts with external frameworks.**
+    - Do not use gray Bootstrap-style borders.
+    - Do not use heavy shadows.
+    - Do not override table cells globally in a way that breaks tables.
+    - Avoid global rules such as `th { display:block; }`.
+
+## 10. KPI cards
+
+1. **KPI cards must be one row when possible.**
+2. **KPI cards may wrap to two rows if too cramped.**
+3. **If KPI cards use two rows, distribute cards evenly.**
+4. **Every KPI card must have a hover breakdown.**
+    - Nationwide view: show region breakdown.
+    - Region view: show division breakdown.
+5. **KPI hover cards must not be clipped.**
+    - KPI cards may use `overflow: visible`.
+    - Hover card should have a high enough `z-index`.
+
+```css
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.kpi {
+  position: relative;
+  overflow: visible;
+}
+
+.kpi-breakdown {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(100% + 8px);
+  z-index: 30;
+  max-height: 260px;
+  overflow: auto;
+}
+```
+
+## 11. Stacked bar graphs
+
+1. **All stacked bar graph segments must have labels inside.**
+2. **Segment labels should show the number/figure only.**
+    - Do not repeat category names inside the bar because categories are already reflected in the legend.
+3. **Use the legend for category names.**
+4. **Maintain readable contrast for the numbers.**
+5. **Small segments should still attempt to show the figure without breaking the bar layout.**
+
+```jsx
+function stackedSegments(values, total, classes, labels) {
+  return values.map((v, i) => {
+    const w = total ? Math.max(v / total * 100, 0) : 0;
+    return "<div class='segment " + classes[i] + "' style='width:" + w + "%' title='" + labels[i] + ": " + fmt(v) + "'>" + fmt(v) + "</div>";
+  }).join("");
+}
+```
+
+```css
+.segment {
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: white;
+  font-family: var(--font-heading);
+  font-size: 8px;
+  font-weight: 950;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+  white-space: nowrap;
+  padding: 0 3px;
+}
+```
+
+## 12. Bar graph drilldown
+
+1. **All bar graphs must support region-to-division drilldown.**
+    - Clicking a region bar filters the dashboard to that region.
+    - The graph should then show division breakdown.
+2. **Drilldown behavior applies to every dashboard bar graph.**
+    - HROD
+    - SIIF
+    - eSF7
+    - NOSCA
+    - Infra
+    - Summary / cross-category
+3. **Do not limit drilldown to only one tab.**
+4. **Only region rows should be clickable for region-to-division drilldown.**
+    - Division rows do not need another drilldown unless explicitly defined.
+5. **Use a reusable helper to avoid inconsistent behavior.**
+
+```jsx
+function enableRegionDrilldown(rowEl, rowName) {
+  if (selectedRegion() === "all") {
+    rowEl.classList.add("drillable");
+    rowEl.title = "Click to drill down to division breakdown";
+    rowEl.onclick = () => {
+      document.getElementById("regionFilter").value = rowName;
+      document.getElementById("divisionFilter").value = "all";
+      renderAll();
+    };
+  }
+}
+```
+
+## 13. Drilldown breadcrumbs
+
+1. **Every drilldown-enabled bar graph card must show breadcrumbs.**
+2. **Breadcrumbs should appear inside the card itself or directly above the graph.**
+3. **Breadcrumbs must allow users to go back up the hierarchy.**
+    - All regions
+    - Selected region
+    - Selected division, if applicable
+4. **Breadcrumbs should be rendered for each graph card, not only the first chart.**
+
+```jsx
+function renderDrillTrail(id) {
+  const trail = document.getElementById(id);
+  if (!trail) return;
+
+  trail.replaceChildren();
+
+  const root = document.createElement("button");
+  root.className = "crumb" + (selectedRegion() === "all" ? " active" : "");
+  root.type = "button";
+  root.textContent = "All regions";
+  root.onclick = () => {
+    document.getElementById("regionFilter").value = "all";
+    document.getElementById("divisionFilter").value = "all";
+    renderAll();
+  };
+  trail.appendChild(root);
+
+  if (selectedRegion() !== "all") {
+    const regionCrumb = document.createElement("button");
+    regionCrumb.className = "crumb" + (selectedDivision() === "all" ? " active" : "");
+    regionCrumb.type = "button";
+    regionCrumb.textContent = selectedRegion();
+    regionCrumb.onclick = () => {
+      document.getElementById("divisionFilter").value = "all";
+      renderAll();
+    };
+    trail.appendChild(regionCrumb);
+  }
+
+  if (selectedDivision() !== "all") {
+    const divisionCrumb = document.createElement("button");
+    divisionCrumb.className = "crumb active";
+    divisionCrumb.type = "button";
+    divisionCrumb.textContent = selectedDivision();
+    trail.appendChild(divisionCrumb);
+  }
+}
+```
+
+## 14. Legends
+
+1. **Use legends to explain chart categories.**
+2. **Keep legend items compact.**
+3. **Use a colored dot and label.**
+4. **Do not duplicate legend category text inside stacked bar segments.**
+
+## 15. Histogram and donut chart layout
+
+1. **Histogram and donut chart cards must be evenly distributed across the row.**
+2. **Use a two-column grid for paired chart cards on desktop.**
+3. **On mobile, allow the pair to stack into one column.**
+4. **Avoid making one card wide unless explicitly required by the layout.**
+
+```css
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1120px) {
+  .grid,
+  .donut-layout {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+## 16. Histograms
+
+1. **Histograms must stay inside the card.**
+2. **Show clear values.**
+3. **Use readable labels.**
+4. **Allow horizontal scroll only when needed for many columns.**
+
+```css
+.histogram {
+  max-width: 100%;
+  overflow-x: auto;
+}
+```
+
+## 17. Donut charts
+
+1. **Donut charts should include a table breakdown.**
+2. **Table should show segment, value, and share.**
+3. **Donut and table should align side-by-side on desktop and stack on mobile.**
+
+```css
+.donut-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, .85fr) minmax(260px, 1.15fr);
+  gap: 12px;
+  align-items: center;
+}
+```
+
+## 18. Data tables
+
+1. **Data tables must not overflow the card.**
+2. **Tables must stay within card boundaries.**
+3. **Use fixed layout, wrapping, and safe word breaks.**
+4. **Do not apply global display rules that break table cells.**
+5. **Avoid `display:block` on `th` or `td`.**
+
+```css
+table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+}
+
+th,
+td {
+  display: table-cell;
+  padding: 10px 8px;
+  border-bottom: 1px solid #E2E8F0;
+  text-align: left;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+th {
+  color: var(--muted);
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .13em;
+  white-space: normal;
+}
+```
+
+## 19. Table pagination
+
+1. **Data tables must show at least 10 entries.**
+2. **Tables must include row count options.**
+    - 10
+    - 25
+    - 50
+    - 100
+3. **Tables must include pagination controls.**
+    - Prev
+    - Next
+4. **If fewer than 10 rows are available, preserve the table layout without causing visual overflow.**
+
+## 20. Line charts
+
+1. **Use compact chart density.**
+2. **Use 7-day, 15-day, and 30-day range selectors when requested.**
+3. **For multi-line charts, each module/category should have a distinct line and color.**
+4. **On hover, the active line should stand out and non-hovered lines should become slightly transparent.**
+5. **If an average-only toggle is requested, it should show the average line without removing the ability to return to individual lines.**
+
+## 21. Responsive layout
+
+1. **At widths below around `1000px`:**
+    - Main layout becomes single-column.
+    - KPI cards become two columns.
+    - Chart cards become full width.
+    - Filter bar becomes 1–2 columns.
+    - Header becomes shorter.
+    - Card radius becomes around `14px`.
+    - Border width becomes around `2px`.
+    - Body gets bottom padding for fixed footer nav.
+2. **At very narrow widths:**
+    - KPI cards may become one column.
+    - Module grids and filter grids may become one column.
+    - Tables must remain within cards.
+
+## 22. Conflict prevention checklist
+
+Before finalizing any InsightED dashboard CSS, verify:
+
+1. **Sidebar conflict check**
+    - If auto-hide is required, `.app` uses `72px 1fr`, not `260px 1fr`.
+    - Sidebar expands on `:hover`, not `:focus-within`.
+    - Nav click handler blurs the clicked link.
+2. **Table conflict check**
+    - Tables use `table-layout: fixed`.
+    - `th` and `td` use `display: table-cell`.
+    - No global selector forces `th` to `display:block`.
+    - Text wraps inside the card.
+3. **Stacked bar conflict check**
+    - Segment labels are inside every segment.
+    - Segment label text is the number/figure only.
+    - Category labels appear in the legend.
+4. **Drilldown conflict check**
+    - Every bar graph has region click drilldown.
+    - Every drilldown graph card has breadcrumbs.
+    - Breadcrumbs allow return to all regions or selected region.
+5. **KPI conflict check**
+    - KPI cards fit in one row or evenly across two rows.
+    - Every KPI card has a hover breakdown.
+    - Hover breakdown is not clipped by card overflow.
+6. **Chart layout conflict check**
+    - Histogram and donut cards are evenly distributed in the same row on desktop.
+    - They stack cleanly on smaller screens.
+7. **Mobile conflict check**
+    - Fixed footer nav does not cover content.
+    - Body has bottom padding.
+    - Nav columns match actual tab count.
+8. **Content preservation check**
+    - No sample labels, sample metrics, or sample routes from the design prompt replaced real dashboard content.
+    - CSS changes did not remove existing event handlers or data bindings.
+
+## 23. Final implementation rule
+
+Use the InsightED visual system for look and feel, but always enforce the dashboard rules and standards for behavior, chart readability, table containment, drilldown, breadcrumbs, KPI hover breakdowns, and responsive usability.

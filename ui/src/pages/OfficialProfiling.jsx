@@ -208,7 +208,7 @@ const OfficialProfiling = () => {
         emt_passer: null, emt_date: '', ces_stage: '', ces_conferment_date: '',
         total_years_third_level: '', permanent_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
-        notable_achievements: '',
+        notable_achievements: '', individual_accomplishments: [],
         performance_rating_1: '', performance_rating_1_period: '',
         performance_rating_2: '', performance_rating_2_period: '',
         cespes_1_rating: '', cespes_2_rating: '',
@@ -321,7 +321,7 @@ const OfficialProfiling = () => {
                 profile.ces_stage, profile.ces_conferment_date, profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date,
                 profile.highest_education, profile.specific_degree, profile.education_program, profile.education_year_graduated,
                 profile.performance_rating_1, profile.performance_rating_2, profile.cespes_1_rating, profile.cespes_2_rating, profile.managerial_experience_total,
-                profile.notable_achievements, prevPositions[0]?.position_name || '', profile.photo_binary_id ? 'Uploaded' : 'Missing', profile.pending_admin_case, profile.ombudsman_case
+                [profile.notable_achievements, ...(profile.individual_accomplishments || [])].filter(Boolean).join(' | '), prevPositions[0]?.position_name || '', profile.photo_binary_id ? 'Uploaded' : 'Missing', profile.pending_admin_case, profile.ombudsman_case
             ].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',');
 
             const csvContent = "data:text/csv;charset=utf-8," + header.join(',') + "\n" + row;
@@ -598,6 +598,7 @@ const OfficialProfiling = () => {
                     education_program: d.education_program || '',
                     education_year_graduated: d.education_year_graduated ?? '',
                     notable_achievements: d.notable_achievements || '',
+                    individual_accomplishments: d.individual_accomplishments || [],
                     performance_rating_1: d.performance_rating_1 || '',
                     performance_rating_1_period: d.performance_rating_1_period || '',
                     performance_rating_2: d.performance_rating_2 || '',
@@ -1793,6 +1794,50 @@ const OfficialProfiling = () => {
                                                                     )}
                                                                 </select>
                                                             </Field>
+                                                        </div>
+
+                                                        {/* Individual Accomplishments */}
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                            <SectionLabel color="#0038A8">Individual Accomplishments</SectionLabel>
+
+                                                            <div className="bg-[#F4F8FB]/40 rounded-[2rem] p-5 border border-blue-100 flex items-center gap-3">
+                                                                <FiInfo size={16} className="text-blue-400 shrink-0" />
+                                                                <p className="text-[10px] font-bold text-[#075985]">List any notable individual accomplishments you have achieved.</p>
+                                                            </div>
+
+                                                            <div className="space-y-3">
+                                                                {(profile.individual_accomplishments || []).map((acc, idx) => (
+                                                                    <motion.div key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
+                                                                        <input 
+                                                                            type="text" 
+                                                                            maxLength={100}
+                                                                            value={acc} 
+                                                                            onChange={e => {
+                                                                                const newAccs = [...(profile.individual_accomplishments || [])];
+                                                                                newAccs[idx] = e.target.value;
+                                                                                setP('individual_accomplishments', newAccs);
+                                                                            }} 
+                                                                            placeholder="Notable individual accomplishment (max 100 characters)" 
+                                                                            className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" 
+                                                                        />
+                                                                        <button 
+                                                                            onClick={() => {
+                                                                                const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
+                                                                                setP('individual_accomplishments', newAccs);
+                                                                            }} 
+                                                                            className="w-10 h-10 flex items-center justify-center shrink-0 bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"
+                                                                        >
+                                                                            <FiTrash2 size={14} />
+                                                                        </button>
+                                                                    </motion.div>
+                                                                ))}
+                                                                <button 
+                                                                    onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), ''])} 
+                                                                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2"
+                                                                >
+                                                                    <FiPlus size={14} /> Add Notable Individual Accomplishment
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}

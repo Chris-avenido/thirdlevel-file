@@ -289,7 +289,7 @@ export const updateProfile = async (req, res) => {
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
-      'relevant_trainings', 'notable_achievements', 'total_training_hours',
+      'relevant_trainings', 'notable_achievements', 'individual_accomplishments', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
@@ -298,7 +298,7 @@ export const updateProfile = async (req, res) => {
       'pending_admin_case', 'ombudsman_case', 'sandiganbayan_case', 'nbi_case', 'csc_case', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
     ];
 
-    const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings']);
+    const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'individual_accomplishments']);
     const updates = [];
     const values = [];
 
