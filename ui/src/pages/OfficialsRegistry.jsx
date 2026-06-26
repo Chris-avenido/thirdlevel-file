@@ -1259,7 +1259,7 @@ const OfficialsRegistry = () => {
                                     <LuChefHat size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{thirdLevelActiveCount}</div>
+                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{thirdLevelActiveCount}</div>
                                     <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level Officials</div>
                                 </div>
                             </div>
@@ -1273,8 +1273,8 @@ const OfficialsRegistry = () => {
                                     <GoArrowUpRight size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{thirdLevelOicActiveCount}</div>
-                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level (SGO)</div>
+                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{thirdLevelOicActiveCount}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level (OIC)</div>
                                 </div>
                             </div>
 
@@ -1287,8 +1287,8 @@ const OfficialsRegistry = () => {
                                     <FiActivity size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsOicActiveCount}</div>
-                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs (SGO)</div>
+                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsOicActiveCount}</div>
+                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs (OIC)</div>
                                 </div>
                             </div>
 
@@ -1301,7 +1301,7 @@ const OfficialsRegistry = () => {
                                     <MdOutlineToggleOff size={16} />
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <div className="text-[24px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsActiveCount}</div>
+                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsActiveCount}</div>
                                     <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs</div>
                                 </div>
                             </div>

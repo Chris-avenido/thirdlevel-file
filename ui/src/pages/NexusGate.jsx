@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiBriefcase, FiArrowRight, FiX, FiLogIn, FiUserPlus, FiShield, FiLock, FiLoader, FiCheckCircle } from 'react-icons/fi';
-import logo from '../assets/InsightEd1.png';
+import { FiX, FiLogIn, FiUserPlus, FiShield } from 'react-icons/fi';
 import PageTransition from '../components/PageTransition';
-import { apiUrl } from '../utils/api';
+import './NexusGate.css';
 
 const NexusGate = () => {
     const navigate = useNavigate();
@@ -15,102 +14,155 @@ const NexusGate = () => {
     // Central Office auth gate modal
     const [showCOGate, setShowCOGate] = useState(false);
 
-    const cardVariants = {
-        hidden: { opacity: 0, y: 30, scale: 0.9 },
-        visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 15 } },
-        hover: { y: -10, scale: 1.02, transition: { duration: 0.3 } }
-    };
+    // Track clicked card for animation
+    const [clickedCard, setClickedCard] = useState(null);
 
     const closeCOGate = () => {
         setShowCOGate(false);
     };
 
+    const handlePortalClick = (portalId) => {
+        setClickedCard(portalId);
+        // After animation starts, automatically redirect to login page
+        setTimeout(() => {
+            if (portalId === 'admin') {
+                navigate('/login', { state: { redirectTo: '/home', isCO: true } });
+            } else if (portalId === 'records') {
+                navigate('/login', { state: { redirectTo: '/official-profiling', isCO: false } });
+            } else {
+                navigate('/login');
+            }
+        }, 500); // 500ms delay matches the transition duration smoothly
+    };
+
+    const portals = [
+        {
+            id: 'records',
+            icon: (
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M8 7V5.8C8 4.8 8.8 4 9.8 4h4.4c1 0 1.8.8 1.8 1.8V7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                    <path d="M5.8 7h12.4c1 0 1.8.8 1.8 1.8v9.4c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8V8.8C4 7.8 4.8 7 5.8 7Z" stroke="currentColor" strokeWidth="1.9" />
+                    <path d="M9 7v13M15 7v13" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                </svg>
+            ),
+            tag: 'Career Path',
+            title: 'Records Management',
+            desc: 'Manage official records and professional profiles for 3rd level positions within the department.',
+            action: 'Enter portal',
+            className: ''
+        },
+        {
+            id: 'admin',
+            icon: (
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3.8 18.5 6v5.1c0 4.1-2.6 7.8-6.5 9.1-3.9-1.3-6.5-5-6.5-9.1V6L12 3.8Z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
+                    <path d="M9.2 12.1 11.1 14l3.8-4.2" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            ),
+            tag: 'Administrative Portal',
+            title: 'Third Level Dashboard',
+            desc: 'Access tools for managing the TLO masterlist, monitoring submissions, and performing authorized administrative actions.',
+            action: 'Administrator access',
+            className: 'admin'
+        },
+        {
+            id: 'insights',
+            icon: (
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 19V5.8C5 4.8 5.8 4 6.8 4h10.4c1 0 1.8.8 1.8 1.8V19" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                    <path d="M8.5 16v-4.2M12 16V8.5M15.5 16v-6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                    <path d="M4 19h16" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                </svg>
+            ),
+            tag: 'Insights Portal',
+            title: 'Reports & Analytics',
+            desc: 'Review summary dashboards, submission trends, and consolidated status reports for leadership monitoring.',
+            action: 'View insights',
+            className: 'reports'
+        },
+        {
+            id: 'support',
+            icon: (
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 4a7 7 0 0 0-7 7v2.4c0 .9.7 1.6 1.6 1.6H8v-5H6.7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M12 4a7 7 0 0 1 7 7v2.4c0 .9-.7 1.6-1.6 1.6H16v-5h1.3" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M16 15c0 2.2-1.5 3.5-4 3.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                </svg>
+            ),
+            tag: 'Service Desk',
+            title: 'Help & Support',
+            desc: 'Submit access concerns, request portal assistance, and track support responses for authorized users.',
+            action: 'Get support',
+            className: 'support'
+        }
+    ];
+
+    const textVariants = {
+        hidden: { opacity: 0, x: -40 },
+        visible: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: 40 }
+    };
+
     return (
         <PageTransition>
-            <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Quicksand']">
-                {/* Background Accents */}
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#075985]/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#FBBF24]/10 rounded-full blur-[100px] pointer-events-none"></div>
+            <div className="nexus-gate-wrapper">
+                <div className="app-container">
+                    <main className="preview">
+                        <div className="preview-bg" aria-hidden="true"></div>
+                        <div className="bg-orb orb-a" aria-hidden="true"></div>
+                        <div className="bg-orb orb-b" aria-hidden="true"></div>
+                        <div className="bg-orb orb-c" aria-hidden="true"></div>
 
-                {/* Logo Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-12 text-left relative z-10 w-full max-w-xl"
-                >
-                    <div className="space-y-1">
-                        <img src={logo} alt="InsightED Logo" className="h-16 w-auto mb-6" />
-                        <h1 className="text-4xl 
-                        font-['Quicksand'] font-black text-[#08315F] tracking-tight text-left leading-tight">
-                            Welcome to the <br />
-                            <span className="text-[#075985] italic uppercase">InsightED Nexus</span>
-                        </h1>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2 ml-1">Specialized Portals Gateway</p>
-                    </div>
-                </motion.div>
+                        <section className="landing-stage">
+                            <section className="hero" aria-labelledby="page-title">
+                                <div className="logo" aria-label="InsightED">IE</div>
+                                <p className="eyebrow">Specialized Portals Gateway</p>
+                                <h1 id="page-title">
+                                    Welcome to the<br />
+                                    <span>Insight<span className="ed-red">ED</span> Nexus</span>
+                                </h1>
+                                <p>
+                                    Choose the portal that matches your role, authorized workflow, and official access level.
+                                </p>
+                            </section>
 
-                {/* Portals Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl relative z-10 px-4">
+                            <section className="portal-grid" aria-label="Available portals">
+                                {portals.map((portal) => (
+                                    <motion.button
+                                        key={portal.id}
+                                        onClick={() => handlePortalClick(portal.id)}
+                                        className={`portal-card ${portal.className}`}
+                                        style={{ textAlign: 'left' }}
+                                        whileTap={{ scale: 0.96 }}
+                                    >
+                                        <motion.div
+                                            variants={textVariants}
+                                            initial="hidden"
+                                            animate={clickedCard === portal.id ? "exit" : "visible"}
+                                            transition={{ duration: 0.4, ease: "easeOut" }}
+                                            className="flex flex-col h-full"
+                                        >
+                                            <div className="card-top">
+                                                <div className="portal-icon" aria-hidden="true">
+                                                    {portal.icon}
+                                                </div>
+                                                <p className="card-label">{portal.tag}</p>
+                                            </div>
+                                            <h2>{portal.title}</h2>
+                                            <p>{portal.desc}</p>
+                                            <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
+                                                {portal.action} <span aria-hidden="true">→</span>
+                                            </div>
+                                        </motion.div>
+                                    </motion.button>
+                                ))}
+                            </section>
 
-                    {/* Recruitment Card */}
-                    <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        whileHover="hover"
-                        onClick={() => navigate('/login')}
-                        className="cursor-pointer group relative overflow-hidden rounded-[22px] bg-white p-10 shadow-none border-2 border-[#08315F] flex flex-col justify-between min-h-[400px] transition-all duration-500"
-                    >
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-[#075985] opacity-10 rounded-full -mr-24 -mt-24 blur-3xl transition-opacity group-hover:opacity-20"></div>
-                        <div className="w-20 h-20 rounded-[2rem] bg-[#075985] text-white flex items-center justify-center shadow-xl mb-8 group-hover:scale-110 transition-transform duration-500">
-                            <FiBriefcase size={40} />
-                        </div>
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <h3 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic leading-tight uppercase">
-                                    <span className="normal-case">Records Management</span>
-                                </h3>
-                                <p className="text-xs font-black text-[#075985] uppercase tracking-widest">& Career Path</p>
-                            </div>
-                            <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                                Manage official records and professional profiles for 3rd level positions within the department.
+                            <p className="footer-note">
+                                Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
                             </p>
-                        </div>
-                        <div className="flex items-center gap-3 mt-6 text-[#075985] font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
-                            <span>Enter Portal</span>
-                            <FiArrowRight />
-                        </div>
-                    </motion.div>
-
-                    {/* Central Office Card */}
-                    <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        whileHover="hover"
-                        onClick={() => navigate('/login', { state: { isCO: true } })}
-                        className="cursor-pointer group relative overflow-hidden rounded-[22px] bg-white p-10 shadow-none border-2 border-[#08315F] flex flex-col justify-between min-h-[400px] transition-all duration-500"
-                    >
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-[#FBBF24] opacity-10 rounded-full -mr-24 -mt-24 blur-3xl transition-opacity group-hover:opacity-20"></div>
-                        <div className="w-20 h-20 rounded-[2rem] bg-[#FBBF24] text-white flex items-center justify-center shadow-xl mb-8 group-hover:scale-110 transition-transform duration-500">
-                            <FiShield size={40} />
-                        </div>
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <h3 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic leading-tight uppercase">
-                                    <span className="normal-case">Third Level Dashboard</span>
-                                </h3>
-                                <p className="text-xs font-black text-[#FBBF24] uppercase tracking-widest">Administrative Portal</p>
-                            </div>
-                            <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                                Users include HRMO or Personnel Division of DepEd Central Office. Access for managing the TLO masterlist and administrative actions.
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3 mt-6 text-[#FBBF24] font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
-                            <span>Administrator Access</span>
-                            <FiArrowRight />
-                        </div>
-                    </motion.div>
+                        </section>
+                    </main>
                 </div>
 
                 {/* ── RECRUITMENT MODAL ── */}
@@ -170,7 +222,6 @@ const NexusGate = () => {
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeCOGate} className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" />
                             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-[22px] shadow-none border-2 border-[#08315F] overflow-hidden">
-
                                 {/* Header bar */}
                                 <div className="bg-[#08315F] px-10 py-8 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
@@ -189,57 +240,47 @@ const NexusGate = () => {
 
                                 <div className="p-10">
                                     <AnimatePresence mode="wait">
-
                                         {/* Access Options */}
                                         <motion.div key="access-step" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                                            <div>
+                                                <h2 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your existing account or register a new one</p>
+                                            </div>
 
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <button
+                                                    onClick={() => navigate('/login', { state: { isCO: true } })}
+                                                    className="group p-6 bg-blue-50 hover:bg-[#08315F] rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
+                                                >
+                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#08315F] shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                        <FiLogIn size={22} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Sign In</h3>
+                                                        <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">I already have an account</p>
+                                                    </div>
+                                                </button>
 
-                                                <div>
-                                                    <h2 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your existing account or register a new one</p>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 gap-4">
-                                                    <button
-                                                        onClick={() => navigate('/login', { state: { isCO: true } })}
-                                                        className="group p-6 bg-blue-50 hover:bg-[#08315F] rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
-                                                    >
-                                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#08315F] shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                                                            <FiLogIn size={22} />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Sign In</h3>
-                                                            <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">I already have an account</p>
-                                                        </div>
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => navigate('/register', { state: { isCO: true } })}
-                                                        className="group p-6 bg-slate-50 hover:bg-[#08315F] rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
-                                                    >
-                                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                                                            <FiUserPlus size={22} />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Register New Account</h3>
-                                                            <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">Create a Central Office account</p>
-                                                        </div>
-                                                    </button>
-                                                </div>
-                                            </motion.div>
+                                                <button
+                                                    onClick={() => navigate('/register', { state: { isCO: true } })}
+                                                    className="group p-6 bg-slate-50 hover:bg-[#08315F] rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
+                                                >
+                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                        <FiUserPlus size={22} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Register New Account</h3>
+                                                        <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">Create a Central Office account</p>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </motion.div>
                                     </AnimatePresence>
                                 </div>
                             </motion.div>
                         </div>
                     )}
                 </AnimatePresence>
-
-                {/* Footer */}
-                <div className="mt-16 text-center space-y-4 relative z-10">
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-                        © 2026 Department of Education • <span className="normal-case">InsightED Nexus</span>
-                    </p>
-                </div>
             </div>
         </PageTransition>
     );
