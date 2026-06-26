@@ -17,6 +17,21 @@ const NexusGate = () => {
     // Track clicked card for animation
     const [clickedCard, setClickedCard] = useState(null);
 
+    // Layout Swap State
+    const [isSwapped, setIsSwapped] = useState(false);
+
+    const itemLeft = {
+        hidden: { opacity: 0, x: -60 },
+        visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
+        exit: { opacity: 0, x: -60, transition: { duration: 0.3, ease: "easeIn" } }
+    };
+
+    const itemRight = {
+        hidden: { opacity: 0, x: 60 },
+        visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
+        exit: { opacity: 0, x: 60, transition: { duration: 0.3, ease: "easeIn" } }
+    };
+
     const closeCOGate = () => {
         setShowCOGate(false);
     };
@@ -105,7 +120,7 @@ const NexusGate = () => {
 
     return (
         <PageTransition>
-            <div className="nexus-gate-wrapper">
+            <div className={`nexus-gate-wrapper ${isSwapped ? 'swapped' : ''}`}>
                 <div className="app-container">
                     <main className="preview">
                         <div className="preview-bg" aria-hidden="true"></div>
@@ -113,55 +128,133 @@ const NexusGate = () => {
                         <div className="bg-orb orb-b" aria-hidden="true"></div>
                         <div className="bg-orb orb-c" aria-hidden="true"></div>
 
-                        <section className="landing-stage">
-                            <section className="hero" aria-labelledby="page-title">
-                                <div className="logo" aria-label="InsightED">IE</div>
-                                <p className="eyebrow">Specialized Portals Gateway</p>
-                                <h1 id="page-title">
-                                    Welcome to the<br />
-                                    <span>Insight<span className="ed-red">ED</span> Nexus</span>
-                                </h1>
-                                <p>
-                                    Choose the portal that matches your role, authorized workflow, and official access level.
-                                </p>
-                            </section>
-
-                            <section className="portal-grid" aria-label="Available portals">
-                                {portals.map((portal) => (
-                                    <motion.button
-                                        key={portal.id}
-                                        onClick={() => handlePortalClick(portal.id)}
-                                        className={`portal-card ${portal.className}`}
-                                        style={{ textAlign: 'left' }}
-                                        whileTap={{ scale: 0.96 }}
+                        <AnimatePresence mode="wait">
+                            {!isSwapped ? (
+                                <motion.section key="normal" className="landing-stage" exit="exit">
+                                    <motion.section 
+                                        className="hero" 
+                                        aria-labelledby="page-title"
+                                        onClick={() => setIsSwapped(true)}
+                                        style={{ cursor: 'pointer' }}
+                                        initial="hidden" animate="visible" exit="exit"
+                                        variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        <motion.div
-                                            variants={textVariants}
-                                            initial="hidden"
-                                            animate={clickedCard === portal.id ? "exit" : "visible"}
-                                            transition={{ duration: 0.4, ease: "easeOut" }}
-                                            className="flex flex-col h-full"
-                                        >
-                                            <div className="card-top">
-                                                <div className="portal-icon" aria-hidden="true">
-                                                    {portal.icon}
-                                                </div>
-                                                <p className="card-label">{portal.tag}</p>
-                                            </div>
-                                            <h2>{portal.title}</h2>
-                                            <p>{portal.desc}</p>
-                                            <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
-                                                {portal.action} <span aria-hidden="true">→</span>
-                                            </div>
-                                        </motion.div>
-                                    </motion.button>
-                                ))}
-                            </section>
+                                        <motion.div variants={itemLeft} className="logo" aria-label="InsightED">IE</motion.div>
+                                        <motion.p variants={itemLeft} className="eyebrow">Specialized Portals Gateway</motion.p>
+                                        <motion.h1 variants={itemLeft} id="page-title">
+                                            Welcome to the<br />
+                                            <span>Insight<span className="ed-red">ED</span> Nexus</span>
+                                        </motion.h1>
+                                        <motion.p variants={itemLeft}>
+                                            Choose the portal that matches your role, authorized workflow, and official access level.
+                                        </motion.p>
+                                    </motion.section>
 
-                            <p className="footer-note">
-                                Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
-                            </p>
-                        </section>
+                                    <motion.section 
+                                        className="portal-grid" 
+                                        aria-label="Available portals"
+                                        initial="hidden" animate="visible" exit="exit"
+                                        variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
+                                    >
+                                        {portals.map((portal) => (
+                                            <motion.button
+                                                key={portal.id}
+                                                variants={itemRight}
+                                                onClick={(e) => { e.stopPropagation(); handlePortalClick(portal.id); }}
+                                                className={`portal-card ${portal.className}`}
+                                                style={{ textAlign: 'left' }}
+                                                whileTap={{ scale: 0.96 }}
+                                            >
+                                                <motion.div
+                                                    variants={textVariants}
+                                                    initial="hidden"
+                                                    animate={clickedCard === portal.id ? "exit" : "visible"}
+                                                    transition={{ duration: 0.4, ease: "easeOut" }}
+                                                    className="flex flex-col h-full"
+                                                >
+                                                    <div className="card-top">
+                                                        <div className="portal-icon" aria-hidden="true">
+                                                            {portal.icon}
+                                                        </div>
+                                                        <p className="card-label">{portal.tag}</p>
+                                                    </div>
+                                                    <h2>{portal.title}</h2>
+                                                    <p>{portal.desc}</p>
+                                                    <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
+                                                        {portal.action} <span aria-hidden="true">→</span>
+                                                    </div>
+                                                </motion.div>
+                                            </motion.button>
+                                        ))}
+                                    </motion.section>
+                                    <p className="footer-note">
+                                        Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
+                                    </p>
+                                </motion.section>
+                            ) : (
+                                <motion.section key="swapped" className="landing-stage swapped" exit="exit">
+                                    <motion.section 
+                                        className="portal-grid" 
+                                        aria-label="Available portals"
+                                        initial="hidden" animate="visible" exit="exit"
+                                        variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
+                                    >
+                                        {portals.map((portal) => (
+                                            <motion.button
+                                                key={portal.id}
+                                                variants={itemLeft}
+                                                onClick={(e) => { e.stopPropagation(); handlePortalClick(portal.id); }}
+                                                className={`portal-card ${portal.className}`}
+                                                style={{ textAlign: 'left' }}
+                                                whileTap={{ scale: 0.96 }}
+                                            >
+                                                <motion.div
+                                                    variants={textVariants}
+                                                    initial="hidden"
+                                                    animate={clickedCard === portal.id ? "exit" : "visible"}
+                                                    transition={{ duration: 0.4, ease: "easeOut" }}
+                                                    className="flex flex-col h-full"
+                                                >
+                                                    <div className="card-top">
+                                                        <div className="portal-icon" aria-hidden="true">
+                                                            {portal.icon}
+                                                        </div>
+                                                        <p className="card-label">{portal.tag}</p>
+                                                    </div>
+                                                    <h2>{portal.title}</h2>
+                                                    <p>{portal.desc}</p>
+                                                    <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
+                                                        {portal.action} <span aria-hidden="true">→</span>
+                                                    </div>
+                                                </motion.div>
+                                            </motion.button>
+                                        ))}
+                                    </motion.section>
+
+                                    <motion.section 
+                                        className="hero" 
+                                        aria-labelledby="page-title"
+                                        onClick={() => setIsSwapped(false)}
+                                        style={{ cursor: 'pointer' }}
+                                        initial="hidden" animate="visible" exit="exit"
+                                        variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
+                                    >
+                                        <motion.div variants={itemRight} className="logo" aria-label="InsightED">IE</motion.div>
+                                        <motion.p variants={itemRight} className="eyebrow">Specialized Portals Gateway</motion.p>
+                                        <motion.h1 variants={itemRight} id="page-title">
+                                            Welcome to the<br />
+                                            <span>Insight<span className="ed-red">ED</span> Nexus</span>
+                                        </motion.h1>
+                                        <motion.p variants={itemRight}>
+                                            Choose the portal that matches your role, authorized workflow, and official access level.
+                                        </motion.p>
+                                    </motion.section>
+                                    <p className="footer-note">
+                                        Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
+                                    </p>
+                                </motion.section>
+                            )}
+                        </AnimatePresence>
                     </main>
                 </div>
 

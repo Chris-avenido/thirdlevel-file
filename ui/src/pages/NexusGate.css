@@ -85,12 +85,23 @@
   width: 68%;
   height: 136%;
   border-radius: 0;
+  
+  /* Fixed background to perfectly preserve layout */
   background:
-    radial-gradient(circle at 18% 18%, rgba(255,255,255,.18), transparent 30%),
-    linear-gradient(160deg, var(--split-a) 0%, var(--split-b) 58%, var(--split-c) 100%);
+    radial-gradient(circle at 18% 18%, rgba(255,255,255,.18), transparent 30%) fixed,
+    linear-gradient(160deg, var(--split-a) 0%, var(--split-b) 58%, var(--split-c) 100%) fixed;
+  
   clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%);
   box-shadow: 34px 0 80px rgba(6,52,95,.20);
   pointer-events: none;
+  
+  /* Pivot exactly at the right edge (center of screen) */
+  transform-origin: 100% 50%;
+  
+  /* Normal state: Left */
+  transform: rotate(0deg) translateZ(0);
+  transition: transform 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
 .nexus-gate-wrapper .preview::after {
@@ -138,18 +149,21 @@
   height: 100%;
   padding: clamp(20px, 3.2vw, 46px);
   display: grid;
-  grid-template-columns: minmax(320px, .82fr) minmax(460px, 1.18fr);
+  /* Ultimate blowout fix: minmax(0, fr) allows perfect fractional shrinking without min-content blowout */
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
   align-items: center;
   gap: clamp(22px, 3.5vw, 50px);
 }
 
 .nexus-gate-wrapper .hero {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* Prevent nested grid blowout */
   justify-items: start;
   text-align: left;
   gap: 9px;
   align-self: center;
   margin-block: auto;
+  min-width: 0; /* Fix CSS Grid overflow gotcha */
 }
 
 .nexus-gate-wrapper .logo {
@@ -200,7 +214,7 @@
 }
 
 .nexus-gate-wrapper .hero p {
-  max-width: 480px;
+  max-width: 456px;
   margin: 0;
   color: var(--hero-copy);
   font-size: 13px;
@@ -217,6 +231,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
+  min-width: 0;
 }
 
 .nexus-gate-wrapper .portal-card {
@@ -758,5 +773,17 @@
   .nexus-gate-wrapper .hero:hover,
   .nexus-gate-wrapper .hero:focus-within {
     transform: none;
+  }
+}
+
+/* --- Premium Background Swap --- */
+.nexus-gate-wrapper.swapped .preview::before {
+  /* Sweep across the Top (-180) to move to the Right side */
+  transform: rotate(-180deg) translateZ(0);
+}
+
+@media (min-width: 941px) {
+  .nexus-gate-wrapper .landing-stage.swapped {
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, .82fr);
   }
 }
