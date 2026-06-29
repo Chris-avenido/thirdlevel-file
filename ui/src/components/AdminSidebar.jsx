@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import newLogo from '../assets/new_logo.png';
+import newLogo from '../assets/modern_logo.png';
 
 const AdminSidebar = () => {
     const navigate = useNavigate();

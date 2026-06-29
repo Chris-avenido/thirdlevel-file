@@ -21,7 +21,7 @@ import { apiUrl } from '../utils/api';
 import { expandAcronym } from '../utils/officialsUtils';
 import ModernDatePicker from '../components/ModernDatePicker';
 import sgMap from '../utils/sgMap.json';
-import newLogo from '../assets/new_logo.png';
+import newLogo from '../assets/modern_logo.png';
 const JustificationInput = ({ value, onChange, placeholder }) => {
     const [local, setLocal] = useState(value);
 
@@ -256,7 +256,7 @@ const OfficialsRegistry = () => {
     const [offices, setOffices] = useState([]);
     const [tabPositions, setTabPositions] = useState([]); // Positions specifically for the active tab
     const [designations, setDesignations] = useState([]);
-    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ key: 'status', direction: 'asc' });
     const [tableFilters, setTableFilters] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
     const [oicOnly, setOicOnly] = useState(false);
@@ -970,13 +970,39 @@ const OfficialsRegistry = () => {
 
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
-            const values = kpiSummary
+            let dataForColumn = kpiSummary;
+            Object.keys(tableFilters).forEach(key => {
+                if (key !== column.key && tableFilters[key]) {
+                    const filterCol = tableColumns.find(c => c.key === key);
+                    if (filterCol) {
+                        dataForColumn = dataForColumn.filter(item => {
+                            const val = (filterCol.filterValue ? filterCol.filterValue(item) : filterCol.value(item))?.trim();
+                            return val === tableFilters[key];
+                        });
+                    }
+                }
+            });
+
+            const values = dataForColumn
                 .map(item => (column.filterValue ? column.filterValue(item) : column.value(item))?.trim())
                 .filter(Boolean);
             options[column.key] = [...new Set(values)].sort((a, b) => a.localeCompare(b));
             return options;
         }, {});
-    }, [kpiSummary, tableColumns]);
+    }, [kpiSummary, tableColumns, tableFilters]);
+
+    const dependentOffices = useMemo(() => {
+        let data = kpiSummary;
+        if (regionFilter !== 'All') {
+            data = data.filter(item => getOfficialRegion(item) === regionFilter);
+        }
+        const availableOffices = data.map(item => item.office).filter(Boolean);
+        return [...new Set(availableOffices)].sort((a, b) => a.localeCompare(b));
+    }, [kpiSummary, regionFilter]);
+
+    useEffect(() => {
+        setOfficeFilter('All');
+    }, [regionFilter]);
 
 
 
@@ -1085,46 +1111,11 @@ const OfficialsRegistry = () => {
 
                     <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* FILTERS & SEARCH BAR */}
-                        <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm">
+                        <div className="mb-6 flex flex-col gap-3">
+                            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm">
 
-                            {/* SEARCH BAR & MOBILE VIEW TOGGLES */}
-                            <div className="flex items-center gap-2 w-full xl:w-auto xl:flex-[1.5]">
-                                <div className="relative flex-1 min-w-[120px] h-[38px]">
-                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Search by name, position, or office..."
-                                        className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
-                                    />
-                                </div>
-                                <div className="flex xl:hidden items-center gap-2 shrink-0">
-                                    <button
-                                        onClick={() => setViewMode('table')}
-                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
-                                        title="Table view"
-                                    >
-                                        <FiList size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('grid')}
-                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
-                                    >
-                                        <FiGrid size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('directory')}
-                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
-                                        title="Organizational Directory"
-                                    >
-                                        <FiLayers size={14} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* DROPDOWNS */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 xl:flex xl:flex-[3] gap-2">
+                            {/* SEARCH BAR MOVED TO BOTTOM */}                            {/* DROPDOWNS */}
+                            <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                 {/* Level Dropdown */}
                                 <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                     <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
@@ -1159,6 +1150,17 @@ const OfficialsRegistry = () => {
                                         <option value="CAR">CAR</option>
                                         <option value="NIR">NIR</option>
                                         <option value="BARMM">BARMM</option>
+                                    </select>
+                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                </div>
+
+                                {/* Division/Office Dropdown */}
+                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                        <option value="All">All Divisions</option>
+                                        {dependentOffices.map(o => (
+                                            <option key={o} value={o}>{o}</option>
+                                        ))}
                                     </select>
                                     <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
@@ -1223,8 +1225,23 @@ const OfficialsRegistry = () => {
                                 </button>
                             </div>
 
-                            {/* DESKTOP VIEW TOGGLES */}
-                            <div className="hidden xl:flex items-center gap-2 shrink-0 ml-auto">
+
+                        </div>
+
+                        {/* BOTTOM ROW: SEARCH BAR */}
+                        <div className="flex items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-1.5 shadow-sm w-full mb-6">
+                            <div className="relative flex-1 h-[38px]">
+                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search by name, position, or office..."
+                                    className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                                />
+                            </div>
+                            {/* VIEW TOGGLES */}
+                            <div className="flex items-center gap-2 shrink-0 px-2">
                                 <button
                                     onClick={() => setViewMode('table')}
                                     className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
@@ -1246,6 +1263,7 @@ const OfficialsRegistry = () => {
                                     <FiLayers size={14} />
                                 </button>
                             </div>
+                        </div>
                         </div>
 
                         {/* STATS CARDS */}
@@ -1332,13 +1350,13 @@ const OfficialsRegistry = () => {
                                                             <div className="flex flex-col gap-3 mt-1 pr-4">
                                                                 <button
                                                                     onClick={() => handleSort(column.key)}
-                                                                    className="flex items-center justify-between h-5 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left"
+                                                                    className="flex items-center justify-between h-5 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left group"
                                                                 >
                                                                     <span>{column.label}</span>
-                                                                    <span className="text-slate-300 text-sm leading-none flex items-center w-3 justify-end">
+                                                                    <span className={`text-sm leading-none flex items-center w-3 justify-end transition-colors ${sortConfig.key === column.key ? 'text-[#08315F]' : 'text-slate-200 group-hover:text-slate-400'}`}>
                                                                         {sortConfig.key === column.key
                                                                             ? (sortConfig.direction === 'asc' ? '↑' : '↓')
-                                                                            : ''}
+                                                                            : '↓'}
                                                                     </span>
                                                                 </button>
                                                                 <select

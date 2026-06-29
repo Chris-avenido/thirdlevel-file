@@ -885,7 +885,11 @@ export const getOfficials = async (req, res) => {
     'status': 'f.status',
     'office': 'f.office',
     'position_title': 'f.position_title',
-    'first_name': 'f.first_name'
+    'first_name': 'f.first_name',
+    'name': 'f.last_name',
+    'region': 'f.strand',
+    'division': 'f.office',
+    'designation': 'f.designation'
   };
   if (sortColumn && sortMap[sortColumn]) {
     query += ` ORDER BY ${sortMap[sortColumn]} ${sortDirection === 'desc' ? 'DESC' : 'ASC'} NULLS LAST`;

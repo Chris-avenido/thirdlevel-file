@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import html2pdf from 'html2pdf.js';
 import PptxGenJS from 'pptxgenjs';
-import newLogo from '../assets/new_logo.png';
+import newLogo from '../assets/modern_logo.png';
 import { apiUrl } from '../utils/api';
 import { compressImageClientSide } from '../utils/imageCompressor';
 import ModernDatePicker from '../components/ModernDatePicker';

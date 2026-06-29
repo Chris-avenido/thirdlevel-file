@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '../assets/InsightEd1.png';
+import logo from '../assets/modern_logo.png';
 
 const LoadingScreen = () => {
     return (

@@ -13,7 +13,7 @@ import {
     FiSmartphone
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import logo from '../assets/InsightEd1.png';
+import logo from '../assets/modern_logo.png';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
 import { apiUrl } from '../utils/api';
