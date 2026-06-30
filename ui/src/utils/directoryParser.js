@@ -54,10 +54,11 @@ export const parseDirectoryFile = (fileBuffer) => {
             lastName = parts.length > 1 ? parts.pop() : '';
             firstName = parts.join(' ').trim();
         }
-        
         const position = String(row['Position'] || '').trim();
-        const office = String(row['Division'] || row['Office'] || '').trim();
-        const strand = String(row['Strand'] || row['Region'] || '').trim();
+        const office = String(row['Office'] || '').trim();
+        const division = String(row['Division'] || '').trim();
+        const strand = String(row['Strand'] || '').trim();
+        const region = String(row['Region'] || '').trim();
         const designation = String(row['Designation'] || '').trim();
         const TLOid = String(row['TLO_id'] || '').trim();
         const contactDetails = String(row['Contact Details'] || '').trim();
@@ -90,7 +91,9 @@ export const parseDirectoryFile = (fileBuffer) => {
           full_name: fullName,
           position_title: position,
           office: office,
+          division: division,
           strand: strand,
+          region: region,
           designation: designation,
           contact_details: contactDetails,
           alt_email_1: altEmail1,

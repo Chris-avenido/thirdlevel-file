@@ -4,11 +4,15 @@ const ensureColumns = async (client) => {
   const masterRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name='third_level_official_masterlist'`);
   const masterCols = masterRes.rows.map(r => r.column_name);
   if (!masterCols.includes('designation')) await client.query('ALTER TABLE third_level_official_masterlist ADD COLUMN designation VARCHAR(255);');
+  if (!masterCols.includes('region')) await client.query('ALTER TABLE third_level_official_masterlist ADD COLUMN region VARCHAR(255);');
+  if (!masterCols.includes('division')) await client.query('ALTER TABLE third_level_official_masterlist ADD COLUMN division VARCHAR(255);');
 
   const updatesRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name='third_level_officials_updates'`);
   const updatesCols = updatesRes.rows.map(r => r.column_name);
   if (!updatesCols.includes('designation')) await client.query('ALTER TABLE third_level_officials_updates ADD COLUMN designation VARCHAR(255);');
   if (!updatesCols.includes('contact_details')) await client.query('ALTER TABLE third_level_officials_updates ADD COLUMN contact_details VARCHAR(255);');
+  if (!updatesCols.includes('region')) await client.query('ALTER TABLE third_level_officials_updates ADD COLUMN region VARCHAR(255);');
+  if (!updatesCols.includes('division')) await client.query('ALTER TABLE third_level_officials_updates ADD COLUMN division VARCHAR(255);');
 };
 
 export const bulkProcessDirectory = async (req, res) => {
@@ -94,7 +98,9 @@ export const bulkProcessDirectory = async (req, res) => {
             last_name: record.last_name || '',
             position_title: record.position_title || '',
             office: record.office || '',
+            division: record.division || '',
             strand: record.strand || '',
+            region: record.region || '',
             designation: record.designation || '',
             contact_details: record.contact_details || '',
           });
@@ -105,7 +111,9 @@ export const bulkProcessDirectory = async (req, res) => {
             last_name: record.last_name || '',
             position_title: record.position_title || '',
             office: record.office || '',
+            division: record.division || '',
             strand: record.strand || '',
+            region: record.region || '',
             designation: record.designation || '',
             email: emailToInsert,
             contact_details: record.contact_details || '',
@@ -123,7 +131,9 @@ export const bulkProcessDirectory = async (req, res) => {
             last_name: record.last_name || '',
             position_title: record.position_title || '',
             office: record.office || '',
+            division: record.division || '',
             strand: record.strand || '',
+            region: record.region || '',
             designation: record.designation || '',
             email: emailToInsert,
             contact_details: record.contact_details || '',
@@ -135,7 +145,9 @@ export const bulkProcessDirectory = async (req, res) => {
             last_name: record.last_name || '',
             position_title: record.position_title || '',
             office: record.office || '',
+            division: record.division || '',
             strand: record.strand || '',
+            region: record.region || '',
             designation: record.designation || '',
             email: emailToInsert,
             contact_details: record.contact_details || '',
@@ -160,13 +172,15 @@ export const bulkProcessDirectory = async (req, res) => {
           last_name = c.last_name,
           position_title = c.position_title,
           office = c.office,
+          division = c.division,
           strand = c.strand,
+          region = c.region,
           designation = c.designation,
           contact_details = c.contact_details,
           updated_at = NOW()
         FROM json_to_recordset($1::json) AS c(
           "TLOid" text, first_name text, last_name text, position_title text,
-          office text, strand text, designation text, contact_details text
+          office text, division text, strand text, region text, designation text, contact_details text
         )
         WHERE m."TLOid" = c."TLOid"
       `, [JSON.stringify(toUpdate)]);
@@ -175,13 +189,13 @@ export const bulkProcessDirectory = async (req, res) => {
     if (toInsert.length > 0) {
       await client.query(`
         INSERT INTO third_level_official_masterlist (
-          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, created_at, updated_at
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, status, created_at, updated_at
         )
         SELECT 
-          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, 'Active', NOW(), NOW()
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, 'Active', NOW(), NOW()
         FROM json_to_recordset($1::json) AS c(
           "TLOid" text, first_name text, last_name text, position_title text,
-          office text, strand text, designation text, email text, contact_details text
+          office text, division text, strand text, region text, designation text, email text, contact_details text
         )
       `, [JSON.stringify(toInsert)]);
     }
@@ -189,13 +203,13 @@ export const bulkProcessDirectory = async (req, res) => {
     if (toHistory.length > 0) {
       await client.query(`
         INSERT INTO third_level_officials_updates (
-          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, status, change_type, remarks, updated_at
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, status, change_type, remarks, updated_at
         )
         SELECT 
-          "TLOid", first_name, last_name, position_title, office, strand, designation, email, contact_details, 'Active', change_type, remarks, NOW()
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, 'Active', change_type, remarks, NOW()
         FROM json_to_recordset($1::json) AS c(
           "TLOid" text, first_name text, last_name text, position_title text,
-          office text, strand text, designation text, email text, contact_details text,
+          office text, division text, strand text, region text, designation text, email text, contact_details text,
           change_type text, remarks text
         )
       `, [JSON.stringify(toHistory)]);

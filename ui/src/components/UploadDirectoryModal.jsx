@@ -99,9 +99,9 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
       const wsData = data.data.map(r => ({
         'TLO_id': r.TLOid || '',
         'Strand': r.strand || '',
-        'Region': '',
+        'Region': r.region || '',
         'Office': r.office || '',
-        'Division': '',
+        'Division': r.division || '',
         'Name': `${r.first_name || ''} ${r.last_name || ''}`.trim(),
         'Position': r.position_title || '',
         'Designation': r.designation || '',

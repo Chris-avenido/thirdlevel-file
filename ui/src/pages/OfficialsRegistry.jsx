@@ -1392,13 +1392,13 @@ const OfficialsRegistry = () => {
                                                 {pagedRecords.map((item) => (
                                                     <tr key={item.TLOid} className="group transition-colors relative hover:bg-slate-50/80">
                                                         <td className="px-3 py-4 align-middle max-w-[120px]">
-                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}>
-                                                                <span>{item.status === 'Inactive' ? 'N/A' : getOfficialRegion(item)}</span>
+                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || item.strand || 'No Region')}>
+                                                                <span>{item.status === 'Inactive' ? 'N/A' : (item.region || item.strand || 'No Region')}</span>
                                                             </div>
                                                         </td>
                                                         <td className="px-2 py-4 align-middle max-w-[200px]">
-                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : (item.office || 'No Division')}>
-                                                                {item.status === 'Inactive' ? 'N/A' : (item.office || 'No Division')}
+                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : (item.division || item.office || 'No Division')}>
+                                                                {item.status === 'Inactive' ? 'N/A' : (item.division || item.office || 'No Division')}
                                                             </div>
                                                         </td>
                                                         <td className="px-2 py-4 align-middle">
@@ -1511,7 +1511,9 @@ const OfficialsRegistry = () => {
                                                     <div className="flex flex-col gap-2 mt-1 bg-slate-50/50 rounded-xl p-3 border border-slate-100">
                                                         <div className="flex justify-between items-center text-[10px] gap-2">
                                                             <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Office</span>
-                                                            <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">{getOfficialRegion(item)} • {item.office || 'No Division'}</span>
+                                                            <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">
+                                                                {(item.region || item.strand) ? `${item.region || item.strand} • ` : ''}{item.division || item.office || 'No Division'}
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-[10px] gap-2">
                                                             <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Position</span>
