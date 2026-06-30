@@ -1,8 +1,11 @@
 import * as XLSX from 'xlsx';
 
 export const EXPECTED_HEADERS = [
-  'Strand/Region', 
-  'Office/Division', 
+  'TLO_id',
+  'Strand', 
+  'Region',
+  'Office',
+  'Division',
   'Name', 
   'Position', 
   'Designation', 
@@ -53,9 +56,10 @@ export const parseDirectoryFile = (fileBuffer) => {
         }
         
         const position = String(row['Position'] || '').trim();
-        const office = String(row['Office/Division'] || '').trim();
-        const strand = String(row['Strand/Region'] || '').trim();
+        const office = String(row['Division'] || row['Office'] || '').trim();
+        const strand = String(row['Strand'] || row['Region'] || '').trim();
         const designation = String(row['Designation'] || '').trim();
+        const TLOid = String(row['TLO_id'] || '').trim();
         const contactDetails = String(row['Contact Details'] || '').trim();
         const altEmail1 = String(row['Alternative Email 1'] || '').trim();
         const altEmail2 = String(row['Alternative Email 2'] || '').trim();
@@ -79,6 +83,7 @@ export const parseDirectoryFile = (fileBuffer) => {
         
         return {
           rowNum,
+          TLOid: TLOid,
           email: email,
           first_name: firstName,
           last_name: lastName,

@@ -87,6 +87,42 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
     setCurrentPage(1);
   };
 
+  const handleDownloadData = async () => {
+    try {
+      Swal.fire({ title: 'Preparing Download', text: 'Fetching existing directory...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      const res = await fetch(apiUrl('/api/third-level/officials?status=All'), {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error('Failed to fetch data');
+      
+      const wsData = data.data.map(r => ({
+        'TLO_id': r.TLOid || '',
+        'Strand': r.strand || '',
+        'Region': '',
+        'Office': r.office || '',
+        'Division': '',
+        'Name': `${r.first_name || ''} ${r.last_name || ''}`.trim(),
+        'Position': r.position_title || '',
+        'Designation': r.designation || '',
+        'Email': r.email || '',
+        'Alternative Email 1': r.alt_email_1 || '',
+        'Alternative Email 2': r.alt_email_2 || '',
+        'Contact Details': r.contact_details || '',
+        'Alternative Contact Details 1': r.alt_contact_1 || '',
+        'Alternative Contact Details 2': r.alt_contact_2 || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Directory");
+      XLSX.writeFile(wb, "directory_export.csv");
+      Swal.close();
+    } catch (err) {
+      Swal.fire('Error', 'Failed to download existing data.', 'error');
+    }
+  };
+
   // Remove the early return so AnimatePresence stays mounted
   // if (!isOpen) return null;
 
@@ -134,12 +170,12 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="flex flex-col gap-6">
                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex justify-between items-center">
                   <div>
-                    <h4 className="font-bold text-blue-900">Sample Template</h4>
-                    <p className="text-sm text-blue-700">Ensure your file has exactly these headers: Strand/Region, Office/Division, Name, Position, Designation, Email, Alternative Email 1, Alternative Email 2, Contact Details, Alternative Contact Details 1, Alternative Contact Details 2</p>
+                    <h4 className="font-bold text-blue-900">Download Existing Data</h4>
+                    <p className="text-sm text-blue-700">Ensure your file has these headers: TLO_id, Strand, Region, Office, Division, Name, Position, Designation, Email, Alternative Email 1/2, Contact Details 1/2.</p>
                   </div>
-                  <a href="/src/assets/layout_exported_v2.csv" download="layout_exported.csv" className="text-sm font-bold text-[#075985] bg-white px-4 py-2 rounded-xl border border-blue-200 shadow-sm flex items-center gap-2 hover:bg-blue-100 transition-colors">
-                    <FiDownload /> Download Sample
-                  </a>
+                  <button onClick={handleDownloadData} className="text-sm font-bold text-[#075985] bg-white px-4 py-2 rounded-xl border border-blue-200 shadow-sm flex items-center gap-2 hover:bg-blue-100 transition-colors">
+                    <FiDownload /> Download Data
+                  </button>
                 </div>
 
                 <div 
@@ -271,7 +307,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
 
             {summary && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 text-center">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
                     <p className="text-3xl font-black text-[#08315f]">{summary.summary.total}</p>
@@ -283,14 +319,6 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className="bg-white p-4 rounded-2xl border-2 border-amber-200 text-center bg-amber-50/30">
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Updated</p>
                     <p className="text-3xl font-black text-amber-700">{summary.summary.updated}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-2xl border-2 border-purple-200 text-center bg-purple-50/30">
-                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">No-Email Insert</p>
-                    <p className="text-3xl font-black text-purple-700">{summary.summary.noEmailInserted || 0}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-2xl border-2 border-indigo-200 text-center bg-indigo-50/30">
-                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">No-Email Update</p>
-                    <p className="text-3xl font-black text-indigo-700">{summary.summary.noEmailUpdated || 0}</p>
                   </div>
                   <div className="bg-white p-4 rounded-2xl border-2 border-red-200 text-center bg-red-50/30">
                     <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Failed</p>
@@ -335,42 +363,10 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                         </ul>
                       </div>
                     )}
-                    {summary.noEmailUpdated && summary.noEmailUpdated.length > 0 && (
-                      <div>
-                        <h4 className="font-black text-indigo-600 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
-                          <FiCheckCircle /> C. No Email Records Updated ({summary.noEmailUpdated.length})
-                        </h4>
-                        <ul className="space-y-2">
-                          {summary.noEmailUpdated.map((r, i) => (
-                            <li key={i} className="text-xs text-slate-700 bg-indigo-50 p-3 rounded-lg font-medium flex flex-col gap-1">
-                              <span className="font-bold text-slate-900">{r.full_name} <span className="text-indigo-600 ml-2">[N/A Email]</span></span>
-                              <span className="text-slate-500">Row {r.rowNum} • {r.position_title} • {r.designation} • {r.office} • {r.strand}</span>
-                              <span className="text-indigo-700 font-bold mt-1">Action: Existing Record Updated (Matched by Fields)</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {summary.noEmailInserted && summary.noEmailInserted.length > 0 && (
-                      <div>
-                        <h4 className="font-black text-purple-600 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
-                          <FiCheckCircle /> D. No Email Records Inserted ({summary.noEmailInserted.length})
-                        </h4>
-                        <ul className="space-y-2">
-                          {summary.noEmailInserted.map((r, i) => (
-                            <li key={i} className="text-xs text-slate-700 bg-purple-50 p-3 rounded-lg font-medium flex flex-col gap-1">
-                              <span className="font-bold text-slate-900">{r.full_name} <span className="text-purple-600 ml-2">[N/A Email]</span></span>
-                              <span className="text-slate-500">Row {r.rowNum} • {r.position_title} • {r.designation} • {r.office} • {r.strand}</span>
-                              <span className="text-purple-700 font-bold mt-1">Action: New Record Inserted (No Email)</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                     {summary.failed.length > 0 && (
                       <div>
                         <h4 className="font-black text-red-500 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
-                          <FiAlertCircle /> E. Failed Records ({summary.failed.length})
+                          <FiAlertCircle /> C. Failed Records ({summary.failed.length})
                         </h4>
                         <ul className="space-y-2">
                           {summary.failed.map((r, i) => (

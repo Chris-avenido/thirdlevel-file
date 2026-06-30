@@ -1002,7 +1002,8 @@ const OfficialsRegistry = () => {
 
     useEffect(() => {
         setOfficeFilter('All');
-    }, [regionFilter]);
+        setStrandFilter('All');
+    }, [regionFilter, levelFilter]);
 
 
 
@@ -1154,16 +1155,28 @@ const OfficialsRegistry = () => {
                                     <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
-                                {/* Division/Office Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                                        <option value="All">All Divisions</option>
-                                        {dependentOffices.map(o => (
-                                            <option key={o} value={o}>{o}</option>
-                                        ))}
-                                    </select>
-                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                                </div>
+                                {/* Strand / Division Dropdown */}
+                                {levelFilter === 'Central Office' || regionFilter === 'Central Office' ? (
+                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                            <option value="All">All Strands</option>
+                                            {strands.map(s => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    </div>
+                                ) : (
+                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                            <option value="All">All Divisions</option>
+                                            {dependentOffices.map(o => (
+                                                <option key={o} value={o}>{o}</option>
+                                            ))}
+                                        </select>
+                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    </div>
+                                )}
 
                                 {/* Designation Dropdown */}
                                 <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">

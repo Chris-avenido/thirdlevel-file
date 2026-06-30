@@ -47,11 +47,9 @@ export const bulkProcessDirectory = async (req, res) => {
     const results = {
       newInserts: [],
       updates: [],
-      noEmailInserted: [],
-      noEmailUpdated: [],
       skipped: [],
       failed: [],
-      summary: { total: records.length, new: 0, updated: 0, noEmailInserted: 0, noEmailUpdated: 0, skipped: 0, failed: 0 }
+      summary: { total: records.length, new: 0, updated: 0, skipped: 0, failed: 0 }
     };
 
     const emptyEmails = [null, '', 'n/a', 'na'];
@@ -65,9 +63,17 @@ export const bulkProcessDirectory = async (req, res) => {
         const isNoEmail = emptyEmails.includes(emailStrRaw);
         const emailToInsert = isNoEmail ? null : record.email;
 
+        if (record.TLOid === 'VACANT-TEST-1') {
+          results.skipped.push({ rowNum: record.rowNum, full_name: record.full_name, email: record.email, reason: 'Skipped VACANT-TEST-1' });
+          results.summary.skipped++;
+          continue;
+        }
+
         let match = null;
 
-        if (isNoEmail) {
+        if (record.TLOid) {
+          match = allMaster.find(m => m.TLOid === record.TLOid);
+        } else if (isNoEmail) {
           match = allMaster.find(m => 
             ((m.first_name || '').toLowerCase() === (record.first_name || '').toLowerCase() &&
              (m.last_name || '').toLowerCase() === (record.last_name || '').toLowerCase() && record.first_name)
@@ -107,15 +113,10 @@ export const bulkProcessDirectory = async (req, res) => {
             remarks: isNoEmail ? 'Existing Record Updated (No Email)' : 'Update Record Inserted'
           });
 
-          if (isNoEmail) {
-            results.noEmailUpdated.push(record);
-            results.summary.noEmailUpdated++;
-          } else {
-            results.updates.push(record);
-            results.summary.updated++;
-          }
+          results.updates.push(record);
+          results.summary.updated++;
         } else {
-          const newTloId = `TLO-${String(nextTloIdNum++).padStart(4, '0')}`;
+          const newTloId = record.TLOid || `TLO-${String(nextTloIdNum++).padStart(4, '0')}`;
           toInsert.push({
             TLOid: newTloId,
             first_name: record.first_name || '',
@@ -142,13 +143,8 @@ export const bulkProcessDirectory = async (req, res) => {
             remarks: isNoEmail ? 'New Record Inserted (No Email)' : 'New Record Inserted'
           });
 
-          if (isNoEmail) {
-            results.noEmailInserted.push(record);
-            results.summary.noEmailInserted++;
-          } else {
-            results.newInserts.push(record);
-            results.summary.new++;
-          }
+          results.newInserts.push(record);
+          results.summary.new++;
         }
       } catch (err) {
         results.failed.push({ record, error: err.message });
@@ -209,8 +205,8 @@ export const bulkProcessDirectory = async (req, res) => {
     
     console.log(`\n--- BULK UPLOAD SUMMARY ---`);
     console.log(`Total Uploaded Records: ${results.summary.total}`);
-    console.log(`Total Inserted Records: ${results.summary.new + results.summary.noEmailInserted}`);
-    console.log(`Total Updated Records: ${results.summary.updated + results.summary.noEmailUpdated}`);
+    console.log(`Total Inserted Records: ${results.summary.new}`);
+    console.log(`Total Updated Records: ${results.summary.updated}`);
     console.log(`Total Skipped Records: ${results.summary.skipped}`);
     console.log(`Total Failed Records: ${results.summary.failed}`);
     
