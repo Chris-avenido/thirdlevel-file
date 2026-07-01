@@ -79,36 +79,6 @@ const NexusGate = () => {
             desc: 'Access tools for managing the TLO masterlist, monitoring submissions, and performing authorized administrative actions.',
             action: 'Administrator access',
             className: 'admin'
-        },
-        {
-            id: 'insights',
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M5 19V5.8C5 4.8 5.8 4 6.8 4h10.4c1 0 1.8.8 1.8 1.8V19" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                    <path d="M8.5 16v-4.2M12 16V8.5M15.5 16v-6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                    <path d="M4 19h16" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                </svg>
-            ),
-            tag: 'Insights Portal',
-            title: 'Reports & Analytics',
-            desc: 'Review summary dashboards, submission trends, and consolidated status reports for leadership monitoring.',
-            action: 'View insights',
-            className: 'reports'
-        },
-        {
-            id: 'support',
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 4a7 7 0 0 0-7 7v2.4c0 .9.7 1.6 1.6 1.6H8v-5H6.7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M12 4a7 7 0 0 1 7 7v2.4c0 .9-.7 1.6-1.6 1.6H16v-5h1.3" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M16 15c0 2.2-1.5 3.5-4 3.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                </svg>
-            ),
-            tag: 'Service Desk',
-            title: 'Help & Support',
-            desc: 'Submit access concerns, request portal assistance, and track support responses for authorized users.',
-            action: 'Get support',
-            className: 'support'
         }
     ];
 

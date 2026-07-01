@@ -1348,57 +1348,41 @@ const OfficialsRegistry = () => {
                             {/* Card 1: Third Level Officials */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Third Level Officials' ? 'ring-2 ring-blue-500 shadow-md' : 'hover:border-blue-400'}`}
+                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Third Level Officials' ? 'border-l-sky-400 shadow-md ring-1 ring-sky-200' : 'border-l-sky-300 hover:shadow-sm'}`}
                             >
-                                <div className="w-9 h-9 bg-[#E0F2FE] text-[#08315F] rounded-full flex items-center justify-center shrink-0 mr-3">
-                                    <LuChefHat size={16} />
-                                </div>
-                                <div className="flex flex-col justify-center">
-                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{thirdLevelActiveCount}</div>
-                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level Officials</div>
-                                </div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Third Level Officials</div>
+                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{thirdLevelActiveCount}</div>
+                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
 
                             {/* Card 2: Third Level (OIC) */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Third Level (OIC)' ? 'ring-2 ring-amber-500 shadow-md' : 'hover:border-amber-400'}`}
+                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Third Level (OIC)' ? 'border-l-amber-500 shadow-md ring-1 ring-amber-200' : 'border-l-amber-400 hover:shadow-sm'}`}
                             >
-                                <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center shrink-0 mr-3">
-                                    <GoArrowUpRight size={16} />
-                                </div>
-                                <div className="flex flex-col justify-center">
-                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{thirdLevelOicActiveCount}</div>
-                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Third Level (OIC)</div>
-                                </div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Third Level (OIC)</div>
+                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{thirdLevelOicActiveCount}</div>
+                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
 
                             {/* Card 3: Division Chiefs (OIC) */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Division Chiefs (OIC)' ? 'ring-2 ring-emerald-500 shadow-md' : 'hover:border-emerald-400'}`}
+                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Division Chiefs (OIC)' ? 'border-l-purple-500 shadow-md ring-1 ring-purple-200' : 'border-l-purple-400 hover:shadow-sm'}`}
                             >
-                                <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0 mr-3">
-                                    <FiActivity size={16} />
-                                </div>
-                                <div className="flex flex-col justify-center">
-                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsOicActiveCount}</div>
-                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs (OIC)</div>
-                                </div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Division Chiefs (OIC)</div>
+                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{divisionChiefsOicActiveCount}</div>
+                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
 
                             {/* Card 4: Division Chiefs */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Division Chiefs' ? 'All' : 'Division Chiefs'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`h-[64px] bg-white rounded-[24px] border-[2px] border-[#08315F] flex items-center px-4 cursor-pointer transition-all ${activeTab === 'Division Chiefs' ? 'ring-2 ring-purple-500 shadow-md' : 'hover:border-purple-400'}`}
+                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Division Chiefs' ? 'border-l-red-500 shadow-md ring-1 ring-red-200' : 'border-l-red-400 hover:shadow-sm'}`}
                             >
-                                <div className="w-9 h-9 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center shrink-0 mr-3">
-                                    <MdOutlineToggleOff size={16} />
-                                </div>
-                                <div className="flex flex-col justify-center">
-                                    <div className="text-[36px] font-black text-[#08315F] leading-none mb-1">{divisionChiefsActiveCount}</div>
-                                    <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Division Chiefs</div>
-                                </div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Division Chiefs</div>
+                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{divisionChiefsActiveCount}</div>
+                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
                         </div>
 
