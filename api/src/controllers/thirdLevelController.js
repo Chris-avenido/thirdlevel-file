@@ -713,7 +713,7 @@ export const getOfficials = async (req, res) => {
   let query = `
     WITH RankedOfficials AS (
       SELECT 
-        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.ombudsman_case, m.date_of_birth,
+        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.ombudsman_case, m.date_of_birth,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         ROW_NUMBER() OVER (
@@ -752,11 +752,11 @@ export const getOfficials = async (req, res) => {
   let filterLevel = Array.isArray(level) ? level[level.length - 1] : level;
   if (filterLevel && filterLevel !== 'All') {
     if (filterLevel === 'Central Office') {
-      conditions.push(`(strand NOT ILIKE 'Region%' AND strand NOT ILIKE 'NCR' AND strand NOT ILIKE 'CAR%' AND strand NOT ILIKE 'NIR' AND strand NOT ILIKE 'BARMM')`);
+      conditions.push(`(region = 'Central Office' OR (COALESCE(region, '') = '' AND COALESCE(strand, '') NOT ILIKE 'Region%' AND COALESCE(strand, '') NOT ILIKE 'NCR' AND COALESCE(strand, '') NOT ILIKE 'CAR%' AND COALESCE(strand, '') NOT ILIKE 'NIR' AND COALESCE(strand, '') NOT ILIKE 'BARMM'))`);
     } else if (filterLevel === 'Regional Office') {
-      conditions.push(`(strand ILIKE 'Region%' OR strand ILIKE 'NCR' OR strand ILIKE 'CAR%' OR strand ILIKE 'NIR' OR strand ILIKE 'BARMM') AND (office ILIKE '%Regional Office%' OR office ILIKE 'ro' OR office = strand OR position_title ILIKE '%Regional Director%' OR position_title ILIKE '% RD %' OR position_title ILIKE '% ARD %')`);
+      conditions.push(`(region != 'Central Office' OR (COALESCE(region, '') = '' AND (COALESCE(strand, '') ILIKE 'Region%' OR COALESCE(strand, '') ILIKE 'NCR' OR COALESCE(strand, '') ILIKE 'CAR%' OR COALESCE(strand, '') ILIKE 'NIR' OR COALESCE(strand, '') ILIKE 'BARMM'))) AND (office ILIKE '%Regional Office%' OR office ILIKE 'ro' OR office = strand OR position_title ILIKE '%Regional Director%' OR position_title ILIKE '% RD %' OR position_title ILIKE '% ARD %')`);
     } else if (filterLevel === 'Schools Division Office') {
-      conditions.push(`(strand ILIKE 'Region%' OR strand ILIKE 'NCR' OR strand ILIKE 'CAR%' OR strand ILIKE 'NIR' OR strand ILIKE 'BARMM') AND NOT (office ILIKE '%Regional Office%' OR office ILIKE 'ro' OR office = strand OR position_title ILIKE '%Regional Director%' OR position_title ILIKE '% RD %' OR position_title ILIKE '% ARD %')`);
+      conditions.push(`(region != 'Central Office' OR (COALESCE(region, '') = '' AND (COALESCE(strand, '') ILIKE 'Region%' OR COALESCE(strand, '') ILIKE 'NCR' OR COALESCE(strand, '') ILIKE 'CAR%' OR COALESCE(strand, '') ILIKE 'NIR' OR COALESCE(strand, '') ILIKE 'BARMM'))) AND NOT (office ILIKE '%Regional Office%' OR office ILIKE 'ro' OR office = strand OR position_title ILIKE '%Regional Director%' OR position_title ILIKE '% RD %' OR position_title ILIKE '% ARD %')`);
     }
   }
 
@@ -784,12 +784,12 @@ export const getOfficials = async (req, res) => {
   let filterRegion = Array.isArray(region) ? region[region.length - 1] : region;
   if (filterRegion && filterRegion !== 'All') {
     if (filterRegion === 'Central Office') {
-      conditions.push(`(strand NOT ILIKE 'Region%' AND strand NOT ILIKE 'NCR' AND strand NOT ILIKE 'CAR%' AND strand NOT ILIKE 'NIR' AND strand NOT ILIKE 'BARMM')`);
+      conditions.push(`(region = 'Central Office' OR (COALESCE(region, '') = '' AND COALESCE(strand, '') NOT ILIKE 'Region%' AND COALESCE(strand, '') NOT ILIKE 'NCR' AND COALESCE(strand, '') NOT ILIKE 'CAR%' AND COALESCE(strand, '') NOT ILIKE 'NIR' AND COALESCE(strand, '') NOT ILIKE 'BARMM'))`);
     } else if (filterRegion === 'CARAGA') {
-      conditions.push(`(strand ILIKE 'Region XIII' OR strand ILIKE 'CARAGA')`);
+      conditions.push(`(region = 'CARAGA' OR (COALESCE(region, '') = '' AND (COALESCE(strand, '') ILIKE 'Region XIII%' OR COALESCE(strand, '') ILIKE 'CARAGA%')))`);
     } else {
       params.push(filterRegion + '%');
-      conditions.push(`strand ILIKE $${params.length}`);
+      conditions.push(`(region ILIKE $${params.length} OR (COALESCE(region, '') = '' AND COALESCE(strand, '') ILIKE $${params.length}))`);
     }
   }
 
@@ -798,10 +798,10 @@ export const getOfficials = async (req, res) => {
   let activeOffice = filterOffice || filterDivision;
   if (activeOffice && activeOffice !== 'All') {
     if (activeOffice === 'No Division') {
-      conditions.push(`(office IS NULL OR office = '')`);
+      conditions.push(`((office IS NULL OR office = '') AND (division IS NULL OR division = ''))`);
     } else {
       params.push(activeOffice);
-      conditions.push(`office = $${params.length}`);
+      conditions.push(`(office = $${params.length} OR strand = $${params.length} OR division = $${params.length})`);
     }
   }
 
@@ -933,7 +933,7 @@ export const getKpiSummary = async (req, res) => {
   try {
     const result = await pool.query(`
       WITH RankedOfficials AS (
-        SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.designation, m.effectivity_date,
+        SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
           m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
           m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case, m.ombudsman_case,
           (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
@@ -943,7 +943,7 @@ export const getKpiSummary = async (req, res) => {
           ) as rn
         FROM third_level_official_masterlist m
       )
-      SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, designation, effectivity_date, date_of_birth, created_at, updated_at, "TLOid", vacate_reason, photo_binary_id, pds_binary_id, contact_details, pending_admin_case, ombudsman_case
+      SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, region, division, designation, effectivity_date, date_of_birth, created_at, updated_at, "TLOid", vacate_reason, photo_binary_id, pds_binary_id, contact_details, pending_admin_case, ombudsman_case
       FROM RankedOfficials 
       WHERE rn = 1
     `);

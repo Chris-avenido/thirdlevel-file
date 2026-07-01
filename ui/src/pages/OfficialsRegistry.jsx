@@ -880,25 +880,42 @@ const OfficialsRegistry = () => {
     }, [unassignedSearch, showActionModal, adminAction, actionOfficial]);
 
     const getOfficialLevel = (item) => {
+        if (item.region) {
+            if (item.region === 'Central Office') return 'Central Office';
+            const pos = item.position_title || '';
+            const office = item.office || '';
+            const isROPosition = /(Regional Director|RD|ARD)/i.test(pos);
+            const isSDOPosition = /(Schools Division Superintendent|SDS|ASDS)/i.test(pos);
+            if (isSDOPosition) return 'Schools Division Office';
+            if (isROPosition || office.toLowerCase().includes('regional office') || office.toLowerCase() === 'ro') return 'Regional Office';
+            return 'Schools Division Office';
+        }
+
         const strand = item.strand || '';
         const office = item.office || '';
         const pos = item.position_title || '';
+        const division = item.division || '';
 
-        const isRegionStrand = /^(Region|NCR|CAR|NIR)/i.test(strand);
-        if (!isRegionStrand) return 'Central Office';
-
-        const isROOffice = !office || office.toLowerCase() === strand.toLowerCase() || office.toLowerCase().includes('regional office') || office.toLowerCase() === 'ro';
         const isROPosition = /(Regional Director|RD|ARD)/i.test(pos);
         const isSDOPosition = /(Schools Division Superintendent|SDS|ASDS)/i.test(pos);
+        const isROOffice = office.toLowerCase().includes('regional office') || office.toLowerCase() === 'ro' || (strand && office.toLowerCase() === strand.toLowerCase());
 
-        if (isSDOPosition) return 'Schools Division Office';
-        if (isROOffice || isROPosition) return 'Regional Office';
+        if (isSDOPosition || division) return 'Schools Division Office';
+        if (isROPosition || isROOffice) return 'Regional Office';
 
-        return 'Schools Division Office';
+        const isRegionStrand = /^(Region|NCR|CAR|NIR|BARMM)/i.test(strand);
+        if (isRegionStrand) {
+            if (!office || office.toLowerCase() === strand.toLowerCase() || office.toLowerCase().includes('regional office') || office.toLowerCase() === 'ro') return 'Regional Office';
+            return 'Schools Division Office';
+        }
+
+        return 'Central Office';
     };
 
     const getOfficialRegion = (item) => {
-        if (getOfficialLevel(item) === 'Central Office') return 'Central Office';
+        if (item.region) return item.region;
+        const level = getOfficialLevel(item);
+        if (level === 'Central Office') return 'Central Office';
 
         const strand = (item.strand || '').trim().toUpperCase();
         if (strand.includes('REGION XIII') || strand.includes('CARAGA')) return 'CARAGA';
@@ -920,8 +937,10 @@ const OfficialsRegistry = () => {
             return found.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
         }
 
-        return 'Central Office';
+        return 'Unknown Region';
     };
+
+    const isCentralOfficeView = levelFilter === 'Central Office' || regionFilter === 'Central Office' || tableFilters['region'] === 'Central Office';
 
     const tableColumns = useMemo(() => ([
         {
@@ -933,10 +952,10 @@ const OfficialsRegistry = () => {
         },
         {
             key: 'division',
-            label: 'Division',
+            label: isCentralOfficeView ? 'Strand' : 'Division',
             width: 'w-[15%]',
-            value: (item) => item.office || '',
-            filterValue: (item) => item.office || 'No Division'
+            value: (item) => (item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || item.office || '') : (item.division || item.office || ''),
+            filterValue: (item) => (item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || item.office || 'No Division') : (item.division || item.office || 'No Division')
         },
         {
             key: 'name',
@@ -966,11 +985,49 @@ const OfficialsRegistry = () => {
             value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
             filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
         }
-    ]), []);
+    ]), [levelFilter, regionFilter, tableFilters]);
 
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
             let dataForColumn = kpiSummary;
+
+            if (levelFilter !== 'All') {
+                dataForColumn = dataForColumn.filter(item => getOfficialLevel(item) === levelFilter);
+            }
+            if (regionFilter !== 'All') {
+                dataForColumn = dataForColumn.filter(item => getOfficialRegion(item) === regionFilter);
+            }
+            if (strandFilter !== 'All') {
+                dataForColumn = dataForColumn.filter(item => item.strand === strandFilter);
+            }
+            if (officeFilter !== 'All') {
+                dataForColumn = dataForColumn.filter(item => item.office === officeFilter);
+            }
+            if (designationFilter !== 'All') {
+                dataForColumn = dataForColumn.filter(item => item.designation === designationFilter);
+            }
+            if (positionFilter !== 'All') {
+                dataForColumn = dataForColumn.filter(item => item.position_title === positionFilter);
+            }
+            if (statusTab !== 'All') {
+                const targetStatus = statusTab === 'Vacant' ? 'Vacated' : statusTab;
+                dataForColumn = dataForColumn.filter(item => item.status === targetStatus);
+            }
+            if (oicOnly) {
+                dataForColumn = dataForColumn.filter(item => item.is_oic);
+            }
+            if (activeTab !== 'All') {
+                if (activeTab === 'Third Level Officials') {
+                    dataForColumn = dataForColumn.filter(item => !item.is_oic && THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                } else if (activeTab === 'Third Level (OIC)') {
+                    dataForColumn = dataForColumn.filter(item => item.is_oic && THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                } else if (activeTab === 'Division Chiefs (OIC)') {
+                    dataForColumn = dataForColumn.filter(item => item.is_oic && !THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                } else if (activeTab === 'Division Chiefs') {
+                    dataForColumn = dataForColumn.filter(item => !item.is_oic && !THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                }
+            }
+
             Object.keys(tableFilters).forEach(key => {
                 if (key !== column.key && tableFilters[key]) {
                     const filterCol = tableColumns.find(c => c.key === key);
@@ -986,10 +1043,17 @@ const OfficialsRegistry = () => {
             const values = dataForColumn
                 .map(item => (column.filterValue ? column.filterValue(item) : column.value(item))?.trim())
                 .filter(Boolean);
-            options[column.key] = [...new Set(values)].sort((a, b) => a.localeCompare(b));
+            
+            if (column.key === 'division' && isCentralOfficeView) {
+                // Ensure all strands are always visible in the dropdown, even if currently empty
+                options[column.key] = [...new Set([...values, ...strands])].sort((a, b) => a.localeCompare(b));
+            } else {
+                options[column.key] = [...new Set(values)].sort((a, b) => a.localeCompare(b));
+            }
+            
             return options;
         }, {});
-    }, [kpiSummary, tableColumns, tableFilters]);
+    }, [kpiSummary, tableColumns, tableFilters, levelFilter, regionFilter, strandFilter, officeFilter, designationFilter, positionFilter, statusTab, oicOnly, activeTab, strands, isCentralOfficeView]);
 
     const dependentOffices = useMemo(() => {
         let data = kpiSummary;
@@ -1115,168 +1179,168 @@ const OfficialsRegistry = () => {
                         <div className="mb-6 flex flex-col gap-3">
                             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm">
 
-                            {/* SEARCH BAR MOVED TO BOTTOM */}                            {/* DROPDOWNS */}
-                            <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
-                                {/* Level Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                                        <option value="All">All CO / RO / SDO</option>
-                                        <option value="Central Office">Central Office</option>
-                                        <option value="Regional Office">Regional Office</option>
-                                        <option value="Schools Division Office">Schools Division Office</option>
-                                    </select>
-                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                                </div>
-
-                                {/* Region Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                                        <option value="All">All Regions</option>
-                                        <option value="Central Office">Central Office</option>
-                                        <option value="Region I">Region I</option>
-                                        <option value="Region II">Region II</option>
-                                        <option value="Region III">Region III</option>
-                                        <option value="Region IV-A">Region IV-A</option>
-                                        <option value="Region IV-B">Region IV-B</option>
-                                        <option value="Region V">Region V</option>
-                                        <option value="Region VI">Region VI</option>
-                                        <option value="Region VII">Region VII</option>
-                                        <option value="Region VIII">Region VIII</option>
-                                        <option value="Region IX">Region IX</option>
-                                        <option value="Region X">Region X</option>
-                                        <option value="Region XI">Region XI</option>
-                                        <option value="Region XII">Region XII</option>
-                                        <option value="CARAGA">CARAGA</option>
-                                        <option value="NCR">NCR</option>
-                                        <option value="CAR">CAR</option>
-                                        <option value="NIR">NIR</option>
-                                        <option value="BARMM">BARMM</option>
-                                    </select>
-                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                                </div>
-
-                                {/* Strand / Division Dropdown */}
-                                {levelFilter === 'Central Office' || regionFilter === 'Central Office' ? (
+                                {/* SEARCH BAR MOVED TO BOTTOM */}                            {/* DROPDOWNS */}
+                                <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
+                                    {/* Level Dropdown */}
                                     <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                                            <option value="All">All Strands</option>
-                                            {strands.map(s => (
-                                                <option key={s} value={s}>{s}</option>
+                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                            <option value="All">All CO / RO / SDO</option>
+                                            <option value="Central Office">Central Office</option>
+                                            <option value="Regional Office">Regional Office</option>
+                                            <option value="Schools Division Office">Schools Division Office</option>
+                                        </select>
+                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    </div>
+
+                                    {/* Region Dropdown */}
+                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                            <option value="All">All Regions</option>
+                                            <option value="Central Office">Central Office</option>
+                                            <option value="Region I">Region I</option>
+                                            <option value="Region II">Region II</option>
+                                            <option value="Region III">Region III</option>
+                                            <option value="Region IV-A">Region IV-A</option>
+                                            <option value="Region IV-B">Region IV-B</option>
+                                            <option value="Region V">Region V</option>
+                                            <option value="Region VI">Region VI</option>
+                                            <option value="Region VII">Region VII</option>
+                                            <option value="Region VIII">Region VIII</option>
+                                            <option value="Region IX">Region IX</option>
+                                            <option value="Region X">Region X</option>
+                                            <option value="Region XI">Region XI</option>
+                                            <option value="Region XII">Region XII</option>
+                                            <option value="CARAGA">CARAGA</option>
+                                            <option value="NCR">NCR</option>
+                                            <option value="CAR">CAR</option>
+                                            <option value="NIR">NIR</option>
+                                            <option value="BARMM">BARMM</option>
+                                        </select>
+                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                    </div>
+
+                                    {/* Strand / Division Dropdown */}
+                                    {levelFilter === 'Central Office' || regionFilter === 'Central Office' ? (
+                                        <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                            <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                                <option value="All">All Strands</option>
+                                                {strands.map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                            <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                        </div>
+                                    ) : (
+                                        <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                            <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                                <option value="All">All Divisions</option>
+                                                {dependentOffices.map(o => (
+                                                    <option key={o} value={o}>{o}</option>
+                                                ))}
+                                            </select>
+                                            <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                        </div>
+                                    )}
+
+                                    {/* Designation Dropdown */}
+                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                            <option value="All">All Designations</option>
+                                            {designations.map(d => (
+                                                <option key={d} value={d}>{expandAcronym(d)}</option>
                                             ))}
                                         </select>
                                         <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                     </div>
-                                ) : (
+
+                                    {/* Position Dropdown */}
                                     <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                                            <option value="All">All Divisions</option>
-                                            {dependentOffices.map(o => (
-                                                <option key={o} value={o}>{o}</option>
+                                        <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                            <option value="All">All Positions</option>
+                                            {tabPositions.map(p => (
+                                                <option key={p} value={p}>{p}</option>
                                             ))}
                                         </select>
                                         <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                     </div>
-                                )}
 
-                                {/* Designation Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                                        <option value="All">All Designations</option>
-                                        {designations.map(d => (
-                                            <option key={d} value={d}>{expandAcronym(d)}</option>
-                                        ))}
-                                    </select>
-                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                                 </div>
 
-                                {/* Position Dropdown */}
-                                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                    <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                                        <option value="All">All Positions</option>
-                                        {tabPositions.map(p => (
-                                            <option key={p} value={p}>{p}</option>
-                                        ))}
-                                    </select>
-                                    <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                {/* BUTTONS */}
+                                <div className="flex items-center gap-2 w-full xl:w-auto">
+                                    {/* OIC Toggle */}
+                                    <button
+                                        onClick={() => setOicOnly(!oicOnly)}
+                                        className={`h-[38px] px-4 flex-1 xl:flex-none rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 border ${oicOnly ? 'bg-[#08315F] border-[#08315F]' : 'bg-[#F0F9FF] border-[#BAE6FD] hover:bg-sky-100'}`}
+                                        title="Toggle OIC only"
+                                    >
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${oicOnly ? 'text-white' : 'text-[#08315F]'}`}>OIC ONLY</span>
+                                        <div className={`w-8 h-4 rounded-full relative transition-colors shrink-0 ${oicOnly ? 'bg-amber-400' : 'bg-slate-300'}`}>
+                                            <div className={`absolute top-[2px] left-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${oicOnly ? 'translate-x-[16px]' : 'translate-x-0'}`} />
+                                        </div>
+                                    </button>
+
+                                    {/* Reset Filters */}
+                                    <button
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setTableFilters({});
+                                            setStatusTab('All');
+                                            setActiveTab('All');
+                                            setLevelFilter('All');
+                                            setRegionFilter('All');
+                                            setStrandFilter('All');
+                                            setOfficeFilter('All');
+                                            setPositionFilter('All');
+                                            setDesignationFilter('All');
+                                            setOicOnly(false);
+                                        }}
+                                        className="h-[38px] px-5 flex-1 xl:flex-none bg-transparent text-rose-400 rounded-full border border-rose-200 font-black text-[10px] tracking-widest uppercase hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
+                                        title="Reset all filters"
+                                    >
+                                        Reset
+                                    </button>
                                 </div>
 
+
                             </div>
 
-                            {/* BUTTONS */}
-                            <div className="flex items-center gap-2 w-full xl:w-auto">
-                                {/* OIC Toggle */}
-                                <button
-                                    onClick={() => setOicOnly(!oicOnly)}
-                                    className={`h-[38px] px-4 flex-1 xl:flex-none rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 border ${oicOnly ? 'bg-[#08315F] border-[#08315F]' : 'bg-[#F0F9FF] border-[#BAE6FD] hover:bg-sky-100'}`}
-                                    title="Toggle OIC only"
-                                >
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ${oicOnly ? 'text-white' : 'text-[#08315F]'}`}>OIC ONLY</span>
-                                    <div className={`w-8 h-4 rounded-full relative transition-colors shrink-0 ${oicOnly ? 'bg-amber-400' : 'bg-slate-300'}`}>
-                                        <div className={`absolute top-[2px] left-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${oicOnly ? 'translate-x-[16px]' : 'translate-x-0'}`} />
-                                    </div>
-                                </button>
-
-                                {/* Reset Filters */}
-                                <button
-                                    onClick={() => {
-                                        setSearchTerm('');
-                                        setTableFilters({});
-                                        setStatusTab('All');
-                                        setActiveTab('All');
-                                        setLevelFilter('All');
-                                        setRegionFilter('All');
-                                        setStrandFilter('All');
-                                        setOfficeFilter('All');
-                                        setPositionFilter('All');
-                                        setDesignationFilter('All');
-                                        setOicOnly(false);
-                                    }}
-                                    className="h-[38px] px-5 flex-1 xl:flex-none bg-transparent text-rose-400 rounded-full border border-rose-200 font-black text-[10px] tracking-widest uppercase hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
-                                    title="Reset all filters"
-                                >
-                                    Reset
-                                </button>
+                            {/* BOTTOM ROW: SEARCH BAR */}
+                            <div className="flex items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-1.5 shadow-sm w-full mb-6">
+                                <div className="relative flex-1 h-[38px]">
+                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
+                                    <input
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="Search by name, position, or office..."
+                                        className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                                    />
+                                </div>
+                                {/* VIEW TOGGLES */}
+                                <div className="flex items-center gap-2 shrink-0 px-2">
+                                    <button
+                                        onClick={() => setViewMode('table')}
+                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        title="Table view"
+                                    >
+                                        <FiList size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                    >
+                                        <FiGrid size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('directory')}
+                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        title="Organizational Directory"
+                                    >
+                                        <FiLayers size={14} />
+                                    </button>
+                                </div>
                             </div>
-
-
-                        </div>
-
-                        {/* BOTTOM ROW: SEARCH BAR */}
-                        <div className="flex items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-1.5 shadow-sm w-full mb-6">
-                            <div className="relative flex-1 h-[38px]">
-                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search by name, position, or office..."
-                                    className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
-                                />
-                            </div>
-                            {/* VIEW TOGGLES */}
-                            <div className="flex items-center gap-2 shrink-0 px-2">
-                                <button
-                                    onClick={() => setViewMode('table')}
-                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
-                                    title="Table view"
-                                >
-                                    <FiList size={14} />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
-                                >
-                                    <FiGrid size={14} />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('directory')}
-                                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
-                                    title="Organizational Directory"
-                                >
-                                    <FiLayers size={14} />
-                                </button>
-                            </div>
-                        </div>
                         </div>
 
                         {/* STATS CARDS */}
@@ -1392,13 +1456,13 @@ const OfficialsRegistry = () => {
                                                 {pagedRecords.map((item) => (
                                                     <tr key={item.TLOid} className="group transition-colors relative hover:bg-slate-50/80">
                                                         <td className="px-3 py-4 align-middle max-w-[120px]">
-                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || item.strand || 'No Region')}>
-                                                                <span>{item.status === 'Inactive' ? 'N/A' : (item.region || item.strand || 'No Region')}</span>
+                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}>
+                                                                <span>{item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}</span>
                                                             </div>
                                                         </td>
                                                         <td className="px-2 py-4 align-middle max-w-[200px]">
-                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : (item.division || item.office || 'No Division')}>
-                                                                {item.status === 'Inactive' ? 'N/A' : (item.division || item.office || 'No Division')}
+                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}>
+                                                                {item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}
                                                             </div>
                                                         </td>
                                                         <td className="px-2 py-4 align-middle">
@@ -1510,9 +1574,9 @@ const OfficialsRegistry = () => {
 
                                                     <div className="flex flex-col gap-2 mt-1 bg-slate-50/50 rounded-xl p-3 border border-slate-100">
                                                         <div className="flex justify-between items-center text-[10px] gap-2">
-                                                            <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Office</span>
+                                                            <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">{((item.region || getOfficialRegion(item)) === 'Central Office') ? 'Strand' : 'Office'}</span>
                                                             <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">
-                                                                {(item.region || item.strand) ? `${item.region || item.strand} • ` : ''}{item.division || item.office || 'No Division'}
+                                                                {(item.region) ? `${item.region} • ` : 'N/A • '}{((item.region || getOfficialRegion(item)) === 'Central Office' ? item.strand : item.division) || 'N/A'}
                                                             </span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-[10px] gap-2">
