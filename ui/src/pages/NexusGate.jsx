@@ -109,8 +109,9 @@ const NexusGate = () => {
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        <motion.div variants={itemLeft} className="logo" aria-label="InsightED">IE</motion.div>
-                                        <motion.p variants={itemLeft} className="eyebrow">Specialized Portals Gateway</motion.p>
+                                        <motion.div variants={itemLeft} className="logo" aria-label="InsightED">
+                                            <img src="/modern_logo.png" alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                        </motion.div>
                                         <motion.h1 variants={itemLeft} id="page-title">
                                             Welcome to the<br />
                                             <span>Insight<span className="ed-red">ED</span> Nexus</span>
@@ -209,8 +210,9 @@ const NexusGate = () => {
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        <motion.div variants={itemRight} className="logo" aria-label="InsightED">IE</motion.div>
-                                        <motion.p variants={itemRight} className="eyebrow">Specialized Portals Gateway</motion.p>
+                                        <motion.div variants={itemRight} className="logo" aria-label="InsightED">
+                                            <img src="/modern_logo.png" alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                        </motion.div>
                                         <motion.h1 variants={itemRight} id="page-title">
                                             Welcome to the<br />
                                             <span>Insight<span className="ed-red">ED</span> Nexus</span>
