@@ -289,7 +289,7 @@ export const updateProfile = async (req, res) => {
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
-      'relevant_trainings', 'notable_achievements', 'individual_accomplishments', 'total_training_hours',
+      'relevant_trainings', 'notable_achievements', 'notable_achievements_year', 'individual_accomplishments', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
@@ -1358,7 +1358,7 @@ export const adminAction = async (req, res) => {
 
 export const getNotableAchievements = async (req, res) => {
   try {
-    const result = await pool.query('SELECT achievement FROM notable_achievements ORDER BY index_number ASC');
+    const result = await pool.query('SELECT achievement FROM notable_achievements WHERE delete_flg = 0 ORDER BY index_number ASC');
     res.json({ success: true, data: result.rows.map(r => r.achievement) });
   } catch (err) {
     res.status(500).json({ error: err.message });

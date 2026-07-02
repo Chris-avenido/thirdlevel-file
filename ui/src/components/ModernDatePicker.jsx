@@ -12,12 +12,16 @@ const currentYear = new Date().getFullYear();
 const startYear = 1900;
 const YEARS = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
 
-const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, isMonthPicker }) => {
+const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, isMonthPicker, isYearPicker }) => {
     // Convert string to Date object
     let selectedDate = null;
     if (value) {
-        // If it's just YYYY-MM, we append -01 to make it a valid date object
-        selectedDate = isMonthPicker ? new Date(value + '-01') : new Date(value);
+        if (isYearPicker) {
+            selectedDate = new Date(value.toString(), 0, 1);
+        } else {
+            // If it's just YYYY-MM, we append -01 to make it a valid date object
+            selectedDate = isMonthPicker ? new Date(value + '-01') : new Date(value);
+        }
     }
 
     // Handle date change
@@ -26,6 +30,12 @@ const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, is
             onChange('');
             return;
         }
+        
+        if (isYearPicker) {
+            onChange(date.getFullYear().toString());
+            return;
+        }
+
         const offset = date.getTimezoneOffset();
         const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
         
@@ -45,10 +55,10 @@ const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, is
                 onChange={handleChange}
                 maxDate={maxDate}
                 placeholderText={placeholder || "Select a date"}
-                showMonthDropdown={!isMonthPicker}
+                showMonthDropdown={!(isMonthPicker || isYearPicker)}
                 showYearDropdown
                 dropdownMode="select"
-                {...(!isMonthPicker ? {
+                {...(!(isMonthPicker || isYearPicker) ? {
                     renderCustomHeader: ({
                         date,
                         changeYear,
@@ -101,8 +111,9 @@ const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, is
                         </div>
                     )
                 } : {})}
-                dateFormat={isMonthPicker ? "MM/yyyy" : "MMMM d, yyyy"}
-                showMonthYearPicker={isMonthPicker}
+                dateFormat={isYearPicker ? "yyyy" : (isMonthPicker ? "MM/yyyy" : "MMMM d, yyyy")}
+                showMonthYearPicker={isMonthPicker && !isYearPicker}
+                showYearPicker={isYearPicker}
                 popperPlacement="bottom-start"
                 className={`w-full bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all pr-10 shadow-sm cursor-pointer ${className || ''}`}
             />

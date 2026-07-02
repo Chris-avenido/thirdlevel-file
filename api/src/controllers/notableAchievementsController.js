@@ -10,13 +10,16 @@ export const getAllNotableAchievements = async (req, res) => {
 };
 
 export const createNotableAchievement = async (req, res) => {
-    const { index_number, achievement } = req.body;
+    const { achievement } = req.body;
     try {
+        const maxResult = await pool.query('SELECT COALESCE(MAX(index_number), 0) as max_id FROM notable_achievements');
+        const nextId = parseInt(maxResult.rows[0].max_id, 10) + 1;
+
         await pool.query(
             'INSERT INTO notable_achievements (index_number, achievement, delete_flg, create_date, edit_date) VALUES ($1, $2, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', 
-            [index_number, achievement]
+            [nextId, achievement]
         );
-        res.json({ success: true });
+        res.json({ success: true, data: { index_number: nextId, achievement } });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

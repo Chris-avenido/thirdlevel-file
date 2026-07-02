@@ -1653,7 +1653,7 @@ const OfficialProfiling = () => {
                                                                     />
                                                                 </Field>
                                                                 <Field label="Year Graduated">
-                                                                    <input type="number" min="1900" max="2099" value={profile.education_year_graduated} onChange={e => setP('education_year_graduated', e.target.value)} placeholder="YYYY" className={inp} />
+                                                                    <ModernDatePicker isYearPicker value={profile.education_year_graduated} onChange={val => setP('education_year_graduated', val)} placeholder="YYYY" className={inp} />
                                                                 </Field>
                                                             </div>
                                                         </div>
@@ -1778,22 +1778,33 @@ const OfficialProfiling = () => {
                                                 {tab === 'achievements' && (
                                                     <div className="space-y-6">
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
-                                                            <SectionLabel color="#FCD116">Notable Achievements</SectionLabel>
-                                                            <Field label="Awards / Recognitions / Notable Achievements">
-                                                                <select
-                                                                    value={profile.notable_achievements}
-                                                                    onChange={e => setP('notable_achievements', e.target.value)}
-                                                                    className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all shadow-sm shadow-slate-50 cursor-pointer"
-                                                                >
-                                                                    <option value="">-- Select Achievement --</option>
-                                                                    {notableAchievementsOptions.map((ach, i) => (
-                                                                        <option key={`opt-${i}`} value={ach}>{ach}</option>
-                                                                    ))}
-                                                                    {profile.notable_achievements && !notableAchievementsOptions.includes(profile.notable_achievements) && (
-                                                                        <option value={profile.notable_achievements}>{profile.notable_achievements}</option>
-                                                                    )}
-                                                                </select>
-                                                            </Field>
+                                                            <SectionLabel color="#FCD116">Notable Achievements (If Any)</SectionLabel>
+                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                <Field label="Awards / Recognitions / Notable Achievements (If Any)">
+                                                                    <select
+                                                                        value={profile.notable_achievements}
+                                                                        onChange={e => setP('notable_achievements', e.target.value)}
+                                                                        className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all shadow-sm shadow-slate-50 cursor-pointer"
+                                                                    >
+                                                                        <option value="">-- Select Achievement --</option>
+                                                                        {notableAchievementsOptions.map((ach, i) => (
+                                                                            <option key={`opt-${i}`} value={ach}>{ach}</option>
+                                                                        ))}
+                                                                        {profile.notable_achievements && !notableAchievementsOptions.includes(profile.notable_achievements) && (
+                                                                            <option value={profile.notable_achievements}>{profile.notable_achievements}</option>
+                                                                        )}
+                                                                    </select>
+                                                                </Field>
+                                                                <Field label="Year Received">
+                                                                    <ModernDatePicker
+                                                                        isYearPicker
+                                                                        value={profile.notable_achievements_year || ''}
+                                                                        onChange={val => setP('notable_achievements_year', val)}
+                                                                        placeholder="YYYY"
+                                                                        className="!py-4 !px-5 !rounded-2xl !bg-transparent hover:!bg-slate-100/30 !border-slate-200/80 focus:!ring-4 focus:!ring-blue-50/50 w-full"
+                                                                    />
+                                                                </Field>
+                                                            </div>
                                                         </div>
 
                                                         {/* Individual Accomplishments */}

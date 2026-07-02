@@ -78,20 +78,20 @@ const AddNewPersonnelForm = ({ onCancel, onSuccess, token }) => {
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">First Name <span className="text-red-500">*</span></label>
-                    <input type="text" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                    <input type="text" autoComplete="off" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
                 </div>
                 <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Last Name <span className="text-red-500">*</span></label>
-                    <input type="text" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                    <input type="text" autoComplete="off" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
                 </div>
             </div>
             <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Email Address <span className="text-red-500">*</span></label>
-                <input type="email" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                <input type="email" autoComplete="off" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
             </div>
             <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Employee Number</label>
-                <input type="text" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                <input type="text" autoComplete="off" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
             </div>
             <button
                 onClick={handleAddPersonnel}
@@ -124,6 +124,7 @@ const DebouncedSearchInput = ({ value, onChange, placeholder }) => {
             value={local}
             onChange={(e) => setLocal(e.target.value)}
             placeholder={placeholder}
+            autoComplete="off"
             className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
         />
     );
@@ -200,6 +201,7 @@ const OfficialsRegistry = () => {
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
                                             placeholder="Search options..."
+                                            autoComplete="off"
                                             className="w-full bg-white border-2 border-slate-100 focus:border-[#08315F]/20 rounded-xl py-3 pl-10 pr-4 text-xs font-bold text-slate-700 outline-none transition-all"
                                         />
                                     </div>
