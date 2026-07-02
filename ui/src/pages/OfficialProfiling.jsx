@@ -43,7 +43,7 @@ const COMPLETENESS_FIELDS = [
     'first_name', 'last_name', 'gender', 'date_of_birth', 'civil_status',
     'position_title', 'appointment_date',
     'permanent_address', 'highest_education', 'education_program', 'education_year_graduated',
-    'performance_rating_1', 'performance_rating_1_period', 'pending_admin_case', 'ombudsman_case'
+    'performance_rating_1', 'performance_rating_1_period', 'pending_admin_case'
 ];
 
 const computeAge = (dob) => {
@@ -209,13 +209,14 @@ const OfficialProfiling = () => {
         total_years_third_level: '', permanent_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
         notable_achievements: '', notable_achievements_year: '', individual_accomplishments: [],
+        eligibilities: [], other_courses: [],
         performance_rating_1: '', performance_rating_1_period: '',
         performance_rating_2: '', performance_rating_2_period: '',
         cespes_1_rating: '', cespes_2_rating: '',
         cespes_rating_1_period: '', cespes_rating_2_period: '',
         managerial_experience_total: '',
-        pending_admin_case: '', ombudsman_case: '',
-        sandiganbayan_case: '', nbi_case: '', csc_case: '',
+        pending_admin_case: '',
+        guilty_admin_details: '', criminally_charged_details: '', convicted_crime_details: '',
         updated_at: null,
     });
     const [prevPositions, setPrevPositions] = useState([]);
@@ -599,6 +600,8 @@ const OfficialProfiling = () => {
                     education_year_graduated: d.education_year_graduated ?? '',
                     notable_achievements: d.notable_achievements || '',
                     notable_achievements_year: d.notable_achievements_year || '',
+                    eligibilities: d.eligibilities || [],
+                    other_courses: d.other_courses || [],
                     individual_accomplishments: d.individual_accomplishments || [],
                     performance_rating_1: d.performance_rating_1 || '',
                     performance_rating_1_period: d.performance_rating_1_period || '',
@@ -610,10 +613,9 @@ const OfficialProfiling = () => {
                     cespes_rating_2_period: d.cespes_rating_2_period || '',
                     managerial_experience_total: d.managerial_experience_total || '',
                     pending_admin_case: d.pending_admin_case || '',
-                    ombudsman_case: d.ombudsman_case || '',
-                    sandiganbayan_case: d.sandiganbayan_case || '',
-                    nbi_case: d.nbi_case || '',
-                    csc_case: d.csc_case || '',
+                    guilty_admin_details: d.guilty_admin_details || '',
+                    criminally_charged_details: d.criminally_charged_details || '',
+                    convicted_crime_details: d.convicted_crime_details || '',
                     alt_email_1: d.alt_email_1 || '',
                     alt_email_2: d.alt_email_2 || '',
                     alt_contact_details_1: d.alt_contact_details_1 || '',
@@ -623,6 +625,10 @@ const OfficialProfiling = () => {
                     profile_word_binary_id: d.profile_word_binary_id || null,
                     profile_ppt_binary_id: d.profile_ppt_binary_id || null,
                     service_records_binary_id: d.service_records_binary_id || null,
+                    sandiganbayan_clearance_binary_id: d.sandiganbayan_clearance_binary_id || null,
+                    nbi_clearance_binary_id: d.nbi_clearance_binary_id || null,
+                    csc_clearance_binary_id: d.csc_clearance_binary_id || null,
+                    ombudsman_clearance_binary_id: d.ombudsman_clearance_binary_id || null,
                     updated_at: d.updated_at || null,
                 });
 
@@ -899,7 +905,11 @@ const OfficialProfiling = () => {
                     'pds': 'pds_binary_id',
                     'profile_word': 'profile_word_binary_id',
                     'profile_ppt': 'profile_ppt_binary_id',
-                    'service_records': 'service_records_binary_id'
+                    'service_records': 'service_records_binary_id',
+                    'sandiganbayan_clearance': 'sandiganbayan_clearance_binary_id',
+                    'nbi_clearance': 'nbi_clearance_binary_id',
+                    'csc_clearance': 'csc_clearance_binary_id',
+                    'ombudsman_clearance': 'ombudsman_clearance_binary_id'
                 };
                 setP(docMap[docType], data.binary_id);
                 setSaved(true);
@@ -911,6 +921,50 @@ const OfficialProfiling = () => {
             Swal.fire('Notice', 'Upload failed: ' + err.message, 'info');
         } finally {
             setUploadingDocs(prev => ({ ...prev, [docType]: false }));
+        }
+    };
+
+    const handleDownloadDocument = async (binaryId, label) => {
+        try {
+            Swal.fire({ title: 'Downloading...', text: 'Please wait while we fetch the document.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const res = await fetch(apiUrl(`/api/binary/${binaryId}`), {
+                headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+            });
+            if (!res.ok) throw new Error('Failed to download document');
+            
+            let filename = '';
+            const disposition = res.headers.get('Content-Disposition');
+            if (disposition && disposition.indexOf('filename=') !== -1) {
+                const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+            }
+            
+            const blob = await res.blob();
+            if (!filename) {
+                let ext = '';
+                if (blob.type === 'application/pdf') ext = '.pdf';
+                else if (blob.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') ext = '.docx';
+                else if (blob.type === 'application/msword') ext = '.doc';
+                else if (blob.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') ext = '.pptx';
+                else if (blob.type === 'application/vnd.ms-powerpoint') ext = '.ppt';
+                else if (blob.type.startsWith('image/')) ext = '.' + blob.type.split('/')[1];
+
+                const safeLabel = label.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_').toLowerCase();
+                const name = buildFullName(profile).replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_');
+                filename = `${name}_${safeLabel}${ext}`;
+            }
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            Swal.close();
+        } catch (err) {
+            Swal.fire('Error', 'Could not download the document.', 'error');
         }
     };
 
@@ -1491,6 +1545,58 @@ const OfficialProfiling = () => {
                                                                 </Field>
                                                             )}
                                                         </div>
+
+                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                            <div className="flex items-center justify-between">
+                                                                <SectionLabel>Other Civil Service Eligibility</SectionLabel>
+                                                                <button
+                                                                    onClick={() => setProfile(p => ({ ...p, eligibilities: [...(p.eligibilities || []), { title: '', details: '' }] }))}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0038A8] text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-[#0038A8] hover:text-white transition-all shadow-sm"
+                                                                >
+                                                                    <FiPlus size={12} /> Add Eligibility
+                                                                </button>
+                                                            </div>
+
+                                                            {(!profile.eligibilities || profile.eligibilities.length === 0) ? (
+                                                                <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                                                    <p className="text-xs font-semibold text-slate-400">No other eligibilities added.</p>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="space-y-4">
+                                                                    {profile.eligibilities.map((elig, idx) => (
+                                                                        <div key={idx} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
+                                                                            <button
+                                                                                onClick={() => setProfile(p => ({ ...p, eligibilities: p.eligibilities.filter((_, i) => i !== idx) }))}
+                                                                                className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
+                                                                                title="Remove"
+                                                                            >
+                                                                                <FiTrash2 size={12} />
+                                                                            </button>
+                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                                                                <Field label="Eligibility">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={elig.title}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, title: e.target.value } : x) }))}
+                                                                                        placeholder="e.g. Career Service Professional"
+                                                                                        className={inp}
+                                                                                    />
+                                                                                </Field>
+                                                                                <Field label="Eligibility Details">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={elig.details}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))}
+                                                                                        placeholder="Rating, Date, Place of Examination, etc."
+                                                                                        className={inp}
+                                                                                    />
+                                                                                </Field>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
 
@@ -1657,6 +1763,76 @@ const OfficialProfiling = () => {
                                                                     <ModernDatePicker isYearPicker value={profile.education_year_graduated} onChange={val => setP('education_year_graduated', val)} placeholder="YYYY" className={inp} />
                                                                 </Field>
                                                             </div>
+
+                                                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+                                                                <SectionLabel>Other Educational / Professional Courses</SectionLabel>
+                                                                <button
+                                                                    onClick={() => setProfile(p => ({ ...p, other_courses: [...(p.other_courses || []), { course: '', date_from: '', date_to: '', details: '' }] }))}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0038A8] text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-[#0038A8] hover:text-white transition-all shadow-sm"
+                                                                >
+                                                                    <FiPlus size={12} /> Add Course
+                                                                </button>
+                                                            </div>
+
+                                                            {(!profile.other_courses || profile.other_courses.length === 0) ? (
+                                                                <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                                                    <p className="text-xs font-semibold text-slate-400">No other courses added.</p>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="space-y-4">
+                                                                    {profile.other_courses.map((course, idx) => (
+                                                                        <div key={idx} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
+                                                                            <button
+                                                                                onClick={() => setProfile(p => ({ ...p, other_courses: p.other_courses.filter((_, i) => i !== idx) }))}
+                                                                                className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
+                                                                                title="Remove"
+                                                                            >
+                                                                                <FiTrash2 size={12} />
+                                                                            </button>
+                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-4">
+                                                                                <Field label="Course Title">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={course.course || ''}
+                                                                                        onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, course: e.target.value } : x) }))}
+                                                                                        placeholder="e.g. Executive Leadership Program"
+                                                                                        className={inp}
+                                                                                    />
+                                                                                </Field>
+                                                                                <Field label="Details">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={course.details || ''}
+                                                                                        onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))}
+                                                                                        placeholder="Sponsor, Location, etc."
+                                                                                        className={inp}
+                                                                                    />
+                                                                                </Field>
+                                                                            </div>
+                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                                                                <Field label="Date From">
+                                                                                    <div className="relative">
+                                                                                        <ModernDatePicker 
+                                                                                            value={course.date_from || ''} 
+                                                                                            onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_from: val } : x) }))} 
+                                                                                            className={inp} 
+                                                                                        />
+                                                                                    </div>
+                                                                                </Field>
+                                                                                <Field label="Date To">
+                                                                                    <div className="relative">
+                                                                                        <ModernDatePicker 
+                                                                                            value={course.date_to || ''} 
+                                                                                            onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_to: val } : x) }))} 
+                                                                                            className={inp} 
+                                                                                        />
+                                                                                    </div>
+                                                                                </Field>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -1920,6 +2096,10 @@ const OfficialProfiling = () => {
                                                                 { id: 'profile_word', label: 'Accomplished Profile (Word File)', note: 'Word format required', accept: '.doc,.docx' },
                                                                 { id: 'profile_ppt', label: 'Accomplished Profile (PPT Format)', note: 'PowerPoint format required', accept: '.ppt,.pptx' },
                                                                 { id: 'service_records', label: 'Service Records', note: 'PDF — verifies previous positions', accept: '.pdf' },
+                                                                { id: 'sandiganbayan_clearance', label: 'Sandiganbayan / Case/s', note: 'Image format only', accept: 'image/*' },
+                                                                { id: 'nbi_clearance', label: 'NBI Clearance / Case/s', note: 'Image format only', accept: 'image/*' },
+                                                                { id: 'csc_clearance', label: 'CSC / Case/s', note: 'Image format only', accept: 'image/*' },
+                                                                { id: 'ombudsman_clearance', label: 'Ombudsman / Case/s', note: 'Image format only', accept: 'image/*' },
                                                             ].map(({ id, label, note, accept }) => (
                                                                 <div key={id} className="flex flex-col gap-3 p-6 bg-slate-50/40 hover:bg-transparent border border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md">
                                                                     <div className="flex items-center gap-3">
@@ -1934,22 +2114,34 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    <div className="relative group/upload">
-                                                                        <input
-                                                                            type="file"
-                                                                            accept={accept}
-                                                                            onChange={(e) => {
-                                                                                const file = e.target.files[0];
-                                                                                if (file) handleFileUpload(file, id);
-                                                                            }}
-                                                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                                                        />
-                                                                        <div className={`flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile[`${id}_binary_id`] ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
-                                                                            <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce' : ''} />
-                                                                            <span className="text-[10px] font-black uppercase tracking-widest">
-                                                                                {uploadingDocs[id] ? 'Processing...' : profile[`${id}_binary_id`] ? 'Replace Document' : 'Upload Document'}
-                                                                            </span>
+                                                                    <div className="flex gap-2 h-10">
+                                                                        <div className="relative group/upload flex-1 h-full">
+                                                                            <input
+                                                                                type="file"
+                                                                                accept={accept}
+                                                                                onChange={(e) => {
+                                                                                    const file = e.target.files[0];
+                                                                                    if (file) handleFileUpload(file, id);
+                                                                                }}
+                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                            />
+                                                                            <div className={`h-full flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile[`${id}_binary_id`] ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
+                                                                                <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce' : ''} />
+                                                                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                                                                    {uploadingDocs[id] ? 'Processing...' : profile[`${id}_binary_id`] ? 'Replace' : 'Upload Document'}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
+                                                                        {profile[`${id}_binary_id`] && (
+                                                                            <button 
+                                                                                onClick={() => handleDownloadDocument(profile[`${id}_binary_id`], label)}
+                                                                                className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
+                                                                                title="Download Document"
+                                                                            >
+                                                                                <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
+                                                                                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -1973,18 +2165,15 @@ const OfficialProfiling = () => {
                                                             <Field label="Pending Administrative Case/s (Type 'Not Applicable' if none)">
                                                                 <textarea value={profile.pending_admin_case || ''} onChange={e => setP('pending_admin_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none. Otherwise, describe the nature and status of the case." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
                                                             </Field>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                                <Field label="Sandiganbayan / Case/s">
-                                                                    <textarea value={profile.sandiganbayan_case || ''} onChange={e => setP('sandiganbayan_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                            <div className="space-y-6">
+                                                                <Field label="Have you ever been found guilty of any administrative offense?">
+                                                                    <textarea value={profile.guilty_admin_details || ''} onChange={e => setP('guilty_admin_details', e.target.value)} rows={2} placeholder="Type 'No' if none. Otherwise, provide details." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
                                                                 </Field>
-                                                                <Field label="NBI Clearance / Case/s">
-                                                                    <textarea value={profile.nbi_case || ''} onChange={e => setP('nbi_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                                <Field label="Have you been criminally charged before any court?">
+                                                                    <textarea value={profile.criminally_charged_details || ''} onChange={e => setP('criminally_charged_details', e.target.value)} rows={2} placeholder="Type 'No' if none. Otherwise, provide date and status of case/s." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
                                                                 </Field>
-                                                                <Field label="CSC / Case/s">
-                                                                    <textarea value={profile.csc_case || ''} onChange={e => setP('csc_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
-                                                                </Field>
-                                                                <Field label="Ombudsman / Case/s">
-                                                                    <textarea value={profile.ombudsman_case || ''} onChange={e => setP('ombudsman_case', e.target.value)} rows={3} placeholder="Type 'Not Applicable' if none." className="w-full bg-transparent border-2 border-transparent focus:border-amber-400 rounded-2xl py-3 px-5 text-sm font-bold outline-none transition-all resize-none" />
+                                                                <Field label="Have you ever been convicted of any crime or violation of any law?">
+                                                                    <textarea value={profile.convicted_crime_details || ''} onChange={e => setP('convicted_crime_details', e.target.value)} rows={2} placeholder="Type 'No' if none. Otherwise, provide details." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
                                                                 </Field>
                                                             </div>
                                                         </div>
@@ -2396,6 +2585,17 @@ const OfficialProfiling = () => {
                                                                     <SummaryRow label="Educational Management Test (EMT)" value={profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : null} />
                                                                     <SummaryRow label="EMT Date" value={profile.emt_date} />
                                                                 </div>
+
+                                                                {profile.eligibilities && profile.eligibilities.length > 0 && (
+                                                                    <div className="mt-5 space-y-2">
+                                                                        {profile.eligibilities.map((elig, idx) => (
+                                                                            <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                                                <span className="text-[10px] font-black text-[#08315F] tracking-widest uppercase">{elig.title || 'Untitled'}:</span>
+                                                                                <span className="text-xs font-bold text-slate-800">{elig.details || '—'}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             <div>
@@ -2406,6 +2606,24 @@ const OfficialProfiling = () => {
                                                                     <SummaryRow label="Program / Course" value={profile.education_program} />
                                                                     <SummaryRow label="Year Graduated" value={profile.education_year_graduated} />
                                                                 </div>
+                                                                {profile.other_courses && profile.other_courses.length > 0 && (
+                                                                    <div className="mt-5 space-y-2">
+                                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Other Courses</p>
+                                                                        {profile.other_courses.map((course, idx) => (
+                                                                            <div key={idx} className="flex flex-col gap-1 sm:gap-2 mb-2">
+                                                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                                                    <span className="text-[10px] font-black text-[#08315F] tracking-widest uppercase">{course.course || 'Untitled'}:</span>
+                                                                                    <span className="text-xs font-bold text-slate-800">
+                                                                                        {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
+                                                                                    </span>
+                                                                                </div>
+                                                                                {course.details && (
+                                                                                    <span className="text-[10px] font-bold text-slate-500 italic">{course.details}</span>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             <div>
@@ -2463,8 +2681,10 @@ const OfficialProfiling = () => {
                                                             <div>
                                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Legal Disclosures</p>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                    <SummaryRow label="Administrative Cases" value={profile.pending_admin_case ? 'Disclosed' : null} />
-                                                                    <SummaryRow label="Ombudsman / CSC Cases" value={profile.ombudsman_case ? 'Disclosed' : null} />
+                                                                    <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case ? 'Disclosed' : 'No'} />
+                                                                    <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details ? 'Disclosed' : 'No'} />
+                                                                    <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details ? 'Disclosed' : 'No'} />
+                                                                    <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details ? 'Disclosed' : 'No'} />
                                                                 </div>
                                                             </div>
                                                         </div>

@@ -220,7 +220,11 @@ export const uploadDocument = async (req, res) => {
       'pds': 'pds_binary_id',
       'profile_word': 'profile_word_binary_id',
       'profile_ppt': 'profile_ppt_binary_id',
-      'service_records': 'service_records_binary_id'
+      'service_records': 'service_records_binary_id',
+      'sandiganbayan_clearance': 'sandiganbayan_clearance_binary_id',
+      'nbi_clearance': 'nbi_clearance_binary_id',
+      'csc_clearance': 'csc_clearance_binary_id',
+      'ombudsman_clearance': 'ombudsman_clearance_binary_id'
     };
 
     const columnName = docMap[docType];
@@ -289,16 +293,18 @@ export const updateProfile = async (req, res) => {
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
-      'relevant_trainings', 'notable_achievements', 'notable_achievements_year', 'individual_accomplishments', 'total_training_hours',
+      'relevant_trainings', 'notable_achievements', 'notable_achievements_year', 'eligibilities', 'individual_accomplishments', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
       'previous_positions', 'is_oic', 'unique_number', 'employment_status',
       'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-      'pending_admin_case', 'ombudsman_case', 'sandiganbayan_case', 'nbi_case', 'csc_case', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
+      'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id',
+      'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for',
+      'other_courses'
     ];
 
-    const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'individual_accomplishments']);
+    const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'individual_accomplishments', 'eligibilities', 'other_courses']);
     const updates = [];
     const values = [];
 
