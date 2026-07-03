@@ -719,7 +719,7 @@ export const getOfficials = async (req, res) => {
   let query = `
     WITH RankedOfficials AS (
       SELECT 
-        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.ombudsman_case, m.date_of_birth,
+        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         ROW_NUMBER() OVER (
@@ -941,7 +941,7 @@ export const getKpiSummary = async (req, res) => {
       WITH RankedOfficials AS (
         SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
           m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
-          m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case, m.ombudsman_case,
+          m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case,
           (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
           ROW_NUMBER() OVER (
             PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
@@ -949,7 +949,7 @@ export const getKpiSummary = async (req, res) => {
           ) as rn
         FROM third_level_official_masterlist m
       )
-      SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, region, division, designation, effectivity_date, date_of_birth, created_at, updated_at, "TLOid", vacate_reason, photo_binary_id, pds_binary_id, contact_details, pending_admin_case, ombudsman_case
+      SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, region, division, designation, effectivity_date, date_of_birth, created_at, updated_at, "TLOid", vacate_reason, photo_binary_id, pds_binary_id, contact_details, pending_admin_case
       FROM RankedOfficials 
       WHERE rn = 1
     `);
