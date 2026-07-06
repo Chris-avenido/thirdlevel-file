@@ -87,6 +87,11 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
     setCurrentPage(1);
   };
 
+  const handleClose = () => {
+    resetModal();
+    onClose();
+  };
+
   const handleDownloadData = async () => {
     try {
       Swal.fire({ title: 'Preparing Download', text: 'Fetching existing directory...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -149,7 +154,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
               <p className="text-sm font-bold text-slate-500 m-0 uppercase tracking-wider mt-1">Bulk Upload & Process</p>
             </div>
             <button 
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isProcessing}
               className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-red-500 transition-colors disabled:opacity-50"
             >
@@ -389,7 +394,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
             {!summary ? (
               <>
                 <button 
-                  onClick={onClose}
+                  onClick={handleClose}
                   disabled={isProcessing}
                   className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50"
                 >
@@ -406,7 +411,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
               </>
             ) : (
               <button 
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-8 py-3 rounded-xl font-black text-white bg-[#075985] hover:bg-[#0369a1] transition-all shadow-lg shadow-[#075985]/30"
               >
                 Close Summary
