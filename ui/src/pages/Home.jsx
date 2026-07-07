@@ -590,7 +590,7 @@ const Home = () => {
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen bg-transparent text-[#0f172a] font-['Quicksand',system-ui,sans-serif]">
+      <div className="flex min-h-screen bg-transparent text-[#0f172a] font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
           {/* TOP NAVIGATION BAR */}
@@ -600,14 +600,14 @@ const Home = () => {
                 <FiHome size={20} />
               </div>
               <div>
-                <h1 className="text-lg font-['Quicksand'] font-black text-white tracking-tight leading-none italic uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
+                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">InsightED Top-Level Metrics</p>
               </div>
             </div>
 
             <div className="flex items-center gap-6">
               <div className="hidden md:flex flex-col items-end">
-                <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
+                <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                 <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
               </div>
             </div>

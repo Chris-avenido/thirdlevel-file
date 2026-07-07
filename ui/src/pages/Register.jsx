@@ -206,7 +206,7 @@ const Register = () => {
                                 <div className="w-16 h-16 bg-white/50 rounded-2xl shadow-inner flex items-center justify-center p-2 mb-6">
                                     <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                                 </div>
-                                <h1 className="text-4xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic leading-none uppercase">
+                                <h1 className="text-4xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic leading-none uppercase">
                                     Join <span className="text-[#075985] not-italic">Registry</span>
                                 </h1>
                                 <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-3 flex items-center gap-2">

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Quicksand:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
 .nexus-gate-wrapper {
   --navy: #06345F;
@@ -31,7 +31,7 @@
   --orb-warm: rgba(253,186,34,.30);
   --orb-cool: rgba(10,111,166,.18);
 
-  --font-heading: "Quicksand", "IBM Plex Sans", system-ui, sans-serif;
+  --font-heading: "Plus Jakarta Sans", "IBM Plex Sans", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   width: 100%;

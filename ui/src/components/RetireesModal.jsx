@@ -38,7 +38,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-['Quicksand']"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-['Plus_Jakarta_Sans']"
         >
           <motion.div 
             initial={{ scale: 0.95, opacity: 0 }}
@@ -257,7 +257,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
                     <div className="flex justify-between items-start mb-8">
                         <div>
                             <span className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
-                            <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
+                            <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
                                 VACATING OFFICIAL
                             </h2>
                             <p className="text-slate-400 font-bold mt-2">

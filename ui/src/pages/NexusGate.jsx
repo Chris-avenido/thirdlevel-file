@@ -239,7 +239,7 @@ const NexusGate = () => {
                                 <div className="p-10">
                                     <div className="flex justify-between items-start mb-8">
                                         <div className="space-y-1">
-                                            <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic uppercase">Application Access</h2>
+                                            <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">Application Access</h2>
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Verify your InsightED account status</p>
                                         </div>
                                         <button onClick={() => setShowRecruitModal(false)} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
@@ -308,7 +308,7 @@ const NexusGate = () => {
                                         {/* Access Options */}
                                         <motion.div key="access-step" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                                             <div>
-                                                <h2 className="text-2xl font-['Quicksand'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
+                                                <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
                                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your existing account or register a new one</p>
                                             </div>
 

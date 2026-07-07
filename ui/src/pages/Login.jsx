@@ -185,7 +185,7 @@ const Login = () => {
                             <div className="relative w-24 h-24 mx-auto mb-4 bg-white/50 rounded-2xl shadow-inner flex items-center justify-center p-2">
                                 <img src={logo} alt="InsightED Logo" className="w-full h-full object-contain drop-shadow-sm" />
                             </div>
-                            <h1 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tight">InsightED</h1>
+                            <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight">InsightED</h1>
                             <p className="text-slate-500 text-sm mt-2 font-medium italic">Recruitment Hub</p>
                         </div>
 

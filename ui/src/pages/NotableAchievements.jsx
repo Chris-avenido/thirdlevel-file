@@ -211,7 +211,7 @@ const NotableAchievements = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent font-['Quicksand'] text-[#08315F] flex-col lg:flex-row relative overflow-hidden">
+            <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] flex-col lg:flex-row relative overflow-hidden">
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
                     
@@ -222,7 +222,7 @@ const NotableAchievements = () => {
                                 <FiAward size={20} />
                             </div>
                             <div>
-                                <h1 className="text-lg font-['Quicksand'] font-black text-white tracking-tight leading-none italic uppercase">Notable <span className="text-blue-300 not-italic">Achievements</span></h1>
+                                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Notable <span className="text-blue-300 not-italic">Achievements</span></h1>
                                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
                                     {achievements.length} Total Achievements
                                 </p>
@@ -286,7 +286,7 @@ const NotableAchievements = () => {
                             ) : sortedRecords.length === 0 ? (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
                                     <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
-                                    <h3 className="text-xl font-['Quicksand'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
+                                    <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or add a new record.</p>
                                 </motion.div>
                             ) : (
@@ -319,7 +319,7 @@ const NotableAchievements = () => {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <div className="font-['Quicksand'] font-black text-[#08315F] text-sm leading-none group-hover:text-[#08315F] transition-colors line-clamp-2">
+                                                            <div className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none group-hover:text-[#08315F] transition-colors line-clamp-2">
                                                                 {item.achievement}
                                                             </div>
                                                         </td>

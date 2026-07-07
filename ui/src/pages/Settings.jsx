@@ -114,7 +114,7 @@ const Settings = () => {
     };
 
     return (
-        <div className="flex h-screen bg-transparent font-['Quicksand'] overflow-hidden">
+        <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] overflow-hidden">
             <AdminSidebar />
             
             <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
@@ -125,14 +125,14 @@ const Settings = () => {
                             <FiSettings size={20} />
                         </div>
                         <div>
-                            <h1 className="text-lg font-['Quicksand'] font-black text-white tracking-tight leading-none italic uppercase">Account <span className="text-blue-300 not-italic">Settings</span></h1>
+                            <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Account <span className="text-blue-300 not-italic">Settings</span></h1>
                             <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">Profile & Security</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-xs font-['Quicksand'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
+                            <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                             <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
                         </div>
                     </div>

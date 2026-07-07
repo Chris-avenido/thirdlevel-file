@@ -124,7 +124,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08315F]/60 backdrop-blur-sm p-4 font-['Quicksand',system-ui,sans-serif]"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08315F]/60 backdrop-blur-sm p-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

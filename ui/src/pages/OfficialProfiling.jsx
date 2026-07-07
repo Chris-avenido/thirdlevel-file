@@ -183,6 +183,7 @@ const OfficialProfiling = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const urlEmail = searchParams.get('email');
+    const urlVacancy = searchParams.get('vacancy');
     const { user, token, logout } = useAuth();
 
     const [status, setStatus] = useState('loading'); // loading | found | not-found | error
@@ -574,7 +575,10 @@ const OfficialProfiling = () => {
                 setApplicationStatus(data.source === 'masterlist' ? null : d.application_status);
                 setDenialReason(d.denial_reason || '');
                 setDataSource(data.source);
-                setTargetVacancyId(d.target_TLOid || null);
+                setTargetVacancyId(urlVacancy || d.target_TLOid || null);
+                if (urlVacancy) {
+                    setTab('application');
+                }
                 setProfile({
                     last_name: d.last_name || '',
                     first_name: d.first_name || '',
@@ -1001,7 +1005,7 @@ const OfficialProfiling = () => {
     // ── LOADING ──
     if (status === 'loading') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-transparent font-['Quicksand']">
+            <div className="min-h-screen flex items-center justify-center bg-transparent font-['Plus_Jakarta_Sans']">
                 <div className="flex flex-col items-center gap-6">
                     <div className="w-14 h-14 border-[5px] border-[#0038A8] border-t-transparent rounded-full animate-spin" />
                     <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px]">Loading Your Profile...</p>
@@ -1014,12 +1018,12 @@ const OfficialProfiling = () => {
     if (status === 'not-found' || status === 'error') {
         return (
             <PageTransition>
-                <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8 font-['Quicksand'] text-center">
+                <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8 font-['Plus_Jakarta_Sans'] text-center">
                     <div className="max-w-md w-full bg-white border-2 border-[#08315F] rounded-[22px] p-12 shadow-none">
                         <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
                             <FiSearch size={40} />
                         </div>
-                        <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] italic tracking-tighter mb-4">Record Not Found</h2>
+                        <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] italic tracking-tighter mb-4">Record Not Found</h2>
                         <p className="text-sm font-bold text-slate-500 leading-relaxed mb-8">
                             Your account email (<span className="text-[#08315F]">{user?.email || 'unknown'}</span>) is not yet linked to an active Third Level Official record in the masterlist.
                         </p>
@@ -1051,7 +1055,7 @@ const OfficialProfiling = () => {
     // ── MAIN PROFILING FORM ──
     return (
         <PageTransition>
-            <div className="min-h-screen bg-transparent font-['Quicksand'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+            <div className="min-h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
                 {/* Ambient Decorative Background Elements */}
 
                 {/* ── Mobile Sidebar Drawer ── */}
@@ -1081,7 +1085,7 @@ const OfficialProfiling = () => {
                                             <FiUser size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-['Quicksand'] font-black text-[#08315F] leading-tight">Talent Portal</p>
+                                            <p className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight">Talent Portal</p>
                                             <p className="text-[10px] font-medium text-slate-400">Applicant Workspace</p>
                                         </div>
                                     </div>
@@ -1183,8 +1187,16 @@ const OfficialProfiling = () => {
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[9px] md:text-[11px] font-medium">
                                         {TLOid && (
                                             <span className="flex items-center gap-1">
-                                                • {applicationId ? `APP-${String(applicationId).padStart(4, '0')}` : TLOid}
+                                                • {TLOid}
                                             </span>
+                                        )}
+                                        {applicationId && (
+                                            <>
+                                                <span className="opacity-30">·</span>
+                                                <span className="flex items-center gap-1">
+                                                    APP-{String(applicationId).padStart(4, '0')}
+                                                </span>
+                                            </>
                                         )}
                                         {TLOid && <span className="opacity-30">·</span>}
                                         <span className="flex items-center gap-1">
@@ -1231,7 +1243,7 @@ const OfficialProfiling = () => {
                                     <FiUser size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-['Quicksand'] font-black text-[#08315F] leading-tight">Talent Portal</p>
+                                    <p className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight">Talent Portal</p>
                                     <p className="text-[10px] font-medium text-slate-400">Applicant Workspace</p>
                                 </div>
                             </div>
@@ -1283,7 +1295,7 @@ const OfficialProfiling = () => {
                                 </div>
                                 <div>
                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Active Section</p>
-                                    <p className="text-xs font-['Quicksand'] font-black text-[#08315F] uppercase tracking-wider mt-1">{TABS.find(t => t.id === tab)?.label}</p>
+                                    <p className="text-xs font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-wider mt-1">{TABS.find(t => t.id === tab)?.label}</p>
                                 </div>
                             </div>
                             <button
@@ -1389,7 +1401,7 @@ const OfficialProfiling = () => {
                                                                 <SectionLabel>Designation & Appointment</SectionLabel>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                                                                     <Field label="Unique Number">
-                                                                        <input type="text" value={profile.unique_number || ''} onChange={e => setP('unique_number', e.target.value)} placeholder="e.g. 123456" className={inp} />
+                                                                        <input type="text" value={TLOid || ''} disabled className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
                                                                     </Field>
                                                                     <Field label="Employment Status">
                                                                         <select value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
@@ -1627,7 +1639,7 @@ const OfficialProfiling = () => {
                                                                             <FiClock size={20} />
                                                                         </div>
                                                                         <div>
-                                                                            <h3 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
+                                                                            <h3 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
                                                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Professional Journey</p>
                                                                         </div>
                                                                     </div>
@@ -1653,7 +1665,7 @@ const OfficialProfiling = () => {
                                                                                     </div>
                                                                                     <div className="flex-1 pt-1">
                                                                                         <div className="flex justify-between items-start">
-                                                                                            <h4 className="text-[11px] font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
+                                                                                            <h4 className="text-[11px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
                                                                                             <span className="text-[8px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
                                                                                         </div>
                                                                                         <p className="text-[10px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
@@ -2105,7 +2117,7 @@ const OfficialProfiling = () => {
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="w-10 h-10 bg-transparent rounded-xl flex items-center justify-center text-[#08315F]"><FiFileText size={18} /></div>
                                                                         <div className="flex-1">
-                                                                            <p className="text-[11px] font-['Quicksand'] font-black text-[#08315F] leading-tight">{label}</p>
+                                                                            <p className="text-[11px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight">{label}</p>
                                                                             <p className="text-[9px] font-bold text-slate-400 italic mt-0.5">{note}</p>
                                                                         </div>
                                                                         {profile[`${id}_binary_id`] && (
@@ -2221,7 +2233,7 @@ const OfficialProfiling = () => {
                                                                                     <FiBriefcase size={20} />
                                                                                 </div>
                                                                                 <div>
-                                                                                    <h4 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic flex items-center gap-2">
+                                                                                    <h4 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic flex items-center gap-2">
                                                                                         <span>{v.position_title}</span>
                                                                                         {v.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                     </h4>
@@ -2309,7 +2321,7 @@ const OfficialProfiling = () => {
                                                                                     <div className="w-full lg:w-64 bg-transparent border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
                                                                                         <div className="flex items-center justify-between mb-4">
                                                                                             <div>
-                                                                                                <h2 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
+                                                                                                <h2 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
                                                                                             </div>
                                                                                             <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm">
                                                                                                 <FiX size={16} />
@@ -2385,7 +2397,7 @@ const OfficialProfiling = () => {
                                                                                         {selectedExportType === 'pdf' && (
                                                                                             <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border border-slate-200 shadow-inner hide-scrollbar">
                                                                                                 <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
-                                                                                                    <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Quicksand'] text-black" id="pdf-preview-content">
+                                                                                                    <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Plus_Jakarta_Sans'] text-black" id="pdf-preview-content">
                                                                                                         <div className="flex justify-between items-start mb-8">
                                                                                                             <div className="flex gap-6 items-center">
                                                                                                                 <img src={newLogo} alt="Logo" className="w-24 h-24 object-contain" />
@@ -2492,13 +2504,13 @@ const OfficialProfiling = () => {
 
                                                                                         {selectedExportType === 'ppt' && (
                                                                                             <div className="overflow-hidden w-full rounded-2xl border-2 border-slate-200 bg-slate-50 relative flex items-start justify-center pt-8 pb-4" style={{ height: `${Math.max(350, 562.5 * previewScale + 64)}px` }}>
-                                                                                                <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Quicksand'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
+                                                                                                <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Plus_Jakarta_Sans'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
                                                                                                     <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
                                                                                                         <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
                                                                                                         <div className="flex gap-4 items-center mb-6">
                                                                                                             <img src={newLogo} alt="Logo" className="w-16 h-16 object-contain" />
                                                                                                             <div>
-                                                                                                                <h1 className="text-3xl font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
+                                                                                                                <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
                                                                                                                 <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
                                                                                                                     <span>{profile.position_title || 'N/A'}</span>
                                                                                                                     {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
@@ -2515,8 +2527,8 @@ const OfficialProfiling = () => {
                                                                                                             </div>
                                                                                                             <div className="w-64 border-2 border-red-700 rounded-xl p-6">
                                                                                                                 <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
-                                                                                                                <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Quicksand'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
-                                                                                                                <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Quicksand'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
+                                                                                                                <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
+                                                                                                                <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                     </div>
@@ -2696,7 +2708,7 @@ const OfficialProfiling = () => {
                                                                     <FiClock size={20} />
                                                                 </div>
                                                                 <div>
-                                                                    <h3 className="text-sm font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
+                                                                    <h3 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
                                                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Professional Journey</p>
                                                                 </div>
                                                             </div>
@@ -2719,7 +2731,7 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                             <div className="flex-1 pt-1">
                                                                                 <div className="flex justify-between items-start">
-                                                                                    <h4 className="text-[11px] font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
+                                                                                    <h4 className="text-[11px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
                                                                                     <span className="text-[8px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
                                                                                 </div>
                                                                                 <p className="text-[10px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
@@ -2912,14 +2924,25 @@ const OfficialProfiling = () => {
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                     <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database
                                 </span>
-                                <button
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                    className="px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
-                                    {saving ? 'Saving...' : 'Save Progress'}
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => {
+                                            const emailParam = searchParams.get('email');
+                                            navigate(`/all-vacancies${emailParam ? `?email=${encodeURIComponent(emailParam)}` : ''}`);
+                                        }}
+                                        className="px-6 py-3 bg-blue-50 hover:bg-blue-100 text-[#0038A8] font-black text-[10px] uppercase tracking-widest rounded-lg shadow-sm hover:shadow-md transition-all duration-300 active:scale-95 flex items-center gap-2 border border-blue-200"
+                                    >
+                                        <FiBriefcase size={14} /> View All Vacancies
+                                    </button>
+                                    <button
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
+                                        {saving ? 'Saving...' : 'Save Progress'}
+                                    </button>
+                                </div>
                             </div>
                         )}
 

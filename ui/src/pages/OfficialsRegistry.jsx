@@ -1169,7 +1169,7 @@ const OfficialsRegistry = () => {
                             </div>
                             <div className="topbar-actions">
                                 <div className="hidden md:flex flex-col justify-center items-end bg-white border-2 border-[#BAE6FD] rounded-full px-6 h-[52px] min-w-[170px] shadow-sm">
-                                    <span className="text-[14px] font-['Quicksand'] font-black text-[#08315F] leading-none mb-1">{user?.first_name} {user?.last_name}</span>
+                                    <span className="text-[14px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-none mb-1">{user?.first_name} {user?.last_name}</span>
                                     <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest leading-none">{user?.role}</span>
                                 </div>
                             </div>
@@ -1461,7 +1461,7 @@ const OfficialsRegistry = () => {
                                                                 <div className="min-w-0">
                                                                     <div
                                                                         onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
-                                                                        className={`font-['Quicksand'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                        className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                         title={item.email ? "View Official Profile" : ""}
                                                                     >
                                                                         {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
@@ -1549,7 +1549,7 @@ const OfficialsRegistry = () => {
                                                                 ) : <FiUser size={16} />}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <div onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)} className="font-['Quicksand'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
+                                                                <div onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
                                                                     {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
                                                                 </div>
                                                                 <div className="text-[10px] font-bold text-slate-400 mt-1 truncate">{item.email || 'No Email'}</div>
@@ -1642,7 +1642,7 @@ const OfficialsRegistry = () => {
                                                     </div>
 
                                                     <div className="space-y-1 relative z-10">
-                                                        <h3 className="text-sm font-['Quicksand'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic line-clamp-2">
+                                                        <h3 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic line-clamp-2">
                                                             {item.first_name ? <>{item.first_name} {item.last_name}</> : <span className="text-rose-500">VACANT POSITION</span>}
                                                         </h3>
                                                         {item.status !== 'Inactive' && (
@@ -1770,7 +1770,7 @@ const OfficialsRegistry = () => {
                                     {Object.keys(directoryGroups).length === 0 && (
                                         <div className="py-20 text-center">
                                             <FiLayers className="mx-auto text-slate-200 mb-6" size={64} />
-                                            <h2 className="text-2xl font-['Quicksand'] font-black text-[#08315F] uppercase tracking-tighter mb-2">No Directory Data</h2>
+                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tighter mb-2">No Directory Data</h2>
                                             <p className="text-slate-500 font-bold max-w-md mx-auto">No records found matching the current filters.</p>
                                         </div>
                                     )}
@@ -1798,7 +1798,7 @@ const OfficialsRegistry = () => {
                                                     <div className="flex items-center gap-2 text-[#075985] font-black text-[10px] uppercase tracking-[0.2em] mb-2">
                                                         <FiClock /> Positional History
                                                     </div>
-                                                    <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
+                                                    <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
                                                     <p className="text-slate-400 font-medium">{selectedPosition?.office || 'Department of Education'}</p>
                                                 </div>
                                                 <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border border-slate-100 transition-all">
@@ -1835,7 +1835,7 @@ const OfficialsRegistry = () => {
                                                                             </div>
                                                                             <div>
                                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                                    <h4 className="font-['Quicksand'] font-black text-[#08315F] text-base italic uppercase leading-none">
+                                                                                    <h4 className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-base italic uppercase leading-none">
                                                                                         {inc.first_name || 'VACANT'} {inc.last_name || ''}
                                                                                     </h4>
                                                                                     {inc.is_current == 1 && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[8px] font-black uppercase tracking-widest">Active</span>}
@@ -1899,7 +1899,7 @@ const OfficialsRegistry = () => {
                                                 <div className="flex justify-between items-start mb-8">
                                                     <div>
                                                         <span className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                                        <h2 className="text-3xl font-['Quicksand'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
+                                                        <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
                                                             {adminAction === 'reassign'
                                                                 ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
                                                                 : `${adminAction === 'vacate' ? 'VACATING' : `${adminAction.toUpperCase()}ING`} OFFICIAL`}

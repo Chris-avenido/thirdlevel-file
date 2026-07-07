@@ -15,6 +15,7 @@ import Home from './pages/Home';
 import Settings from './pages/Settings';
 import NotableAchievements from './pages/NotableAchievements';
 import LoadingScreen from './components/LoadingScreen';
+import AllVacancies from './pages/AllVacancies';
 
 // Public Route Component
 const PublicRoute = ({ children }) => {
@@ -99,6 +100,14 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <Settings />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/all-vacancies" 
+                element={
+                    <ProtectedRoute>
+                        <AllVacancies />
                     </ProtectedRoute>
                 } 
             />
