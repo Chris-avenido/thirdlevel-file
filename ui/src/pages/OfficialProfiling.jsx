@@ -236,6 +236,7 @@ const OfficialProfiling = () => {
     const [selectedExportType, setSelectedExportType] = useState('csv');
     const [exporting, setExporting] = useState(false);
     const [previewScale, setPreviewScale] = useState(1);
+    const [oicModalOpen, setOicModalOpen] = useState(false);
     const previewContainerRef = React.useRef(null);
 
     React.useEffect(() => {
@@ -846,10 +847,8 @@ const OfficialProfiling = () => {
     };
 
     useEffect(() => {
-        if (tab === 'application') {
-            fetchVacancies();
-        }
-    }, [tab]);
+        fetchVacancies();
+    }, []);
 
     const fetchNotableAchievements = async () => {
         try {
@@ -1189,7 +1188,7 @@ const OfficialProfiling = () => {
                                         )}
                                     </div>
                                     <p className="text-blue-200/80 text-xs md:text-sm font-medium mt-1 truncate flex items-center gap-2">
-                                        <span>{profile.position_title || 'No position selected'}{profile.designation ? ` - ${profile.designation}` : ''}</span>
+                                        <span>{profile.position_title || 'No position selected'}{(profile.designation && profile.designation !== profile.position_title) ? ` - ${profile.designation}` : ''}</span>
                                         {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[9px] md:text-[11px] font-medium">
@@ -1454,7 +1453,13 @@ const OfficialProfiling = () => {
                                                                         <div className="flex items-center gap-3 py-2 px-1">
                                                                             <button
                                                                                 type="button"
-                                                                                onClick={() => setP('is_oic', !profile.is_oic)}
+                                                                                onClick={() => {
+                                                                                    if (!profile.is_oic) {
+                                                                                        setOicModalOpen(true);
+                                                                                    } else {
+                                                                                        setP('is_oic', false);
+                                                                                    }
+                                                                                }}
                                                                                 className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-200'}`}
                                                                             >
                                                                                 <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -2979,6 +2984,36 @@ const OfficialProfiling = () => {
                                         {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
                                         {saving ? 'Saving...' : 'Save Progress'}
                                     </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {oicModalOpen && (
+                            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] flex items-center justify-center p-4">
+                                <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                        <div>
+                                            <h3 className="text-lg font-black text-[#08315F]">Select OIC Position</h3>
+                                            <p className="text-xs font-semibold text-slate-500 mt-1">Choose a vacant position to serve as Officer-in-Charge</p>
+                                        </div>
+                                        <button onClick={() => setOicModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-400 transition-colors"><FiX size={18} /></button>
+                                    </div>
+                                    <div className="p-6 overflow-y-auto flex-1 space-y-3">
+                                        {vacancies.length === 0 ? (
+                                            <div className="text-center py-8 text-sm font-semibold text-slate-400">No vacancies available.</div>
+                                        ) : (
+                                            vacancies.map(vac => (
+                                                <button key={vac.TLOid} onClick={() => {
+                                                    setP('position_title', vac.position_title);
+                                                    setP('is_oic', true);
+                                                    setOicModalOpen(false);
+                                                }} className="w-full text-left p-4 rounded-2xl border border-slate-200 hover:border-[#FCD116] hover:bg-yellow-50/30 transition-all flex flex-col gap-1 group">
+                                                    <span className="font-black text-[#08315F] text-sm group-hover:text-[#FBBF24] transition-colors">{vac.position_title}</span>
+                                                    <span className="font-bold text-slate-500 text-xs">{vac.office} • {vac.strand}</span>
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}

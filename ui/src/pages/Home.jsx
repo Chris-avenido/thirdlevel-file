@@ -233,6 +233,18 @@ const Home = () => {
     return allOfficials.filter(o => o.status === 'Vacated' || o.first_name === 'VACANT' || !o.first_name);
   }, [allOfficials]);
 
+  const anticipatedVacanciesCount = useMemo(() => {
+    const today = new Date();
+    const in5Years = new Date(today.getFullYear() + 5, today.getMonth(), today.getDate());
+
+    return officials.filter(o => {
+      if (!o.date_of_birth) return false;
+      const dob = new Date(o.date_of_birth);
+      const retirementDate = new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate());
+      return retirementDate >= today && retirementDate <= in5Years;
+    }).length;
+  }, [officials]);
+
   const inactiveOfficials = useMemo(() => {
     return allOfficials.filter(o => o.status === 'Inactive');
   }, [allOfficials]);
@@ -808,8 +820,11 @@ const Home = () => {
               </div>
               <div className={`kpi red ${activeQueueFilter === 'vacant' ? 'active-filter' : ''}`} onClick={() => toggleFilter('vacant')} style={{ cursor: 'pointer' }}>
                 <p>Total Vacant Positions</p>
-                <h2>{loading ? '-' : vacantOfficials.length}</h2>
-                <div className="kpi-subheader">Unfilled positions</div>
+                <div className="flex items-center gap-3 mt-2">
+                  <h2 className="!mt-0">{loading ? '-' : vacantOfficials.length}</h2>
+                  <span className="text-red-500 text-[10px] font-black uppercase tracking-widest bg-red-50 px-2 py-1 rounded-md border border-red-100" title="Retiring within 5 years">+{loading ? '-' : anticipatedVacanciesCount} Anticipated</span>
+                </div>
+                <div className="kpi-subheader mt-1">Unfilled positions</div>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
                   {Object.keys(vacantRegionBreakdown).length > 0 ? Object.entries(vacantRegionBreakdown).map(([region, count], idx) => (
