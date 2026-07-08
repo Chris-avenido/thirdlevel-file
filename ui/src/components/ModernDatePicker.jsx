@@ -111,7 +111,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, is
                         </div>
                     )
                 } : {})}
-                dateFormat={isYearPicker ? "yyyy" : (isMonthPicker ? "MM/yyyy" : "MMMM d, yyyy")}
+                dateFormat={isYearPicker ? "yyyy" : (isMonthPicker ? "MM/yyyy" : "MM/dd/yy")}
                 showMonthYearPicker={isMonthPicker && !isYearPicker}
                 showYearPicker={isYearPicker}
                 popperPlacement="bottom-start"
