@@ -233,7 +233,7 @@ const Home = () => {
     return allOfficials.filter(o => o.status === 'Vacated' || o.first_name === 'VACANT' || !o.first_name);
   }, [allOfficials]);
 
-  const anticipatedVacanciesCount = useMemo(() => {
+  const anticipatedVacancies = useMemo(() => {
     const today = new Date();
     const in5Years = new Date(today.getFullYear() + 5, today.getMonth(), today.getDate());
 
@@ -242,8 +242,10 @@ const Home = () => {
       const dob = new Date(o.date_of_birth);
       const retirementDate = new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate());
       return retirementDate >= today && retirementDate <= in5Years;
-    }).length;
+    });
   }, [officials]);
+
+  const anticipatedVacanciesCount = anticipatedVacancies.length;
 
   const inactiveOfficials = useMemo(() => {
     return allOfficials.filter(o => o.status === 'Inactive');
@@ -412,6 +414,23 @@ const Home = () => {
       });
     });
 
+    // Anticipated Retirees
+    anticipatedVacancies.forEach(o => {
+      if (!retireesThisMonth.find(r => r.TLOid === o.TLOid)) {
+        queue.push({
+          id: o.TLOid,
+          email: o.email,
+          name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
+          desc: `Anticipated Retirement (Within 5 Yrs) · ${o.office || 'Unassigned'}`,
+          status: 'Anticipated',
+          badgeClass: 'warn',
+          type: 'retirees',
+          region: getOfficialRegion(o),
+          level: getOfficialLevel(o)
+        });
+      }
+    });
+
     // Vacant Positions
     vacantOfficials.forEach(o => {
       queue.push({
@@ -490,7 +509,7 @@ const Home = () => {
     }
 
     return queue.slice(0, 8);
-  }, [applications, officials, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth]);
+  }, [applications, officials, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth, anticipatedVacancies]);
 
   const activityLogs = useMemo(() => {
     let filtered = [...allOfficials];
@@ -503,7 +522,8 @@ const Home = () => {
         filtered = filtered.filter(o => o.status === 'Active' && (o.pending_admin_case || o.ombudsman_case));
       } else if (activeQueueFilter === 'retirees') {
         const retireeIds = retireesThisMonth.map(r => r.TLOid);
-        filtered = filtered.filter(o => retireeIds.includes(o.TLOid));
+        const anticipatedIds = anticipatedVacancies.map(r => r.TLOid);
+        filtered = filtered.filter(o => retireeIds.includes(o.TLOid) || anticipatedIds.includes(o.TLOid));
       } else if (activeQueueFilter === 'vacant') {
         filtered = filtered.filter(o => o.status === 'Vacated' || o.first_name === 'VACANT' || !o.first_name);
       } else if (activeQueueFilter === 'inactive') {
@@ -594,7 +614,7 @@ const Home = () => {
           time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
         };
       });
-  }, [allOfficials, applications, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth]);
+  }, [allOfficials, applications, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth, anticipatedVacancies]);
 
   const toggleFilter = (filter) => {
     setActiveQueueFilter(prev => prev === filter ? 'all' : filter);
@@ -802,8 +822,11 @@ const Home = () => {
               </div>
               <div className={`kpi purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}`} onClick={() => toggleFilter('retirees')} style={{ cursor: 'pointer' }}>
                 <p>Upcoming Resignations & Retirees</p>
-                <h2>{loading ? '-' : retireesThisMonth.length}</h2>
-                <div className="kpi-subheader">Separations this month</div>
+                <div className="flex items-center gap-3 mt-2">
+                  <h2 className="!mt-0">{loading ? '-' : retireesThisMonth.length}</h2>
+                  <span className="text-purple-500 text-[10px] font-black uppercase tracking-widest bg-purple-50 px-2 py-1 rounded-md border border-purple-100" title="Retiring within 5 years">{loading ? '-' : anticipatedVacanciesCount} Anticipated</span>
+                </div>
+                <div className="kpi-subheader mt-1">Separations this month</div>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
                   {Object.keys(retireesRegionBreakdown).length > 0 ? Object.entries(retireesRegionBreakdown).map(([region, count], idx) => (
@@ -820,11 +843,8 @@ const Home = () => {
               </div>
               <div className={`kpi red ${activeQueueFilter === 'vacant' ? 'active-filter' : ''}`} onClick={() => toggleFilter('vacant')} style={{ cursor: 'pointer' }}>
                 <p>Total Vacant Positions</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <h2 className="!mt-0">{loading ? '-' : vacantOfficials.length}</h2>
-                  <span className="text-red-500 text-[10px] font-black uppercase tracking-widest bg-red-50 px-2 py-1 rounded-md border border-red-100" title="Retiring within 5 years">+{loading ? '-' : anticipatedVacanciesCount} Anticipated</span>
-                </div>
-                <div className="kpi-subheader mt-1">Unfilled positions</div>
+                <h2>{loading ? '-' : vacantOfficials.length}</h2>
+                <div className="kpi-subheader">Unfilled positions</div>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
                   {Object.keys(vacantRegionBreakdown).length > 0 ? Object.entries(vacantRegionBreakdown).map(([region, count], idx) => (
