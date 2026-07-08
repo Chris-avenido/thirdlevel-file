@@ -207,7 +207,7 @@ const OfficialProfiling = () => {
         gender: '', date_of_birth: '', age: '', civil_status: '',
         position_title: '', designation: '', is_oic: false, appointment_date: '',
         emt_passer: null, emt_date: '', ces_stage: '', ces_conferment_date: '',
-        total_years_third_level: '', permanent_address: '',
+        total_years_third_level: '', permanent_address: '', temporary_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
         notable_achievements: '', notable_achievements_year: '', individual_accomplishments: [],
         eligibilities: [], other_courses: [],
@@ -598,6 +598,7 @@ const OfficialProfiling = () => {
                     ces_conferment_date: d.ces_conferment_date ? d.ces_conferment_date.split('T')[0] : '',
                     total_years_third_level: d.total_years_third_level ?? '',
                     permanent_address: d.permanent_address || '',
+                    temporary_address: d.temporary_address || '',
                     highest_education: d.highest_education || '',
                     specific_degree: d.specific_degree || '',
                     education_program: d.education_program || '',
@@ -738,10 +739,17 @@ const OfficialProfiling = () => {
         setSaveSuccess(false);
         try {
             const targetVacancy = vacancies.find(v => v.TLOid === targetVacancyId);
+            const cleanOIC = (oics) => (oics || []).filter(o => o.oic_position_name?.trim() || o.oic_office?.trim() || o.oic_start_date?.trim() || o.oic_end_date?.trim());
+            const cleanPrevPositions = prevPositions
+                .map(p => ({ ...p, oic_positions: cleanOIC(p.oic_positions) }))
+                .filter(p => p.position_name?.trim() || p.office?.trim() || p.start_date?.trim() || p.end_date?.trim() || p.oic_positions.length > 0);
+
+            const cleanTrainings = trainings.filter(t => t.training_name?.trim() || t.date_from?.trim() || t.date_to?.trim());
+
             const payload = {
                 ...profile,
-                previous_positions: prevPositions,
-                relevant_trainings: trainings,
+                previous_positions: cleanPrevPositions,
+                relevant_trainings: cleanTrainings,
                 target_TLOid: targetVacancyId,
                 position_applied_for: targetVacancy ? targetVacancy.position_title : profile.position_applied_for,
                 profiling_status: completeness === 100 ? 'profiling completed' : 'profiling'
@@ -935,14 +943,14 @@ const OfficialProfiling = () => {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             if (!res.ok) throw new Error('Failed to download document');
-            
+
             let filename = '';
             const disposition = res.headers.get('Content-Disposition');
             if (disposition && disposition.indexOf('filename=') !== -1) {
                 const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
                 if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
             }
-            
+
             const blob = await res.blob();
             if (!filename) {
                 let ext = '';
@@ -973,13 +981,13 @@ const OfficialProfiling = () => {
     };
 
     const handleAddPosition = () => setPrevPositions(p => [...p, { position_id: `tmp-${Date.now()}`, position_name: '', office: '', start_date: '', end_date: '', is_oic: false, isNew: true }]);
-    const handleRemovePosition = (pos) => {
-        setPrevPositions(p => p.filter(x => x.position_id !== pos.position_id));
+    const handleRemovePosition = (idxToRemove) => {
+        setPrevPositions(p => p.filter((_, idx) => idx !== idxToRemove));
     };
 
     const handleAddTraining = () => setTrainings(t => [...t, { training_id: `tmp-${Date.now()}`, training_name: '', date_from: '', date_to: '', hours_per_day: '8', hours: '', isNew: true }]);
-    const handleRemoveTraining = (tr) => {
-        setTrainings(t => t.filter(x => x.training_id !== tr.training_id));
+    const handleRemoveTraining = (idxToRemove) => {
+        setTrainings(t => t.filter((_, idx) => idx !== idxToRemove));
     };
 
     const handleTrainingDateChange = (idx, field, val) => {
@@ -1411,7 +1419,7 @@ const OfficialProfiling = () => {
                                                                         </select>
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
-                                                                        <select value={profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                        <select value={(profile.position_title && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.position_title)) ? 'Others' : (profile.position_title || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                             <option value="">Select Position Title</option>
                                                                             {[
                                                                                 'Undersecretary',
@@ -1420,19 +1428,14 @@ const OfficialProfiling = () => {
                                                                                 'Director III',
                                                                                 'Chief Administrative Officer'
                                                                             ].map(o => <option key={o} value={o}>{o}</option>)}
-                                                                            {profile.position_title && ![
-                                                                                'Undersecretary',
-                                                                                'Assistant Secretary',
-                                                                                'Director IV',
-                                                                                'Director III',
-                                                                                'Chief Administrative Officer'
-                                                                            ].includes(profile.position_title) && (
-                                                                                    <option value={profile.position_title}>{profile.position_title}</option>
-                                                                                )}
+                                                                            <option value="Others">Others</option>
                                                                         </select>
+                                                                        {(profile.position_title && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.position_title)) && (
+                                                                            <input type="text" value={profile.position_title === 'Others' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
+                                                                        )}
                                                                     </Field>
                                                                     <Field label="Designation">
-                                                                        <select value={profile.designation || ''} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                        <select value={(profile.designation && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.designation)) ? 'Others' : (profile.designation || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
                                                                             <option value="">Select Designation</option>
                                                                             {[
                                                                                 'Undersecretary',
@@ -1441,16 +1444,11 @@ const OfficialProfiling = () => {
                                                                                 'Director III',
                                                                                 'Chief Administrative Officer'
                                                                             ].map(o => <option key={o} value={o}>{o}</option>)}
-                                                                            {profile.designation && ![
-                                                                                'Undersecretary',
-                                                                                'Assistant Secretary',
-                                                                                'Director IV',
-                                                                                'Director III',
-                                                                                'Chief Administrative Officer'
-                                                                            ].includes(profile.designation) && (
-                                                                                    <option value={profile.designation}>{profile.designation}</option>
-                                                                                )}
+                                                                            <option value="Others">Others</option>
                                                                         </select>
+                                                                        {(profile.designation && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.designation)) && (
+                                                                            <input type="text" value={profile.designation === 'Others' ? '' : profile.designation} onChange={e => setP('designation', e.target.value || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
+                                                                        )}
                                                                     </Field>
                                                                     <Field label="Officer-in-Charge (OIC) Status">
                                                                         <div className="flex items-center gap-3 py-2 px-1">
@@ -1480,6 +1478,9 @@ const OfficialProfiling = () => {
                                                                 <div className="space-y-4">
                                                                     <Field label="Permanent Address">
                                                                         <input type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
+                                                                    </Field>
+                                                                    <Field label="Temporary Address">
+                                                                        <input type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                                                         <Field label="Phone Number"><input type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
@@ -1691,38 +1692,73 @@ const OfficialProfiling = () => {
                                                                     {['Position', 'Office / Division', 'From', 'To', 'OIC?', ''].map(h => <span key={h} className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{h}</span>)}
                                                                 </div>
                                                                 {prevPositions.map((pos, idx) => (
-                                                                    <motion.div key={pos.position_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
-                                                                        <div className="flex flex-col gap-1.5 w-full">
-                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
-                                                                            <SearchableSelect value={pos.position_name || ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: val } : x))} options={PREVIOUS_POSITION_OPTIONS} placeholder="Position" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm" />
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-1.5 w-full">
-                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Office / Division</span>
-                                                                            <input type="text" value={pos.office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, office: e.target.value } : x))} placeholder="Office" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all truncate min-w-0 h-[38px] shadow-sm" />
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-1.5 w-full">
-                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">From Date</span>
-                                                                            <div className="relative">
-                                                                                <ModernDatePicker value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-
+                                                                    <div key={pos.position_id || idx} className="relative mb-2">
+                                                                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm relative z-10">
+                                                                            <div className="flex flex-col gap-1.5 w-full">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
+                                                                                <SearchableSelect value={pos.position_name || ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: val } : x))} options={PREVIOUS_POSITION_OPTIONS} placeholder="Position" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm" />
                                                                             </div>
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-1.5 w-full">
-                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
-                                                                            <div className="relative">
-                                                                                <ModernDatePicker value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-
+                                                                            <div className="flex flex-col gap-1.5 w-full">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Office / Division</span>
+                                                                                <input type="text" value={pos.office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, office: e.target.value } : x))} placeholder="Office" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all truncate min-w-0 h-[38px] shadow-sm" />
                                                                             </div>
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-1.5 w-full">
-                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">OIC Status</span>
-                                                                            <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, is_oic: !x.is_oic } : x))} className={`flex items-center justify-center gap-1 text-[9px] font-black uppercase py-2 px-1 rounded-xl transition-all h-[38px] ${pos.is_oic ? 'bg-[#FCD116] text-[#08315F]' : 'bg-white border border-slate-200 text-slate-400 shadow-sm'}`}>{pos.is_oic ? <FiToggleRight size={14} /> : <FiToggleLeft size={14} />} OIC</button>
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
-                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden md:invisible">Action</span>
-                                                                            <button onClick={() => handleRemovePosition(pos)} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
-                                                                        </div>
-                                                                    </motion.div>
+                                                                            <div className="flex flex-col gap-1.5 w-full">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">From Date</span>
+                                                                                <div className="relative">
+                                                                                    <ModernDatePicker value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex flex-col gap-1.5 w-full">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
+                                                                                <div className="relative">
+                                                                                    <ModernDatePicker value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex flex-col gap-1.5 w-full">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">OIC Status</span>
+                                                                                <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: [...(x.oic_positions || []), { id: `tmp-oic-${Date.now()}`, oic_position_name: '', oic_office: '', oic_start_date: '', oic_end_date: '' }] } : x))} className="flex items-center justify-center gap-1 text-[9px] font-black uppercase py-2 px-1 rounded-xl transition-all h-[38px] bg-white border border-slate-200 text-slate-400 shadow-sm hover:border-[#FCD116] hover:text-[#FBBF24]">
+                                                                                    <FiPlus size={14} /> Add OIC
+                                                                                </button>
+                                                                            </div>
+                                                                            <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden md:invisible">Action</span>
+                                                                                <button onClick={() => handleRemovePosition(idx)} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
+                                                                            </div>
+                                                                        </motion.div>
+
+                                                                        {(pos.oic_positions || []).map((oic, oicIdx) => (
+                                                                            <motion.div key={oic.id || oicIdx} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative">
+                                                                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-white p-4 rounded-2xl border border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
+                                                                                    <div className="absolute -left-6 top-1/2 w-6 h-0.5 border-t-2 border-dashed border-[#FCD116]"></div>
+                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Position</span>
+                                                                                        <SearchableSelect value={oic.oic_position_name || ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: val } : o) } : x))} options={PREVIOUS_POSITION_OPTIONS} placeholder="OIC Position" className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm" />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Office / Division</span>
+                                                                                        <input type="text" value={oic.oic_office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_office: e.target.value } : o) } : x))} placeholder="OIC Office" className="bg-white border border-[#FCD116]/50 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#FBBF24] transition-all truncate min-w-0 h-[38px] shadow-sm" />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC From Date</span>
+                                                                                        <div className="relative">
+                                                                                            <ModernDatePicker value={oic.oic_start_date ? oic.oic_start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_start_date: val } : o) } : x))} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC To Date</span>
+                                                                                        <div className="relative">
+                                                                                            <ModernDatePicker value={oic.oic_end_date ? oic.oic_end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_end_date: val } : o) } : x))} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="hidden xl:block"></div>
+                                                                                    <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
+                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden md:invisible">Action</span>
+                                                                                        <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.filter((_, j) => j !== oicIdx) } : x))} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </motion.div>
+                                                                        ))}
+                                                                    </div>
                                                                 ))}
                                                                 <button onClick={handleAddPosition} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
                                                                     <FiPlus size={14} /> Add Position
@@ -1824,19 +1860,19 @@ const OfficialProfiling = () => {
                                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                                                 <Field label="Date From">
                                                                                     <div className="relative">
-                                                                                        <ModernDatePicker 
-                                                                                            value={course.date_from || ''} 
-                                                                                            onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_from: val } : x) }))} 
-                                                                                            className={inp} 
+                                                                                        <ModernDatePicker
+                                                                                            value={course.date_from || ''}
+                                                                                            onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_from: val } : x) }))}
+                                                                                            className={inp}
                                                                                         />
                                                                                     </div>
                                                                                 </Field>
                                                                                 <Field label="Date To">
                                                                                     <div className="relative">
-                                                                                        <ModernDatePicker 
-                                                                                            value={course.date_to || ''} 
-                                                                                            onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_to: val } : x) }))} 
-                                                                                            className={inp} 
+                                                                                        <ModernDatePicker
+                                                                                            value={course.date_to || ''}
+                                                                                            onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_to: val } : x) }))}
+                                                                                            className={inp}
                                                                                         />
                                                                                     </div>
                                                                                 </Field>
@@ -2008,31 +2044,31 @@ const OfficialProfiling = () => {
                                                             <div className="space-y-3">
                                                                 {(profile.individual_accomplishments || []).map((acc, idx) => (
                                                                     <motion.div key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
-                                                                        <input 
-                                                                            type="text" 
+                                                                        <input
+                                                                            type="text"
                                                                             maxLength={100}
-                                                                            value={acc} 
+                                                                            value={acc}
                                                                             onChange={e => {
                                                                                 const newAccs = [...(profile.individual_accomplishments || [])];
                                                                                 newAccs[idx] = e.target.value;
                                                                                 setP('individual_accomplishments', newAccs);
-                                                                            }} 
-                                                                            placeholder="Notable individual accomplishment (max 100 characters)" 
-                                                                            className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" 
+                                                                            }}
+                                                                            placeholder="Notable individual accomplishment (max 100 characters)"
+                                                                            className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
                                                                         />
-                                                                        <button 
+                                                                        <button
                                                                             onClick={() => {
                                                                                 const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
                                                                                 setP('individual_accomplishments', newAccs);
-                                                                            }} 
+                                                                            }}
                                                                             className="w-10 h-10 flex items-center justify-center shrink-0 bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"
                                                                         >
                                                                             <FiTrash2 size={14} />
                                                                         </button>
                                                                     </motion.div>
                                                                 ))}
-                                                                <button 
-                                                                    onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), ''])} 
+                                                                <button
+                                                                    onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), ''])}
                                                                     className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2"
                                                                 >
                                                                     <FiPlus size={14} /> Add Notable Individual Accomplishment
@@ -2082,7 +2118,7 @@ const OfficialProfiling = () => {
                                                                             <option value="2">2 hrs</option>
                                                                         </select>
                                                                         <input type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
-                                                                        <button onClick={() => handleRemoveTraining(tr)} className="w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
+                                                                        <button onClick={() => handleRemoveTraining(idx)} className="w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
                                                                     </motion.div>
                                                                 ))}
                                                                 <button onClick={handleAddTraining} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
@@ -2145,7 +2181,7 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                         </div>
                                                                         {profile[`${id}_binary_id`] && (
-                                                                            <button 
+                                                                            <button
                                                                                 onClick={() => handleDownloadDocument(profile[`${id}_binary_id`], label)}
                                                                                 className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
                                                                                 title="Download Document"
@@ -2379,8 +2415,8 @@ const OfficialProfiling = () => {
                                                                                                             {[
                                                                                                                 ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
                                                                                                                 ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
-                                                                                                                ['Civil Status', profile.civil_status], ['Position Title', profile.position_title], ['Designation', profile.designation],
-                                                                                                                ['Permanent Address', profile.permanent_address], ['CES Stage', profile.ces_stage],
+                                                                                                                ['Total Years in Third Level', profile.total_years_third_level],
+                                                                                                                ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
                                                                                                                 ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
                                                                                                                 ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
                                                                                                             ].map(([k, v], i) => (
@@ -2586,6 +2622,7 @@ const OfficialProfiling = () => {
                                                                     />
                                                                     <SummaryRow label="Date of Present Position" value={profile.appointment_date} />
                                                                     <SummaryRow label="Permanent Address" value={profile.permanent_address} />
+                                                                    <SummaryRow label="Temporary Address" value={profile.temporary_address} />
                                                                 </div>
                                                             </div>
 
