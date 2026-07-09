@@ -1,9 +1,9 @@
 import pool from './config/db.js';
-import { processScheduledVacancies } from './controllers/thirdLevelController.js';
+import { processScheduledVacancies, processAnticipatedVacancies } from './controllers/thirdLevelController.js';
 
 console.log('==================================================');
 console.log('🚀 Starting Standalone CRON Service');
-console.log('📅 Task: Processing Scheduled Effectivity Dates');
+console.log('📅 Task: Processing Scheduled Effectivity Dates & Anticipated Vacancies');
 console.log('==================================================\n');
 
 // Function to run the job
@@ -13,11 +13,14 @@ const runJob = async () => {
     process.stdout.write(`[${timestamp}] Checking scheduled vacancies... `);
     
     await processScheduledVacancies(pool);
-    
+    console.log('Done.');
+
+    process.stdout.write(`[${timestamp}] Checking anticipated vacancies... `);
+    await processAnticipatedVacancies(pool);
     console.log('Done.');
   } catch (err) {
     console.log('Error!');
-    console.error('🔥 [Cron Error] Failed to process scheduled vacancies:', err);
+    console.error('🔥 [Cron Error] Failed to process scheduled/anticipated vacancies:', err);
   }
 };
 

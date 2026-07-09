@@ -693,6 +693,26 @@ export const processScheduledVacancies = async (client) => {
   }
 };
 
+export const processAnticipatedVacancies = async (client) => {
+  try {
+    // Identify personnel within 5 years of mandatory retirement (age 60 to 65)
+    const res = await client.query(`
+      SELECT "TLOid", first_name, last_name, position_title, office, date_of_birth 
+      FROM third_level_official_masterlist
+      WHERE status = 'Active' 
+        AND date_of_birth IS NOT NULL
+        AND date_of_birth <= NOW() - INTERVAL '60 years'
+        AND date_of_birth > NOW() - INTERVAL '65 years'
+    `);
+    
+    if (res.rows.length > 0) {
+      console.log(`\n📌 [Anticipated Vacancies] Identified ${res.rows.length} personnel retiring within 5 years.`);
+    }
+  } catch (err) {
+    console.error('Failed to process anticipated vacancies:', err);
+  }
+};
+
 // HTTP Endpoint for Vercel Cron
 export const triggerCron = async (req, res) => {
   try {
