@@ -909,7 +909,7 @@ const OfficialProfiling = () => {
                 Swal.fire('Notice', 'Please upload a valid image file (PNG, JPG) for the ID Picture.', 'info');
                 return;
             }
-            
+
             // Check if it's a portrait image (for CSC / 2x2 format)
             const isPortrait = await new Promise((resolve) => {
                 const img = new Image();
@@ -917,7 +917,7 @@ const OfficialProfiling = () => {
                 img.onerror = () => resolve(false);
                 img.src = URL.createObjectURL(file);
             });
-            
+
             if (!isPortrait) {
                 Swal.fire('Notice', 'Please upload a portrait/passport-sized photo. Landscape or wide images do not meet the criteria.', 'warning');
                 return;
