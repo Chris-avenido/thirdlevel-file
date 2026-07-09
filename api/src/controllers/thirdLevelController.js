@@ -387,6 +387,34 @@ export const submitApplication = async (req, res) => {
   }
 };
 
+export const getPositions = async (req, res) => {
+  try {
+    const posResult = await pool.query(`
+      SELECT DISTINCT position_title 
+      FROM third_level_official_masterlist 
+      WHERE position_title IS NOT NULL 
+        AND position_title != '' 
+        AND position_title NOT ILIKE 'N/A'
+      ORDER BY position_title
+    `);
+    const desigResult = await pool.query(`
+      SELECT DISTINCT designation 
+      FROM third_level_official_masterlist 
+      WHERE designation IS NOT NULL 
+        AND designation != '' 
+        AND designation NOT ILIKE 'N/A'
+      ORDER BY designation
+    `);
+    res.json({ 
+      success: true, 
+      positions: posResult.rows.map(r => displayPositionTitle(r.position_title)),
+      designations: desigResult.rows.map(r => displayPositionTitle(r.designation))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const getVacancies = async (req, res) => {
   try {
     await ensureOicColumn();

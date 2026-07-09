@@ -231,6 +231,8 @@ const OfficialProfiling = () => {
     const [certifying, setCertifying] = useState(false);
     const [vacancies, setVacancies] = useState([]);
     const [vacanciesLoading, setVacanciesLoading] = useState(false);
+    const [positionsList, setPositionsList] = useState([]);
+    const [designationsList, setDesignationsList] = useState([]);
     const [targetVacancyId, setTargetVacancyId] = useState(null);
     const [notableAchievementsOptions, setNotableAchievementsOptions] = useState([]);
 
@@ -239,6 +241,8 @@ const OfficialProfiling = () => {
     const [exporting, setExporting] = useState(false);
     const [previewScale, setPreviewScale] = useState(1);
     const [oicModalOpen, setOicModalOpen] = useState(false);
+    const [selectedEducationType, setSelectedEducationType] = useState('');
+    const [preOicDesignation, setPreOicDesignation] = useState('');
     const previewContainerRef = React.useRef(null);
 
     React.useEffect(() => {
@@ -857,9 +861,47 @@ const OfficialProfiling = () => {
         }
     };
 
+    const fetchPositionsList = async () => {
+        try {
+            const res = await fetch(apiUrl('/api/third-level/positions'), {
+                headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                const validPositions = (data.positions || []).filter(p => p.toUpperCase() !== 'N/A' && p.toUpperCase() !== 'NA');
+                setPositionsList(validPositions);
+                const validDesignations = (data.designations || []).filter(d => d.toUpperCase() !== 'N/A' && d.toUpperCase() !== 'NA');
+                setDesignationsList(validDesignations);
+            }
+        } catch (err) {
+            console.error('Failed to fetch positions:', err);
+        }
+    };
+
     useEffect(() => {
         fetchVacancies();
+        fetchPositionsList();
     }, []);
+
+    const defaultPositions = [
+        'Undersecretary',
+        'Assistant Secretary',
+        'Director IV',
+        'Director III',
+        'Chief Administrative Officer'
+    ];
+    
+    // Merge positions and designations
+    const combinedPositions = new Set([...positionsList, ...designationsList]);
+    if (positionsList.length === 0 && designationsList.length === 0) {
+        defaultPositions.forEach(p => combinedPositions.add(p));
+    }
+    
+    const unifiedList = Array.from(combinedPositions).sort();
+
+    const isPositionOthers = profile.position_title === 'Others' || (profile.position_title && !unifiedList.includes(profile.position_title));
+    // If they are an OIC, force the Designation into the custom input box as requested
+    const isDesignationOthers = profile.designation === 'Others' || profile.is_oic || (profile.designation && !unifiedList.includes(profile.designation));
 
     const fetchNotableAchievements = async () => {
         try {
@@ -1451,34 +1493,22 @@ const OfficialProfiling = () => {
                                                                         </select>
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
-                                                                        <select value={(profile.position_title && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.position_title)) ? 'Others' : (profile.position_title || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                        <select value={isPositionOthers ? 'Others' : (profile.position_title || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                             <option value="">Select Position Title</option>
-                                                                            {[
-                                                                                'Undersecretary',
-                                                                                'Assistant Secretary',
-                                                                                'Director IV',
-                                                                                'Director III',
-                                                                                'Chief Administrative Officer'
-                                                                            ].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                            {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
                                                                             <option value="Others">Others</option>
                                                                         </select>
-                                                                        {(profile.position_title && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.position_title)) && (
+                                                                        {isPositionOthers && (
                                                                             <input type="text" value={profile.position_title === 'Others' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
                                                                         )}
                                                                     </Field>
                                                                     <Field label="Designation">
-                                                                        <select value={(profile.designation && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.designation)) ? 'Others' : (profile.designation || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                        <select value={isDesignationOthers ? 'Others' : (profile.designation || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
                                                                             <option value="">Select Designation</option>
-                                                                            {[
-                                                                                'Undersecretary',
-                                                                                'Assistant Secretary',
-                                                                                'Director IV',
-                                                                                'Director III',
-                                                                                'Chief Administrative Officer'
-                                                                            ].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                            {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
                                                                             <option value="Others">Others</option>
                                                                         </select>
-                                                                        {(profile.designation && !['Undersecretary', 'Assistant Secretary', 'Director IV', 'Director III', 'Chief Administrative Officer'].includes(profile.designation)) && (
+                                                                        {isDesignationOthers && (
                                                                             <input type="text" value={profile.designation === 'Others' ? '' : profile.designation} onChange={e => setP('designation', e.target.value || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
                                                                         )}
                                                                     </Field>
@@ -1488,9 +1518,11 @@ const OfficialProfiling = () => {
                                                                                 type="button"
                                                                                 onClick={() => {
                                                                                     if (!profile.is_oic) {
+                                                                                        setPreOicDesignation(profile.designation || '');
                                                                                         setOicModalOpen(true);
                                                                                     } else {
                                                                                         setP('is_oic', false);
+                                                                                        setP('designation', preOicDesignation); // Restore the previous designation
                                                                                     }
                                                                                 }}
                                                                                 className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-200'}`}
@@ -1807,49 +1839,172 @@ const OfficialProfiling = () => {
                                                 )}
 
                                                 {/* ── EDUCATION ── */}
-                                                {tab === 'education' && (
+                                                {tab === 'education' && (() => {
+                                                    const bachelors = (profile.bachelor_degree || '').split('\n');
+                                                    const bYears = (profile.bachelor_year || '').split('\n');
+                                                    const masters = (profile.master_degree || '').split('\n');
+                                                    const mYears = (profile.master_year || '').split('\n');
+                                                    const doctorates = (profile.doctorate_degree || '').split('\n');
+                                                    const dYears = (profile.doctorate_year || '').split('\n');
+
+                                                    // Ensure at least one bachelor block is shown by default if completely empty
+                                                    if (bachelors.length === 0 || (bachelors.length === 1 && !bachelors[0] && !bYears[0])) {
+                                                        if (bachelors.length === 0) bachelors.push('');
+                                                        if (bYears.length === 0) bYears.push('');
+                                                    }
+
+                                                    return (
                                                     <div className="space-y-6">
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
-                                                            <SectionLabel>Educational Attainment</SectionLabel>
-
-                                                            {/* Baccalaureate */}
-                                                            <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6">
-                                                                <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Baccalaureate / Bachelor's Degree</p>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                    <Field label="Degree / Course">
-                                                                        <input type="text" value={profile.bachelor_degree} onChange={e => setP('bachelor_degree', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
-                                                                    </Field>
-                                                                    <Field label="Year Graduated">
-                                                                        <ModernDatePicker isYearPicker value={profile.bachelor_year} onChange={val => setP('bachelor_year', val)} placeholder="YYYY" className={inp} />
-                                                                    </Field>
+                                                            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-2">
+                                                                <div className="-mb-4">
+                                                                    <SectionLabel>Educational Attainment</SectionLabel>
+                                                                </div>
+                                                                
+                                                                <div className="flex items-center gap-3">
+                                                                    <select
+                                                                        value={selectedEducationType}
+                                                                        onChange={e => setSelectedEducationType(e.target.value)}
+                                                                        className={`${sel} w-auto min-w-[240px]`}
+                                                                    >
+                                                                        <option value="">Select Degree Type to Add...</option>
+                                                                        <option value="bachelor">Baccalaureate / Bachelor's Degree</option>
+                                                                        <option value="master">Master's Degree</option>
+                                                                        <option value="doctorate">Doctorate</option>
+                                                                    </select>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (selectedEducationType === 'bachelor') {
+                                                                                setP('bachelor_degree', [...bachelors, ' '].join('\n'));
+                                                                                setP('bachelor_year', [...bYears, ' '].join('\n'));
+                                                                            } else if (selectedEducationType === 'master') {
+                                                                                setP('master_degree', [...masters, ' '].join('\n'));
+                                                                                setP('master_year', [...mYears, ' '].join('\n'));
+                                                                            } else if (selectedEducationType === 'doctorate') {
+                                                                                setP('doctorate_degree', [...doctorates, ' '].join('\n'));
+                                                                                setP('doctorate_year', [...dYears, ' '].join('\n'));
+                                                                            }
+                                                                            setSelectedEducationType('');
+                                                                        }}
+                                                                        disabled={!selectedEducationType}
+                                                                        className="flex items-center gap-1.5 px-4 py-2.5 bg-[#0038A8] text-white text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-[#002b80] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
+                                                                    >
+                                                                        <FiPlus size={12} /> Add
+                                                                    </button>
                                                                 </div>
                                                             </div>
 
-                                                            {/* Master's Degree */}
-                                                            <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6">
-                                                                <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Master's Degree</p>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                    <Field label="Degree / Course">
-                                                                        <input type="text" value={profile.master_degree} onChange={e => setP('master_degree', e.target.value)} placeholder="e.g. Master of Arts in Public Administration" className={inp} />
-                                                                    </Field>
-                                                                    <Field label="Year Graduated">
-                                                                        <ModernDatePicker isYearPicker value={profile.master_year} onChange={val => setP('master_year', val)} placeholder="YYYY" className={inp} />
-                                                                    </Field>
+                                                            {/* Baccalaureates */}
+                                                            {bachelors.map((deg, i) => {
+                                                                if (!deg && !bYears[i] && i > 0) return null; // Hide empty extras if any
+                                                                return (
+                                                                <div key={`bachelor-${i}`} className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
+                                                                    {i > 0 && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const nb = bachelors.filter((_, idx) => idx !== i);
+                                                                                const nby = bYears.filter((_, idx) => idx !== i);
+                                                                                setP('bachelor_degree', nb.join('\n'));
+                                                                                setP('bachelor_year', nby.join('\n'));
+                                                                            }}
+                                                                            className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
+                                                                            title="Remove"
+                                                                        >
+                                                                            <FiTrash2 size={12} />
+                                                                        </button>
+                                                                    )}
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Baccalaureate / Bachelor's Degree {i > 0 ? `#${i+1}` : ''}</p>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                        <Field label="Degree / Course">
+                                                                            <input type="text" value={deg} onChange={e => {
+                                                                                const nb = [...bachelors]; nb[i] = e.target.value;
+                                                                                setP('bachelor_degree', nb.join('\n'));
+                                                                            }} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Year Graduated">
+                                                                            <ModernDatePicker isYearPicker value={bYears[i] || ''} onChange={val => {
+                                                                                const nby = [...bYears]; nby[i] = val;
+                                                                                setP('bachelor_year', nby.join('\n'));
+                                                                            }} placeholder="YYYY" className={inp} />
+                                                                        </Field>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
+                                                            )})}
 
-                                                            {/* Doctorate */}
-                                                            <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
-                                                                <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Doctorate</p>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                    <Field label="Degree / Course">
-                                                                        <input type="text" value={profile.doctorate_degree} onChange={e => setP('doctorate_degree', e.target.value)} placeholder="e.g. Doctor of Philosophy in Education" className={inp} />
-                                                                    </Field>
-                                                                    <Field label="Year Graduated">
-                                                                        <ModernDatePicker isYearPicker value={profile.doctorate_year} onChange={val => setP('doctorate_year', val)} placeholder="YYYY" className={inp} />
-                                                                    </Field>
+                                                            {/* Master's Degrees */}
+                                                            {masters.map((deg, i) => {
+                                                                if (!deg && !mYears[i]) return null;
+                                                                return (
+                                                                <div key={`master-${i}`} className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const nm = masters.filter((_, idx) => idx !== i);
+                                                                            const nmy = mYears.filter((_, idx) => idx !== i);
+                                                                            setP('master_degree', nm.join('\n'));
+                                                                            setP('master_year', nmy.join('\n'));
+                                                                        }}
+                                                                        className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
+                                                                        title="Remove"
+                                                                    >
+                                                                        <FiTrash2 size={12} />
+                                                                    </button>
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Master's Degree {i > 0 ? `#${i+1}` : ''}</p>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                        <Field label="Degree / Course">
+                                                                            <input type="text" value={deg} onChange={e => {
+                                                                                const nm = [...masters]; nm[i] = e.target.value;
+                                                                                setP('master_degree', nm.join('\n'));
+                                                                            }} placeholder="e.g. Master of Arts in Public Administration" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Year Graduated">
+                                                                            <ModernDatePicker isYearPicker value={mYears[i] || ''} onChange={val => {
+                                                                                const nmy = [...mYears]; nmy[i] = val;
+                                                                                setP('master_year', nmy.join('\n'));
+                                                                            }} placeholder="YYYY" className={inp} />
+                                                                        </Field>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
+                                                            )})}
+
+                                                            {/* Doctorates */}
+                                                            {doctorates.map((deg, i) => {
+                                                                if (!deg && !dYears[i]) return null;
+                                                                return (
+                                                                <div key={`doctorate-${i}`} className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const nd = doctorates.filter((_, idx) => idx !== i);
+                                                                            const ndy = dYears.filter((_, idx) => idx !== i);
+                                                                            setP('doctorate_degree', nd.join('\n'));
+                                                                            setP('doctorate_year', ndy.join('\n'));
+                                                                        }}
+                                                                        className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
+                                                                        title="Remove"
+                                                                    >
+                                                                        <FiTrash2 size={12} />
+                                                                    </button>
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Doctorate {i > 0 ? `#${i+1}` : ''}</p>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                        <Field label="Degree / Course">
+                                                                            <input type="text" value={deg} onChange={e => {
+                                                                                const nd = [...doctorates]; nd[i] = e.target.value;
+                                                                                setP('doctorate_degree', nd.join('\n'));
+                                                                            }} placeholder="e.g. Doctor of Philosophy in Education" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Year Graduated">
+                                                                            <ModernDatePicker isYearPicker value={dYears[i] || ''} onChange={val => {
+                                                                                const ndy = [...dYears]; ndy[i] = val;
+                                                                                setP('doctorate_year', ndy.join('\n'));
+                                                                            }} placeholder="YYYY" className={inp} />
+                                                                        </Field>
+                                                                    </div>
+                                                                </div>
+                                                            )})}
+
 
                                                             <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
                                                                 <SectionLabel>Other Educational / Professional Courses</SectionLabel>
@@ -1922,7 +2077,7 @@ const OfficialProfiling = () => {
                                                             )}
                                                         </div>
                                                     </div>
-                                                )}
+                                                );})()}
 
                                                 {/* ── PERFORMANCE RATINGS ── */}
                                                 {tab === 'performance' && (
