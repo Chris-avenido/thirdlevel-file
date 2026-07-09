@@ -13,6 +13,7 @@ import PageTransition from '../components/PageTransition';
 import html2pdf from 'html2pdf.js';
 import PptxGenJS from 'pptxgenjs';
 import newLogo from '../assets/modern_logo.png';
+import depedLogo from '../assets/DepED-Logo.png';
 import { apiUrl } from '../utils/api';
 import { compressImageClientSide } from '../utils/imageCompressor';
 import ModernDatePicker from '../components/ModernDatePicker';
@@ -380,15 +381,9 @@ const OfficialProfiling = () => {
             let slide = pres.addSlide();
 
             // Header: Logo, Name and Position
-            slide.addImage({ path: newLogo, x: 0.4, y: 0.2, w: 1.1, h: 1.1 });
+            slide.addImage({ path: depedLogo, x: 0.4, y: 0.2, w: 1.1, h: 1.1 });
             slide.addText(`${profile.last_name?.toUpperCase() || ''}, ${profile.first_name?.toUpperCase() || ''} ${profile.middle_name?.toUpperCase() || ''}`, { x: 1.6, y: 0.3, w: 4.3, h: 0.6, fontSize: 32, bold: true, color: '000000' });
             slide.addText(`${profile.position_title || ''}, ${profile.office || ''}`, { x: 1.6, y: 0.9, w: 4.3, h: 0.5, fontSize: 22, bold: true, color: '000000' });
-
-            // Top Right: Position Applied For
-            slide.addShape(pres.ShapeType.rect, { x: 6.2, y: 0.4, w: 2.2, h: 0.3, fill: { color: 'B91C1C' } });
-            slide.addText('Position Applied For', { x: 6.2, y: 0.4, w: 2.2, h: 0.3, color: 'FFFFFF', bold: true, align: 'center', fontSize: 12 });
-            slide.addShape(pres.ShapeType.rect, { x: 6.2, y: 0.7, w: 2.2, h: 0.5, fill: { color: 'FFFFFF' }, line: { color: 'B91C1C' } });
-            slide.addText(targetVacancyId ? vacancies.find(v => v.TLOid === targetVacancyId)?.position_title || 'N/A' : 'N/A', { x: 6.2, y: 0.7, w: 2.2, h: 0.5, align: 'center', fontSize: 11, color: '000000' });
 
             // Top Right: Photo
             slide.addShape(pres.ShapeType.rect, { x: 8.6, y: 0.2, w: 1.2, h: 1.2, fill: { color: 'E2E8F0' } });
@@ -2767,7 +2762,7 @@ const OfficialProfiling = () => {
                                                                                                     <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Plus_Jakarta_Sans'] text-black" id="pdf-preview-content">
                                                                                                         <div className="flex justify-between items-start mb-8">
                                                                                                             <div className="flex gap-6 items-center">
-                                                                                                                <img src={newLogo} alt="Logo" className="w-24 h-24 object-contain" />
+                                                                                                                <img src={depedLogo} alt="Logo" className="w-24 h-24 object-contain" />
                                                                                                                 <div>
                                                                                                                     <h1 className="text-3xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
                                                                                                                     <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
@@ -2778,21 +2773,6 @@ const OfficialProfiling = () => {
                                                                                                                 </div>
                                                                                                             </div>
                                                                                                             <div className="flex gap-6 items-start">
-                                                                                                                <div className="text-center w-56">
-                                                                                                                    <div className="bg-red-700 text-white font-bold py-1.5 text-xs uppercase tracking-wider">Position Applied For</div>
-                                                                                                                    <div className="border border-red-700 py-2 text-sm font-bold min-h-[44px] flex items-center justify-center text-[#08315F] bg-white">
-                                                                                                                        {(() => {
-                                                                                                                            const vac = vacancies.find(v => v.TLOid === targetVacancyId);
-                                                                                                                            if (!vac) return '—';
-                                                                                                                            return (
-                                                                                                                                <div className="flex items-center gap-2">
-                                                                                                                                    <span>{vac.position_title}</span>
-                                                                                                                                    {vac.is_oic && <span className="px-1.5 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                                </div>
-                                                                                                                            );
-                                                                                                                        })()}
-                                                                                                                    </div>
-                                                                                                                </div>
                                                                                                                 <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
                                                                                                                     2x2 Photo
                                                                                                                 </div>
@@ -2886,7 +2866,7 @@ const OfficialProfiling = () => {
                                                                                                     <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
                                                                                                         <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
                                                                                                         <div className="flex gap-4 items-center mb-6">
-                                                                                                            <img src={newLogo} alt="Logo" className="w-16 h-16 object-contain" />
+                                                                                                            <img src={depedLogo} alt="Logo" className="w-16 h-16 object-contain" />
                                                                                                             <div>
                                                                                                                 <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
                                                                                                                 <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
