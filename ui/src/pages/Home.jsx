@@ -226,7 +226,7 @@ const Home = () => {
   }, [officials]);
 
   const flaggedProfiles = useMemo(() => {
-    return officials.filter(o => o.pending_admin_case || o.ombudsman_case).length;
+    return officials.filter(o => o.pending_admin_case === 'Yes' || o.guilty_admin_details === 'Yes' || o.criminally_charged_details === 'Yes' || o.convicted_crime_details === 'Yes').length;
   }, [officials]);
 
   const vacantOfficials = useMemo(() => {
@@ -242,6 +242,14 @@ const Home = () => {
       const dob = new Date(o.date_of_birth);
       const retirementDate = new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate());
       return retirementDate >= today && retirementDate <= in5Years;
+    }).map(o => {
+      const dob = new Date(o.date_of_birth);
+      return {
+        ...o,
+        separationReason: 'Anticipated Retirement',
+        separationDate: new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate()),
+        isTurning65: false
+      };
     });
   }, [officials]);
 
@@ -306,7 +314,7 @@ const Home = () => {
 
   const flaggedRegionBreakdown = useMemo(() => {
     const counts = {};
-    const flaggedOfficials = officials.filter(o => o.pending_admin_case || o.ombudsman_case);
+    const flaggedOfficials = officials.filter(o => o.pending_admin_case === 'Yes' || o.guilty_admin_details === 'Yes' || o.criminally_charged_details === 'Yes' || o.convicted_crime_details === 'Yes');
     flaggedOfficials.forEach(o => {
       const region = getOfficialRegion(o);
       counts[region] = (counts[region] || 0) + 1;
@@ -350,6 +358,21 @@ const Home = () => {
     );
   }, [officials]);
 
+  const anticipatedRegionBreakdown = useMemo(() => {
+    const counts = {};
+    anticipatedVacancies.forEach(o => {
+      const region = getOfficialRegion(o);
+      counts[region] = (counts[region] || 0) + 1;
+    });
+
+    return Object.fromEntries(
+      Object.entries(counts).sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        return a[0].localeCompare(b[0]);
+      })
+    );
+  }, [anticipatedVacancies]);
+
   // Action Queue: combining pending apps and incomplete profiles for display
   const actionQueue = useMemo(() => {
     let queue = [];
@@ -385,7 +408,7 @@ const Home = () => {
     });
 
     // Flagged profiles
-    officials.filter(o => o.pending_admin_case || o.ombudsman_case).forEach(o => {
+    officials.filter(o => o.pending_admin_case === 'Yes' || o.guilty_admin_details === 'Yes' || o.criminally_charged_details === 'Yes' || o.convicted_crime_details === 'Yes').forEach(o => {
       queue.push({
         id: o.TLOid,
         email: o.email,
@@ -519,7 +542,7 @@ const Home = () => {
       if (activeQueueFilter === 'incomplete') {
         filtered = filtered.filter(o => o.status === 'Active' && (!o.photo_binary_id || !o.pds_binary_id || !o.contact_details));
       } else if (activeQueueFilter === 'expiring') {
-        filtered = filtered.filter(o => o.status === 'Active' && (o.pending_admin_case || o.ombudsman_case));
+        filtered = filtered.filter(o => o.status === 'Active' && (o.pending_admin_case === 'Yes' || o.guilty_admin_details === 'Yes' || o.criminally_charged_details === 'Yes' || o.convicted_crime_details === 'Yes'));
       } else if (activeQueueFilter === 'retirees') {
         const retireeIds = retireesThisMonth.map(r => r.TLOid);
         const anticipatedIds = anticipatedVacancies.map(r => r.TLOid);
@@ -821,15 +844,15 @@ const Home = () => {
                 </div>
               </div>
               <div className={`kpi purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}`} onClick={() => toggleFilter('retirees')} style={{ cursor: 'pointer' }}>
-                <p>Upcoming Resignations & Retirees</p>
+                <p>Anticipated Vacancies</p>
                 <div className="flex items-center gap-3 mt-2">
-                  <h2 className="!mt-0">{loading ? '-' : retireesThisMonth.length}</h2>
-                  <span className="text-purple-500 text-[10px] font-black uppercase tracking-widest bg-purple-50 px-2 py-1 rounded-md border border-purple-100" title="Retiring within 5 years">{loading ? '-' : anticipatedVacanciesCount} Anticipated</span>
+                  <h2 className="!mt-0">{loading ? '-' : anticipatedVacanciesCount}</h2>
+                  <span className="text-purple-500 text-[10px] font-black uppercase tracking-widest bg-purple-50 px-2 py-1 rounded-md border border-purple-100" title="Separating this month">{loading ? '-' : retireesThisMonth.length} Separating</span>
                 </div>
-                <div className="kpi-subheader mt-1">Separations this month</div>
+                <div className="kpi-subheader mt-1">Retiring within 5 years</div>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
-                  {Object.keys(retireesRegionBreakdown).length > 0 ? Object.entries(retireesRegionBreakdown).map(([region, count], idx) => (
+                  {Object.keys(anticipatedRegionBreakdown).length > 0 ? Object.entries(anticipatedRegionBreakdown).map(([region, count], idx) => (
                     <div key={region} className="kpi-tooltip-row">
                       <span className="label" title={region}>
                         <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
@@ -1029,7 +1052,7 @@ const Home = () => {
       <RetireesModal
         isOpen={isRetireesModalOpen}
         onClose={() => setIsRetireesModalOpen(false)}
-        retirees={retireesThisMonth}
+        retirees={anticipatedVacancies}
         applicationsThisMonth={applicationsThisMonth}
         elementsThisMonth={elementsThisMonth}
       />

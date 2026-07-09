@@ -30,7 +30,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, is
             onChange('');
             return;
         }
-        
+
         if (isYearPicker) {
             onChange(date.getFullYear().toString());
             return;
@@ -38,7 +38,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, is
 
         const offset = date.getTimezoneOffset();
         const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
-        
+
         if (isMonthPicker) {
             // Return YYYY-MM
             onChange(adjustedDate.toISOString().split('T')[0].substring(0, 7));
@@ -77,7 +77,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, maxDate, className, is
                             >
                                 <FiChevronLeft size={16} />
                             </button>
-                            
+
                             <div className="flex items-center space-x-2">
                                 <select
                                     value={MONTHS[date.getMonth()]}

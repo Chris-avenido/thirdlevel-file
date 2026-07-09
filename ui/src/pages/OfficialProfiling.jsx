@@ -209,10 +209,12 @@ const OfficialProfiling = () => {
         emt_passer: null, emt_date: '', ces_stage: '', ces_conferment_date: '',
         total_years_third_level: '', permanent_address: '', temporary_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
+        bachelor_degree: '', bachelor_year: '', master_degree: '', master_year: '', doctorate_degree: '', doctorate_year: '',
         notable_achievements: '', notable_achievements_year: '', individual_accomplishments: [],
         eligibilities: [], other_courses: [],
         performance_rating_1: '', performance_rating_1_period: '',
         performance_rating_2: '', performance_rating_2_period: '',
+        performance_rating_3: '', performance_rating_3_period: '',
         cespes_1_rating: '', cespes_2_rating: '',
         cespes_rating_1_period: '', cespes_rating_2_period: '',
         managerial_experience_total: '',
@@ -295,7 +297,7 @@ const OfficialProfiling = () => {
             return !!profile.photo_binary_id;
         }
         if (tabId === 'legal') {
-            return profile.pending_admin_case !== '' && profile.ombudsman_case !== '';
+            return profile.pending_admin_case && profile.guilty_admin_details && profile.criminally_charged_details && profile.convicted_crime_details;
         }
         if (tabId === 'application') {
             return !!targetVacancyId;
@@ -604,6 +606,12 @@ const OfficialProfiling = () => {
                     specific_degree: d.specific_degree || '',
                     education_program: d.education_program || '',
                     education_year_graduated: d.education_year_graduated ?? '',
+                    bachelor_degree: d.bachelor_degree || '',
+                    bachelor_year: d.bachelor_year || '',
+                    master_degree: d.master_degree || '',
+                    master_year: d.master_year || '',
+                    doctorate_degree: d.doctorate_degree || '',
+                    doctorate_year: d.doctorate_year || '',
                     notable_achievements: d.notable_achievements || '',
                     notable_achievements_year: d.notable_achievements_year || '',
                     eligibilities: d.eligibilities || [],
@@ -613,6 +621,8 @@ const OfficialProfiling = () => {
                     performance_rating_1_period: d.performance_rating_1_period || '',
                     performance_rating_2: d.performance_rating_2 || '',
                     performance_rating_2_period: d.performance_rating_2_period || '',
+                    performance_rating_3: d.performance_rating_3 || '',
+                    performance_rating_3_period: d.performance_rating_3_period || '',
                     cespes_1_rating: d.cespes_1_rating || '',
                     cespes_2_rating: d.cespes_2_rating || '',
                     cespes_rating_1_period: d.cespes_rating_1_period || '',
@@ -635,6 +645,7 @@ const OfficialProfiling = () => {
                     nbi_clearance_binary_id: d.nbi_clearance_binary_id || null,
                     csc_clearance_binary_id: d.csc_clearance_binary_id || null,
                     ombudsman_clearance_binary_id: d.ombudsman_clearance_binary_id || null,
+                    executive_summary_binary_id: d.executive_summary_binary_id || null,
                     updated_at: d.updated_at || null,
                 });
 
@@ -920,7 +931,8 @@ const OfficialProfiling = () => {
                     'sandiganbayan_clearance': 'sandiganbayan_clearance_binary_id',
                     'nbi_clearance': 'nbi_clearance_binary_id',
                     'csc_clearance': 'csc_clearance_binary_id',
-                    'ombudsman_clearance': 'ombudsman_clearance_binary_id'
+                    'ombudsman_clearance': 'ombudsman_clearance_binary_id',
+                    'executive_summary': 'executive_summary_binary_id'
                 };
                 setP(docMap[docType], data.binary_id);
                 setSaved(true);
@@ -1778,43 +1790,44 @@ const OfficialProfiling = () => {
                                                     <div className="space-y-6">
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel>Educational Attainment</SectionLabel>
-                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                <Field label="Highest Educational Attainment">
-                                                                    <select value={profile.highest_education} onChange={e => setP('highest_education', e.target.value)} className={sel}>
-                                                                        <option value="">Select Level</option>
-                                                                        {[
-                                                                            'Post-Doctoral Studies',
-                                                                            "Doctorate Degree",
-                                                                            "Master's Degree",
-                                                                            "Bachelor's Degree"
-                                                                        ].map(o => <option key={o} value={o}>{o}</option>)}
-                                                                    </select>
-                                                                </Field>
 
-                                                                <Field label="Specific Degree Title (e.g. PhD, EdD, MAEd)">
-                                                                    <input
-                                                                        type="text"
-                                                                        value={profile.specific_degree}
-                                                                        onChange={e => setP('specific_degree', e.target.value)}
-                                                                        placeholder="Specify the exact degree title"
-                                                                        className={inp}
-                                                                    />
-                                                                </Field>
+                                                            {/* Baccalaureate */}
+                                                            <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6">
+                                                                <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Baccalaureate / Bachelor's Degree</p>
+                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                    <Field label="Degree / Course">
+                                                                        <input type="text" value={profile.bachelor_degree} onChange={e => setP('bachelor_degree', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
+                                                                    </Field>
+                                                                    <Field label="Year Graduated">
+                                                                        <ModernDatePicker isYearPicker value={profile.bachelor_year} onChange={val => setP('bachelor_year', val)} placeholder="YYYY" className={inp} />
+                                                                    </Field>
+                                                                </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                <Field label="Full Program / Field of Study (No Abbreviations)">
-                                                                    <input
-                                                                        type="text"
-                                                                        value={profile.education_program}
-                                                                        onChange={e => setP('education_program', e.target.value)}
-                                                                        placeholder="e.g. Master of Arts in Educational Management"
-                                                                        className={inp}
-                                                                    />
-                                                                </Field>
-                                                                <Field label="Year Graduated">
-                                                                    <ModernDatePicker isYearPicker value={profile.education_year_graduated} onChange={val => setP('education_year_graduated', val)} placeholder="YYYY" className={inp} />
-                                                                </Field>
+                                                            {/* Master's Degree */}
+                                                            <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6">
+                                                                <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Master's Degree</p>
+                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                    <Field label="Degree / Course">
+                                                                        <input type="text" value={profile.master_degree} onChange={e => setP('master_degree', e.target.value)} placeholder="e.g. Master of Arts in Public Administration" className={inp} />
+                                                                    </Field>
+                                                                    <Field label="Year Graduated">
+                                                                        <ModernDatePicker isYearPicker value={profile.master_year} onChange={val => setP('master_year', val)} placeholder="YYYY" className={inp} />
+                                                                    </Field>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Doctorate */}
+                                                            <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
+                                                                <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Doctorate</p>
+                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                    <Field label="Degree / Course">
+                                                                        <input type="text" value={profile.doctorate_degree} onChange={e => setP('doctorate_degree', e.target.value)} placeholder="e.g. Doctor of Philosophy in Education" className={inp} />
+                                                                    </Field>
+                                                                    <Field label="Year Graduated">
+                                                                        <ModernDatePicker isYearPicker value={profile.doctorate_year} onChange={val => setP('doctorate_year', val)} placeholder="YYYY" className={inp} />
+                                                                    </Field>
+                                                                </div>
                                                             </div>
 
                                                             <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
@@ -1897,7 +1910,7 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <SectionLabel color="#0038A8">IPCRF / OPCRF</SectionLabel>
 
-                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                                                 {/* Rating 1 */}
                                                                 <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
                                                                     <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Latest Rating (1st)</p>
@@ -1924,6 +1937,22 @@ const OfficialProfiling = () => {
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
                                                                                 <ModernDatePicker isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP('performance_rating_2_period', val)} className={inp} />
+
+                                                                            </div>
+                                                                        </Field>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Rating 3 */}
+                                                                <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4">
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Oldest Rating (3rd)</p>
+                                                                    <div className="space-y-3">
+                                                                        <Field label="Rating (Max 5.000)">
+                                                                            <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_3} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_3', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_3', n.toString()); } }} placeholder="4.650" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Rating Period">
+                                                                            <div className="relative">
+                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_3_period} onChange={val => setP('performance_rating_3_period', val)} className={inp} />
 
                                                                             </div>
                                                                         </Field>
@@ -2146,13 +2175,7 @@ const OfficialProfiling = () => {
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
                                                                 { id: 'pds', label: 'Personal Data Sheet (CSC Form 212, rev 2025)', note: 'PDF with Work Experience Sheet attached', accept: '.pdf' },
-                                                                { id: 'profile_word', label: 'Accomplished Profile (Word File)', note: 'Word format required', accept: '.doc,.docx' },
-                                                                { id: 'profile_ppt', label: 'Accomplished Profile (PPT Format)', note: 'PowerPoint format required', accept: '.ppt,.pptx' },
                                                                 { id: 'service_records', label: 'Service Records', note: 'PDF — verifies previous positions', accept: '.pdf' },
-                                                                { id: 'sandiganbayan_clearance', label: 'Sandiganbayan / Case/s', note: 'Image format only', accept: 'image/*' },
-                                                                { id: 'nbi_clearance', label: 'NBI Clearance / Case/s', note: 'Image format only', accept: 'image/*' },
-                                                                { id: 'csc_clearance', label: 'CSC / Case/s', note: 'Image format only', accept: 'image/*' },
-                                                                { id: 'ombudsman_clearance', label: 'Ombudsman / Case/s', note: 'Image format only', accept: 'image/*' },
                                                             ].map(({ id, label, note, accept }) => (
                                                                 <div key={id} className="flex flex-col gap-3 p-6 bg-slate-50/40 hover:bg-transparent border border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md">
                                                                     <div className="flex items-center gap-3">
@@ -2215,18 +2238,105 @@ const OfficialProfiling = () => {
                                                             </div>
                                                         </div>
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
-                                                            <Field label="Pending Administrative Case/s (Type 'Not Applicable' if none)">
-                                                                <textarea value={profile.pending_admin_case || ''} onChange={e => setP('pending_admin_case', e.target.value)} rows={4} placeholder="Type 'Not Applicable' if none. Otherwise, describe the nature and status of the case." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
+                                                            <Field label="Pending Administrative Case/s?">
+                                                                <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
+                                                                    {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
+                                                                        <button
+                                                                            key={opt.val}
+                                                                            onClick={() => setP('pending_admin_case', opt.val)}
+                                                                            className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
+                                                                        ${profile.pending_admin_case === opt.val
+                                                                                    ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
+                                                                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                        >
+                                                                            {opt.label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
                                                             </Field>
                                                             <div className="space-y-6">
                                                                 <Field label="Have you ever been found guilty of any administrative offense?">
-                                                                    <textarea value={profile.guilty_admin_details || ''} onChange={e => setP('guilty_admin_details', e.target.value)} rows={2} placeholder="Type 'No' if none. Otherwise, provide details." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
+                                                                    <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
+                                                                        {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
+                                                                            <button
+                                                                                key={opt.val}
+                                                                                onClick={() => setP('guilty_admin_details', opt.val)}
+                                                                                className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
+                                                                            ${profile.guilty_admin_details === opt.val
+                                                                                        ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
+                                                                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                            >
+                                                                                {opt.label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
                                                                 </Field>
                                                                 <Field label="Have you been criminally charged before any court?">
-                                                                    <textarea value={profile.criminally_charged_details || ''} onChange={e => setP('criminally_charged_details', e.target.value)} rows={2} placeholder="Type 'No' if none. Otherwise, provide date and status of case/s." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
+                                                                    <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
+                                                                        {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
+                                                                            <button
+                                                                                key={opt.val}
+                                                                                onClick={() => setP('criminally_charged_details', opt.val)}
+                                                                                className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
+                                                                            ${profile.criminally_charged_details === opt.val
+                                                                                        ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
+                                                                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                            >
+                                                                                {opt.label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
                                                                 </Field>
                                                                 <Field label="Have you ever been convicted of any crime or violation of any law?">
-                                                                    <textarea value={profile.convicted_crime_details || ''} onChange={e => setP('convicted_crime_details', e.target.value)} rows={2} placeholder="Type 'No' if none. Otherwise, provide details." className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all resize-none shadow-sm shadow-slate-50" />
+                                                                    <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
+                                                                        {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
+                                                                            <button
+                                                                                key={opt.val}
+                                                                                onClick={() => setP('convicted_crime_details', opt.val)}
+                                                                                className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
+                                                                            ${profile.convicted_crime_details === opt.val
+                                                                                        ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
+                                                                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                            >
+                                                                                {opt.label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </Field>
+                                                            </div>
+                                                            <div className="pt-6 border-t border-slate-100 mt-6">
+                                                                <Field label="Executive Summary">
+                                                                    <div className="flex flex-col gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                                                                        <div className="flex gap-2 h-10">
+                                                                            <div className="relative group/upload flex-1 h-full">
+                                                                                <input
+                                                                                    type="file"
+                                                                                    accept=".pdf"
+                                                                                    onChange={(e) => {
+                                                                                        const file = e.target.files[0];
+                                                                                        if (file) handleFileUpload(file, 'executive_summary');
+                                                                                    }}
+                                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                                />
+                                                                                <div className={`h-full flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile.executive_summary_binary_id ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
+                                                                                    <FiUpload size={14} className={uploadingDocs.executive_summary ? 'animate-bounce' : ''} />
+                                                                                    <span className="text-[10px] font-black uppercase tracking-widest">
+                                                                                        {uploadingDocs.executive_summary ? 'Processing...' : profile.executive_summary_binary_id ? 'Replace Document' : 'Upload PDF'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                            {profile.executive_summary_binary_id && (
+                                                                                <button
+                                                                                    onClick={() => handleDownloadDocument(profile.executive_summary_binary_id, 'Executive Summary')}
+                                                                                    className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
+                                                                                    title="Download Document"
+                                                                                >
+                                                                                    <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
+                                                                                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
                                                                 </Field>
                                                             </div>
                                                         </div>
@@ -2498,9 +2608,19 @@ const OfficialProfiling = () => {
                                                                                                                     </thead>
                                                                                                                     <tbody className="text-slate-800">
                                                                                                                         <tr>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">N/A</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.specific_degree || profile.education_program || '—'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.education_year_graduated || '—'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Doctorate</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.doctorate_degree || '—'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.doctorate_year || '—'}</td>
+                                                                                                                        </tr>
+                                                                                                                        <tr>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Master's Degree</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.master_degree || '—'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.master_year || '—'}</td>
+                                                                                                                        </tr>
+                                                                                                                        <tr>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Baccalaureate</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.bachelor_degree || '—'}</td>
+                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.bachelor_year || '—'}</td>
                                                                                                                         </tr>
                                                                                                                     </tbody>
                                                                                                                 </table>
@@ -2519,6 +2639,7 @@ const OfficialProfiling = () => {
                                                                                                                         <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
                                                                                                                         <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
                                                                                                                         <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
+                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_3 || '—'}</td></tr>
                                                                                                                     </tbody>
                                                                                                                 </table>
                                                                                                                 <table className="w-full text-sm border-collapse">
@@ -2685,6 +2806,7 @@ const OfficialProfiling = () => {
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                                     <SummaryRow label="Latest Rating (1st)" value={profile.performance_rating_1 ? `${profile.performance_rating_1} (${profile.performance_rating_1_period})` : null} />
                                                                     <SummaryRow label="Previous Rating (2nd)" value={profile.performance_rating_2 ? `${profile.performance_rating_2} (${profile.performance_rating_2_period})` : null} />
+                                                                    <SummaryRow label="Oldest Rating (3rd)" value={profile.performance_rating_3 ? `${profile.performance_rating_3} (${profile.performance_rating_3_period})` : null} />
                                                                     <SummaryRow label="CESPES 1st Sem" value={profile.cespes_1_rating ? `${profile.cespes_1_rating}${profile.cespes_rating_1_period ? ` (${profile.cespes_rating_1_period})` : ''}` : null} />
                                                                     <SummaryRow label="CESPES 2nd Sem" value={profile.cespes_2_rating ? `${profile.cespes_2_rating}${profile.cespes_rating_2_period ? ` (${profile.cespes_rating_2_period})` : ''}` : null} />
                                                                     <SummaryRow label="Total Managerial Experience" value={profile.managerial_experience_total} />
@@ -2719,8 +2841,6 @@ const OfficialProfiling = () => {
                                                                     {[
                                                                         { key: 'photo_binary_id', label: '2x2 Photo' },
                                                                         { key: 'pds_binary_id', label: 'PDS' },
-                                                                        { key: 'profile_word_binary_id', label: 'Profile (Word)' },
-                                                                        { key: 'profile_ppt_binary_id', label: 'Profile (PPT)' },
                                                                         { key: 'service_records_binary_id', label: 'Service Records' },
                                                                     ].map(d => (
                                                                         <div key={d.key} className={`flex flex-col items-center gap-2 p-4 rounded-[1.5rem] border-2 text-center ${profile[d.key] ? 'bg-emerald-50 border-emerald-200' : 'bg-transparent border-slate-100'}`}>
@@ -2735,10 +2855,10 @@ const OfficialProfiling = () => {
                                                             <div>
                                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Legal Disclosures</p>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                    <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case ? 'Disclosed' : 'No'} />
-                                                                    <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details ? 'Disclosed' : 'No'} />
-                                                                    <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details ? 'Disclosed' : 'No'} />
-                                                                    <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details ? 'Disclosed' : 'No'} />
+                                                                    <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case === 'Yes' ? 'Yes' : 'No'} />
+                                                                    <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                    <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                    <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details === 'Yes' ? 'Yes' : 'No'} />
                                                                 </div>
                                                             </div>
                                                         </div>

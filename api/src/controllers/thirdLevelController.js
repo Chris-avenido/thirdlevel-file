@@ -224,7 +224,8 @@ export const uploadDocument = async (req, res) => {
       'sandiganbayan_clearance': 'sandiganbayan_clearance_binary_id',
       'nbi_clearance': 'nbi_clearance_binary_id',
       'csc_clearance': 'csc_clearance_binary_id',
-      'ombudsman_clearance': 'ombudsman_clearance_binary_id'
+      'ombudsman_clearance': 'ombudsman_clearance_binary_id',
+      'executive_summary': 'executive_summary_binary_id'
     };
 
     const columnName = docMap[docType];
@@ -293,13 +294,14 @@ export const updateProfile = async (req, res) => {
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'temporary_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
+      'bachelor_degree', 'bachelor_year', 'master_degree', 'master_year', 'doctorate_degree', 'doctorate_year',
       'relevant_trainings', 'notable_achievements', 'notable_achievements_year', 'eligibilities', 'individual_accomplishments', 'total_training_hours',
-      'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period',
+      'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period', 'performance_rating_3', 'performance_rating_3_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
       'previous_positions', 'is_oic', 'unique_number', 'employment_status',
       'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-      'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id',
+      'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
       'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for',
       'other_courses'
     ];

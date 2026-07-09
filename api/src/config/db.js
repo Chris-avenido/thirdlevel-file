@@ -44,6 +44,7 @@ export const initDB = async () => {
       );
     `);
     await pool.query(`
+      
       INSERT INTO authorization_codes (code, role, is_active)
       VALUES 
         ($1, $2, TRUE),
