@@ -6,7 +6,7 @@ import {
     FiChevronLeft, FiChevronRight, FiSave, FiPlus, FiTrash2, FiCheckCircle,
     FiAlertTriangle, FiInfo, FiUpload, FiToggleLeft, FiToggleRight,
     FiSearch, FiLoader, FiList, FiLock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
-    FiDownload, FiX, FiMonitor, FiFile
+    FiDownload, FiX, FiMonitor, FiFile, FiPrinter
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
@@ -2495,7 +2495,47 @@ const OfficialProfiling = () => {
                                                                                             </button>
                                                                                         ))}
 
-                                                                                        <div className="mt-auto pt-6">
+                                                                                        <div className="mt-auto pt-6 flex flex-col gap-3">
+                                                                                            {selectedExportType === 'pdf' && (
+                                                                                                <button
+                                                                                                    onClick={() => {
+                                                                                                        const printContent = document.getElementById('pdf-preview-content').outerHTML;
+                                                                                                        const printWindow = window.open('', '_blank');
+                                                                                                        printWindow.document.write(`
+                                                                                                            <html>
+                                                                                                            <head>
+                                                                                                                <title>Print Profile</title>
+                                                                                                                <script src="https://cdn.tailwindcss.com"></script>
+                                                                                                                <style>
+                                                                                                                    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+                                                                                                                    body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                                                                                                    @page { size: landscape; margin: 10mm; }
+                                                                                                                </style>
+                                                                                                            </head>
+                                                                                                            <body>
+                                                                                                                <div class="flex justify-center items-start w-full h-full">
+                                                                                                                    ${printContent}
+                                                                                                                </div>
+                                                                                                                <script>
+                                                                                                                    window.onload = function() {
+                                                                                                                        setTimeout(function() {
+                                                                                                                            window.print();
+                                                                                                                            window.close();
+                                                                                                                        }, 800);
+                                                                                                                    };
+                                                                                                                </script>
+                                                                                                            </body>
+                                                                                                            </html>
+                                                                                                        `);
+                                                                                                        printWindow.document.close();
+                                                                                                    }}
+                                                                                                    disabled={exporting}
+                                                                                                    className="w-full py-4 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                                >
+                                                                                                    <FiPrinter size={16} />
+                                                                                                    Print Document
+                                                                                                </button>
+                                                                                            )}
                                                                                             <button
                                                                                                 onClick={() => {
                                                                                                     if (selectedExportType === 'csv') generateCSV();
