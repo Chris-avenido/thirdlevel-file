@@ -903,12 +903,33 @@ const OfficialProfiling = () => {
 
     const handleFileUpload = async (file, docType) => {
         if (!TLOid || !file) return;
+
+        if (docType === 'photo') {
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('Notice', 'Please upload a valid image file (PNG, JPG) for the ID Picture.', 'info');
+                return;
+            }
+            
+            // Check if it's a portrait image (for CSC / 2x2 format)
+            const isPortrait = await new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img.height >= img.width);
+                img.onerror = () => resolve(false);
+                img.src = URL.createObjectURL(file);
+            });
+            
+            if (!isPortrait) {
+                Swal.fire('Notice', 'Please upload a portrait/passport-sized photo. Landscape or wide images do not meet the criteria.', 'warning');
+                return;
+            }
+        }
+
         setUploadingDocs(prev => ({ ...prev, [docType]: true }));
         try {
             let fileToUpload = file;
 
             // Compress 2x2 ID Picture
-            if (docType === 'photo' && file.type.startsWith('image/')) {
+            if (docType === 'photo') {
                 fileToUpload = await compressImageClientSide(file, 800, 0.9);
             }
 
@@ -1346,10 +1367,10 @@ const OfficialProfiling = () => {
                                                             <div>
                                                                 <SectionLabel>Personal Information</SectionLabel>
                                                                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-                                                                    {/* 2x2 ID Upload */}
-                                                                    <div className="w-full lg:w-[132px] shrink-0">
-                                                                        <Field label="2x2 ID Picture">
-                                                                            <div className="relative group/upload w-full aspect-square max-w-[132px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
+                                                                    {/* CSC ID Upload */}
+                                                                    <div className="w-full lg:w-[150px] shrink-0">
+                                                                        <Field label="CSC Format ID Picture">
+                                                                            <div className="relative group/upload w-full aspect-[3.5/4.5] max-w-[150px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
                                                                                 <input
                                                                                     type="file"
                                                                                     accept="image/*"
@@ -1361,7 +1382,7 @@ const OfficialProfiling = () => {
                                                                                 />
                                                                                 {profile.photo_binary_id ? (
                                                                                     <>
-                                                                                        <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="2x2 ID" className="w-full h-full object-cover" />
+                                                                                        <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="CSC ID" className="w-full h-full object-cover" />
                                                                                         <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/upload:opacity-100 transition-opacity flex flex-col items-center justify-center text-white z-0 backdrop-blur-sm">
                                                                                             <FiUpload size={20} className="mb-2" />
                                                                                             <span className="text-[9px] font-black uppercase tracking-widest text-center px-2">Change Photo</span>
@@ -1373,7 +1394,7 @@ const OfficialProfiling = () => {
                                                                                         <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight mt-1">
                                                                                             {uploadingDocs['photo'] ? 'Processing...' : 'Upload Photo'}
                                                                                         </span>
-                                                                                        <span className="text-[8px] font-bold text-slate-400 italic mt-1.5 text-center">PNG or JPG</span>
+                                                                                        <span className="text-[8px] font-bold text-slate-400 italic mt-1.5 text-center">Passport size with handwritten name tag & signature</span>
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -2327,7 +2348,7 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                             {profile.executive_summary_binary_id && (
                                                                                 <button
-                                                                                    onClick={() => handleDownloadDocument(profile.executive_summary_binary_id, 'Executive Summary')}
+                                                                                    onClick={() => handleDownloadDocument(profile.executive_summary_binary_id, 'Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents')}
                                                                                     className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
                                                                                     title="Download Document"
                                                                                 >
@@ -3164,7 +3185,7 @@ const OfficialProfiling = () => {
                                         ) : (
                                             vacancies.map(vac => (
                                                 <button key={vac.TLOid} onClick={() => {
-                                                    setP('position_title', vac.position_title);
+                                                    setP('designation', vac.position_title);
                                                     setP('is_oic', true);
                                                     setOicModalOpen(false);
                                                 }} className="w-full text-left p-4 rounded-2xl border border-slate-200 hover:border-[#FCD116] hover:bg-yellow-50/30 transition-all flex flex-col gap-1 group">
