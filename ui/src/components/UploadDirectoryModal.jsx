@@ -312,9 +312,9 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
 
             {summary && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className={`grid gap-4 ${summary.summary.failed > 0 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'}`}>
                   <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 text-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total (CSV)</p>
                     <p className="text-3xl font-black text-[#08315f]">{summary.summary.total}</p>
                   </div>
                   <div className="bg-white p-4 rounded-2xl border-2 border-green-200 text-center bg-green-50/30">
@@ -322,13 +322,15 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                     <p className="text-3xl font-black text-green-700">{summary.summary.new}</p>
                   </div>
                   <div className="bg-white p-4 rounded-2xl border-2 border-amber-200 text-center bg-amber-50/30">
-                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Updated</p>
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Existing in DB</p>
                     <p className="text-3xl font-black text-amber-700">{summary.summary.updated}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl border-2 border-red-200 text-center bg-red-50/30">
-                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Failed</p>
-                    <p className="text-3xl font-black text-red-700">{summary.summary.failed}</p>
-                  </div>
+                  {summary.summary.failed > 0 && (
+                    <div className="bg-white p-4 rounded-2xl border-2 border-red-200 text-center bg-red-50/30">
+                      <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Failed</p>
+                      <p className="text-3xl font-black text-red-700">{summary.summary.failed}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden">
@@ -355,14 +357,14 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                     {summary.updates.length > 0 && (
                       <div>
                         <h4 className="font-black text-amber-600 text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
-                          <FiCheckCircle /> B. Updated Records ({summary.updates.length})
+                          <FiCheckCircle /> B. Existing in Database ({summary.updates.length})
                         </h4>
                         <ul className="space-y-2">
                           {summary.updates.map((r, i) => (
                             <li key={i} className="text-xs text-slate-700 bg-amber-50 p-3 rounded-lg font-medium flex flex-col gap-1">
                               <span className="font-bold text-slate-900">{r.full_name} <span className="text-amber-600 ml-2">[{r.email}]</span></span>
                               <span className="text-slate-500">Row {r.rowNum} • {r.position_title} • {r.designation} • {r.office} • {r.strand}</span>
-                              <span className="text-amber-700 font-bold mt-1">Action: Existing Record Updated</span>
+                              <span className="text-amber-700 font-bold mt-1">Action: Already Exists (Skipped Update)</span>
                             </li>
                           ))}
                         </ul>

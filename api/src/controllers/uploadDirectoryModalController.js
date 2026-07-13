@@ -91,36 +91,7 @@ export const bulkProcessDirectory = async (req, res) => {
         }
 
         if (match) {
-          const existingTloId = match.TLOid;
-          toUpdate.push({
-            TLOid: existingTloId,
-            first_name: record.first_name || '',
-            last_name: record.last_name || '',
-            position_title: record.position_title || '',
-            office: record.office || '',
-            division: record.division || '',
-            strand: record.strand || '',
-            region: record.region || '',
-            designation: record.designation || '',
-            contact_details: record.contact_details || '',
-          });
-
-          toHistory.push({
-            TLOid: existingTloId,
-            first_name: record.first_name || '',
-            last_name: record.last_name || '',
-            position_title: record.position_title || '',
-            office: record.office || '',
-            division: record.division || '',
-            strand: record.strand || '',
-            region: record.region || '',
-            designation: record.designation || '',
-            email: emailToInsert,
-            contact_details: record.contact_details || '',
-            change_type: 'Update',
-            remarks: isNoEmail ? 'Existing Record Updated (No Email)' : 'Update Record Inserted'
-          });
-
+          // DO NOT update records. Instead, just count them as existing.
           results.updates.push(record);
           results.summary.updated++;
         } else {
