@@ -561,6 +561,43 @@ const OfficialProfiling = () => {
         }
     }, [trainings]);
 
+    // Highest Education Auto-Sync
+    useEffect(() => {
+        let hEd = '';
+        let hProg = '';
+        let hYear = '';
+        
+        const doc = (profile.doctorate_degree || '').split('\n').filter(Boolean);
+        const docY = (profile.doctorate_year || '').split('\n').filter(Boolean);
+        const mas = (profile.master_degree || '').split('\n').filter(Boolean);
+        const masY = (profile.master_year || '').split('\n').filter(Boolean);
+        const bac = (profile.bachelor_degree || '').split('\n').filter(Boolean);
+        const bacY = (profile.bachelor_year || '').split('\n').filter(Boolean);
+
+        if (doc.length > 0) {
+            hEd = 'Doctorate';
+            hProg = doc[0];
+            hYear = docY[0] || '';
+        } else if (mas.length > 0) {
+            hEd = "Master's Degree";
+            hProg = mas[0];
+            hYear = masY[0] || '';
+        } else if (bac.length > 0) {
+            hEd = "Baccalaureate / Bachelor's Degree";
+            hProg = bac[0];
+            hYear = bacY[0] || '';
+        }
+
+        if (profile.highest_education !== hEd || profile.education_program !== hProg || profile.education_year_graduated !== hYear) {
+            setProfile(prev => ({
+                ...prev,
+                highest_education: hEd,
+                education_program: hProg,
+                education_year_graduated: hYear
+            }));
+        }
+    }, [profile.doctorate_degree, profile.master_degree, profile.bachelor_degree, profile.doctorate_year, profile.master_year, profile.bachelor_year]);
+
     const lookupByEmail = async (email) => {
         if (!email) { setStatus('not-found'); return; }
         try {
@@ -763,7 +800,6 @@ const OfficialProfiling = () => {
                 position_applied_for: targetVacancy ? targetVacancy.position_title : profile.position_applied_for,
                 profiling_status: completeness === 100 ? 'profiling completed' : 'profiling'
             };
-            delete payload.age;
 
             const res = await fetch(apiUrl(`/api/third-level/${TLOid}/profile`), {
                 method: 'PUT',
