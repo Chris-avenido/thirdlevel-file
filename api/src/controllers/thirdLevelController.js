@@ -569,7 +569,7 @@ export const processApplication = async (req, res) => {
       `, [app_TLOid]);
 
       await client.query(`
-        UPDATE users SET role = 'Third Level Official' WHERE LOWER(email) = $1 AND role = 'Third Level Applicant'
+        UPDATE tlo_users SET role = 'Third Level Official' WHERE LOWER(email) = $1 AND role = 'Third Level Applicant'
       `, [applicant.email.toLowerCase().trim()]);
     }
 
@@ -592,7 +592,7 @@ const executeReassignment = async (client, official, effTs, justification, assig
       WHERE app_TLOid = $1
       UNION ALL
       SELECT uid AS "TLOid", first_name, last_name, email, contact_number AS contact_details
-      FROM users
+      FROM tlo_users
       WHERE uid = $1
       LIMIT 1
     `, [assignee_TLOid]);
@@ -1139,7 +1139,7 @@ export const createUnassignedPersonnel = async (req, res) => {
   try {
     const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1)', [email]);
     const appCheck = await client.query('SELECT 1 FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1)', [email]);
-    const userCheck = await client.query('SELECT 1 FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    const userCheck = await client.query('SELECT 1 FROM tlo_users WHERE LOWER(email) = LOWER($1)', [email]);
 
     if (masterCheck.rows.length > 0 || appCheck.rows.length > 0 || userCheck.rows.length > 0) {
       return res.json({ success: false, error: 'Email already exists. Please use a different email address.' });
@@ -1198,7 +1198,7 @@ export const getUnassignedPersonnel = async (req, res) => {
       ['employee_number', 'employee_no', 'emp_no']
     );
     const userEmployeeExpr = await getOptionalColumnExpression(
-      'users',
+      'tlo_users',
       'u',
       ['employee_number', 'employee_no', 'emp_no']
     );
@@ -1211,7 +1211,7 @@ export const getUnassignedPersonnel = async (req, res) => {
         COALESCE(a.email, u.email) AS email,
         COALESCE(${appEmployeeExpr}, ${userEmployeeExpr}) AS employee_number,
         COALESCE(a.contact_details, u.contact_number) AS contact_details
-      FROM users u
+      FROM tlo_users u
       FULL JOIN third_level_officials_profiling_application a
         ON LOWER(a.email) = LOWER(u.email)
       WHERE COALESCE(a.email, u.email) IS NOT NULL

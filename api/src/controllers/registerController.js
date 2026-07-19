@@ -134,7 +134,7 @@ export const checkEmail = async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
-    const check = await pool.query('SELECT uid FROM users WHERE LOWER(email) = $1', [email.toLowerCase().trim()]);
+    const check = await pool.query('SELECT uid FROM tlo_users WHERE LOWER(email) = $1', [email.toLowerCase().trim()]);
     res.json({ exists: check.rows.length > 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -176,7 +176,7 @@ export const registerUser = async (req, res) => {
 
     await client.query('BEGIN');
 
-    const userCheck = await client.query('SELECT uid FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
+    const userCheck = await client.query('SELECT uid FROM tlo_users WHERE LOWER(email) = $1', [normalizedEmail]);
     if (userCheck.rows.length > 0) {
       await client.query('ROLLBACK');
       client.release();
@@ -186,13 +186,13 @@ export const registerUser = async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const uidRes = await client.query(`
       SELECT COALESCE(MAX(CAST(SUBSTRING(uid FROM 10) AS INTEGER)), 0) AS max_num
-      FROM users WHERE uid ~ '^TLO-2026-[0-9]{4}$'
+      FROM tlo_users WHERE uid ~ '^TLO-2026-[0-9]{4}$'
     `);
     const nextNum = parseInt(uidRes.rows[0].max_num) + 1;
     const uid = `TLO-2026-${String(nextNum).padStart(4, '0')}`;
 
     await client.query(
-      `INSERT INTO users (
+      `INSERT INTO tlo_users (
         uid, email, password_hash, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Approved', NOW())`,
       [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division]

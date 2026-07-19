@@ -56,7 +56,7 @@ export const updateSettings = async (req, res) => {
     values.push(email.toLowerCase().trim());
     
     const updateQuery = `
-      UPDATE users 
+      UPDATE tlo_users 
       SET ${updates.join(', ')} 
       WHERE LOWER(email) = $${queryIndex}
       RETURNING uid, first_name, last_name, email, role;

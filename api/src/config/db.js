@@ -29,8 +29,8 @@ pool.on('error', (err) => {
 export const initDB = async () => {
   try {
     await pool.query('ALTER TABLE third_level_officials_updates ADD COLUMN IF NOT EXISTS remarks TEXT;');
-    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_region TEXT;');
-    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_division TEXT;');
+    await pool.query('ALTER TABLE tlo_users ADD COLUMN IF NOT EXISTS assigned_region TEXT;');
+    await pool.query('ALTER TABLE tlo_users ADD COLUMN IF NOT EXISTS assigned_division TEXT;');
     await pool.query('ALTER TABLE third_level_official_masterlist ADD COLUMN IF NOT EXISTS designation TEXT;');
     await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS designation TEXT;');
     await pool.query(`

@@ -12,7 +12,7 @@ export const login = async (req, res) => {
 
   try {
     const authRes = await pool.query(
-      'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM users WHERE LOWER(email) = $1',
+      'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM tlo_users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
     const centralUser = authRes.rows[0];
@@ -183,7 +183,7 @@ export const pinLogin = async (req, res) => {
 
   try {
     const authRes = await pool.query(
-      'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM users WHERE LOWER(email) = $1',
+      'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
     const centralUser = authRes.rows[0];
