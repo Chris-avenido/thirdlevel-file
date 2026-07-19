@@ -405,8 +405,8 @@ export const getPositions = async (req, res) => {
         AND designation NOT ILIKE 'N/A'
       ORDER BY designation
     `);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       positions: posResult.rows.map(r => displayPositionTitle(r.position_title)),
       designations: desigResult.rows.map(r => displayPositionTitle(r.designation))
     });
@@ -679,7 +679,7 @@ let lastProcessTime = 0;
 export const processScheduledVacancies = async (client) => {
   const now = Date.now();
   if (isProcessingVacancies || now - lastProcessTime < 60000) return; // Only run once per minute
-  
+
   isProcessingVacancies = true;
   lastProcessTime = now;
 
@@ -732,7 +732,7 @@ export const processAnticipatedVacancies = async (client) => {
         AND date_of_birth <= NOW() - INTERVAL '60 years'
         AND date_of_birth > NOW() - INTERVAL '65 years'
     `);
-    
+
     if (res.rows.length > 0) {
       console.log(`\n📌 [Anticipated Vacancies] Identified ${res.rows.length} personnel retiring within 5 years.`);
     }
@@ -895,18 +895,18 @@ export const getOfficials = async (req, res) => {
 
   if (category === 'Third Level') {
     params.push(THIRD_LEVEL_POSITIONS);
-    conditions.push(`position_title = ANY($${params.length}) AND COALESCE(is_oic, FALSE) = FALSE`);
+    conditions.push(`position_title = ANY($${params.length}) AND NOT (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'Third Level (OIC)') {
     params.push(THIRD_LEVEL_POSITIONS);
-    conditions.push(`position_title = ANY($${params.length}) AND COALESCE(is_oic, FALSE) = TRUE`);
+    conditions.push(`(position_title = ANY($${params.length}) OR designation = ANY($${params.length}) OR designation ILIKE '%OIC%') AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'Division Chiefs') {
     params.push(THIRD_LEVEL_POSITIONS);
-    conditions.push(`position_title != ALL($${params.length}) AND COALESCE(is_oic, FALSE) = FALSE`);
+    conditions.push(`position_title != ALL($${params.length}) AND NOT (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'Division Chiefs (OIC)') {
     params.push(THIRD_LEVEL_POSITIONS);
-    conditions.push(`position_title != ALL($${params.length}) AND COALESCE(is_oic, FALSE) = TRUE`);
+    conditions.push(`position_title != ALL($${params.length}) AND designation != ALL($${params.length}) AND (designation NOT ILIKE '%OIC%' OR designation IS NULL) AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'OIC / Chiefs') {
-    conditions.push(`COALESCE(is_oic, FALSE) = TRUE`);
+    conditions.push(`(COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   }
 
   if (is_oic === 'true') {

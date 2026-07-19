@@ -590,7 +590,7 @@ const OfficialProfiling = () => {
                     civil_status: d.civil_status || '',
                     position_title: d.position_title || '',
                     designation: d.designation || '',
-                    is_oic: d.is_oic ?? false,
+                    is_oic: (d.designation && typeof d.designation === 'string' && d.designation.toUpperCase().includes('OIC')) ? true : (d.is_oic ?? false),
                     appointment_date: d.appointment_date ? d.appointment_date.split('T')[0] : '',
                     emt_passer: d.emt_passer ?? null,
                     emt_date: d.emt_date ? d.emt_date.split('T')[0] : '',

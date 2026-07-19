@@ -265,21 +265,23 @@ const OfficialsRegistry = () => {
     const [kpiSummary, setKpiSummary] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
 
-    // Filter officials on the client side
+    const isThirdLevel = (o) => THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC'));
+    const isOIC = (o) => o.is_oic || (o.designation && o.designation.toUpperCase().includes('OIC'));
+
     const thirdLevelOfficials = useMemo(() => {
-        return kpiSummary.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        return kpiSummary.filter(o => !isOIC(o) && THIRD_LEVEL_POSITIONS.includes(o.position_title));
     }, [kpiSummary]);
 
     const thirdLevelOic = useMemo(() => {
-        return kpiSummary.filter(o => o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        return kpiSummary.filter(o => isOIC(o) && isThirdLevel(o));
     }, [kpiSummary]);
 
     const divisionChiefsOic = useMemo(() => {
-        return kpiSummary.filter(o => o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        return kpiSummary.filter(o => isOIC(o) && !isThirdLevel(o));
     }, [kpiSummary]);
 
     const divisionChiefs = useMemo(() => {
-        return kpiSummary.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        return kpiSummary.filter(o => !isOIC(o) && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
     }, [kpiSummary]);
 
     // Active counts for KPI cards (to match Home page logic which only counts Active)
@@ -395,9 +397,9 @@ const OfficialsRegistry = () => {
             if (data.success) {
                 let filteredData = data.data;
                 if (activeTab === 'Third Level (OIC)') {
-                    filteredData = data.data.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title));
+                    filteredData = data.data.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC')));
                 } else if (activeTab === 'Division Chiefs (OIC)') {
-                    filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+                    filteredData = data.data.filter(o => !(THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC'))));
                 } else if (activeTab === 'Division Chiefs') {
                     filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
                 }
@@ -1045,14 +1047,14 @@ const OfficialsRegistry = () => {
             const values = dataForColumn
                 .map(item => (column.filterValue ? column.filterValue(item) : column.value(item))?.trim())
                 .filter(Boolean);
-            
+
             if (column.key === 'division' && isCentralOfficeView) {
                 // Ensure all strands are always visible in the dropdown, even if currently empty
                 options[column.key] = [...new Set([...values, ...strands])].sort((a, b) => a.localeCompare(b));
             } else {
                 options[column.key] = [...new Set(values)].sort((a, b) => a.localeCompare(b));
             }
-            
+
             return options;
         }, {});
     }, [kpiSummary, tableColumns, tableFilters, levelFilter, regionFilter, strandFilter, officeFilter, designationFilter, positionFilter, statusTab, oicOnly, activeTab, strands, isCentralOfficeView]);
@@ -1346,7 +1348,7 @@ const OfficialsRegistry = () => {
                         </div>
 
                         {/* STATS CARDS */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-8 w-full">
                             {/* Card 1: Third Level Officials */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
@@ -1364,26 +1366,6 @@ const OfficialsRegistry = () => {
                             >
                                 <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Third Level (OIC)</div>
                                 <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{thirdLevelOicActiveCount}</div>
-                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
-                            </div>
-
-                            {/* Card 3: Division Chiefs (OIC) */}
-                            <div
-                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs (OIC)' ? 'All' : 'Division Chiefs (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Division Chiefs (OIC)' ? 'border-l-purple-500 shadow-md ring-1 ring-purple-200' : 'border-l-purple-400 hover:shadow-sm'}`}
-                            >
-                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Division Chiefs (OIC)</div>
-                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{divisionChiefsOicActiveCount}</div>
-                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
-                            </div>
-
-                            {/* Card 4: Division Chiefs */}
-                            <div
-                                onClick={() => { setActiveTab(prev => prev === 'Division Chiefs' ? 'All' : 'Division Chiefs'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Division Chiefs' ? 'border-l-red-500 shadow-md ring-1 ring-red-200' : 'border-l-red-400 hover:shadow-sm'}`}
-                            >
-                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Division Chiefs</div>
-                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{divisionChiefsActiveCount}</div>
                                 <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
                         </div>
