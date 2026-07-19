@@ -2153,13 +2153,12 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Period (1st)">
                                                                             <div className="relative">
-                                                                                <input
-                                                                                    type="month"
+                                                                                <ModernDatePicker
+                                                                                    isMonthPicker
                                                                                     value={profile.cespes_rating_1_period}
-                                                                                    onChange={e => setP('cespes_rating_1_period', e.target.value)}
+                                                                                    onChange={val => setP('cespes_rating_1_period', val)}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
-
                                                                             </div>
                                                                         </Field>
                                                                     </div>
@@ -2184,13 +2183,12 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Period (2nd)">
                                                                             <div className="relative">
-                                                                                <input
-                                                                                    type="month"
+                                                                                <ModernDatePicker
+                                                                                    isMonthPicker
                                                                                     value={profile.cespes_rating_2_period}
-                                                                                    onChange={e => setP('cespes_rating_2_period', e.target.value)}
+                                                                                    onChange={val => setP('cespes_rating_2_period', val)}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
-
                                                                             </div>
                                                                         </Field>
                                                                     </div>
