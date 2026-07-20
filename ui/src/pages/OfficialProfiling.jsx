@@ -2519,7 +2519,7 @@ const OfficialProfiling = () => {
                                                                             <div className="relative group/upload flex-1 h-full">
                                                                                 <input
                                                                                     type="file"
-                                                                                    accept=".pdf"
+                                                                                    accept=".pdf,.doc,.docx"
                                                                                     onChange={(e) => {
                                                                                         const file = e.target.files[0];
                                                                                         if (file) handleFileUpload(file, 'executive_summary');
@@ -2529,7 +2529,7 @@ const OfficialProfiling = () => {
                                                                                 <div className={`h-full flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile.executive_summary_binary_id ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
                                                                                     <FiUpload size={14} className={uploadingDocs.executive_summary ? 'animate-bounce' : ''} />
                                                                                     <span className="text-[10px] font-black uppercase tracking-widest">
-                                                                                        {uploadingDocs.executive_summary ? 'Processing...' : profile.executive_summary_binary_id ? 'Replace Document' : 'Upload PDF'}
+                                                                                        {uploadingDocs.executive_summary ? 'Processing...' : profile.executive_summary_binary_id ? 'Replace Document' : 'Upload Document'}
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
