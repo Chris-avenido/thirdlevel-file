@@ -297,7 +297,7 @@ const OfficialProfiling = () => {
             return !!profile.notable_achievements;
         }
         if (tabId === 'documents') {
-            return !!profile.pds_binary_id;
+            return !!(profile.pds_binary_id || profile.photo_binary_id || profile.service_records_binary_id || profile.executive_summary_binary_id);
         }
         if (tabId === 'legal') {
             return profile.pending_admin_case && profile.guilty_admin_details && profile.criminally_charged_details && profile.convicted_crime_details;
