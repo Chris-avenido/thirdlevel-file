@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiLogIn, FiUserPlus, FiShield } from 'react-icons/fi';
 import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
+import modernLogo from '../assets/modern_logo.png';
 
 const NexusGate = () => {
     const navigate = useNavigate();
@@ -110,7 +111,7 @@ const NexusGate = () => {
                                         variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
                                         <motion.div variants={itemLeft} className="logo" aria-label="InsightED">
-                                            <img src="/modern_logo.png" alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                            <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
                                         </motion.div>
                                         <motion.h1 variants={itemLeft} id="page-title">
                                             Welcome to the<br />
@@ -211,7 +212,7 @@ const NexusGate = () => {
                                         variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
                                         <motion.div variants={itemRight} className="logo" aria-label="InsightED">
-                                            <img src="/modern_logo.png" alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                            <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
                                         </motion.div>
                                         <motion.h1 variants={itemRight} id="page-title">
                                             Welcome to the<br />
