@@ -5,6 +5,7 @@ import { FiX, FiLogIn, FiUserPlus, FiShield } from 'react-icons/fi';
 import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
 import modernLogo from '../assets/modern_logo.png';
+import depedLogo from '../assets/DepED-Logo.png';
 
 const NexusGate = () => {
     const navigate = useNavigate();
@@ -62,9 +63,10 @@ const NexusGate = () => {
                 </svg>
             ),
             tag: 'Career Path',
+            roleLabel: 'For Third Level Personnel',
             title: 'Records Management',
-            desc: 'Manage official records and professional profiles for 3rd level positions within the department.',
-            action: 'Enter portal',
+            desc: 'Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.',
+            action: 'Continue',
             className: ''
         },
         {
@@ -76,9 +78,10 @@ const NexusGate = () => {
                 </svg>
             ),
             tag: 'Administrative Portal',
-            title: 'Third Level Dashboard',
-            desc: 'Access tools for managing the TLO masterlist, monitoring submissions, and performing authorized administrative actions.',
-            action: 'Administrator access',
+            roleLabel: 'For Administrators',
+            title: 'Third Level Portal',
+            desc: 'Access tools for managing the TLO masterlist, monitoring submissions and performing authorized actions.',
+            action: 'Continue',
             className: 'admin'
         }
     ];
@@ -110,15 +113,20 @@ const NexusGate = () => {
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        <motion.div variants={itemLeft} className="logo" aria-label="InsightED">
-                                            <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                        <motion.div variants={itemLeft} className="flex gap-4 mb-2" aria-label="Logos">
+                                            <div className="logo">
+                                                <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
+                                            </div>
+                                            <div className="logo">
+                                                <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                            </div>
                                         </motion.div>
                                         <motion.h1 variants={itemLeft} id="page-title">
-                                            Welcome to the<br />
+                                            Welcome to<br />
                                             <span>Insight<span className="ed-red">ED</span> Nexus</span>
                                         </motion.h1>
                                         <motion.p variants={itemLeft}>
-                                            Choose the portal that matches your role, authorized workflow, and official access level.
+                                            Select the portal that corresponds to your role to access the appropriate services and information.
                                         </motion.p>
                                     </motion.section>
 
@@ -151,6 +159,7 @@ const NexusGate = () => {
                                                         <p className="card-label">{portal.tag}</p>
                                                     </div>
                                                     <h2>{portal.title}</h2>
+                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">{portal.roleLabel}</p>
                                                     <p>{portal.desc}</p>
                                                     <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
                                                         {portal.action} <span aria-hidden="true">→</span>
@@ -194,6 +203,7 @@ const NexusGate = () => {
                                                         <p className="card-label">{portal.tag}</p>
                                                     </div>
                                                     <h2>{portal.title}</h2>
+                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">{portal.roleLabel}</p>
                                                     <p>{portal.desc}</p>
                                                     <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
                                                         {portal.action} <span aria-hidden="true">→</span>
@@ -211,15 +221,20 @@ const NexusGate = () => {
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        <motion.div variants={itemRight} className="logo" aria-label="InsightED">
-                                            <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                        <motion.div variants={itemRight} className="flex gap-4 mb-2" aria-label="Logos">
+                                            <div className="logo">
+                                                <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
+                                            </div>
+                                            <div className="logo">
+                                                <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
+                                            </div>
                                         </motion.div>
                                         <motion.h1 variants={itemRight} id="page-title">
-                                            Welcome to the<br />
+                                            Welcome to<br />
                                             <span>Insight<span className="ed-red">ED</span> Nexus</span>
                                         </motion.h1>
                                         <motion.p variants={itemRight}>
-                                            Choose the portal that matches your role, authorized workflow, and official access level.
+                                            Select the portal that corresponds to your role to access the appropriate services and information.
                                         </motion.p>
                                     </motion.section>
                                     <p className="footer-note">
@@ -353,3 +368,4 @@ const NexusGate = () => {
 };
 
 export default NexusGate;
+

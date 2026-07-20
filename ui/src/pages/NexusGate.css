@@ -236,9 +236,9 @@
 
 .nexus-gate-wrapper .portal-card {
   position: relative;
-  min-height: 0;
-  height: clamp(180px, 28vh, 220px);
-  padding: 24px 28px 20px;
+  min-height: clamp(180px, 28vh, 240px);
+  height: auto;
+  padding: 24px 28px 24px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -362,10 +362,7 @@
   font-size: 13px;
   font-weight: 600;
   line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block;
 }
 
 .nexus-gate-wrapper .portal-link {
