@@ -227,8 +227,8 @@ export const registerUser = async (req, res) => {
 
     await client.query(
       `INSERT INTO tlo_users (
-        uid, email, password_hash, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Approved', NOW())`,
+        uid, email, password_hash, hash_version, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at
+      ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, $8, $9, 'Approved', NOW())`,
       [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division]
     );
 
