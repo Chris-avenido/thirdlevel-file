@@ -163,10 +163,10 @@ export const checkMasterlistEmail = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  let { email, password, firstName, lastName, contactNumber, authCode, assigned_region, assigned_division } = req.body;
+  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division } = req.body;
 
-  if (!email || !password || !authCode) {
-    return res.status(400).json({ error: 'Email, Password, and Authorization Code are required' });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and Password are required' });
   }
 
   // Defensive uppercase for names
@@ -177,18 +177,7 @@ export const registerUser = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const authCheck = await client.query(
-      'SELECT role FROM authorization_codes WHERE code = $1 AND is_active = TRUE',
-      [authCode.toUpperCase().trim()]
-    );
-    console.log(authCheck.rows);
-
-    if (authCheck.rows.length === 0) {
-      client.release();
-      return res.status(403).json({ error: 'Invalid Authorization Code. Please contact your administrator.' });
-    }
-
-    let assignedRole = authCheck.rows[0].role;
+    let assignedRole = role || 'TLO Applicant';
     if (assignedRole === 'Third Level Applicant') assignedRole = 'TLO Applicant';
     if (assignedRole === 'CO_PD') assignedRole = 'Central Office';
     if (assignedRole === 'RO_HRMO') assignedRole = 'Regional Office';

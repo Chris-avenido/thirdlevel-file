@@ -36,7 +36,6 @@ const Register = () => {
         contactNumber: '',
         password: '',
         confirmPassword: '',
-        authCode: isCO ? coAuthCode : '',
         role: isCO ? 'Personnel Admin' : 'TLO Applicant'
     });
 
@@ -149,31 +148,6 @@ const Register = () => {
     };
 
     const handleFinalStep = async () => {
-        if (!formData.authCode) {
-            return Swal.fire('Notice', "Please enter your Portal Auth Code", 'info');
-        }
-        try {
-            // Validate the auth code against the database
-            const res = await fetch(apiUrl(`/api/auth/check-auth-code?code=${encodeURIComponent(formData.authCode.trim())}`));
-            const data = await res.json();
-            if (!data.valid) {
-                return Swal.fire('Error', "Invalid or expired Portal Auth Code. Please contact your administrator.", 'error');
-            }
-
-            if (isCO) {
-                const adminRoles = ['Personnel Admin', 'Central Office', 'Regional Office', 'School Division Office'];
-                if (!adminRoles.includes(data.role)) {
-                    return Swal.fire('Error', "This code is not authorized for administrative access. Please use a Central Office code.", 'error');
-                }
-            } else {
-                if (data.role !== 'TLO Applicant' && data.role !== 'Third Level Applicant') {
-                    return Swal.fire('Error', "This code is not authorized for Applicant access.", 'error');
-                }
-            }
-        } catch (err) {
-            return Swal.fire('Error', "Network error while verifying Auth Code", 'error');
-        }
-        
         setCurrentStep(3);
     };
 
@@ -192,7 +166,7 @@ const Register = () => {
                     firstName: formData.first_name,
                     lastName: formData.last_name,
                     contactNumber: formData.contactNumber,
-                    authCode: formData.authCode
+                    role: formData.role
                 })
             });
             const data = await res.json();
@@ -342,14 +316,6 @@ const Register = () => {
                                         <div className="relative group">
                                             <FiSmartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
                                             <input type="text" value={formData.contactNumber} onChange={handlePhoneChange} placeholder="09XXXXXXXXX" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
-                                        </div>
-                                    </div>
-                                    {/* Auth code is required for all registrations */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Portal Auth Code</label>
-                                        <div className="relative group">
-                                            <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                            <input type="text" value={formData.authCode} onChange={(e) => setFormData({ ...formData, authCode: e.target.value })} placeholder="Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
                                         </div>
                                     </div>
                                 </div>
