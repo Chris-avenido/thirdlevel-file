@@ -614,6 +614,37 @@ const OfficialProfiling = () => {
         }
     }, [profile.doctorate_degree, profile.master_degree, profile.bachelor_degree, profile.doctorate_year, profile.master_year, profile.bachelor_year]);
 
+    useEffect(() => {
+        // Enforce Bachelor < Master < Doctorate year rule reactively
+        const bacY = (profile.bachelor_year || '').split('\n');
+        const masY = (profile.master_year || '').split('\n');
+        const docY = (profile.doctorate_year || '').split('\n');
+
+        const maxBac = Math.max(0, ...bacY.map(y => parseInt(y) || 0));
+        let changedMas = false;
+        const newMasY = masY.map(y => {
+            const numY = parseInt(y);
+            if (numY && maxBac > 0 && numY <= maxBac) { changedMas = true; return ''; }
+            return y;
+        });
+
+        const maxMas = Math.max(0, ...newMasY.map(y => parseInt(y) || 0));
+        let changedDoc = false;
+        const newDocY = docY.map(y => {
+            const numY = parseInt(y);
+            if (numY && maxMas > 0 && numY <= maxMas) { changedDoc = true; return ''; }
+            return y;
+        });
+
+        if (changedMas || changedDoc) {
+            setProfile(prev => ({
+                ...prev,
+                ...(changedMas ? { master_year: newMasY.join('\n') } : {}),
+                ...(changedDoc ? { doctorate_year: newDocY.join('\n') } : {})
+            }));
+        }
+    }, [profile.bachelor_year, profile.master_year, profile.doctorate_year]);
+
     const lookupByEmail = async (email) => {
         if (!email) { setStatus('not-found'); return; }
         try {
@@ -792,6 +823,59 @@ const OfficialProfiling = () => {
             }
         }
 
+        // 3b. Degree Year Ordering
+        const bacY = (profile.bachelor_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
+        const masY = (profile.master_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
+        const docY = (profile.doctorate_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
+
+        const maxBac = bacY.length > 0 ? Math.max(...bacY) : 0;
+        const maxMas = masY.length > 0 ? Math.max(...masY) : 0;
+
+        if (maxBac > 0 && masY.some(m => m <= maxBac)) {
+            Swal.fire('Validation Error', 'Master\'s Degree year must be strictly greater than Bachelor\'s Degree year.', 'error');
+            return false;
+        }
+        if (maxMas > 0 && docY.some(d => d <= maxMas)) {
+            Swal.fire('Validation Error', 'Doctorate year must be strictly greater than Master\'s Degree year.', 'error');
+            return false;
+        }
+
+        // 3c. Rating Period Validation
+        const currentMonth = new Date().toISOString().substring(0, 7);
+        if (profile.performance_rating_1_period && profile.performance_rating_1_period > currentMonth) {
+            Swal.fire('Validation Error', 'Latest Performance Rating period cannot be in the future.', 'error');
+            return false;
+        }
+        if (profile.performance_rating_2_period && profile.performance_rating_2_period > currentMonth) {
+            Swal.fire('Validation Error', 'Previous Performance Rating period cannot be in the future.', 'error');
+            return false;
+        }
+        if (profile.performance_rating_3_period && profile.performance_rating_3_period > currentMonth) {
+            Swal.fire('Validation Error', 'Oldest Performance Rating period cannot be in the future.', 'error');
+            return false;
+        }
+        if (profile.performance_rating_3_period && profile.performance_rating_2_period && profile.performance_rating_3_period > profile.performance_rating_2_period) {
+            Swal.fire('Validation Error', 'Previous Rating period cannot be earlier than Oldest Rating period.', 'error');
+            return false;
+        }
+        if (profile.performance_rating_2_period && profile.performance_rating_1_period && profile.performance_rating_2_period > profile.performance_rating_1_period) {
+            Swal.fire('Validation Error', 'Latest Rating period cannot be earlier than Previous Rating period.', 'error');
+            return false;
+        }
+
+        if (profile.cespes_rating_1_period && profile.cespes_rating_1_period > currentMonth) {
+            Swal.fire('Validation Error', 'CESPES 1st Semester period cannot be in the future.', 'error');
+            return false;
+        }
+        if (profile.cespes_rating_2_period && profile.cespes_rating_2_period > currentMonth) {
+            Swal.fire('Validation Error', 'CESPES 2nd Semester period cannot be in the future.', 'error');
+            return false;
+        }
+        if (profile.cespes_rating_1_period && profile.cespes_rating_2_period && profile.cespes_rating_1_period > profile.cespes_rating_2_period) {
+            Swal.fire('Validation Error', 'CESPES 2nd Semester period cannot be earlier than 1st Semester period.', 'error');
+            return false;
+        }
+
         // 4. Date Ranges
         const validateRange = (from, to, ctx) => {
             if (from && to) {
@@ -843,7 +927,10 @@ const OfficialProfiling = () => {
                 .map(p => ({ ...p, oic_positions: cleanOIC(p.oic_positions) }))
                 .filter(p => p.position_name?.trim() || p.office?.trim() || p.start_date?.trim() || p.end_date?.trim() || p.oic_positions.length > 0);
 
-            const cleanTrainings = trainings.filter(t => t.training_name?.trim() || t.date_from?.trim() || t.date_to?.trim());
+            const cleanTrainings = trainings.filter(t => t.training_name?.trim() || t.date_from?.trim() || t.date_to?.trim()).map(t => ({
+                ...t,
+                training_name: t.training_name ? t.training_name.toUpperCase() : ''
+            }));
 
             const payload = {
                 ...profile,
@@ -1956,6 +2043,9 @@ const OfficialProfiling = () => {
                                                     const doctorates = (profile.doctorate_degree || '').split('\n');
                                                     const dYears = (profile.doctorate_year || '').split('\n');
 
+                                                    const maxBachelorYear = Math.max(0, ...bYears.map(y => parseInt(y) || 0));
+                                                    const maxMasterYear = Math.max(0, ...mYears.map(y => parseInt(y) || 0));
+
                                                     // Ensure at least one bachelor block is shown by default if completely empty
                                                     if (bachelors.length === 0 || (bachelors.length === 1 && !bachelors[0] && !bYears[0])) {
                                                         if (bachelors.length === 0) bachelors.push('');
@@ -2073,7 +2163,7 @@ const OfficialProfiling = () => {
                                                                                     <ModernDatePicker isYearPicker value={mYears[i] || ''} onChange={val => {
                                                                                         const nmy = [...mYears]; nmy[i] = val;
                                                                                         setP('master_year', nmy.join('\n'));
-                                                                                    }} placeholder="YYYY" className={inp} />
+                                                                                    }} minDate={maxBachelorYear > 0 ? new Date(maxBachelorYear + 1, 0, 1) : undefined} placeholder="YYYY" className={inp} />
                                                                                 </Field>
                                                                             </div>
                                                                         </div>
@@ -2110,7 +2200,7 @@ const OfficialProfiling = () => {
                                                                                     <ModernDatePicker isYearPicker value={dYears[i] || ''} onChange={val => {
                                                                                         const ndy = [...dYears]; ndy[i] = val;
                                                                                         setP('doctorate_year', ndy.join('\n'));
-                                                                                    }} placeholder="YYYY" className={inp} />
+                                                                                    }} minDate={maxMasterYear > 0 ? new Date(maxMasterYear + 1, 0, 1) : undefined} placeholder="YYYY" className={inp} />
                                                                                 </Field>
                                                                             </div>
                                                                         </div>
@@ -2213,7 +2303,7 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP('performance_rating_1_period', val)} className={inp} />
+                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP('performance_rating_1_period', val)} maxDate={new Date()} minDate={profile.performance_rating_2_period ? new Date(profile.performance_rating_2_period + "-01") : undefined} className={inp} />
 
                                                                             </div>
                                                                         </Field>
@@ -2229,7 +2319,7 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP('performance_rating_2_period', val)} className={inp} />
+                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP('performance_rating_2_period', val)} maxDate={profile.performance_rating_1_period ? new Date(profile.performance_rating_1_period + "-01") : new Date()} minDate={profile.performance_rating_3_period ? new Date(profile.performance_rating_3_period + "-01") : undefined} className={inp} />
 
                                                                             </div>
                                                                         </Field>
@@ -2245,7 +2335,7 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_3_period} onChange={val => setP('performance_rating_3_period', val)} className={inp} />
+                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_3_period} onChange={val => setP('performance_rating_3_period', val)} maxDate={profile.performance_rating_2_period ? new Date(profile.performance_rating_2_period + "-01") : new Date()} className={inp} />
 
                                                                             </div>
                                                                         </Field>
@@ -2282,6 +2372,7 @@ const OfficialProfiling = () => {
                                                                                     isMonthPicker
                                                                                     value={profile.cespes_rating_1_period}
                                                                                     onChange={val => setP('cespes_rating_1_period', val)}
+                                                                                    maxDate={profile.cespes_rating_2_period ? new Date(profile.cespes_rating_2_period + "-01") : new Date()}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
                                                                             </div>
@@ -2312,6 +2403,8 @@ const OfficialProfiling = () => {
                                                                                     isMonthPicker
                                                                                     value={profile.cespes_rating_2_period}
                                                                                     onChange={val => setP('cespes_rating_2_period', val)}
+                                                                                    maxDate={new Date()}
+                                                                                    minDate={profile.cespes_rating_1_period ? new Date(profile.cespes_rating_1_period + "-01") : undefined}
                                                                                     className={`${inp} pr-10`}
                                                                                 />
                                                                             </div>
@@ -2428,7 +2521,7 @@ const OfficialProfiling = () => {
                                                                 </div>
                                                                 {trainings.map((tr, idx) => (
                                                                     <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
-                                                                        <input type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
+                                                                        <input type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
                                                                         <div className="relative">
                                                                             <ModernDatePicker value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                         </div>

@@ -325,14 +325,36 @@ export const updateProfile = async (req, res) => {
       throw new Error("Doctorate year must be greater than Master's year");
     }
 
-    if (req.body.performance_rating_3_period && req.body.performance_rating_2_period && parseInt(req.body.performance_rating_2_period) < parseInt(req.body.performance_rating_3_period)) {
+    const currentMonth = new Date().toISOString().substring(0, 7);
+    
+    if (req.body.performance_rating_1_period && req.body.performance_rating_1_period > currentMonth) throw new Error("Latest Performance Rating period cannot be in the future");
+    if (req.body.performance_rating_2_period && req.body.performance_rating_2_period > currentMonth) throw new Error("Previous Performance Rating period cannot be in the future");
+    if (req.body.performance_rating_3_period && req.body.performance_rating_3_period > currentMonth) throw new Error("Oldest Performance Rating period cannot be in the future");
+    if (req.body.cespes_rating_1_period && req.body.cespes_rating_1_period > currentMonth) throw new Error("CESPES 1st Semester period cannot be in the future");
+    if (req.body.cespes_rating_2_period && req.body.cespes_rating_2_period > currentMonth) throw new Error("CESPES 2nd Semester period cannot be in the future");
+
+    if (req.body.performance_rating_3_period && req.body.performance_rating_2_period && req.body.performance_rating_2_period < req.body.performance_rating_3_period) {
        throw new Error("Previous rating period must be >= Oldest rating period");
     }
-    if (req.body.performance_rating_2_period && req.body.performance_rating_1_period && parseInt(req.body.performance_rating_1_period) < parseInt(req.body.performance_rating_2_period)) {
+    if (req.body.performance_rating_2_period && req.body.performance_rating_1_period && req.body.performance_rating_1_period < req.body.performance_rating_2_period) {
        throw new Error("Latest rating period must be >= Previous rating period");
     }
-    if (req.body.cespes_rating_1_period && req.body.cespes_rating_2_period && parseInt(req.body.cespes_rating_2_period) < parseInt(req.body.cespes_rating_1_period)) {
-       throw new Error("CESPES 2nd sem year must be >= 1st sem year");
+    if (req.body.cespes_rating_1_period && req.body.cespes_rating_2_period && req.body.cespes_rating_2_period < req.body.cespes_rating_1_period) {
+       throw new Error("CESPES 2nd sem period must be >= 1st sem period");
+    }
+
+    const bacY = (req.body.bachelor_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
+    const masY = (req.body.master_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
+    const docY = (req.body.doctorate_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
+    
+    const maxBac = bacY.length > 0 ? Math.max(...bacY) : 0;
+    const maxMas = masY.length > 0 ? Math.max(...masY) : 0;
+
+    if (maxBac > 0 && masY.some(m => m <= maxBac)) {
+        throw new Error("Master's Degree year must be strictly greater than Bachelor's Degree year.");
+    }
+    if (maxMas > 0 && docY.some(d => d <= maxMas)) {
+        throw new Error("Doctorate year must be strictly greater than Master's Degree year.");
     }
 
     if (req.body.previous_positions && Array.isArray(req.body.previous_positions)) {
@@ -343,10 +365,12 @@ export const updateProfile = async (req, res) => {
       });
     }
     if (req.body.relevant_trainings && Array.isArray(req.body.relevant_trainings)) {
-      req.body.relevant_trainings.forEach(t => {
+      req.body.relevant_trainings = req.body.relevant_trainings.map(t => {
+        if (t.training_name) t.training_name = t.training_name.toUpperCase();
         if (t.date_from && t.date_to && new Date(t.date_to) <= new Date(t.date_from)) {
            throw new Error("End date must be after start date for trainings");
         }
+        return t;
       });
     }
 
