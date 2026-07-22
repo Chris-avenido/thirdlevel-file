@@ -7,6 +7,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
+import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight } from 'react-icons/fi';
 import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
 
@@ -44,6 +45,7 @@ const Home = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isNotableModalOpen, setIsNotableModalOpen] = useState(false);
   const [isRetireesModalOpen, setIsRetireesModalOpen] = useState(false);
+  const [isRegisterPersonnelOpen, setIsRegisterPersonnelOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1010,7 +1012,15 @@ const Home = () => {
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can upload directory data.' : ''}
                 >
-                  <FiUserPlus />Upload Officials Directory Data
+                  <FiUploadCloud />Upload Officials Directory Data
+                </button>
+                <button
+                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                  onClick={() => setIsRegisterPersonnelOpen(true)}
+                  disabled={user?.role !== 'Central Office'}
+                  title={user?.role !== 'Central Office' ? 'Only Central Office can register personnel.' : ''}
+                >
+                  <FiUserPlus />Register Third Level Personnel
                 </button>
                 <button
                   className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
@@ -1043,6 +1053,12 @@ const Home = () => {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onSuccess={() => setRefreshTrigger(prev => prev + 1)}
+      />
+      <RegisterPersonnelModal
+        isOpen={isRegisterPersonnelOpen}
+        onClose={() => setIsRegisterPersonnelOpen(false)}
+        onSuccess={() => setRefreshTrigger(prev => prev + 1)}
+        token={token}
       />
       <NotableAchievementsModal
         isOpen={isNotableModalOpen}

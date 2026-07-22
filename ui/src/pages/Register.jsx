@@ -47,6 +47,45 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+
+    const [masterlistCheckStatus, setMasterlistCheckStatus] = useState('idle'); // 'idle' | 'checking' | 'valid' | 'invalid'
+    
+    // Debounced masterlist check for non-CO accounts
+    useEffect(() => {
+        if (isCO || currentStep !== 2) return;
+        
+        const email = formData.email.trim();
+        const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        
+        if (!email || !isValidFormat) {
+            setMasterlistCheckStatus('idle');
+            return;
+        }
+
+        const checkMasterlist = async () => {
+            setMasterlistCheckStatus('checking');
+            try {
+                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}`));
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.inMasterlist) {
+                        setMasterlistCheckStatus('valid');
+                    } else {
+                        setMasterlistCheckStatus('invalid');
+                    }
+                } else {
+                    setMasterlistCheckStatus('idle');
+                }
+            } catch (err) {
+                console.error("Masterlist check failed", err);
+                setMasterlistCheckStatus('idle'); // fail closed (handled in submit/otp as well)
+            }
+        };
+
+        const timer = setTimeout(checkMasterlist, 500);
+        return () => clearTimeout(timer);
+    }, [formData.email, isCO, currentStep]);
+
     useEffect(() => {
         if (!isCO) {
             setFormData(prev => ({ ...prev, role: 'TLO Applicant' }));
@@ -271,13 +310,29 @@ const Register = () => {
 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-3 relative">
                                         <div className="relative group flex-1">
                                             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <input type="email" disabled={isOtpVerified || otpSent} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] disabled:opacity-50" />
+                                            <input type="email" disabled={isOtpVerified || otpSent} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all disabled:opacity-50 ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`} />
+                                            
+                                            {!isCO && masterlistCheckStatus === 'valid' && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
+                                                    <FiCheckCircle size={18} />
+                                                </div>
+                                            )}
+                                            {!isCO && masterlistCheckStatus === 'checking' && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                    <div className="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+                                                </div>
+                                            )}
                                         </div>
-                                        {!otpSent && !isOtpVerified && <button onClick={handleSendOtp} disabled={otpLoading || !formData.email} className="bg-[#08315F] text-white font-black px-6 rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg text-[10px] uppercase">{otpLoading ? '...' : 'Send OTP'}</button>}
+                                        {!otpSent && !isOtpVerified && <button onClick={handleSendOtp} disabled={otpLoading || !formData.email || (!isCO && masterlistCheckStatus !== 'valid')} className="bg-[#08315F] text-white font-black px-6 rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg text-[10px] uppercase disabled:opacity-50 disabled:hover:bg-[#08315F]">{otpLoading ? '...' : 'Send OTP'}</button>}
                                     </div>
+                                    {!isCO && masterlistCheckStatus === 'invalid' && (
+                                        <p className="text-[10px] font-bold text-red-500 mt-1 ml-1">
+                                            This email is not registered in the Third Level Masterlist. Please contact the Personnel Division for support.
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Phone & Auth Code (Moved here) */}

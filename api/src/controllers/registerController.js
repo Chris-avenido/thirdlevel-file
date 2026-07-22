@@ -147,6 +147,21 @@ export const checkEmail = async (req, res) => {
   }
 };
 
+export const checkMasterlistEmail = async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  try {
+    const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [email.toLowerCase().trim()]);
+    if (check.rows.length > 0) {
+      res.json({ inMasterlist: true, official: check.rows[0] });
+    } else {
+      res.json({ inMasterlist: false });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const registerUser = async (req, res) => {
   let { email, password, firstName, lastName, contactNumber, authCode, assigned_region, assigned_division } = req.body;
 
@@ -191,6 +206,15 @@ export const registerUser = async (req, res) => {
       await client.query('ROLLBACK');
       client.release();
       return res.status(400).json({ error: 'This email is already registered in InsightEd. Please Login instead.' });
+    }
+
+    if (assignedRole === 'TLO Applicant') {
+      const mlCheck = await client.query('SELECT "TLOid" FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
+      if (mlCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'This email is not registered in the Third Level Masterlist. Please contact the Personnel Division for support.' });
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 10);

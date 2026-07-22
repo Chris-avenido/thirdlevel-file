@@ -1339,6 +1339,51 @@ export const createUnassignedPersonnel = async (req, res) => {
     client.release();
   }
 };
+export const registerPersonnel = async (req, res) => {
+  const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
+  if (!adminRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { first_name, last_name, email, position_title } = req.body;
+  if (!email || !first_name || !last_name || !position_title) return res.json({ success: false, error: 'Missing required fields' });
+
+  const client = await pool.connect();
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const upperFirstName = first_name.trim().toUpperCase();
+    const upperLastName = last_name.trim().toUpperCase();
+
+    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
+    
+    if (masterCheck.rows.length > 0) {
+      return res.json({ success: false, error: 'Email already exists in the masterlist. Please use a different email address.' });
+    }
+
+    await client.query('BEGIN');
+
+    const uidRes = await client.query(`
+      SELECT COALESCE(MAX(CAST(SUBSTRING("TLOid" FROM 5) AS INTEGER)), 0) AS max_num
+      FROM third_level_official_masterlist WHERE "TLOid" ~ '^TLO-[0-9]{4}$'
+    `);
+    const nextNum = parseInt(uidRes.rows[0].max_num) + 1;
+    const tloId = `TLO-${String(nextNum).padStart(4, '0')}`;
+
+    await client.query(`
+      INSERT INTO third_level_official_masterlist (
+          "TLOid", first_name, last_name, email, position_title, status, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, 'Pending Assignment', NOW(), NOW())
+    `, [tloId, upperFirstName, upperLastName, normalizedEmail, position_title]);
+
+    await client.query('COMMIT');
+    res.json({ success: true, TLOid: tloId, message: 'Personnel registered successfully', newPersonnel: { TLOid: tloId, first_name: upperFirstName, last_name: upperLastName, email: normalizedEmail, position_title } });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+};
 
 export const getUnassignedPersonnel = async (req, res) => {
   const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
