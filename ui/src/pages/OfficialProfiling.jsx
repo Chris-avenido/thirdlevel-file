@@ -19,6 +19,7 @@ import { compressImageClientSide } from '../utils/imageCompressor';
 import ModernDatePicker from '../components/ModernDatePicker';
 import YearInput from '../components/YearInput';
 import Swal from 'sweetalert2';
+import { toUpper } from '../utils/textUtils';
 
 const TABS = [
     { id: 'personal', label: 'Personal Info', icon: FiUser },
@@ -139,7 +140,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder, className }) 
     );
 
     const handleInputChange = (e) => {
-        const val = e.target.value;
+        const val = e.target.value.toUpperCase();
         setSearch(val);
         onChange(val);
         setIsOpen(true);
@@ -243,6 +244,7 @@ const OfficialProfiling = () => {
     const [exporting, setExporting] = useState(false);
     const [previewScale, setPreviewScale] = useState(1);
     const [selectedEducationType, setSelectedEducationType] = useState('');
+    const [uploadedFileNames, setUploadedFileNames] = useState({});
     const previewContainerRef = React.useRef(null);
 
     React.useEffect(() => {
@@ -661,7 +663,7 @@ const OfficialProfiling = () => {
                 setDataSource(data.source);
                 setTargetVacancyId(urlVacancy || d.target_TLOid || null);
                 if (urlVacancy) {
-                    setTab('application');
+                    setTab('summary');
                 }
                 setProfile({
                     last_name: d.last_name || '',
@@ -785,8 +787,22 @@ const OfficialProfiling = () => {
         }
     };
 
-    const setP = (field, value) => setProfile(p => ({ ...p, [field]: value }));
-
+    const setP = (field, value) => {
+        const skipFields = [
+            'email', 'alt_email_1', 'alt_email_2', 'alt_contact_details_1', 'password', 'passcode',
+            'date_of_birth', 'appointment_date', 'ces_conferment_date', 'emt_date',
+            'performance_rating_1_period', 'performance_rating_2_period', 'performance_rating_3_period',
+            'cespes_rating_1_period', 'cespes_rating_2_period',
+            'bachelor_year', 'master_year', 'doctorate_year', 'education_year_graduated', 'notable_achievements_year',
+            'photo_binary_id', 'pds_binary_id', 'service_records_binary_id', 'executive_summary_binary_id',
+            'is_oic', 'emt_passer', 'profiling_status', 'gender', 'civil_status', 'employment_status'
+        ];
+        let finalValue = value;
+        if (typeof value === 'string' && !skipFields.includes(field)) {
+            finalValue = toUpper(value);
+        }
+        setProfile(p => ({ ...p, [field]: finalValue }));
+    };
     const validateProfile = () => {
         // 1. Date of Birth
         if (profile.date_of_birth) {
@@ -978,7 +994,7 @@ const OfficialProfiling = () => {
             const data = await res.json();
             if (data.success) {
                 setCertified(true);
-                if (thenNavigate) setTab('application');
+                if (thenNavigate) setTab('summary');
             } else {
                 Swal.fire('Notice', data.error || 'Certification failed.', 'info');
             }
@@ -1166,6 +1182,7 @@ const OfficialProfiling = () => {
                     'executive_summary': 'executive_summary_binary_id'
                 };
                 setP(docMap[docType], data.binary_id);
+                setUploadedFileNames(prev => ({ ...prev, [docType]: file.name }));
                 setSaved(true);
                 setTimeout(() => setSaved(false), 3000);
             } else {
@@ -1350,7 +1367,7 @@ const OfficialProfiling = () => {
                                 <div className="p-4 flex-1 overflow-y-auto">
                                     <p className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Sections</p>
                                     <div className="space-y-1">
-                                        {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
+                                        {TABS.filter(t => dataSource !== 'masterlist').map(t => {
                                             const isLocked = t.id === 'application' && completeness < 100;
                                             const active = tab === t.id;
                                             const completed = isTabCompleted(t.id);
@@ -1667,7 +1684,7 @@ const OfficialProfiling = () => {
                                                                             <option value="Others">Others</option>
                                                                         </select>
                                                                         {isPositionOthers && (
-                                                                            <input type="text" value={profile.position_title === 'Others' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
+                                                                            <input type="text" value={profile.position_title === 'Others' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
                                                                         )}
                                                                     </Field>
                                                                     {profile.is_oic && (
@@ -1678,7 +1695,7 @@ const OfficialProfiling = () => {
                                                                                 <option value="Others">Others</option>
                                                                             </select>
                                                                             {isDesignationOthers && (
-                                                                                <input type="text" value={profile.designation === 'Others' ? '' : profile.designation} onChange={e => setP('designation', e.target.value || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
+                                                                                <input type="text" value={profile.designation === 'Others' ? '' : profile.designation} onChange={e => setP('designation', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
                                                                             )}
                                                                         </Field>
                                                                     )}
@@ -1953,10 +1970,32 @@ const OfficialProfiling = () => {
                                                                 </div>
                                                                 {prevPositions.map((pos, idx) => (
                                                                     <div key={pos.position_id || idx} className="relative mb-2">
+                                                                        {(() => {
+                                                                            const isPrevPosOthers = pos.position_name === 'Others' || (pos.position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === pos.position_name.toUpperCase()));
+                                                                            return (
+                                                                                <>
                                                                         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm relative z-10">
                                                                             <div className="flex flex-col gap-1.5 w-full">
                                                                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
-                                                                                <SearchableSelect value={pos.position_name || ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: val } : x))} options={PREVIOUS_POSITION_OPTIONS} placeholder="Position" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm" />
+                                                                                <select 
+                                                                                    value={isPrevPosOthers ? 'Others' : (pos.position_name?.toUpperCase() || '')} 
+                                                                                    onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value } : x))}
+                                                                                    className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
+                                                                                >
+                                                                                    <option value="">Select Position</option>
+                                                                                    {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                                    <option value="Others">Others</option>
+                                                                                </select>
+                                                                                {isPrevPosOthers && (
+                                                                                    <input 
+                                                                                        type="text" 
+                                                                                        value={pos.position_name === 'Others' ? '' : pos.position_name} 
+                                                                                        onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value.toUpperCase() || 'Others' } : x))}
+                                                                                        placeholder="Type the position you held" 
+                                                                                        className="bg-white border border-slate-200 focus:border-[#0038A8] rounded-xl px-3 py-2 text-xs font-semibold mt-2 w-full outline-none transition-all shadow-sm"
+                                                                                        autoFocus
+                                                                                    />
+                                                                                )}
                                                                             </div>
                                                                             <div className="flex flex-col gap-1.5 w-full">
                                                                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Office / Division</span>
@@ -1989,13 +2028,33 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                         </motion.div>
 
-                                                                        {(pos.oic_positions || []).map((oic, oicIdx) => (
+                                                                        {(pos.oic_positions || []).map((oic, oicIdx) => {
+                                                                            const isOicPosOthers = oic.oic_position_name === 'Others' || (oic.oic_position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === oic.oic_position_name.toUpperCase()));
+                                                                            return (
                                                                             <motion.div key={oic.id || oicIdx} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative">
                                                                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-white p-4 rounded-2xl border border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
                                                                                     <div className="absolute -left-6 top-1/2 w-6 h-0.5 border-t-2 border-dashed border-[#FCD116]"></div>
                                                                                     <div className="flex flex-col gap-1.5 w-full">
                                                                                         <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Position</span>
-                                                                                        <SearchableSelect value={oic.oic_position_name || ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: val } : o) } : x))} options={PREVIOUS_POSITION_OPTIONS} placeholder="OIC Position" className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm" />
+                                                                                        <select 
+                                                                                            value={isOicPosOthers ? 'Others' : (oic.oic_position_name?.toUpperCase() || '')} 
+                                                                                            onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value } : o) } : x))}
+                                                                                            className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
+                                                                                        >
+                                                                                            <option value="">Select OIC Position</option>
+                                                                                            {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                                            <option value="Others">Others</option>
+                                                                                        </select>
+                                                                                        {isOicPosOthers && (
+                                                                                            <input 
+                                                                                                type="text" 
+                                                                                                value={oic.oic_position_name === 'Others' ? '' : oic.oic_position_name} 
+                                                                                                onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value.toUpperCase() || 'Others' } : o) } : x))}
+                                                                                                placeholder="Type the position you held" 
+                                                                                                className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] rounded-xl px-3 py-2 text-xs font-semibold mt-2 w-full outline-none transition-all shadow-sm"
+                                                                                                autoFocus
+                                                                                            />
+                                                                                        )}
                                                                                     </div>
                                                                                     <div className="flex flex-col gap-1.5 w-full">
                                                                                         <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Office / Division</span>
@@ -2023,7 +2082,11 @@ const OfficialProfiling = () => {
                                                                                     </div>
                                                                                 </div>
                                                                             </motion.div>
-                                                                        ))}
+                                                                            );
+                                                                        })}
+                                                                        </>
+                                                                            );
+                                                                        })()}
                                                                     </div>
                                                                 ))}
                                                                 <button onClick={handleAddPosition} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
@@ -2036,176 +2099,61 @@ const OfficialProfiling = () => {
 
                                                 {/* ── EDUCATION ── */}
                                                 {tab === 'education' && (() => {
-                                                    const bachelors = (profile.bachelor_degree || '').split('\n');
-                                                    const bYears = (profile.bachelor_year || '').split('\n');
-                                                    const masters = (profile.master_degree || '').split('\n');
-                                                    const mYears = (profile.master_year || '').split('\n');
-                                                    const doctorates = (profile.doctorate_degree || '').split('\n');
-                                                    const dYears = (profile.doctorate_year || '').split('\n');
+                                                    const bachelorDeg = profile.bachelor_degree || '';
+                                                    const bachelorYr = profile.bachelor_year || '';
+                                                    const masterDeg = profile.master_degree || '';
+                                                    const masterYr = profile.master_year || '';
+                                                    const doctorateDeg = profile.doctorate_degree || '';
+                                                    const doctorateYr = profile.doctorate_year || '';
 
-                                                    const maxBachelorYear = Math.max(0, ...bYears.map(y => parseInt(y) || 0));
-                                                    const maxMasterYear = Math.max(0, ...mYears.map(y => parseInt(y) || 0));
-
-                                                    // Ensure at least one bachelor block is shown by default if completely empty
-                                                    if (bachelors.length === 0 || (bachelors.length === 1 && !bachelors[0] && !bYears[0])) {
-                                                        if (bachelors.length === 0) bachelors.push('');
-                                                        if (bYears.length === 0) bYears.push('');
-                                                    }
+                                                    const bYearNum = parseInt(bachelorYr) || 0;
+                                                    const mYearNum = parseInt(masterYr) || 0;
 
                                                     return (
                                                         <div className="space-y-6">
                                                             <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
-                                                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-2">
-                                                                    <div className="-mb-4">
-                                                                        <SectionLabel>Educational Attainment</SectionLabel>
-                                                                    </div>
+                                                                <div className="mb-6">
+                                                                    <SectionLabel>Educational Attainment</SectionLabel>
+                                                                </div>
 
-                                                                    <div className="flex items-center gap-3">
-                                                                        <select
-                                                                            value={selectedEducationType}
-                                                                            onChange={e => setSelectedEducationType(e.target.value)}
-                                                                            className={`${sel} w-auto min-w-[240px]`}
-                                                                        >
-                                                                            <option value="">Select Degree Type to Add...</option>
-                                                                            <option value="bachelor">Baccalaureate / Bachelor's Degree</option>
-                                                                            <option value="master">Master's Degree</option>
-                                                                            <option value="doctorate">Doctorate</option>
-                                                                        </select>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                if (selectedEducationType === 'bachelor') {
-                                                                                    setP('bachelor_degree', [...bachelors, ' '].join('\n'));
-                                                                                    setP('bachelor_year', [...bYears, ' '].join('\n'));
-                                                                                } else if (selectedEducationType === 'master') {
-                                                                                    setP('master_degree', [...masters, ' '].join('\n'));
-                                                                                    setP('master_year', [...mYears, ' '].join('\n'));
-                                                                                } else if (selectedEducationType === 'doctorate') {
-                                                                                    setP('doctorate_degree', [...doctorates, ' '].join('\n'));
-                                                                                    setP('doctorate_year', [...dYears, ' '].join('\n'));
-                                                                                }
-                                                                                setSelectedEducationType('');
-                                                                            }}
-                                                                            disabled={!selectedEducationType}
-                                                                            className="flex items-center gap-1.5 px-4 py-2.5 bg-[#0038A8] text-white text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-[#002b80] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed h-[38px]"
-                                                                        >
-                                                                            <FiPlus size={12} /> Add
-                                                                        </button>
+                                                                {/* Baccalaureate */}
+                                                                <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Baccalaureate / Bachelor's Degree</p>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                        <Field label="Degree / Course">
+                                                                            <input type="text" value={bachelorDeg} onChange={e => setP('bachelor_degree', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Year Graduated">
+                                                                            <YearInput value={bachelorYr} onChange={val => setP('bachelor_year', val)} placeholder="YYYY" />
+                                                                        </Field>
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Baccalaureates */}
-                                                                {bachelors.map((deg, i) => {
-                                                                    if (!deg && !bYears[i] && i > 0) return null; // Hide empty extras if any
-                                                                    return (
-                                                                        <div key={`bachelor-${i}`} className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
-                                                                            {i > 0 && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        const nb = bachelors.filter((_, idx) => idx !== i);
-                                                                                        const nby = bYears.filter((_, idx) => idx !== i);
-                                                                                        setP('bachelor_degree', nb.join('\n'));
-                                                                                        setP('bachelor_year', nby.join('\n'));
-                                                                                    }}
-                                                                                    className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
-                                                                                    title="Remove"
-                                                                                >
-                                                                                    <FiTrash2 size={12} />
-                                                                                </button>
-                                                                            )}
-                                                                            <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Baccalaureate / Bachelor's Degree {i > 0 ? `#${i + 1}` : ''}</p>
-                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                                <Field label="Degree / Course">
-                                                                                    <input type="text" value={deg} onChange={e => {
-                                                                                        const nb = [...bachelors]; nb[i] = e.target.value;
-                                                                                        setP('bachelor_degree', nb.join('\n'));
-                                                                                    }} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
-                                                                                </Field>
-                                                                                <Field label="Year Graduated">
-                                                                                    <ModernDatePicker isYearPicker value={bYears[i] || ''} onChange={val => {
-                                                                                        const nby = [...bYears]; nby[i] = val;
-                                                                                        setP('bachelor_year', nby.join('\n'));
-                                                                                    }} placeholder="YYYY" className={inp} />
-                                                                                </Field>
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                })}
+                                                                {/* Master's Degree */}
+                                                                <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Master's Degree</p>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                        <Field label="Degree / Course">
+                                                                            <input type="text" value={masterDeg} onChange={e => setP('master_degree', e.target.value)} placeholder="e.g. Master of Arts in Public Administration" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Year Graduated">
+                                                                            <YearInput value={masterYr} onChange={val => setP('master_year', val)} min={bYearNum > 0 ? bYearNum + 1 : 1900} placeholder="YYYY" />
+                                                                        </Field>
+                                                                    </div>
+                                                                </div>
 
-                                                                {/* Master's Degrees */}
-                                                                {masters.map((deg, i) => {
-                                                                    if (!deg && !mYears[i]) return null;
-                                                                    return (
-                                                                        <div key={`master-${i}`} className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const nm = masters.filter((_, idx) => idx !== i);
-                                                                                    const nmy = mYears.filter((_, idx) => idx !== i);
-                                                                                    setP('master_degree', nm.join('\n'));
-                                                                                    setP('master_year', nmy.join('\n'));
-                                                                                }}
-                                                                                className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
-                                                                                title="Remove"
-                                                                            >
-                                                                                <FiTrash2 size={12} />
-                                                                            </button>
-                                                                            <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Master's Degree {i > 0 ? `#${i + 1}` : ''}</p>
-                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                                <Field label="Degree / Course">
-                                                                                    <input type="text" value={deg} onChange={e => {
-                                                                                        const nm = [...masters]; nm[i] = e.target.value;
-                                                                                        setP('master_degree', nm.join('\n'));
-                                                                                    }} placeholder="e.g. Master of Arts in Public Administration" className={inp} />
-                                                                                </Field>
-                                                                                <Field label="Year Graduated">
-                                                                                    <ModernDatePicker isYearPicker value={mYears[i] || ''} onChange={val => {
-                                                                                        const nmy = [...mYears]; nmy[i] = val;
-                                                                                        setP('master_year', nmy.join('\n'));
-                                                                                    }} minDate={maxBachelorYear > 0 ? new Date(maxBachelorYear + 1, 0, 1) : undefined} placeholder="YYYY" className={inp} />
-                                                                                </Field>
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                })}
-
-                                                                {/* Doctorates */}
-                                                                {doctorates.map((deg, i) => {
-                                                                    if (!deg && !dYears[i]) return null;
-                                                                    return (
-                                                                        <div key={`doctorate-${i}`} className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const nd = doctorates.filter((_, idx) => idx !== i);
-                                                                                    const ndy = dYears.filter((_, idx) => idx !== i);
-                                                                                    setP('doctorate_degree', nd.join('\n'));
-                                                                                    setP('doctorate_year', ndy.join('\n'));
-                                                                                }}
-                                                                                className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
-                                                                                title="Remove"
-                                                                            >
-                                                                                <FiTrash2 size={12} />
-                                                                            </button>
-                                                                            <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Doctorate {i > 0 ? `#${i + 1}` : ''}</p>
-                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                                <Field label="Degree / Course">
-                                                                                    <input type="text" value={deg} onChange={e => {
-                                                                                        const nd = [...doctorates]; nd[i] = e.target.value;
-                                                                                        setP('doctorate_degree', nd.join('\n'));
-                                                                                    }} placeholder="e.g. Doctor of Philosophy in Education" className={inp} />
-                                                                                </Field>
-                                                                                <Field label="Year Graduated">
-                                                                                    <ModernDatePicker isYearPicker value={dYears[i] || ''} onChange={val => {
-                                                                                        const ndy = [...dYears]; ndy[i] = val;
-                                                                                        setP('doctorate_year', ndy.join('\n'));
-                                                                                    }} minDate={maxMasterYear > 0 ? new Date(maxMasterYear + 1, 0, 1) : undefined} placeholder="YYYY" className={inp} />
-                                                                                </Field>
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                })}
+                                                                {/* Doctorate */}
+                                                                <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
+                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Doctorate</p>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                        <Field label="Degree / Course">
+                                                                            <input type="text" value={doctorateDeg} onChange={e => setP('doctorate_degree', e.target.value)} placeholder="e.g. Doctor of Philosophy in Education" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Year Graduated">
+                                                                            <YearInput value={doctorateYr} onChange={val => setP('doctorate_year', val)} min={mYearNum > 0 ? mYearNum + 1 : 1900} placeholder="YYYY" />
+                                                                        </Field>
+                                                                    </div>
+                                                                </div>
 
 
                                                                 <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
@@ -2589,8 +2537,8 @@ const OfficialProfiling = () => {
                                                                             />
                                                                             <div className={`h-full flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile[`${id}_binary_id`] ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
                                                                                 <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce' : ''} />
-                                                                                <span className="text-[10px] font-black uppercase tracking-widest">
-                                                                                    {uploadingDocs[id] ? 'Processing...' : profile[`${id}_binary_id`] ? 'Replace' : 'Upload Document'}
+                                                                                <span className="text-[10px] font-black uppercase tracking-widest truncate max-w-[200px]">
+                                                                                    {uploadingDocs[id] ? 'Processing...' : profile[`${id}_binary_id`] ? (uploadedFileNames[id] ? `Saved ✓ — ${uploadedFileNames[id]}` : 'Document on file ✓') : 'Upload Document'}
                                                                                 </span>
                                                                             </div>
                                                                         </div>
@@ -2706,8 +2654,8 @@ const OfficialProfiling = () => {
                                                                                 />
                                                                                 <div className={`h-full flex items-center justify-center gap-2.5 border border-dashed rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile.executive_summary_binary_id ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
                                                                                     <FiUpload size={14} className={uploadingDocs.executive_summary ? 'animate-bounce' : ''} />
-                                                                                    <span className="text-[10px] font-black uppercase tracking-widest">
-                                                                                        {uploadingDocs.executive_summary ? 'Processing...' : profile.executive_summary_binary_id ? 'Replace Document' : 'Upload Document'}
+                                                                                    <span className="text-[10px] font-black uppercase tracking-widest truncate max-w-[200px]">
+                                                                                        {uploadingDocs.executive_summary ? 'Processing...' : profile.executive_summary_binary_id ? (uploadedFileNames.executive_summary ? `Saved ✓ — ${uploadedFileNames.executive_summary}` : 'Document on file ✓') : 'Upload Document'}
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
@@ -2729,103 +2677,7 @@ const OfficialProfiling = () => {
                                                     </div>
                                                 )}
 
-                                                {/* ── APPLICATION ── */}
-                                                {tab === 'application' && (
-                                                    <div className="space-y-6">
-                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
-                                                            <div className="flex items-center justify-between">
-                                                                <SectionLabel color="#0038A8">Apply for Vacant Position</SectionLabel>
-                                                                {applicationStatus === 'under_review' && (
-                                                                    <div className="px-4 py-1.5 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100 flex items-center gap-2">
-                                                                        <FiLock size={12} /> Under Review
-                                                                    </div>
-                                                                )}
-                                                            </div>
 
-                                                            <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-2xl">
-                                                                Please select the vacant position you wish to apply for. Your profile must be <span className="text-[#08315F] font-bold">100% complete</span> and certified before you can submit your application.
-                                                            </p>
-
-                                                            <div className="grid grid-cols-1 gap-4">
-                                                                {vacanciesLoading ? (
-                                                                    <div className="py-20 text-center bg-transparent rounded-[2rem] border-2 border-dashed border-slate-200">
-                                                                        <FiLoader className="animate-spin mx-auto text-[#075985] mb-4" size={32} />
-                                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fetching Available Vacancies...</p>
-                                                                    </div>
-                                                                ) : vacancies.length === 0 ? (
-                                                                    <div className="py-20 text-center bg-transparent rounded-[2rem] border-2 border-dashed border-slate-200">
-                                                                        <FiAlertTriangle className="mx-auto text-amber-400 mb-4" size={32} />
-                                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Vacant Positions Found</p>
-                                                                    </div>
-                                                                ) : (
-                                                                    vacancies.map(v => (
-                                                                        <button
-                                                                            key={v.TLOid}
-                                                                            disabled={applicationStatus === 'under_review'}
-                                                                            onClick={() => setTargetVacancyId(v.TLOid)}
-                                                                            className={`w-full flex items-center justify-between p-6 rounded-[2rem] border-2 transition-all text-left group ${targetVacancyId === v.TLOid ? 'bg-[#F4F8FB] border-[#0038A8] shadow-lg shadow-blue-900/10' : 'bg-white border-slate-100 hover:border-slate-200'}`}
-                                                                        >
-                                                                            <div className="flex items-center gap-5">
-                                                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${targetVacancyId === v.TLOid ? 'bg-[#08315F] text-white' : 'bg-transparent text-slate-400 group-hover:bg-slate-100'}`}>
-                                                                                    <FiBriefcase size={20} />
-                                                                                </div>
-                                                                                <div>
-                                                                                    <h4 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic flex items-center gap-2">
-                                                                                        <span>{v.position_title}</span>
-                                                                                        {v.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                    </h4>
-                                                                                    <div className="flex items-center gap-3 mt-1">
-                                                                                        <span className="text-[9px] font-bold text-[#075985] uppercase tracking-widest">{v.office}</span>
-                                                                                        <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                                                                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{v.strand}</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${targetVacancyId === v.TLOid ? 'bg-[#08315F] border-[#0038A8] text-white' : 'border-slate-100 text-transparent'}`}>
-                                                                                <FiCheckCircle size={14} />
-                                                                            </div>
-                                                                        </button>
-                                                                    ))
-                                                                )}
-                                                            </div>
-
-                                                            {targetVacancyId && applicationStatus !== 'under_review' && (
-                                                                <div className="pt-6 border-t border-slate-100 mt-10">
-                                                                    <div className="bg-slate-900 rounded-[2rem] p-8 text-white flex flex-col lg:flex-row items-center justify-between gap-8">
-                                                                        <div className="flex items-center gap-5">
-                                                                            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center">
-                                                                                <FiActivity size={24} className="text-blue-300" />
-                                                                            </div>
-                                                                            <div>
-                                                                                <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] mb-1">Selected Vacancy</p>
-                                                                                <h3 className="text-xl font-black italic tracking-tight flex items-center gap-2">
-                                                                                    {(() => {
-                                                                                        const vac = vacancies.find(x => x.TLOid === targetVacancyId);
-                                                                                        if (!vac) return null;
-                                                                                        return (
-                                                                                            <>
-                                                                                                <span>{vac.position_title}</span>
-                                                                                                {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                            </>
-                                                                                        );
-                                                                                    })()}
-                                                                                </h3>
-                                                                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">{vacancies.find(x => x.TLOid === targetVacancyId)?.office}</p>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        <button
-                                                                            onClick={() => setTab('summary')}
-                                                                            className="w-full lg:w-auto px-10 py-4 bg-white text-[#08315F] font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3"
-                                                                        >
-                                                                            Proceed to Final Step <FiArrowRight size={14} />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
 
                                                 {/* ── SUMMARY & CERTIFY ── */}
                                                 {tab === 'summary' && (
@@ -3415,7 +3267,7 @@ const OfficialProfiling = () => {
                                                                                     </button>
                                                                                     {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
                                                                                         <button
-                                                                                            onClick={targetVacancyId ? handleSubmitApplication : () => setTab('application')}
+                                                                                            onClick={targetVacancyId ? handleSubmitApplication : () => setTab('summary')}
                                                                                             disabled={!dpaConsent || !truthConsent || saving}
                                                                                             className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
                                                                                         >
@@ -3482,7 +3334,7 @@ const OfficialProfiling = () => {
                                             )}
                                         </AnimatePresence>
 
-                                        {applicationStatus === 'disapproved' && tab === 'application' && (
+                                        {applicationStatus === 'disapproved' && tab === 'summary' && (
                                             <div className="mt-10 flex justify-center">
                                                 <button
                                                     onClick={handleResubmit}
