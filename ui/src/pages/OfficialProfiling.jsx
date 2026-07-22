@@ -17,6 +17,7 @@ import depedLogo from '../assets/DepED-Logo.png';
 import { apiUrl } from '../utils/api';
 import { compressImageClientSide } from '../utils/imageCompressor';
 import ModernDatePicker from '../components/ModernDatePicker';
+import YearInput from '../components/YearInput';
 import Swal from 'sweetalert2';
 
 const TABS = [
@@ -29,7 +30,7 @@ const TABS = [
     { id: 'achievements', label: 'Achievements', icon: FiTrendingUp },
     { id: 'documents', label: 'Documents', icon: FiFileText },
     { id: 'legal', label: 'Legal', icon: FiShield },
-    { id: 'application', label: 'Apply for Position', icon: FiActivity },
+
     { id: 'summary', label: 'Summary & Certify', icon: FiList },
 ];
 
@@ -1662,7 +1663,7 @@ const OfficialProfiling = () => {
                                                             <div className="flex items-center justify-between">
                                                                 <SectionLabel>Other Civil Service Eligibility</SectionLabel>
                                                                 <button
-                                                                    onClick={() => setProfile(p => ({ ...p, eligibilities: [...(p.eligibilities || []), { title: '', details: '' }] }))}
+                                                                    onClick={() => setProfile(p => ({ ...p, eligibilities: [...(p.eligibilities || []), { eligibility: '', date: '', rating: '', place_of_assignment: '' }] }))}
                                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0038A8] text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-[#0038A8] hover:text-white transition-all shadow-sm"
                                                                 >
                                                                     <FiPlus size={12} /> Add Eligibility
@@ -1688,21 +1689,43 @@ const OfficialProfiling = () => {
                                                                                 <Field label="Eligibility">
                                                                                     <input
                                                                                         type="text"
-                                                                                        value={elig.title}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, title: e.target.value } : x) }))}
+                                                                                        value={elig.eligibility || elig.title || ''}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value, title: undefined } : x) }))}
                                                                                         placeholder="e.g. Career Service Professional"
                                                                                         className={inp}
                                                                                     />
                                                                                 </Field>
-                                                                                <Field label="Eligibility Details">
+                                                                                <Field label="Date of Examination / Conferment">
                                                                                     <input
-                                                                                        type="text"
-                                                                                        value={elig.details}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))}
-                                                                                        placeholder="Rating, Date, Place of Examination, etc."
+                                                                                        type="date"
+                                                                                        value={elig.date || ''}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, date: e.target.value } : x) }))}
                                                                                         className={inp}
                                                                                     />
                                                                                 </Field>
+                                                                                <Field label="Rating">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={elig.rating || ''}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, rating: e.target.value } : x) }))}
+                                                                                        placeholder="e.g. 85.50"
+                                                                                        className={inp}
+                                                                                    />
+                                                                                </Field>
+                                                                                <Field label="Place of Examination / Conferment">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={elig.place_of_assignment || ''}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value } : x) }))}
+                                                                                        placeholder="e.g. Manila"
+                                                                                        className={inp}
+                                                                                    />
+                                                                                </Field>
+                                                                                {elig.details && !elig.eligibility && (
+                                                                                     <div className="lg:col-span-2 mt-2">
+                                                                                         <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">Legacy Details: {elig.details}</p>
+                                                                                     </div>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     ))}
@@ -2262,12 +2285,10 @@ const OfficialProfiling = () => {
                                                                     </select>
                                                                 </Field>
                                                                 <Field label="Year Received">
-                                                                    <ModernDatePicker
-                                                                        isYearPicker
+                                                                    <YearInput
                                                                         value={profile.notable_achievements_year || ''}
                                                                         onChange={val => setP('notable_achievements_year', val)}
                                                                         placeholder="YYYY"
-                                                                        className="!py-4 !px-5 !rounded-2xl !bg-transparent hover:!bg-slate-100/30 !border-slate-200/80 focus:!ring-4 focus:!ring-blue-50/50 w-full"
                                                                     />
                                                                 </Field>
                                                             </div>
@@ -2996,12 +3017,22 @@ const OfficialProfiling = () => {
 
                                                                 {profile.eligibilities && profile.eligibilities.length > 0 && (
                                                                     <div className="mt-5 space-y-2">
-                                                                        {profile.eligibilities.map((elig, idx) => (
-                                                                            <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                                                <span className="text-[10px] font-black text-[#08315F] tracking-widest uppercase">{elig.title || 'Untitled'}:</span>
-                                                                                <span className="text-xs font-bold text-slate-800">{elig.details || '—'}</span>
-                                                                            </div>
-                                                                        ))}
+                                                                        {profile.eligibilities.map((elig, idx) => {
+                                                                            const name = elig.eligibility || elig.title || 'Untitled';
+                                                                            const meta = [
+                                                                                elig.rating ? `Rating: ${elig.rating}` : '',
+                                                                                elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
+                                                                                elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
+                                                                            ].filter(Boolean).join(' | ');
+                                                                            const fallback = elig.details || '—';
+                                                                            
+                                                                            return (
+                                                                                <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                                                    <span className="text-[10px] font-black text-[#08315F] tracking-widest uppercase">{name}:</span>
+                                                                                    <span className="text-xs font-bold text-slate-800">{meta || fallback}</span>
+                                                                                </div>
+                                                                            );
+                                                                        })}
                                                                     </div>
                                                                 )}
                                                             </div>

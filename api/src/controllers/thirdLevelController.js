@@ -289,6 +289,55 @@ export const updateProfile = async (req, res) => {
       req.body.is_oic = normalizedPosition.is_oic;
     }
 
+    const validateYear = (yr, max) => {
+      if (!yr) return;
+      const num = parseInt(yr, 10);
+      if (isNaN(num) || num > max) throw new Error(`Year ${yr} cannot be greater than ${max}`);
+    };
+    const currentYear = new Date().getFullYear();
+    
+    validateYear(req.body.performance_rating_1_period, currentYear);
+    validateYear(req.body.performance_rating_2_period, currentYear);
+    validateYear(req.body.performance_rating_3_period, currentYear);
+    validateYear(req.body.cespes_rating_1_period, currentYear);
+    validateYear(req.body.cespes_rating_2_period, currentYear);
+    validateYear(req.body.notable_achievements_year, currentYear);
+    validateYear(req.body.bachelor_year, currentYear);
+    validateYear(req.body.master_year, currentYear);
+    validateYear(req.body.doctorate_year, currentYear);
+
+    if (req.body.bachelor_year && req.body.master_year && parseInt(req.body.master_year) <= parseInt(req.body.bachelor_year)) {
+      throw new Error("Master's year must be greater than Bachelor's year");
+    }
+    if (req.body.master_year && req.body.doctorate_year && parseInt(req.body.doctorate_year) <= parseInt(req.body.master_year)) {
+      throw new Error("Doctorate year must be greater than Master's year");
+    }
+
+    if (req.body.performance_rating_3_period && req.body.performance_rating_2_period && parseInt(req.body.performance_rating_2_period) < parseInt(req.body.performance_rating_3_period)) {
+       throw new Error("Previous rating period must be >= Oldest rating period");
+    }
+    if (req.body.performance_rating_2_period && req.body.performance_rating_1_period && parseInt(req.body.performance_rating_1_period) < parseInt(req.body.performance_rating_2_period)) {
+       throw new Error("Latest rating period must be >= Previous rating period");
+    }
+    if (req.body.cespes_rating_1_period && req.body.cespes_rating_2_period && parseInt(req.body.cespes_rating_2_period) < parseInt(req.body.cespes_rating_1_period)) {
+       throw new Error("CESPES 2nd sem year must be >= 1st sem year");
+    }
+
+    if (req.body.previous_positions && Array.isArray(req.body.previous_positions)) {
+      req.body.previous_positions.forEach(p => {
+        if (p.start_date && p.end_date && new Date(p.end_date) <= new Date(p.start_date)) {
+           throw new Error("End date must be after start date for previous positions");
+        }
+      });
+    }
+    if (req.body.relevant_trainings && Array.isArray(req.body.relevant_trainings)) {
+      req.body.relevant_trainings.forEach(t => {
+        if (t.date_from && t.date_to && new Date(t.date_to) <= new Date(t.date_from)) {
+           throw new Error("End date must be after start date for trainings");
+        }
+      });
+    }
+
     const allFields = [
       'strand', 'division', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
@@ -320,10 +369,50 @@ export const updateProfile = async (req, res) => {
     `, [table]);
     const validCols = new Set(colsRes.rows.map(r => r.column_name.toLowerCase()));
 
+    const DO_NOT_UPPERCASE = new Set([
+      'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
+      'password', 'password_hash', 'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
+      'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
+      'target_tloid', 'application_status', 'profiling_status'
+    ]);
+
+    const toUpper = (val) => {
+      if (typeof val === 'string') return val.toUpperCase();
+      return val;
+    };
+
     allFields.forEach(f => {
       if (req.body[f] !== undefined && validCols.has(f.toLowerCase())) {
         let val = req.body[f] === '' ? null : req.body[f];
-        if (JSONB_FIELDS.has(f) && val !== null && typeof val !== 'string') val = JSON.stringify(val);
+        
+        if (f === 'eligibilities' && Array.isArray(val)) {
+          val = val.map(e => {
+            if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
+            return {
+              ...e,
+              eligibility: e.eligibility ? e.eligibility.toUpperCase() : e.title ? e.title.toUpperCase() : null,
+              place_of_assignment: e.place_of_assignment ? e.place_of_assignment.toUpperCase() : null
+            };
+          });
+        }
+        if (f === 'relevant_trainings' && Array.isArray(val)) {
+          val = val.map(t => ({
+            ...t,
+            training_name: t.training_name ? t.training_name.toUpperCase() : null
+          }));
+        }
+        if (f === 'previous_positions' && Array.isArray(val)) {
+          val = val.map(p => ({
+            ...p,
+            position_name: p.position_name ? p.position_name.toUpperCase() : null
+          }));
+        }
+
+        if (JSONB_FIELDS.has(f) && val !== null && typeof val !== 'string') {
+            val = JSON.stringify(val);
+        } else if (val !== null && typeof val === 'string' && !DO_NOT_UPPERCASE.has(f.toLowerCase())) {
+            val = toUpper(val);
+        }
         values.push(val);
         updates.push(`"${f}" = $${values.length}`);
       }

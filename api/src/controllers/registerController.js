@@ -5,11 +5,16 @@ import pool from '../config/db.js';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
+
+transporter.verify().then(() => console.log('SMTP connection verified')).catch(err => console.warn('SMTP verification failed:', err.message));
 
 const sendOTPEmail = async (email, code) => {
   const mailOptions = {
@@ -44,13 +49,14 @@ export const sendOtp = async (req, res) => {
     );
 
     console.log(`[Development Fallback] OTP for ${email} is: ${code}`);
-    try {
-      await sendOTPEmail(email, code);
-    } catch (emailErr) {
-      console.warn('[Development] Failed to send email via SMTP, falling back to logged OTP:', emailErr.message);
-    }
-
+    
+    // Respond immediately, don't wait for email to send
     res.json({ success: true, message: 'OTP sent successfully' });
+    
+    sendOTPEmail(email, code).catch(emailErr => {
+      console.warn('[Development] Failed to send email via SMTP, falling back to logged OTP:', emailErr.message);
+    });
+
   } catch (err) {
     console.error('Send OTP Error:', err);
     res.status(500).json({ error: 'Failed to send verification code' });
@@ -142,11 +148,15 @@ export const checkEmail = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  const { email, password, firstName, lastName, contactNumber, authCode, assigned_region, assigned_division } = req.body;
+  let { email, password, firstName, lastName, contactNumber, authCode, assigned_region, assigned_division } = req.body;
 
   if (!email || !password || !authCode) {
     return res.status(400).json({ error: 'Email, Password, and Authorization Code are required' });
   }
+
+  // Defensive uppercase for names
+  firstName = (firstName || '').trim().toUpperCase();
+  lastName = (lastName || '').trim().toUpperCase();
 
   const normalizedEmail = email.toLowerCase().trim();
   const client = await pool.connect();
