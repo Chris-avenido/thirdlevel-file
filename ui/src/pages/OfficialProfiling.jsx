@@ -319,7 +319,7 @@ const OfficialProfiling = () => {
             const header = [
                 'First Name', 'Last Name', 'Middle Name', 'Suffix', 'Gender', 'Date of Birth', 'Age', 'Civil Status',
                 'Position Title', 'Designation', 'Date of Present Position', 'Permanent Address',
-                'Career Executive Service (CES)', 'CES Conferment Date', 'Educational Management Test (EMT)', 'EMT Date',
+                'Career Executive Service (CES)', 'CES Conferment Date', 'Educational Management Test (EMT)', 'EMT Date', 'Other Eligibilities',
                 'Highest Education', 'Specific Degree', 'Program / Course', 'Year Graduated',
                 'Latest Rating (1st)', 'Previous Rating (2nd)', 'CESPES 1st Sem', 'CESPES 2nd Sem', 'Total Managerial Experience',
                 'Notable Achievements', 'Previous Position 1', 'Documents 2x2 Photo', 'Administrative Cases', 'Ombudsman / CSC Cases'
@@ -328,6 +328,7 @@ const OfficialProfiling = () => {
                 profile.first_name, profile.last_name, profile.middle_name, profile.suffix, profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
                 profile.position_title, profile.designation, profile.appointment_date, profile.permanent_address,
                 profile.ces_stage, profile.ces_conferment_date, profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date,
+                (profile.eligibilities || []).map(e => `${e.eligibility || e.title || 'Untitled'} (${[e.date ? new Date(e.date).toLocaleDateString() : '', e.rating ? 'Rating: ' + e.rating : '', e.place_of_assignment ? 'Place: ' + e.place_of_assignment : '', e.details || ''].filter(Boolean).join(' | ')})`).join('; '),
                 profile.highest_education, profile.specific_degree, profile.education_program, profile.education_year_graduated,
                 profile.performance_rating_1, profile.performance_rating_2, profile.cespes_1_rating, profile.cespes_2_rating, profile.managerial_experience_total,
                 [profile.notable_achievements, ...(profile.individual_accomplishments || [])].filter(Boolean).join(' | '), prevPositions[0]?.position_name || '', profile.photo_binary_id ? 'Uploaded' : 'Missing', profile.pending_admin_case, profile.ombudsman_case
@@ -439,6 +440,20 @@ const OfficialProfiling = () => {
             ];
             eligRows.push([{ text: `CES: ${profile.ces_stage || 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.ces_conferment_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
             eligRows.push([{ text: `EMT: ${profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.emt_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
+            
+            if (profile.eligibilities && profile.eligibilities.length > 0) {
+                profile.eligibilities.forEach(elig => {
+                    const name = elig.eligibility || elig.title || 'Untitled';
+                    const meta = [
+                        elig.rating ? `Rating: ${elig.rating}` : '',
+                        elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
+                        elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
+                    ].filter(Boolean).join(' | ');
+                    const fallback = elig.details || '—';
+                    eligRows.push([{ text: name, options: { fontSize: 10, color: '000000' } }, { text: meta || fallback, options: { fontSize: 10, align: 'center', color: '000000' } }]);
+                });
+            }
+
             slide.addTable(eligRows, { x: 6.2, y: 4.0, w: 3.6, colW: [2.0, 1.6], border: { pt: 1, color: 'B91C1C' }, fill: 'FFFFFF' });
             pres.writeFile({ fileName: `profile_${profile.last_name || 'export'}.pptx` }).then(() => setExporting(false));
         } catch (err) {
@@ -777,6 +792,42 @@ const OfficialProfiling = () => {
             }
         }
 
+        // 4. Date Ranges
+        const validateRange = (from, to, ctx) => {
+            if (from && to) {
+                const d1 = new Date(from);
+                const d2 = new Date(to);
+                if (d2 <= d1) {
+                    Swal.fire('Validation Error', `In ${ctx}: To Date must be after From Date.`, 'error');
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        for (let i = 0; i < prevPositions.length; i++) {
+            const p = prevPositions[i];
+            if (!validateRange(p.start_date, p.end_date, `Managerial Experience #${i + 1}`)) return false;
+            if (p.oic_positions) {
+                for (let j = 0; j < p.oic_positions.length; j++) {
+                    const oic = p.oic_positions[j];
+                    if (!validateRange(oic.oic_start_date, oic.oic_end_date, `Managerial Experience #${i + 1} (OIC #${j + 1})`)) return false;
+                }
+            }
+        }
+
+        for (let i = 0; i < trainings.length; i++) {
+            const t = trainings[i];
+            if (!validateRange(t.date_from, t.date_to, `Relevant Training #${i + 1}`)) return false;
+        }
+
+        if (profile.other_courses && profile.other_courses.length > 0) {
+            for (let i = 0; i < profile.other_courses.length; i++) {
+                const c = profile.other_courses[i];
+                if (!validateRange(c.date_from, c.date_to, `Other Training/Course #${i + 1}`)) return false;
+            }
+        }
+
         return true;
     };
 
@@ -930,8 +981,8 @@ const OfficialProfiling = () => {
 
     const unifiedList = Array.from(combinedPositions).sort();
 
-    const isPositionOthers = profile.position_title === 'Others' || (profile.position_title && !unifiedList.includes(profile.position_title));
-    const isDesignationOthers = profile.designation === 'Others' || (profile.designation && !unifiedList.includes(profile.designation));
+    const isPositionOthers = profile.position_title === 'Others' || (profile.position_title && !unifiedList.some(u => u.toUpperCase() === profile.position_title.toUpperCase()));
+    const isDesignationOthers = profile.designation === 'Others' || (profile.designation && !unifiedList.some(u => u.toUpperCase() === profile.designation.toUpperCase()));
 
     const fetchNotableAchievements = async () => {
         try {
@@ -1484,8 +1535,8 @@ const OfficialProfiling = () => {
                                                                             <Field label="Gender">
                                                                                 <select value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
                                                                                     <option value="">Select</option>
-                                                                                    <option value="Male">Male</option>
-                                                                                    <option value="Female">Female</option>
+                                                                                    <option value="MALE">Male</option>
+                                                                                    <option value="FEMALE">Female</option>
                                                                                 </select>
                                                                             </Field>
                                                                             <Field label="Date of Birth">
@@ -1501,7 +1552,7 @@ const OfficialProfiling = () => {
                                                                             <Field label="Civil Status">
                                                                                 <select value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
                                                                                     <option value="">Select</option>
-                                                                                    {['Single', 'Married', 'Widowed', 'Separated'].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                                    {['SINGLE', 'MARRIED', 'WIDOWED', 'SEPARATED'].map(o => <option key={o} value={o}>{o.charAt(0) + o.slice(1).toLowerCase()}</option>)}
                                                                                 </select>
                                                                             </Field>
                                                                         </div>
@@ -1518,14 +1569,14 @@ const OfficialProfiling = () => {
                                                                     <Field label="Employment Status">
                                                                         <select value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
                                                                             <option value="">Select Status</option>
-                                                                            <option value="Regular">Regular</option>
-                                                                            <option value="Coterminous">Coterminous</option>
+                                                                            <option value="REGULAR">Regular</option>
+                                                                            <option value="COTERMINOUS">Coterminous</option>
                                                                         </select>
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
-                                                                        <select value={isPositionOthers ? 'Others' : (profile.position_title || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                        <select value={isPositionOthers ? 'Others' : (profile.position_title?.toUpperCase() || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                             <option value="">Select Position Title</option>
-                                                                            {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
+                                                                            {unifiedList.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
                                                                             <option value="Others">Others</option>
                                                                         </select>
                                                                         {isPositionOthers && (
@@ -1534,9 +1585,9 @@ const OfficialProfiling = () => {
                                                                     </Field>
                                                                     {profile.is_oic && (
                                                                         <Field label="Designation">
-                                                                            <select value={isDesignationOthers ? 'Others' : (profile.designation || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                            <select value={isDesignationOthers ? 'Others' : (profile.designation?.toUpperCase() || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
                                                                                 <option value="">Select Designation</option>
-                                                                                {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
+                                                                                {unifiedList.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
                                                                                 <option value="Others">Others</option>
                                                                             </select>
                                                                             {isDesignationOthers && (
@@ -1690,7 +1741,7 @@ const OfficialProfiling = () => {
                                                                                     <input
                                                                                         type="text"
                                                                                         value={elig.eligibility || elig.title || ''}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value, title: undefined } : x) }))}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value.toUpperCase(), title: undefined } : x) }))}
                                                                                         placeholder="e.g. Career Service Professional"
                                                                                         className={inp}
                                                                                     />
@@ -1716,7 +1767,7 @@ const OfficialProfiling = () => {
                                                                                     <input
                                                                                         type="text"
                                                                                         value={elig.place_of_assignment || ''}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value } : x) }))}
+                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value.toUpperCase() } : x) }))}
                                                                                         placeholder="e.g. Manila"
                                                                                         className={inp}
                                                                                     />
@@ -1833,7 +1884,10 @@ const OfficialProfiling = () => {
                                                                             <div className="flex flex-col gap-1.5 w-full">
                                                                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
                                                                                 <div className="relative">
-                                                                                    <ModernDatePicker value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                    <ModernDatePicker value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} minDate={pos.start_date ? new Date(pos.start_date) : undefined} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                    {pos.start_date && pos.end_date && new Date(pos.end_date) <= new Date(pos.start_date) && (
+                                                                                        <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                             <div className="flex flex-col gap-1.5 w-full">
@@ -1869,7 +1923,10 @@ const OfficialProfiling = () => {
                                                                                     <div className="flex flex-col gap-1.5 w-full">
                                                                                         <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC To Date</span>
                                                                                         <div className="relative">
-                                                                                            <ModernDatePicker value={oic.oic_end_date ? oic.oic_end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_end_date: val } : o) } : x))} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                            <ModernDatePicker value={oic.oic_end_date ? oic.oic_end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_end_date: val } : o) } : x))} minDate={oic.oic_start_date ? new Date(oic.oic_start_date) : undefined} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                            {oic.oic_start_date && oic.oic_end_date && new Date(oic.oic_end_date) <= new Date(oic.oic_start_date) && (
+                                                                                                <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
+                                                                                            )}
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="hidden xl:block"></div>
@@ -2121,8 +2178,12 @@ const OfficialProfiling = () => {
                                                                                             <ModernDatePicker
                                                                                                 value={course.date_to || ''}
                                                                                                 onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_to: val } : x) }))}
+                                                                                                minDate={course.date_from ? new Date(course.date_from) : undefined}
                                                                                                 className={inp}
                                                                                             />
+                                                                                            {course.date_from && course.date_to && new Date(course.date_to) <= new Date(course.date_from) && (
+                                                                                                <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
+                                                                                            )}
                                                                                         </div>
                                                                                     </Field>
                                                                                 </div>
@@ -2372,7 +2433,10 @@ const OfficialProfiling = () => {
                                                                             <ModernDatePicker value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                         </div>
                                                                         <div className="relative">
-                                                                            <ModernDatePicker value={tr.date_to ? tr.date_to.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_to', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                            <ModernDatePicker value={tr.date_to ? tr.date_to.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_to', val)} minDate={tr.date_from ? new Date(tr.date_from) : undefined} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                            {tr.date_from && (tr.date_to || tr.date_completed) && new Date(tr.date_to || tr.date_completed) <= new Date(tr.date_from) && (
+                                                                                <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
+                                                                            )}
                                                                         </div>
                                                                         <select value={tr.hours_per_day || '8'} onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)} className="bg-white border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0 cursor-pointer shadow-sm">
                                                                             <option value="8">8 hrs</option>

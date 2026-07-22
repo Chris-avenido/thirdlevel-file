@@ -174,6 +174,12 @@ export const getByEmail = async (req, res) => {
       const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
       row.position_title = normalized.position_title;
       row.is_oic = normalized.is_oic;
+      if (Array.isArray(row.eligibilities)) {
+        row.eligibilities = row.eligibilities.map(e => {
+          if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
+          return e;
+        });
+      }
       return res.json({ success: true, data: row, source: 'masterlist' });
     }
 
@@ -188,6 +194,12 @@ export const getByEmail = async (req, res) => {
       const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
       row.position_title = normalized.position_title;
       row.is_oic = normalized.is_oic;
+      if (Array.isArray(row.eligibilities)) {
+        row.eligibilities = row.eligibilities.map(e => {
+          if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
+          return e;
+        });
+      }
       return res.json({ success: true, data: row, source: 'staging' });
     }
 
@@ -335,6 +347,40 @@ export const updateProfile = async (req, res) => {
         if (t.date_from && t.date_to && new Date(t.date_to) <= new Date(t.date_from)) {
            throw new Error("End date must be after start date for trainings");
         }
+      });
+    }
+
+    // Validate date ranges
+    const validateDateRange = (from, to, context) => {
+      if (from && to) {
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
+        if (toDate <= fromDate) {
+          throw new Error(`Invalid date range in ${context}: TO date must be strictly after FROM date.`);
+        }
+      }
+    };
+
+    if (Array.isArray(req.body.previous_positions)) {
+      req.body.previous_positions.forEach((p, idx) => {
+        validateDateRange(p.start_date, p.end_date, `Previous Position ${idx + 1}`);
+        if (Array.isArray(p.oic_positions)) {
+          p.oic_positions.forEach((oic, oicIdx) => {
+            validateDateRange(oic.oic_start_date, oic.oic_end_date, `Previous Position ${idx + 1} (OIC ${oicIdx + 1})`);
+          });
+        }
+      });
+    }
+
+    if (Array.isArray(req.body.relevant_trainings)) {
+      req.body.relevant_trainings.forEach((t, idx) => {
+        validateDateRange(t.date_from, t.date_to, `Training ${idx + 1}`);
+      });
+    }
+
+    if (Array.isArray(req.body.other_courses)) {
+      req.body.other_courses.forEach((c, idx) => {
+        validateDateRange(c.date_from, c.date_to, `Other Course ${idx + 1}`);
       });
     }
 
