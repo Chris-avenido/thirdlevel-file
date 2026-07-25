@@ -1,6 +1,7 @@
 
 import pool from '../config/db.js';
 import { upsertBinary } from '../utils/binaryPipeline.js';
+import { uploadToAzure } from '../utils/azureBlobService.js';
 
 let oicSchemaReady = false;
 const optionalColumnExpressionCache = new Map();
@@ -256,7 +257,30 @@ export const uploadDocument = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    res.json({ success: true, binary_id, message: `${docType} uploaded successfully` });
+    
+    // Azure Blob Storage Upload
+    let azureData = null;
+    try {
+      console.log(`[Upload] Calling uploadToAzure...`);
+      azureData = await uploadToAzure(
+        req.file.buffer, 
+        req.file.originalname, 
+        mimeType, 
+        TLOid, 
+        docType
+      );
+      console.log(`[Upload] Azure upload successful for ${azureData.filename}`);
+    } catch (azureErr) {
+      console.error(`[Upload] Azure upload failed: ${azureErr.message}`);
+      // Continuing despite Azure error to satisfy "without removing existing logic" requirement
+    }
+
+    res.json({ 
+      success: true, 
+      binary_id, 
+      message: `${docType} uploaded successfully`,
+      ...(azureData || {})
+    });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });

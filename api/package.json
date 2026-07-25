@@ -9,6 +9,7 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.33.0",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",

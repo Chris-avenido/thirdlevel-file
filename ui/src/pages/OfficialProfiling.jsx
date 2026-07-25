@@ -1168,6 +1168,10 @@ const OfficialProfiling = () => {
         }
     };
 
+    const handleViewDocument = (binaryId) => {
+        window.open(apiUrl(`/api/binary/${binaryId}`), '_blank');
+    };
+
     const handleDownloadDocument = async (binaryId, label) => {
         try {
             Swal.fire({ title: 'Downloading...', text: 'Please wait while we fetch the document.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -3114,7 +3118,7 @@ const OfficialProfiling = () => {
                                                                                     </div>
                                                                                 </div>
                                                                                 {profile[d.dbKey] && (
-                                                                                    <button onClick={() => handleDownloadDocument(profile[d.dbKey], d.label)} className="flex items-center justify-center gap-1.5 border border-slate-200 rounded-lg px-2 py-1.5 text-[9px] font-bold transition-all bg-white hover:border-[#08315F] text-[#08315F] w-full">
+                                                                                    <button onClick={() => handleViewDocument(profile[d.dbKey])} className="flex items-center justify-center gap-1.5 border border-slate-200 rounded-lg px-2 py-1.5 text-[9px] font-bold transition-all bg-white hover:border-[#08315F] text-[#08315F] w-full">
                                                                                         <FiEye size={10} />
                                                                                         <span>View</span>
                                                                                     </button>
