@@ -127,7 +127,8 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (emailStatus === 'invalid_domain') {
+    const normalizedEmail = formData.email.toLowerCase().trim();
+    if (!normalizedEmail.endsWith('@deped.gov.ph')) {
       Swal.fire('Error', 'Only @deped.gov.ph emails are allowed for DepEd Email.', 'error');
       return;
     }

@@ -163,7 +163,7 @@ export const checkMasterlistEmail = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division } = req.body;
+  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division, passcode } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and Password are required' });
@@ -216,9 +216,9 @@ export const registerUser = async (req, res) => {
 
     await client.query(
       `INSERT INTO tlo_users (
-        uid, email, password_hash, hash_version, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at
-      ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, $8, $9, 'Approved', NOW())`,
-      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division]
+        uid, email, password_hash, hash_version, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at, passcode
+      ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, $8, $9, 'Approved', NOW(), $10)`,
+      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division, passcode || null]
     );
 
     const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];

@@ -36,6 +36,7 @@ const Register = () => {
         contactNumber: '',
         password: '',
         confirmPassword: '',
+        passcode: '',
         role: isCO ? 'Personnel Admin' : 'TLO Applicant'
     });
 
@@ -113,7 +114,8 @@ const Register = () => {
                     firstName: formData.first_name,
                     lastName: formData.last_name,
                     contactNumber: formData.contactNumber,
-                    role: formData.role
+                    role: formData.role,
+                    passcode: formData.passcode
                 })
             });
             const data = await res.json();
@@ -254,7 +256,7 @@ const Register = () => {
                                 </div>
 
                                 {/* Phone & Auth Code (Moved here) */}
-                                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                                <div className="grid gap-4 grid-cols-1">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
                                         <div className="relative group">
@@ -289,6 +291,13 @@ const Register = () => {
                                         <div className="relative group">
                                             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
                                             <input type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] shadow-sm" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Passcode (For account recovery)</label>
+                                        <div className="relative group">
+                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
+                                            <input type="text" value={formData.passcode} onChange={(e) => setFormData({ ...formData, passcode: e.target.value })} placeholder="Enter 6-digit passcode" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] shadow-sm" />
                                         </div>
                                     </div>
                                 </div>

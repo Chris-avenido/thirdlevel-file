@@ -6,7 +6,7 @@ import {
     FiChevronLeft, FiChevronRight, FiSave, FiPlus, FiTrash2, FiCheckCircle,
     FiAlertTriangle, FiInfo, FiUpload, FiToggleLeft, FiToggleRight,
     FiSearch, FiLoader, FiList, FiLock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
-    FiDownload, FiX, FiMonitor, FiFile, FiPrinter
+    FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
@@ -468,8 +468,7 @@ const OfficialProfiling = () => {
     useEffect(() => {
         const filledCount = COMPLETENESS_FIELDS.filter(f => !!profile[f]).length;
         setCompleteness(Math.round((filledCount / COMPLETENESS_FIELDS.length) * 100));
-    }, [profile]);
-
+    }, [profile]);    
     useEffect(() => {
         if (completeness === 100 && profile.profiling_status !== 'profiling completed') {
             setP('profiling_status', 'profiling completed');
@@ -506,7 +505,11 @@ const OfficialProfiling = () => {
     }, []);
 
     useEffect(() => {
-        const emailToLookup = urlEmail || user?.email || user?.userEmail || localStorage.getItem('userEmail');
+        let parsedUrlEmail = urlEmail;
+        if (parsedUrlEmail) {
+            parsedUrlEmail = parsedUrlEmail.replace(/ /g, '+');
+        }
+        const emailToLookup = parsedUrlEmail || user?.email || user?.userEmail || localStorage.getItem('userEmail');
         if (emailToLookup) {
             lookupByEmail(emailToLookup);
         } else {
@@ -616,36 +619,8 @@ const OfficialProfiling = () => {
         }
     }, [profile.doctorate_degree, profile.master_degree, profile.bachelor_degree, profile.doctorate_year, profile.master_year, profile.bachelor_year]);
 
-    useEffect(() => {
-        // Enforce Bachelor < Master < Doctorate year rule reactively
-        const bacY = (profile.bachelor_year || '').split('\n');
-        const masY = (profile.master_year || '').split('\n');
-        const docY = (profile.doctorate_year || '').split('\n');
-
-        const maxBac = Math.max(0, ...bacY.map(y => parseInt(y) || 0));
-        let changedMas = false;
-        const newMasY = masY.map(y => {
-            const numY = parseInt(y);
-            if (numY && maxBac > 0 && numY <= maxBac) { changedMas = true; return ''; }
-            return y;
-        });
-
-        const maxMas = Math.max(0, ...newMasY.map(y => parseInt(y) || 0));
-        let changedDoc = false;
-        const newDocY = docY.map(y => {
-            const numY = parseInt(y);
-            if (numY && maxMas > 0 && numY <= maxMas) { changedDoc = true; return ''; }
-            return y;
-        });
-
-        if (changedMas || changedDoc) {
-            setProfile(prev => ({
-                ...prev,
-                ...(changedMas ? { master_year: newMasY.join('\n') } : {}),
-                ...(changedDoc ? { doctorate_year: newDocY.join('\n') } : {})
-            }));
-        }
-    }, [profile.bachelor_year, profile.master_year, profile.doctorate_year]);
+    // Removed reactive degree year clearing because it prevents typing (e.g. typing "20" evaluates to 20 < 2010 and gets cleared).
+    // Validation is already properly handled by `validateProfile` on save.
 
     const lookupByEmail = async (email) => {
         if (!email) { setStatus('not-found'); return; }
@@ -788,17 +763,15 @@ const OfficialProfiling = () => {
     };
 
     const setP = (field, value) => {
-        const skipFields = [
-            'email', 'alt_email_1', 'alt_email_2', 'alt_contact_details_1', 'password', 'passcode',
-            'date_of_birth', 'appointment_date', 'ces_conferment_date', 'emt_date',
-            'performance_rating_1_period', 'performance_rating_2_period', 'performance_rating_3_period',
-            'cespes_rating_1_period', 'cespes_rating_2_period',
-            'bachelor_year', 'master_year', 'doctorate_year', 'education_year_graduated', 'notable_achievements_year',
-            'photo_binary_id', 'pds_binary_id', 'service_records_binary_id', 'executive_summary_binary_id',
-            'is_oic', 'emt_passer', 'profiling_status', 'gender', 'civil_status', 'employment_status'
-        ];
+        const skipFields = new Set([
+            'email', 'alt_email_1', 'alt_email_2',
+            'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
+            'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
+            'target_TLOid', 'application_status', 'profiling_status', 'is_oic',
+            'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'ces_stage', 'gender', 'civil_status', 'employment_status'
+        ]);
         let finalValue = value;
-        if (typeof value === 'string' && !skipFields.includes(field)) {
+        if (typeof value === 'string' && !skipFields.has(field)) {
             finalValue = toUpper(value);
         }
         setProfile(p => ({ ...p, [field]: finalValue }));
@@ -1292,12 +1265,12 @@ const OfficialProfiling = () => {
                         </div>
                         <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] italic tracking-tighter mb-4">Record Not Found</h2>
                         <p className="text-sm font-bold text-slate-500 leading-relaxed mb-8">
-                            Your account email (<span className="text-[#08315F]">{user?.email || 'unknown'}</span>) is not yet linked to an active Third Level Official record in the masterlist.
+                            The profile for email (<span className="text-[#08315F]">{urlEmail || user?.email || 'unknown'}</span>) is not yet linked to an active Third Level Official record in the masterlist.
                         </p>
                         <p className="text-[11px] font-bold text-slate-400 italic mb-8">
-                            {(user?.role === 'Third Level Applicant' || user?.role === 'Regional Office' || user?.role === 'School Division Office')
+                            {(!urlEmail && (user?.role === 'Third Level Applicant' || user?.role === 'Regional Office' || user?.role === 'School Division Office'))
                                 ? "To proceed with recruitment, you need to initialize your candidate profile using your current account email."
-                                : "Please contact the Personnel Division (TLM Section) to have your record linked before you can access the profiling system."}
+                                : "Please contact the Personnel Division (TLM Section) to have this record linked before it can be accessed."}
                         </p>
                         <div className="flex flex-col gap-3">
                             {(user?.role === 'Third Level Applicant' || user?.role === 'Regional Office' || user?.role === 'School Division Office') && (
@@ -1754,22 +1727,20 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel color="#0038A8">Career Executive Service (CES)</SectionLabel>
                                                             <Field label="CES Eligibility / Rank Status">
-                                                                <select value={profile.ces_stage} onChange={e => setP('ces_stage', e.target.value)} className={sel}>
+                                                                <select value={profile.ces_stage || ''} onChange={e => setP('ces_stage', e.target.value)} className={inp}>
                                                                     <option value="">Select Status</option>
-                                                                    {[
-                                                                        'Stage 1 (CES Written Examination)',
-                                                                        'Stage 2 (Assessment Center)',
-                                                                        'Stage 3 (Performance Validation)',
-                                                                        'Stage 4 (Board Interview)',
-                                                                        'CES Eligible',
-                                                                        'CESO Rank VI',
-                                                                        'CESO Rank V',
-                                                                        'CESO Rank IV',
-                                                                        'CESO Rank III',
-                                                                        'CESO Rank II',
-                                                                        'CESO Rank I',
-                                                                        'Not Applicable'
-                                                                    ].map(o => <option key={o} value={o}>{o}</option>)}
+                                                                    <option value="STAGE 1 (CES WRITTEN EXAMINATION)">Stage 1 (CES Written Examination)</option>
+                                                                    <option value="STAGE 2 (ASSESSMENT CENTER)">Stage 2 (Assessment Center)</option>
+                                                                    <option value="STAGE 3 (PERFORMANCE VALIDATION)">Stage 3 (Performance Validation)</option>
+                                                                    <option value="STAGE 4 (BOARD INTERVIEW)">Stage 4 (Board Interview)</option>
+                                                                    <option value="CES ELIGIBLE">CES Eligible</option>
+                                                                    <option value="CESO RANK VI">CESO Rank VI</option>
+                                                                    <option value="CESO RANK V">CESO Rank V</option>
+                                                                    <option value="CESO RANK IV">CESO Rank IV</option>
+                                                                    <option value="CESO RANK III">CESO Rank III</option>
+                                                                    <option value="CESO RANK II">CESO Rank II</option>
+                                                                    <option value="CESO RANK I">CESO Rank I</option>
+                                                                    <option value="NOT APPLICABLE">Not Applicable</option>
                                                                 </select>
                                                             </Field>
                                                             <Field label="Date of Conferment (if applicable)">
@@ -2099,62 +2070,65 @@ const OfficialProfiling = () => {
 
                                                 {/* ── EDUCATION ── */}
                                                 {tab === 'education' && (() => {
-                                                    const bachelorDeg = profile.bachelor_degree || '';
-                                                    const bachelorYr = profile.bachelor_year || '';
-                                                    const masterDeg = profile.master_degree || '';
-                                                    const masterYr = profile.master_year || '';
-                                                    const doctorateDeg = profile.doctorate_degree || '';
-                                                    const doctorateYr = profile.doctorate_year || '';
+                                                    const renderDegreeSection = (title, degField, yrField, prevMin) => {
+                                                        const degrees = (profile[degField] || '').split('\n');
+                                                        const years = (profile[yrField] || '').split('\n');
+                                                        const count = Math.max(degrees.length, years.length, 1);
+                                                        
+                                                        const updateEntry = (idx, type, val) => {
+                                                            if (type === 'deg') {
+                                                                const newDegs = [...degrees];
+                                                                newDegs[idx] = val;
+                                                                setP(degField, newDegs.join('\n'));
+                                                            } else {
+                                                                const newYrs = [...years];
+                                                                newYrs[idx] = val;
+                                                                setP(yrField, newYrs.join('\n'));
+                                                            }
+                                                        };
 
-                                                    const bYearNum = parseInt(bachelorYr) || 0;
-                                                    const mYearNum = parseInt(masterYr) || 0;
+                                                        return (
+                                                            <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
+                                                                <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">{title}</p>
+                                                                {Array.from({ length: count }).map((_, idx) => (
+                                                                    <div key={`${degField}-${idx}`} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                                                                        <Field label="Degree / Course">
+                                                                            <input type="text" value={degrees[idx] || ''} onChange={e => updateEntry(idx, 'deg', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
+                                                                        </Field>
+                                                                        <Field label="Year Graduated">
+                                                                            <YearInput value={years[idx] || ''} onChange={val => updateEntry(idx, 'yr', val)} min={prevMin > 0 ? prevMin + 1 : 1900} placeholder="YYYY" />
+                                                                        </Field>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    };
+
+                                                    const bachelorYr = profile.bachelor_year || '';
+                                                    const masterYr = profile.master_year || '';
+                                                    const bYearNum = parseInt(bachelorYr.split('\n')[0]) || 0;
+                                                    const mYearNum = parseInt(masterYr.split('\n')[0]) || 0;
 
                                                     return (
                                                         <div className="space-y-6">
                                                             <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
-                                                                <div className="mb-6">
+                                                                <div className="mb-6 flex justify-between items-center">
                                                                     <SectionLabel>Educational Attainment</SectionLabel>
-                                                                </div>
-
-                                                                {/* Baccalaureate */}
-                                                                <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
-                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Baccalaureate / Bachelor's Degree</p>
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                        <Field label="Degree / Course">
-                                                                            <input type="text" value={bachelorDeg} onChange={e => setP('bachelor_degree', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
-                                                                        </Field>
-                                                                        <Field label="Year Graduated">
-                                                                            <YearInput value={bachelorYr} onChange={val => setP('bachelor_year', val)} placeholder="YYYY" />
-                                                                        </Field>
+                                                                    <div className="relative group/add-degree">
+                                                                       <button type="button" className="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-2">
+                                                                           <FiPlus size={12} /> Add Degree
+                                                                       </button>
+                                                                       <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible group-hover/add-degree:opacity-100 group-hover/add-degree:visible transition-all z-10 flex flex-col p-1">
+                                                                          <button type="button" onClick={() => { setP('bachelor_degree', (profile.bachelor_degree ? profile.bachelor_degree + '\n' : '')); setP('bachelor_year', (profile.bachelor_year ? profile.bachelor_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Bachelor's</button>
+                                                                          <button type="button" onClick={() => { setP('master_degree', (profile.master_degree ? profile.master_degree + '\n' : '')); setP('master_year', (profile.master_year ? profile.master_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Master's</button>
+                                                                          <button type="button" onClick={() => { setP('doctorate_degree', (profile.doctorate_degree ? profile.doctorate_degree + '\n' : '')); setP('doctorate_year', (profile.doctorate_year ? profile.doctorate_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Doctorate</button>
+                                                                       </div>
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Master's Degree */}
-                                                                <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
-                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Master's Degree</p>
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                        <Field label="Degree / Course">
-                                                                            <input type="text" value={masterDeg} onChange={e => setP('master_degree', e.target.value)} placeholder="e.g. Master of Arts in Public Administration" className={inp} />
-                                                                        </Field>
-                                                                        <Field label="Year Graduated">
-                                                                            <YearInput value={masterYr} onChange={val => setP('master_year', val)} min={bYearNum > 0 ? bYearNum + 1 : 1900} placeholder="YYYY" />
-                                                                        </Field>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Doctorate */}
-                                                                <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border border-[#0038A8]/10 space-y-4 mb-6 group">
-                                                                    <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Doctorate</p>
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                        <Field label="Degree / Course">
-                                                                            <input type="text" value={doctorateDeg} onChange={e => setP('doctorate_degree', e.target.value)} placeholder="e.g. Doctor of Philosophy in Education" className={inp} />
-                                                                        </Field>
-                                                                        <Field label="Year Graduated">
-                                                                            <YearInput value={doctorateYr} onChange={val => setP('doctorate_year', val)} min={mYearNum > 0 ? mYearNum + 1 : 1900} placeholder="YYYY" />
-                                                                        </Field>
-                                                                    </div>
-                                                                </div>
-
+                                                                {renderDegreeSection("Baccalaureate / Bachelor's Degree", 'bachelor_degree', 'bachelor_year', 1900)}
+                                                                {renderDegreeSection("Master's Degree", 'master_degree', 'master_year', bYearNum)}
+                                                                {renderDegreeSection("Doctorate", 'doctorate_degree', 'doctorate_year', mYearNum)}
 
                                                                 <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
                                                                     <SectionLabel>Other Educational / Professional Courses</SectionLabel>
@@ -2507,9 +2481,8 @@ const OfficialProfiling = () => {
                                                         </div>
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
-                                                                { id: 'pds', label: 'Personal Data Sheet (CSC Form 212, rev 2025)', note: 'PDF with Work Experience Sheet attached', accept: '.pdf' },
-                                                                { id: 'service_records', label: 'Service Records', note: 'PDF — verifies previous positions', accept: '.pdf' },
-                                                                { id: 'executive_summary', label: 'Executive Summary', note: 'PDF/Word - summary of qualifications', accept: '.pdf,.doc,.docx' },
+                                                                { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx' },
+                                                                { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf' },
                                                             ].map(({ id, label, note, accept }) => (
                                                                 <div key={id} className="flex flex-col gap-3 p-6 bg-slate-50/40 hover:bg-transparent border border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md">
                                                                     <div className="flex items-center gap-3">
@@ -2578,10 +2551,11 @@ const OfficialProfiling = () => {
                                                                         <button
                                                                             key={opt.val}
                                                                             onClick={() => setP('pending_admin_case', opt.val)}
-                                                                            className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
-                                                                        ${profile.pending_admin_case === opt.val
-                                                                                    ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
-                                                                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                            className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
+                                                                        ${profile.pending_admin_case?.toUpperCase() === opt.val.toUpperCase()
+                                                                                    ? 'bg-[#0038A8] text-white shadow-lg shadow-[#0038A8]/20'
+                                                                                    : 'bg-white border-2 border-slate-100 text-slate-400 hover:border-[#0038A8] hover:text-[#0038A8]'
+                                                                                }`}
                                                                         >
                                                                             {opt.label}
                                                                         </button>
@@ -2595,10 +2569,11 @@ const OfficialProfiling = () => {
                                                                             <button
                                                                                 key={opt.val}
                                                                                 onClick={() => setP('guilty_admin_details', opt.val)}
-                                                                                className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
-                                                                            ${profile.guilty_admin_details === opt.val
-                                                                                        ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
-                                                                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                                className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
+                                                                            ${profile.guilty_admin_details?.toUpperCase() === opt.val.toUpperCase()
+                                                                                        ? 'bg-[#0038A8] text-white shadow-lg shadow-[#0038A8]/20'
+                                                                                        : 'bg-white border-2 border-slate-100 text-slate-400 hover:border-[#0038A8] hover:text-[#0038A8]'
+                                                                                    }`}
                                                                             >
                                                                                 {opt.label}
                                                                             </button>
@@ -2611,10 +2586,11 @@ const OfficialProfiling = () => {
                                                                             <button
                                                                                 key={opt.val}
                                                                                 onClick={() => setP('criminally_charged_details', opt.val)}
-                                                                                className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
-                                                                            ${profile.criminally_charged_details === opt.val
-                                                                                        ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
-                                                                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                                className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
+                                                                            ${profile.criminally_charged_details?.toUpperCase() === opt.val.toUpperCase()
+                                                                                        ? 'bg-[#0038A8] text-white shadow-lg shadow-[#0038A8]/20'
+                                                                                        : 'bg-white border-2 border-slate-100 text-slate-400 hover:border-[#0038A8] hover:text-[#0038A8]'
+                                                                                    }`}
                                                                             >
                                                                                 {opt.label}
                                                                             </button>
@@ -2627,10 +2603,11 @@ const OfficialProfiling = () => {
                                                                             <button
                                                                                 key={opt.val}
                                                                                 onClick={() => setP('convicted_crime_details', opt.val)}
-                                                                                className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
-                                                                            ${profile.convicted_crime_details === opt.val
-                                                                                        ? (opt.val === 'Yes' ? 'bg-[#08315F] text-white shadow-sm shadow-blue-900/10' : 'bg-[#FBBF24] text-white shadow-sm shadow-red-900/10')
-                                                                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                                                                                className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
+                                                                            ${profile.convicted_crime_details?.toUpperCase() === opt.val.toUpperCase()
+                                                                                        ? 'bg-[#0038A8] text-white shadow-lg shadow-[#0038A8]/20'
+                                                                                        : 'bg-white border-2 border-slate-100 text-slate-400 hover:border-[#0038A8] hover:text-[#0038A8]'
+                                                                                    }`}
                                                                             >
                                                                                 {opt.label}
                                                                             </button>
@@ -3112,14 +3089,37 @@ const OfficialProfiling = () => {
                                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Documents</p>
                                                                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                                                                     {[
-                                                                        { key: 'photo_binary_id', label: '2x2 Photo' },
-                                                                        { key: 'pds_binary_id', label: 'PDS' },
-                                                                        { key: 'service_records_binary_id', label: 'Service Records' },
+                                                                        { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*' },
+                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx' },
+                                                                        { key: 'profile_word', dbKey: 'profile_word_binary_id', label: 'Profile (Word)', accept: '.doc,.docx' },
+                                                                        { key: 'profile_ppt', dbKey: 'profile_ppt_binary_id', label: 'Profile (PPT)', accept: '.ppt,.pptx' },
+                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },
+                                                                        { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan', accept: '.pdf' },
+                                                                        { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf' },
+                                                                        { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf' },
+                                                                        { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman', accept: '.pdf' },
+                                                                        { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Exec. Summary', accept: '.pdf' },
                                                                     ].map(d => (
-                                                                        <div key={d.key} className={`flex flex-col items-center gap-2 p-4 rounded-[1.5rem] border-2 text-center ${profile[d.key] ? 'bg-emerald-50 border-emerald-200' : 'bg-transparent border-slate-100'}`}>
-                                                                            <FiFileText size={20} className={profile[d.key] ? 'text-emerald-500' : 'text-slate-300'} />
-                                                                            <span className="text-[9px] font-black uppercase tracking-wider leading-tight" style={{ color: profile[d.key] ? '#059669' : '#94a3b8' }}>{d.label}</span>
-                                                                            <span className={`text-[8px] font-black uppercase tracking-widest ${profile[d.key] ? 'text-emerald-500' : 'text-slate-300'}`}>{profile[d.key] ? 'Uploaded' : 'Missing'}</span>
+                                                                        <div key={d.key} className={`flex flex-col items-center gap-2 p-4 rounded-[1.5rem] border-2 text-center ${profile[d.dbKey] ? 'bg-emerald-50 border-emerald-200' : 'bg-transparent border-slate-100'}`}>
+                                                                            <FiFileText size={20} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} />
+                                                                            <span className="text-[9px] font-black uppercase tracking-wider leading-tight" style={{ color: profile[d.dbKey] ? '#059669' : '#94a3b8' }}>{d.label}</span>
+                                                                            <span className={`text-[8px] font-black uppercase tracking-widest ${profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} mb-2`}>{profile[d.dbKey] ? 'Uploaded' : 'Missing'}</span>
+                                                                            
+                                                                            <div className="flex flex-col gap-2 w-full mt-auto">
+                                                                                <div className="relative group/upload w-full">
+                                                                                    <input type="file" accept={d.accept} onChange={(e) => { const file = e.target.files[0]; if (file) handleFileUpload(file, d.key); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full" />
+                                                                                    <div className="flex items-center justify-center gap-1.5 border border-dashed rounded-lg px-2 py-1.5 text-[9px] font-bold transition-all bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F] w-full">
+                                                                                        <FiUpload size={10} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
+                                                                                        <span className="truncate">{uploadingDocs[d.key] ? 'Processing...' : 'Upload'}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                {profile[d.dbKey] && (
+                                                                                    <button onClick={() => handleDownloadDocument(profile[d.dbKey], d.label)} className="flex items-center justify-center gap-1.5 border border-slate-200 rounded-lg px-2 py-1.5 text-[9px] font-bold transition-all bg-white hover:border-[#08315F] text-[#08315F] w-full">
+                                                                                        <FiEye size={10} />
+                                                                                        <span>View</span>
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     ))}
                                                                 </div>
