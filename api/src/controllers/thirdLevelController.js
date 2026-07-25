@@ -269,6 +269,9 @@ export const uploadDocument = async (req, res) => {
         TLOid, 
         docType
       );
+      if (azureData && azureData.url) {
+        await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [azureData.url, binary_id]);
+      }
       console.log(`[Upload] Azure upload successful for ${azureData.filename}`);
     } catch (azureErr) {
       console.error(`[Upload] Azure upload failed: ${azureErr.message}`);

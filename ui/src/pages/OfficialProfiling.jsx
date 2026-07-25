@@ -3091,12 +3091,10 @@ const OfficialProfiling = () => {
 
                                                             <div>
                                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Documents</p>
-                                                                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                                     {[
                                                                         { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*' },
                                                                         { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'profile_word', dbKey: 'profile_word_binary_id', label: 'Profile (Word)', accept: '.doc,.docx' },
-                                                                        { key: 'profile_ppt', dbKey: 'profile_ppt_binary_id', label: 'Profile (PPT)', accept: '.ppt,.pptx' },
                                                                         { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },
                                                                         { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan', accept: '.pdf' },
                                                                         { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf' },
