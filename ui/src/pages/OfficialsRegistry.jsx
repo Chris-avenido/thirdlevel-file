@@ -1442,7 +1442,7 @@ const OfficialsRegistry = () => {
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <div
-                                                                        onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
+                                                                        onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
                                                                         className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                         title={item.email ? "View Official Profile" : ""}
                                                                     >
@@ -1531,7 +1531,7 @@ const OfficialsRegistry = () => {
                                                                 ) : <FiUser size={16} />}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <div onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
+                                                                <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
                                                                     {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
                                                                 </div>
                                                                 <div className="text-[10px] font-bold text-slate-400 mt-1 truncate">{item.email || 'No Email'}</div>
@@ -1604,7 +1604,7 @@ const OfficialsRegistry = () => {
                                             <motion.div
                                                 key={item.TLOid}
                                                 whileHover={{ y: -4 }}
-                                                onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}
+                                                onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
                                                 className={`bg-white rounded-[1.5rem] p-5 border border-[#08315F] shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                             >
                                                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
@@ -1732,7 +1732,7 @@ const OfficialsRegistry = () => {
 
                                             <div className="flex flex-wrap justify-center gap-6">
                                                 {members.map(item => (
-                                                    <div key={item.TLOid} className="bg-white border-2 border-slate-200 rounded-3xl p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-[#075985] transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${item.email}`)}>
+                                                    <div key={item.TLOid} className="bg-white border-2 border-slate-200 rounded-3xl p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-[#075985] transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}>
                                                         <div className="absolute -top-4 bg-[#075985] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md w-[90%] truncate">
                                                             {item.position_title || 'Position Unknown'}
                                                         </div>

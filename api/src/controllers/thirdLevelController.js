@@ -307,7 +307,7 @@ export const updateProfile = async (req, res) => {
       if (isNaN(num) || num > max) throw new Error(`Year ${yr} cannot be greater than ${max}`);
     };
     const currentYear = new Date().getFullYear();
-    
+
     validateYear(req.body.performance_rating_1_period, currentYear);
     validateYear(req.body.performance_rating_2_period, currentYear);
     validateYear(req.body.performance_rating_3_period, currentYear);
@@ -326,7 +326,7 @@ export const updateProfile = async (req, res) => {
     }
 
     const currentMonth = new Date().toISOString().substring(0, 7);
-    
+
     if (req.body.performance_rating_1_period && req.body.performance_rating_1_period > currentMonth) throw new Error("Latest Performance Rating period cannot be in the future");
     if (req.body.performance_rating_2_period && req.body.performance_rating_2_period > currentMonth) throw new Error("Previous Performance Rating period cannot be in the future");
     if (req.body.performance_rating_3_period && req.body.performance_rating_3_period > currentMonth) throw new Error("Oldest Performance Rating period cannot be in the future");
@@ -334,33 +334,33 @@ export const updateProfile = async (req, res) => {
     if (req.body.cespes_rating_2_period && req.body.cespes_rating_2_period > currentMonth) throw new Error("CESPES 2nd Semester period cannot be in the future");
 
     if (req.body.performance_rating_3_period && req.body.performance_rating_2_period && req.body.performance_rating_2_period < req.body.performance_rating_3_period) {
-       throw new Error("Previous rating period must be >= Oldest rating period");
+      throw new Error("Previous rating period must be >= Oldest rating period");
     }
     if (req.body.performance_rating_2_period && req.body.performance_rating_1_period && req.body.performance_rating_1_period < req.body.performance_rating_2_period) {
-       throw new Error("Latest rating period must be >= Previous rating period");
+      throw new Error("Latest rating period must be >= Previous rating period");
     }
     if (req.body.cespes_rating_1_period && req.body.cespes_rating_2_period && req.body.cespes_rating_2_period < req.body.cespes_rating_1_period) {
-       throw new Error("CESPES 2nd sem period must be >= 1st sem period");
+      throw new Error("CESPES 2nd sem period must be >= 1st sem period");
     }
 
     const bacY = (req.body.bachelor_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
     const masY = (req.body.master_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
     const docY = (req.body.doctorate_year || '').split('\n').map(y => parseInt(y)).filter(y => !isNaN(y));
-    
+
     const maxBac = bacY.length > 0 ? Math.max(...bacY) : 0;
     const maxMas = masY.length > 0 ? Math.max(...masY) : 0;
 
     if (maxBac > 0 && masY.some(m => m <= maxBac)) {
-        throw new Error("Master's Degree year must be strictly greater than Bachelor's Degree year.");
+      throw new Error("Master's Degree year must be strictly greater than Bachelor's Degree year.");
     }
     if (maxMas > 0 && docY.some(d => d <= maxMas)) {
-        throw new Error("Doctorate year must be strictly greater than Master's Degree year.");
+      throw new Error("Doctorate year must be strictly greater than Master's Degree year.");
     }
 
     if (req.body.previous_positions && Array.isArray(req.body.previous_positions)) {
       req.body.previous_positions.forEach(p => {
         if (p.start_date && p.end_date && new Date(p.end_date) <= new Date(p.start_date)) {
-           throw new Error("End date must be after start date for previous positions");
+          throw new Error("End date must be after start date for previous positions");
         }
       });
     }
@@ -368,7 +368,7 @@ export const updateProfile = async (req, res) => {
       req.body.relevant_trainings = req.body.relevant_trainings.map(t => {
         if (t.training_name) t.training_name = t.training_name.toUpperCase();
         if (t.date_from && t.date_to && new Date(t.date_to) <= new Date(t.date_from)) {
-           throw new Error("End date must be after start date for trainings");
+          throw new Error("End date must be after start date for trainings");
         }
         return t;
       });
@@ -454,7 +454,7 @@ export const updateProfile = async (req, res) => {
     allFields.forEach(f => {
       if (req.body[f] !== undefined && validCols.has(f.toLowerCase())) {
         let val = req.body[f] === '' ? null : req.body[f];
-        
+
         if (f === 'eligibilities' && Array.isArray(val)) {
           val = val.map(e => {
             if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
@@ -479,9 +479,9 @@ export const updateProfile = async (req, res) => {
         }
 
         if (JSONB_FIELDS.has(f) && val !== null && typeof val !== 'string') {
-            val = JSON.stringify(val);
+          val = JSON.stringify(val);
         } else if (val !== null && typeof val === 'string' && !DO_NOT_UPPERCASE.has(f.toLowerCase())) {
-            val = toUpper(val);
+          val = toUpper(val);
         }
         values.push(val);
         updates.push(`"${f}" = $${values.length}`);
@@ -564,10 +564,26 @@ export const getPositions = async (req, res) => {
         AND designation NOT ILIKE 'N/A'
       ORDER BY designation
     `);
+    const strandResult = await pool.query(`
+      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' ORDER BY strand
+    `);
+    const regionResult = await pool.query(`
+      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' ORDER BY region
+    `);
+    const officeResult = await pool.query(`
+      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' ORDER BY office
+    `);
+    const divisionResult = await pool.query(`
+      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' ORDER BY division
+    `);
     res.json({
       success: true,
       positions: posResult.rows.map(r => displayPositionTitle(r.position_title)),
-      designations: desigResult.rows.map(r => displayPositionTitle(r.designation))
+      designations: desigResult.rows.map(r => displayPositionTitle(r.designation)),
+      strands: strandResult.rows.map(r => r.strand),
+      regions: regionResult.rows.map(r => r.region),
+      offices: officeResult.rows.map(r => r.office),
+      divisions: divisionResult.rows.map(r => r.division)
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1345,17 +1361,40 @@ export const registerPersonnel = async (req, res) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const { first_name, last_name, email, position_title } = req.body;
+  const { 
+    first_name, 
+    middle_name,
+    last_name, 
+    email, 
+    position_title,
+    strand,
+    region,
+    office,
+    division,
+    designation,
+    alt_email_1,
+    alt_email_2,
+    contact_details,
+    alt_contact_1,
+    alt_contact_2 
+  } = req.body;
+
   if (!email || !first_name || !last_name || !position_title) return res.json({ success: false, error: 'Missing required fields' });
 
   const client = await pool.connect();
   try {
     const normalizedEmail = email.toLowerCase().trim();
-    const upperFirstName = first_name.trim().toUpperCase();
-    const upperLastName = last_name.trim().toUpperCase();
+    if (!normalizedEmail.endsWith('@deped.gov.ph')) {
+      return res.json({ success: false, error: 'Only @deped.gov.ph emails are allowed for DepEd Email.' });
+    }
+
+    const mName = (middle_name || '').trim().toUpperCase();
+    const fName = (first_name || '').trim().toUpperCase();
+    const upperFirstName = mName ? `${fName} ${mName}` : fName;
+    const upperLastName = (last_name || '').trim().toUpperCase();
 
     const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
-    
+
     if (masterCheck.rows.length > 0) {
       return res.json({ success: false, error: 'Email already exists in the masterlist. Please use a different email address.' });
     }
@@ -1371,9 +1410,16 @@ export const registerPersonnel = async (req, res) => {
 
     await client.query(`
       INSERT INTO third_level_official_masterlist (
-          "TLOid", first_name, last_name, email, position_title, status, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, 'Pending Assignment', NOW(), NOW())
-    `, [tloId, upperFirstName, upperLastName, normalizedEmail, position_title]);
+          "TLOid", first_name, last_name, email, position_title, 
+          strand, region, office, division, designation, 
+          alt_email_1, alt_email_2, contact_details, alt_contact_details_1, alt_contact_details_2,
+          status, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'Active', NOW(), NOW())
+    `, [
+      tloId, upperFirstName, upperLastName, normalizedEmail, position_title,
+      (strand || '').trim(), (region || '').trim(), (office || '').trim(), (division || '').trim(), (designation || '').trim(),
+      (alt_email_1 || '').trim(), (alt_email_2 || '').trim(), (contact_details || '').trim(), (alt_contact_1 || '').trim(), (alt_contact_2 || '').trim()
+    ]);
 
     await client.query('COMMIT');
     res.json({ success: true, TLOid: tloId, message: 'Personnel registered successfully', newPersonnel: { TLOid: tloId, first_name: upperFirstName, last_name: upperLastName, email: normalizedEmail, position_title } });
