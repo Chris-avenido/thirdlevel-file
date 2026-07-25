@@ -39,10 +39,7 @@ const Register = () => {
         role: isCO ? 'Personnel Admin' : 'TLO Applicant'
     });
 
-    const [otpCode, setOtpCode] = useState('');
-    const [otpSent, setOtpSent] = useState(false);
-    const [isOtpVerified, setIsOtpVerified] = useState(false);
-    const [otpLoading, setOtpLoading] = useState(false);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
@@ -96,56 +93,6 @@ const Register = () => {
         setFormData(prev => ({ ...prev, contactNumber: val }));
     };
 
-    const handleSendOtp = async () => {
-        if (!formData.email) return Swal.fire('Notice', "Please enter email first", 'info');
-
-        try {
-            const checkRes = await fetch(apiUrl(`/api/auth/check-email?email=${formData.email}`));
-            const checkData = await checkRes.json();
-            if (checkData.exists) {
-                return Swal.fire('Notice', "This email is already registered in InsightEd. Please use 'I have an account' to login.", 'info');
-            }
-        } catch (err) {
-            console.error("Check email failed", err);
-        }
-
-        setOtpLoading(true);
-        try {
-            const res = await fetch(apiUrl('/api/auth/send-otp'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: formData.email })
-            });
-            if (res.ok) setOtpSent(true);
-            else Swal.fire('Notice', "Failed to send OTP", 'error');
-        } catch (err) {
-            Swal.fire('Error', "Network error", 'error');
-        } finally {
-            setOtpLoading(false);
-        }
-    };
-
-    const handleVerifyOtp = async () => {
-        setOtpLoading(true);
-        console.log(formData.email, otpCode);
-        try {
-            const res = await fetch(apiUrl('/api/auth/verify-otp'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: formData.email, code: otpCode })
-            });
-            if (res.ok) {
-                setIsOtpVerified(true);
-                setOtpSent(false);
-            } else {
-                Swal.fire('Error', "Invalid OTP code", 'error');
-            }
-        } catch (err) {
-            Swal.fire('Error', "Verification error", 'error');
-        } finally {
-            setOtpLoading(false);
-        }
-    };
 
     const handleFinalStep = async () => {
         setCurrentStep(3);
@@ -284,10 +231,9 @@ const Register = () => {
 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                                    <div className="flex gap-3 relative">
-                                        <div className="relative group flex-1">
+                                    <div className="relative group">
                                             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <input type="email" disabled={isOtpVerified || otpSent} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all disabled:opacity-50 ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`} />
+                                            <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`} />
                                             
                                             {!isCO && masterlistCheckStatus === 'valid' && (
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
@@ -300,8 +246,6 @@ const Register = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        {!otpSent && !isOtpVerified && <button onClick={handleSendOtp} disabled={otpLoading || !formData.email || (!isCO && masterlistCheckStatus !== 'valid')} className="bg-[#08315F] text-white font-black px-6 rounded-2xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg text-[10px] uppercase disabled:opacity-50 disabled:hover:bg-[#08315F]">{otpLoading ? '...' : 'Send OTP'}</button>}
-                                    </div>
                                     {!isCO && masterlistCheckStatus === 'invalid' && (
                                         <p className="text-[10px] font-bold text-red-500 mt-1 ml-1">
                                             This email is not registered in the Third Level Masterlist. Please contact the Personnel Division for support.
@@ -320,42 +264,11 @@ const Register = () => {
                                     </div>
                                 </div>
 
-                                {otpSent && !isOtpVerified && (
-                                    <div className="space-y-6 animate-in zoom-in-95 duration-300">
-                                        <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 text-center">
-                                            <p className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-4">Verification Code Sent</p>
-                                            <div className="relative group">
-                                                <input
-                                                    type="text"
-                                                    maxLength="6"
-                                                    value={otpCode}
-                                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                                                    placeholder="000000"
-                                                    className="w-full text-center text-4xl font-black tracking-[0.5em] py-4 bg-white border-2 border-blue-200 rounded-2xl focus:border-[#08315F] focus:outline-none shadow-inner text-slate-900"
-                                                    style={{ WebkitTextFillColor: '#1e293b' }}
-                                                />
-                                            </div>
-                                            <button
-                                                onClick={handleVerifyOtp}
-                                                className="mt-6 w-full py-4 bg-[#08315F] text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg text-[10px] uppercase tracking-widest"
-                                            >
-                                                Verify OTP
-                                            </button>
-                                        </div>
-                                        <button onClick={() => setOtpSent(false)} className="w-full text-slate-400 text-[10px] font-black uppercase hover:text-slate-600">Change Email</button>
-                                    </div>
-                                )}
 
-                                {isOtpVerified && (
-                                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-600 text-xs font-bold flex items-center gap-3">
-                                        <FiCheckCircle className="w-5 h-5" />
-                                        Identity verified. Proceed to security.
-                                    </div>
-                                )}
 
                                 <div className="flex gap-4 pt-4">
                                     <button onClick={() => setCurrentStep(1)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
-                                    <button disabled={!isOtpVerified} onClick={handleFinalStep} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl disabled:bg-slate-200 active:scale-95 transition-all text-xs uppercase italic tracking-widest">Final Step</button>
+                                    <button onClick={handleFinalStep} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Final Step</button>
                                 </div>
                             </div>
                         )}
