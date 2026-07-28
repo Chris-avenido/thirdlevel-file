@@ -298,10 +298,16 @@ const Login = () => {
                         )}
 
                         {/* FOOTER */}
-                        <div className="mt-10 pt-8 border-t border-slate-100 text-center">
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                Don't have an account? <Link to="/register" state={{ isCO }} className="text-[#08315F] hover:text-blue-800 ml-1">Register Now</Link>
-                            </p>
+                        <div className="mt-8">
+                            <div className="flex items-center justify-center gap-4 mb-6">
+                                <div className="h-px bg-slate-200 flex-1"></div>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">OR</span>
+                                <div className="h-px bg-slate-200 flex-1"></div>
+                            </div>
+                            <Link to="/register" state={{ isCO }} className="block w-full text-center py-4 border-2 border-yellow-500 rounded-lg hover:bg-yellow-50 transition-colors">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Don't have an account?</span>
+                                <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest ml-2">Register Now</span>
+                            </Link>
                         </div>
                     </div>
                 </div>

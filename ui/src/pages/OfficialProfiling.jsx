@@ -6,7 +6,8 @@ import {
     FiChevronLeft, FiChevronRight, FiSave, FiPlus, FiTrash2, FiCheckCircle,
     FiAlertTriangle, FiInfo, FiUpload, FiToggleLeft, FiToggleRight,
     FiSearch, FiLoader, FiList, FiLock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
-    FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye
+    FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye,
+    FiEdit2, FiHeart, FiBookOpen, FiRotateCcw, FiCamera, FiBarChart2, FiChevronDown, FiHome, FiMapPin, FiLayers
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
@@ -2662,462 +2663,674 @@ const OfficialProfiling = () => {
 
                                                 {/* ── SUMMARY & CERTIFY ── */}
                                                 {tab === 'summary' && (
-                                                    <div className="space-y-8">
-
-                                                        {/* ── Profile Summary Card ── */}
-                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-8">
-                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4 relative">
-                                                                <SectionLabel>Profile Summary</SectionLabel>
-                                                                <div className="relative">
-                                                                    <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#08315F] px-5 py-2.5 rounded-full text-white hover:bg-blue-800 font-black text-[10px] uppercase tracking-widest transition-all shadow-md hover:shadow-lg w-max relative z-[51]">
-                                                                        <FiDownload size={14} /> Export Profile
-                                                                    </button>
-                                                                    <AnimatePresence>
-                                                                        {exportModalOpen && (
-                                                                            <motion.div
-                                                                                initial={{ opacity: 0 }}
-                                                                                animate={{ opacity: 1 }}
-                                                                                exit={{ opacity: 0 }}
-                                                                                className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-slate-900/60 backdrop-blur-sm"
-                                                                            >
-                                                                                <motion.div
-                                                                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                                                                    className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
-                                                                                    onClick={e => e.stopPropagation()}
-                                                                                >
-                                                                                    {/* Sidebar Options */}
-                                                                                    <div className="w-full lg:w-64 bg-transparent border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
-                                                                                        <div className="flex items-center justify-between mb-4">
-                                                                                            <div>
-                                                                                                <h2 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
-                                                                                            </div>
-                                                                                            <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm">
-                                                                                                <FiX size={16} />
-                                                                                            </button>
-                                                                                        </div>
-                                                                                        {[
-                                                                                            { id: 'csv', label: 'Data Export (CSV)', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-                                                                                            { id: 'pdf', label: 'Document (PDF)', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
-                                                                                            { id: 'ppt', label: 'Presentation (PPT)', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-                                                                                        ].map(opt => (
-                                                                                            <button
-                                                                                                key={opt.id}
-                                                                                                onClick={() => setSelectedExportType(opt.id)}
-                                                                                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                                                                                            >
-                                                                                                <opt.icon size={16} className={selectedExportType === opt.id ? opt.color : 'text-slate-400'} />
-                                                                                                <div>
-                                                                                                    <p className={`text-[10px] font-black uppercase tracking-tight ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
-                                                                                                </div>
-                                                                                            </button>
-                                                                                        ))}
-
-                                                                                        <div className="mt-auto pt-6 flex flex-col gap-3">
-                                                                                            {selectedExportType === 'pdf' && (
-                                                                                                <button
-                                                                                                    onClick={() => {
-                                                                                                        const printContent = document.getElementById('pdf-preview-content').outerHTML;
-                                                                                                        const printWindow = window.open('', '_blank');
-                                                                                                        printWindow.document.write(`
-                                                                                                            <html>
-                                                                                                            <head>
-                                                                                                                <title>Print Profile</title>
-                                                                                                                <script src="https://cdn.tailwindcss.com"></script>
-                                                                                                                <style>
-                                                                                                                    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
-                                                                                                                    body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                                                                                                    @page { size: landscape; margin: 10mm; }
-                                                                                                                </style>
-                                                                                                            </head>
-                                                                                                            <body>
-                                                                                                                <div class="flex justify-center items-start w-full h-full">
-                                                                                                                    ${printContent}
-                                                                                                                </div>
-                                                                                                                <script>
-                                                                                                                    window.onload = function() {
-                                                                                                                        setTimeout(function() {
-                                                                                                                            window.print();
-                                                                                                                            window.close();
-                                                                                                                        }, 800);
-                                                                                                                    };
-                                                                                                                </script>
-                                                                                                            </body>
-                                                                                                            </html>
-                                                                                                        `);
-                                                                                                        printWindow.document.close();
-                                                                                                    }}
-                                                                                                    disabled={exporting}
-                                                                                                    className="w-full py-4 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                                                                >
-                                                                                                    <FiPrinter size={16} />
-                                                                                                    Print Document
-                                                                                                </button>
-                                                                                            )}
-                                                                                            <button
-                                                                                                onClick={() => {
-                                                                                                    if (selectedExportType === 'csv') generateCSV();
-                                                                                                    if (selectedExportType === 'pdf') generatePDF();
-                                                                                                    if (selectedExportType === 'ppt') generatePPT();
-                                                                                                }}
-                                                                                                disabled={exporting}
-                                                                                                className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                                                            >
-                                                                                                {exporting ? <FiLoader className="animate-spin" size={16} /> : <FiDownload size={16} />}
-                                                                                                {exporting ? 'Generating...' : `Download`}
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    {/* Preview Area */}
-                                                                                    <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
-                                                                                        {selectedExportType === 'csv' && (
-                                                                                            <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                                                                                <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
-                                                                                                    <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
-                                                                                                    <span className="text-[11px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
-                                                                                                </div>
-                                                                                                <div className="p-0 overflow-x-auto custom-scrollbar">
-                                                                                                    <table className="w-full text-left border-collapse text-[11px] font-mono whitespace-nowrap">
-                                                                                                        <thead className="bg-transparent sticky top-0">
-                                                                                                            <tr className="border-b border-slate-200 text-slate-500">
-                                                                                                                <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
-                                                                                                            </tr>
-                                                                                                        </thead>
-                                                                                                        <tbody>
-                                                                                                            {[
-                                                                                                                ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
-                                                                                                                ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
-                                                                                                                ['Total Years in Third Level', profile.total_years_third_level],
-                                                                                                                ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
-                                                                                                                ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
-                                                                                                                ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
-                                                                                                            ].map(([k, v], i) => (
-                                                                                                                <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
-                                                                                                                    <td className="px-4 py-3 font-bold text-slate-500 border-r border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
-                                                                                                                </tr>
-                                                                                                            ))}
-                                                                                                        </tbody>
-                                                                                                    </table>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        )}
-
-                                                                                        {selectedExportType === 'pdf' && (
-                                                                                            <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border border-slate-200 shadow-inner hide-scrollbar">
-                                                                                                <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
-                                                                                                    <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Plus_Jakarta_Sans'] text-black" id="pdf-preview-content">
-                                                                                                        <div className="flex justify-between items-start mb-8">
-                                                                                                            <div className="flex gap-6 items-center">
-                                                                                                                <img src={depedLogo} alt="Logo" className="w-24 h-24 object-contain" />
-                                                                                                                <div>
-                                                                                                                    <h1 className="text-3xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
-                                                                                                                    <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
-                                                                                                                        <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                        {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                        {profile.office ? `, ${profile.office}` : ''}
-                                                                                                                    </h2>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                            <div className="flex gap-6 items-start">
-                                                                                                                <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
-                                                                                                                    2x2 Photo
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div className="grid grid-cols-12 gap-10">
-                                                                                                            <div className="col-span-7 space-y-8">
-                                                                                                                <table className="w-full text-sm border-collapse">
-                                                                                                                    <thead>
-                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Managerial Experience</th></tr>
-                                                                                                                    </thead>
-                                                                                                                    <tbody>
-                                                                                                                        {history.slice(0, 4).map((h, i) => {
-                                                                                                                            const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                                                                                                                            return (
-                                                                                                                                <tr key={i} className="text-slate-800">
-                                                                                                                                    <td className="border border-slate-400 px-3 py-2 font-medium w-1/3">{h.position_title || '—'}</td>
-                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/3">{h.office || '—'}</td>
-                                                                                                                                    <td className="border border-slate-400 px-3 py-2 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
-                                                                                                                                </tr>
-                                                                                                                            );
-                                                                                                                        })}
-                                                                                                                        {history.length === 0 && <tr><td colSpan={3} className="border border-slate-400 px-3 py-2 text-center text-slate-500 italic">No experience listed</td></tr>}
-                                                                                                                    </tbody>
-                                                                                                                </table>
-                                                                                                                <table className="w-full text-sm border-collapse">
-                                                                                                                    <thead>
-                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Educational Attainment</th></tr>
-                                                                                                                    </thead>
-                                                                                                                    <tbody className="text-slate-800">
-                                                                                                                        <tr>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Doctorate</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.doctorate_degree || '—'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.doctorate_year || '—'}</td>
-                                                                                                                        </tr>
-                                                                                                                        <tr>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Master's Degree</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.master_degree || '—'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.master_year || '—'}</td>
-                                                                                                                        </tr>
-                                                                                                                        <tr>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Baccalaureate</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.bachelor_degree || '—'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.bachelor_year || '—'}</td>
-                                                                                                                        </tr>
-                                                                                                                    </tbody>
-                                                                                                                </table>
-                                                                                                            </div>
-                                                                                                            <div className="col-span-5 space-y-8 relative">
-                                                                                                                <div className="absolute -top-14 left-0 w-24">
-                                                                                                                    <div className="bg-amber-500 text-white font-bold py-1 text-center text-xs uppercase tracking-widest">Age</div>
-                                                                                                                    <div className="border border-amber-500 py-1.5 text-center font-bold text-lg text-[#08315F] bg-white">{profile.age || '—'}</div>
-                                                                                                                </div>
-                                                                                                                <table className="w-full text-sm border-collapse mt-10">
-                                                                                                                    <thead>
-                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Performance Rating</th></tr>
-                                                                                                                    </thead>
-                                                                                                                    <tbody className="text-slate-800">
-                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_1_rating || '—'}</td></tr>
-                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
-                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
-                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
-                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_3 || '—'}</td></tr>
-                                                                                                                    </tbody>
-                                                                                                                </table>
-                                                                                                                <table className="w-full text-sm border-collapse">
-                                                                                                                    <thead>
-                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Eligibility</th></tr>
-                                                                                                                    </thead>
-                                                                                                                    <tbody className="text-slate-800">
-                                                                                                                        <tr>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Career Executive Service (CES): {profile.ces_stage || 'Not Applicable'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.ces_conferment_date || '—'}</td>
-                                                                                                                        </tr>
-                                                                                                                        <tr>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Educational Management Test (EMT): {profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}</td>
-                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.emt_date || '—'}</td>
-                                                                                                                        </tr>
-                                                                                                                    </tbody>
-                                                                                                                </table>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        )}
-
-                                                                                        {selectedExportType === 'ppt' && (
-                                                                                            <div className="overflow-hidden w-full rounded-2xl border-2 border-slate-200 bg-slate-50 relative flex items-start justify-center pt-8 pb-4" style={{ height: `${Math.max(350, 562.5 * previewScale + 64)}px` }}>
-                                                                                                <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Plus_Jakarta_Sans'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
-                                                                                                    <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
-                                                                                                        <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
-                                                                                                        <div className="flex gap-4 items-center mb-6">
-                                                                                                            <img src={depedLogo} alt="Logo" className="w-16 h-16 object-contain" />
-                                                                                                            <div>
-                                                                                                                <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
-                                                                                                                <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
-                                                                                                                    <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                    {profile.office ? `, ${profile.office}` : ''}
-                                                                                                                </h2>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div className="flex gap-6 mt-8">
-                                                                                                            <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
-                                                                                                                <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
-                                                                                                                {history.slice(0, 3).map((h, i) => (
-                                                                                                                    <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
-                                                                                                                ))}
-                                                                                                            </div>
-                                                                                                            <div className="w-64 border-2 border-red-700 rounded-xl p-6">
-                                                                                                                <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
-                                                                                                                <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
-                                                                                                                <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </motion.div>
-                                                                            </motion.div>
-                                                                        )}
-                                                                    </AnimatePresence>
-                                                                </div>
+                                                    <div className="bg-slate-50 min-h-screen">
+                                                        <div className="space-y-6">
+                                                            
+                                                            {/* PROFILE SUMMARY */}
+                                                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 relative">
+                                                            <div className="absolute top-8 right-8 z-[51]">
+                                                                <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#004a99] border border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[11px] transition-all shadow-sm relative z-[51]">
+                                                                    <FiDownload size={14} /> Export Profile
+                                                                </button>
+                                                                <AnimatePresence>
+                                                                    {/* Reusing existing exportModalOpen block logic but keeping it hidden inside this div */}
+                                                                    {exportModalOpen && (
+                                                                        /* existing export modal code will go here - I will retain the original modal code */
+                                                                        <AnimatePresence>
+                                                                                                                        {exportModalOpen && (
+                                                                                                                            <motion.div
+                                                                                                                                initial={{ opacity: 0 }}
+                                                                                                                                animate={{ opacity: 1 }}
+                                                                                                                                exit={{ opacity: 0 }}
+                                                                                                                                className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-slate-900/60 backdrop-blur-sm"
+                                                                                                                            >
+                                                                                                                                <motion.div
+                                                                                                                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                                                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                                                                    className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
+                                                                                                                                    onClick={e => e.stopPropagation()}
+                                                                                                                                >
+                                                                                                                                    {/* Sidebar Options */}
+                                                                                                                                    <div className="w-full lg:w-64 bg-transparent border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
+                                                                                                                                        <div className="flex items-center justify-between mb-4">
+                                                                                                                                            <div>
+                                                                                                                                                <h2 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
+                                                                                                                                            </div>
+                                                                                                                                            <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm">
+                                                                                                                                                <FiX size={16} />
+                                                                                                                                            </button>
+                                                                                                                                        </div>
+                                                                                                                                        {[
+                                                                                                                                            { id: 'csv', label: 'Data Export (CSV)', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+                                                                                                                                            { id: 'pdf', label: 'Document (PDF)', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
+                                                                                                                                            { id: 'ppt', label: 'Presentation (PPT)', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+                                                                                                                                        ].map(opt => (
+                                                                                                                                            <button
+                                                                                                                                                key={opt.id}
+                                                                                                                                                onClick={() => setSelectedExportType(opt.id)}
+                                                                                                                                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                                                                                                                                            >
+                                                                                                                                                <opt.icon size={16} className={selectedExportType === opt.id ? opt.color : 'text-slate-400'} />
+                                                                                                                                                <div>
+                                                                                                                                                    <p className={`text-[10px] font-black uppercase tracking-tight ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
+                                                                                                                                                </div>
+                                                                                                                                            </button>
+                                                                                                                                        ))}
+                                                
+                                                                                                                                        <div className="mt-auto pt-6 flex flex-col gap-3">
+                                                                                                                                            {selectedExportType === 'pdf' && (
+                                                                                                                                                <button
+                                                                                                                                                    onClick={() => {
+                                                                                                                                                        const printContent = document.getElementById('pdf-preview-content').outerHTML;
+                                                                                                                                                        const printWindow = window.open('', '_blank');
+                                                                                                                                                        printWindow.document.write(`
+                                                                                                                                                            <html>
+                                                                                                                                                            <head>
+                                                                                                                                                                <title>Print Profile</title>
+                                                                                                                                                                <script src="https://cdn.tailwindcss.com"></script>
+                                                                                                                                                                <style>
+                                                                                                                                                                    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+                                                                                                                                                                    body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                                                                                                                                                    @page { size: landscape; margin: 10mm; }
+                                                                                                                                                                </style>
+                                                                                                                                                            </head>
+                                                                                                                                                            <body>
+                                                                                                                                                                <div class="flex justify-center items-start w-full h-full">
+                                                                                                                                                                    ${printContent}
+                                                                                                                                                                </div>
+                                                                                                                                                                <script>
+                                                                                                                                                                    window.onload = function() {
+                                                                                                                                                                        setTimeout(function() {
+                                                                                                                                                                            window.print();
+                                                                                                                                                                            window.close();
+                                                                                                                                                                        }, 800);
+                                                                                                                                                                    };
+                                                                                                                                                                </script>
+                                                                                                                                                            </body>
+                                                                                                                                                            </html>
+                                                                                                                                                        `);
+                                                                                                                                                        printWindow.document.close();
+                                                                                                                                                    }}
+                                                                                                                                                    disabled={exporting}
+                                                                                                                                                    className="w-full py-4 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                                                                                >
+                                                                                                                                                    <FiPrinter size={16} />
+                                                                                                                                                    Print Document
+                                                                                                                                                </button>
+                                                                                                                                            )}
+                                                                                                                                            <button
+                                                                                                                                                onClick={() => {
+                                                                                                                                                    if (selectedExportType === 'csv') generateCSV();
+                                                                                                                                                    if (selectedExportType === 'pdf') generatePDF();
+                                                                                                                                                    if (selectedExportType === 'ppt') generatePPT();
+                                                                                                                                                }}
+                                                                                                                                                disabled={exporting}
+                                                                                                                                                className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                                                                            >
+                                                                                                                                                {exporting ? <FiLoader className="animate-spin" size={16} /> : <FiDownload size={16} />}
+                                                                                                                                                {exporting ? 'Generating...' : `Download`}
+                                                                                                                                            </button>
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                
+                                                                                                                                    {/* Preview Area */}
+                                                                                                                                    <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
+                                                                                                                                        {selectedExportType === 'csv' && (
+                                                                                                                                            <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                                                                                                                                <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
+                                                                                                                                                    <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
+                                                                                                                                                    <span className="text-[11px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
+                                                                                                                                                </div>
+                                                                                                                                                <div className="p-0 overflow-x-auto custom-scrollbar">
+                                                                                                                                                    <table className="w-full text-left border-collapse text-[11px] font-mono whitespace-nowrap">
+                                                                                                                                                        <thead className="bg-transparent sticky top-0">
+                                                                                                                                                            <tr className="border-b border-slate-200 text-slate-500">
+                                                                                                                                                                <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
+                                                                                                                                                            </tr>
+                                                                                                                                                        </thead>
+                                                                                                                                                        <tbody>
+                                                                                                                                                            {[
+                                                                                                                                                                ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
+                                                                                                                                                                ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
+                                                                                                                                                                ['Total Years in Third Level', profile.total_years_third_level],
+                                                                                                                                                                ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
+                                                                                                                                                                ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
+                                                                                                                                                                ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
+                                                                                                                                                            ].map(([k, v], i) => (
+                                                                                                                                                                <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
+                                                                                                                                                                    <td className="px-4 py-3 font-bold text-slate-500 border-r border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
+                                                                                                                                                                </tr>
+                                                                                                                                                            ))}
+                                                                                                                                                        </tbody>
+                                                                                                                                                    </table>
+                                                                                                                                                </div>
+                                                                                                                                            </div>
+                                                                                                                                        )}
+                                                
+                                                                                                                                        {selectedExportType === 'pdf' && (
+                                                                                                                                            <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border border-slate-200 shadow-inner hide-scrollbar">
+                                                                                                                                                <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
+                                                                                                                                                    <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Plus_Jakarta_Sans'] text-black" id="pdf-preview-content">
+                                                                                                                                                        <div className="flex justify-between items-start mb-8">
+                                                                                                                                                            <div className="flex gap-6 items-center">
+                                                                                                                                                                <img src={depedLogo} alt="Logo" className="w-24 h-24 object-contain" />
+                                                                                                                                                                <div>
+                                                                                                                                                                    <h1 className="text-3xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
+                                                                                                                                                                    <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
+                                                                                                                                                                        <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                                                                        {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                                                                        {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                                                                    </h2>
+                                                                                                                                                                </div>
+                                                                                                                                                            </div>
+                                                                                                                                                            <div className="flex gap-6 items-start">
+                                                                                                                                                                <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
+                                                                                                                                                                    2x2 Photo
+                                                                                                                                                                </div>
+                                                                                                                                                            </div>
+                                                                                                                                                        </div>
+                                                                                                                                                        <div className="grid grid-cols-12 gap-10">
+                                                                                                                                                            <div className="col-span-7 space-y-8">
+                                                                                                                                                                <table className="w-full text-sm border-collapse">
+                                                                                                                                                                    <thead>
+                                                                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Managerial Experience</th></tr>
+                                                                                                                                                                    </thead>
+                                                                                                                                                                    <tbody>
+                                                                                                                                                                        {history.slice(0, 4).map((h, i) => {
+                                                                                                                                                                            const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                                                                                                                                                                            return (
+                                                                                                                                                                                <tr key={i} className="text-slate-800">
+                                                                                                                                                                                    <td className="border border-slate-400 px-3 py-2 font-medium w-1/3">{h.position_title || '—'}</td>
+                                                                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/3">{h.office || '—'}</td>
+                                                                                                                                                                                    <td className="border border-slate-400 px-3 py-2 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
+                                                                                                                                                                                </tr>
+                                                                                                                                                                            );
+                                                                                                                                                                        })}
+                                                                                                                                                                        {history.length === 0 && <tr><td colSpan={3} className="border border-slate-400 px-3 py-2 text-center text-slate-500 italic">No experience listed</td></tr>}
+                                                                                                                                                                    </tbody>
+                                                                                                                                                                </table>
+                                                                                                                                                                <table className="w-full text-sm border-collapse">
+                                                                                                                                                                    <thead>
+                                                                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Educational Attainment</th></tr>
+                                                                                                                                                                    </thead>
+                                                                                                                                                                    <tbody className="text-slate-800">
+                                                                                                                                                                        <tr>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Doctorate</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.doctorate_degree || '—'}</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.doctorate_year || '—'}</td>
+                                                                                                                                                                        </tr>
+                                                                                                                                                                        <tr>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Master's Degree</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.master_degree || '—'}</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.master_year || '—'}</td>
+                                                                                                                                                                        </tr>
+                                                                                                                                                                        <tr>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Baccalaureate</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.bachelor_degree || '—'}</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.bachelor_year || '—'}</td>
+                                                                                                                                                                        </tr>
+                                                                                                                                                                    </tbody>
+                                                                                                                                                                </table>
+                                                                                                                                                            </div>
+                                                                                                                                                            <div className="col-span-5 space-y-8 relative">
+                                                                                                                                                                <div className="absolute -top-14 left-0 w-24">
+                                                                                                                                                                    <div className="bg-amber-500 text-white font-bold py-1 text-center text-xs uppercase tracking-widest">Age</div>
+                                                                                                                                                                    <div className="border border-amber-500 py-1.5 text-center font-bold text-lg text-[#08315F] bg-white">{profile.age || '—'}</div>
+                                                                                                                                                                </div>
+                                                                                                                                                                <table className="w-full text-sm border-collapse mt-10">
+                                                                                                                                                                    <thead>
+                                                                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Performance Rating</th></tr>
+                                                                                                                                                                    </thead>
+                                                                                                                                                                    <tbody className="text-slate-800">
+                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_1_rating || '—'}</td></tr>
+                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
+                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
+                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
+                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_3 || '—'}</td></tr>
+                                                                                                                                                                    </tbody>
+                                                                                                                                                                </table>
+                                                                                                                                                                <table className="w-full text-sm border-collapse">
+                                                                                                                                                                    <thead>
+                                                                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Eligibility</th></tr>
+                                                                                                                                                                    </thead>
+                                                                                                                                                                    <tbody className="text-slate-800">
+                                                                                                                                                                        <tr>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Career Executive Service (CES): {profile.ces_stage || 'Not Applicable'}</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.ces_conferment_date || '—'}</td>
+                                                                                                                                                                        </tr>
+                                                                                                                                                                        <tr>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Educational Management Test (EMT): {profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}</td>
+                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.emt_date || '—'}</td>
+                                                                                                                                                                        </tr>
+                                                                                                                                                                    </tbody>
+                                                                                                                                                                </table>
+                                                                                                                                                            </div>
+                                                                                                                                                        </div>
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                            </div>
+                                                                                                                                        )}
+                                                
+                                                                                                                                        {selectedExportType === 'ppt' && (
+                                                                                                                                            <div className="overflow-hidden w-full rounded-2xl border-2 border-slate-200 bg-slate-50 relative flex items-start justify-center pt-8 pb-4" style={{ height: `${Math.max(350, 562.5 * previewScale + 64)}px` }}>
+                                                                                                                                                <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Plus_Jakarta_Sans'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
+                                                                                                                                                    <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
+                                                                                                                                                        <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
+                                                                                                                                                        <div className="flex gap-4 items-center mb-6">
+                                                                                                                                                            <img src={depedLogo} alt="Logo" className="w-16 h-16 object-contain" />
+                                                                                                                                                            <div>
+                                                                                                                                                                <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
+                                                                                                                                                                <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
+                                                                                                                                                                    <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                                                                    {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                                                                </h2>
+                                                                                                                                                            </div>
+                                                                                                                                                        </div>
+                                                                                                                                                        <div className="flex gap-6 mt-8">
+                                                                                                                                                            <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
+                                                                                                                                                                <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
+                                                                                                                                                                {history.slice(0, 3).map((h, i) => (
+                                                                                                                                                                    <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
+                                                                                                                                                                ))}
+                                                                                                                                                            </div>
+                                                                                                                                                            <div className="w-64 border-2 border-red-700 rounded-xl p-6">
+                                                                                                                                                                <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
+                                                                                                                                                                <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
+                                                                                                                                                                <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
+                                                                                                                                                            </div>
+                                                                                                                                                        </div>
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                            </div>
+                                                                                                                                        )}
+                                                                                                                                    </div>
+                                                                                                                                </motion.div>
+                                                                                                                            </motion.div>
+                                                                                                                        )}
+                                                                                                                    </AnimatePresence>
+                                                                    )}
+                                                                </AnimatePresence>
                                                             </div>
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Personal Information</p>
-                                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                                                                    <SummaryRow label="First Name" value={profile.first_name} />
-                                                                    <SummaryRow label="Last Name" value={profile.last_name} />
-                                                                    <SummaryRow label="Middle Name" value={profile.middle_name} />
-                                                                    <SummaryRow label="Suffix" value={profile.suffix} />
-                                                                    <SummaryRow label="Gender" value={profile.gender} />
-                                                                    <SummaryRow label="Date of Birth" value={profile.date_of_birth} />
-                                                                    <SummaryRow label="Age" value={profile.age} />
-                                                                    <SummaryRow label="Civil Status" value={profile.civil_status} />
-                                                                    <SummaryRow
-                                                                        label="Target Vacancy"
-                                                                        value={(() => {
-                                                                            const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
-                                                                            if (!vac) return null;
-                                                                            return (
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <span>{vac.position_title}</span>
-                                                                                    {vac.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                </div>
-                                                                            );
-                                                                        })()}
-                                                                    />
+                                                                
+                                                                <div className="flex items-center gap-3 mb-8">
+                                                                    <FiUser className="text-[#08315F]" size={20} />
+                                                                    <h2 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Profile Summary</h2>
                                                                 </div>
-                                                            </div>
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Designation & Appointment</p>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                    <SummaryRow
-                                                                        label="Position Title"
-                                                                        value={
-                                                                            profile.position_title ? (
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <span>{profile.position_title}</span>
-                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                </div>
-                                                                            ) : null
-                                                                        }
-                                                                    />
-                                                                    <SummaryRow label="Date of Present Position" value={profile.appointment_date} />
-                                                                    <SummaryRow label="Permanent Address" value={profile.permanent_address} />
-                                                                    <SummaryRow label="Temporary Address" value={profile.temporary_address} />
-                                                                </div>
-                                                            </div>
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Eligibility</p>
-                                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                                                                    <SummaryRow label="Career Executive Service (CES)" value={profile.ces_stage} />
-                                                                    <SummaryRow label="CES Conferment Date" value={profile.ces_conferment_date} />
-                                                                    <SummaryRow label="Educational Management Test (EMT)" value={profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : null} />
-                                                                    <SummaryRow label="EMT Date" value={profile.emt_date} />
-                                                                </div>
-
-                                                                {profile.eligibilities && profile.eligibilities.length > 0 && (
-                                                                    <div className="mt-5 space-y-2">
-                                                                        {profile.eligibilities.map((elig, idx) => {
-                                                                            const name = elig.eligibility || elig.title || 'Untitled';
-                                                                            const meta = [
-                                                                                elig.rating ? `Rating: ${elig.rating}` : '',
-                                                                                elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
-                                                                                elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
-                                                                            ].filter(Boolean).join(' | ');
-                                                                            const fallback = elig.details || '—';
-                                                                            
-                                                                            return (
-                                                                                <div key={idx} className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                                                    <span className="text-[10px] font-black text-[#08315F] tracking-widest uppercase">{name}:</span>
-                                                                                    <span className="text-xs font-bold text-slate-800">{meta || fallback}</span>
-                                                                                </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Education</p>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                    <SummaryRow label="Highest Education" value={profile.highest_education} />
-                                                                    <SummaryRow label="Specific Degree" value={profile.specific_degree} />
-                                                                    <SummaryRow label="Program / Course" value={profile.education_program} />
-                                                                    <SummaryRow label="Year Graduated" value={profile.education_year_graduated} />
-                                                                </div>
-                                                                {profile.other_courses && profile.other_courses.length > 0 && (
-                                                                    <div className="mt-5 space-y-2">
-                                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Other Courses</p>
-                                                                        {profile.other_courses.map((course, idx) => (
-                                                                            <div key={idx} className="flex flex-col gap-1 sm:gap-2 mb-2">
-                                                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                                                    <span className="text-[10px] font-black text-[#08315F] tracking-widest uppercase">{course.course || 'Untitled'}:</span>
-                                                                                    <span className="text-xs font-bold text-slate-800">
-                                                                                        {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
-                                                                                    </span>
-                                                                                </div>
-                                                                                {course.details && (
-                                                                                    <span className="text-[10px] font-bold text-slate-500 italic">{course.details}</span>
-                                                                                )}
+                                                
+                                                                {/* Personal Information */}
+                                                                <div className="mb-8">
+                                                                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Personal Information</h3>
+                                                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                                                                        <div><p className="text-[10px] text-slate-400 mb-1">First Name</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.first_name || '—'}</p></div>
+                                                                        <div><p className="text-[10px] text-slate-400 mb-1">Last Name</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.last_name || '—'}</p></div>
+                                                                        <div><p className="text-[10px] text-slate-400 mb-1">Middle Name</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.middle_name || '—'}</p></div>
+                                                                        <div><p className="text-[10px] text-slate-400 mb-1">Suffix</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.suffix || '—'}</p></div>
+                                                                        <div></div>{/* Empty column for alignment if needed */}
+                                                                        
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiUser size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Gender</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.gender || '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiCalendar size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Date of Birth</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.date_of_birth || '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiUser size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Age</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.age || '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiHeart size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Civil Status</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.civil_status || '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiStar size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Target Vacancy</p>
+                                                                                <p className="text-[12px] font-black text-slate-800 uppercase">
+                                                                                    {(() => {
+                                                                                        const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
+                                                                                        return vac ? vac.position_title : '—';
+                                                                                    })()}
+                                                                                </p>
                                                                             </div>
-                                                                        ))}
+                                                                        </div>
                                                                     </div>
-                                                                )}
-                                                            </div>
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Performance History</p>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                    <SummaryRow label="Latest Rating (1st)" value={profile.performance_rating_1 ? `${profile.performance_rating_1} (${profile.performance_rating_1_period})` : null} />
-                                                                    <SummaryRow label="Previous Rating (2nd)" value={profile.performance_rating_2 ? `${profile.performance_rating_2} (${profile.performance_rating_2_period})` : null} />
-                                                                    <SummaryRow label="Oldest Rating (3rd)" value={profile.performance_rating_3 ? `${profile.performance_rating_3} (${profile.performance_rating_3_period})` : null} />
-                                                                    <SummaryRow label="CESPES 1st Sem" value={profile.cespes_1_rating ? `${profile.cespes_1_rating}${profile.cespes_rating_1_period ? ` (${profile.cespes_rating_1_period})` : ''}` : null} />
-                                                                    <SummaryRow label="CESPES 2nd Sem" value={profile.cespes_2_rating ? `${profile.cespes_2_rating}${profile.cespes_rating_2_period ? ` (${profile.cespes_rating_2_period})` : ''}` : null} />
-                                                                    <SummaryRow label="Total Managerial Experience" value={profile.managerial_experience_total} />
                                                                 </div>
-                                                            </div>
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Notable Achievements</p>
-                                                                <p className="text-sm font-bold text-slate-800 whitespace-pre-wrap leading-relaxed">{profile.notable_achievements || 'No achievements listed.'}</p>
-                                                            </div>
-
-                                                            {prevPositions.length > 0 && (
+                                                
+                                                                <div className="w-full h-px bg-slate-100 my-8"></div>
+                                                
+                                                                {/* Designation & Appointment */}
+                                                                <div className="mb-8">
+                                                                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Designation & Appointment</h3>
+                                                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                                                                        <div className="col-span-2">
+                                                                            <p className="text-[10px] text-slate-400 mb-1">Position Title</p>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p className="text-[12px] font-black text-slate-800 uppercase">{profile.position_title || '—'}</p>
+                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase">OIC</span>}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiCalendar size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Date of Present Position</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.appointment_date || '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiHome size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Permanent Address</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.permanent_address || '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiMapPin size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Temporary Address</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.temporary_address || '—'}</p></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                
+                                                                <div className="w-full h-px bg-slate-100 my-8"></div>
+                                                
+                                                                {/* Eligibility */}
                                                                 <div>
-                                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Previous Positions ({prevPositions.length})</p>
-                                                                    <div className="space-y-2">
-                                                                        {prevPositions.map((p, i) => (
-                                                                            <div key={i} className="flex items-start gap-3 p-3 bg-transparent rounded-2xl">
-                                                                                <span className="text-[10px] font-black text-slate-400 mt-0.5 w-5 shrink-0">{i + 1}.</span>
-                                                                                <div>
-                                                                                    <p className="text-sm font-bold text-slate-800">{p.position_name || '—'}</p>
-                                                                                    <p className="text-[10px] font-bold text-slate-400">{p.office} {p.start_date ? `· ${p.start_date} – ${p.end_date || 'Present'}` : ''}</p>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
+                                                                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Eligibility</h3>
+                                                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
+                                                                        <div className="col-span-2"><p className="text-[10px] text-slate-400 mb-1">Career Executive Service (CES)</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.ces_stage || '—'}</p></div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiCalendar size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">CES Conferment Date</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.ces_conferment_date || '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiBookOpen size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">Educational Management Test (EMT)</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '—'}</p></div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiCalendar size={14} className="text-blue-500 mt-0.5" />
+                                                                            <div><p className="text-[10px] text-slate-400 mb-1">EMT Date</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.emt_date || '—'}</p></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {/* Eligibilities List */}
+                                                                    {profile.eligibilities && profile.eligibilities.length > 0 && (
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3">
+                                                                            {profile.eligibilities.map((elig, idx) => {
+                                                                                const name = elig.eligibility || elig.title || 'Untitled';
+                                                                                const meta = [
+                                                                                    elig.rating ? `Rating: ${elig.rating}` : '',
+                                                                                    elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
+                                                                                    elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
+                                                                                ].filter(Boolean).join(' | ');
+                                                                                
+                                                                                return (
+                                                                                    <div key={idx} className="flex items-center justify-between">
+                                                                                        <div className="flex items-center gap-2 text-[11px]">
+                                                                                            <span className="font-black text-blue-600 uppercase w-24">{name}:</span>
+                                                                                            <span className="text-slate-600">{meta || '—'}</span>
+                                                                                        </div>
+                                                                                        {/* Star Rating Visualization (dummy logic if not real rating format, but image shows stars) */}
+                                                                                        <div className="flex text-yellow-400 gap-0.5">
+                                                                                            {[1,2,3,4,5].map(star => (
+                                                                                                <FiStar key={star} size={10} fill={(elig.rating && parseInt(elig.rating) >= star) ? 'currentColor' : 'none'} className={(elig.rating && parseInt(elig.rating) >= star) ? '' : 'text-slate-200'} />
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                
+                                                            {/* EDUCATION */}
+                                                            <div className="mb-10">
+                                                                <div className="flex items-center gap-4 mb-6 px-2">
+                                                                    <div className="w-12 h-12 bg-blue-50 text-[#0038A8] rounded-full flex items-center justify-center shadow-sm border border-blue-100/50">
+                                                                        <FiAward size={22} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h2 className="text-sm font-black text-[#08315F] uppercase tracking-widest leading-tight">Education</h2>
+                                                                        <p className="text-xs font-medium text-slate-400 mt-0.5">Your academic background and qualifications</p>
                                                                     </div>
                                                                 </div>
-                                                            )}
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Documents</p>
-                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                                
+                                                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
+                                                                    {(!profile.education_degrees || profile.education_degrees.length === 0) ? (
+                                                                        (profile.highest_education || profile.education_program) ? (
+                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
+                                                                                <div className="flex gap-4 items-start">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                        <FiAward size={18} />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Highest Education</span>
+                                                                                        <span className="text-[12px] font-black text-slate-800 uppercase break-words">{profile.highest_education || '—'}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex gap-4 items-start">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                        <FiFileText size={18} />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Specific Degree</span>
+                                                                                        <span className="text-[12px] font-black text-slate-800 uppercase break-words">{profile.specific_degree || '—'}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                
+                                                                                <div className="col-span-1 lg:col-span-2 border-t border-slate-100/80 my-[-1rem] hidden lg:block" />
+                                                                                
+                                                                                <div className="flex gap-4 items-start">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                        <FiBookOpen size={18} />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Program / Course</span>
+                                                                                        <span className="text-[12px] font-black text-slate-800 uppercase break-words">{profile.education_program || '—'}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex gap-4 items-start">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                        <FiCalendar size={18} />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Year Graduated</span>
+                                                                                        <span className="text-[12px] font-black text-slate-800 uppercase break-words">{profile.education_year_graduated || '—'}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <p className="text-sm font-bold text-slate-400 text-center py-4">No degrees added</p>
+                                                                        )
+                                                                    ) : (
+                                                                        <div className="space-y-12">
+                                                                            {profile.education_degrees.map((deg, idx) => (
+                                                                                <div key={idx} className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
+                                                                                    <div className="flex gap-4 items-start">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                            <FiAward size={18} />
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Highest Education</span>
+                                                                                            <span className="text-[12px] font-black text-slate-800 uppercase break-words">{deg.highest_education || '—'}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="flex gap-4 items-start">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                            <FiFileText size={18} />
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Specific Degree</span>
+                                                                                            <span className="text-[12px] font-black text-slate-800 uppercase break-words">{deg.specific_degree || '—'}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    
+                                                                                    <div className="col-span-1 lg:col-span-2 border-t border-slate-100/80 my-[-1rem] hidden lg:block" />
+                                                                                    
+                                                                                    <div className="flex gap-4 items-start">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                            <FiBookOpen size={18} />
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Program / Course</span>
+                                                                                            <span className="text-[12px] font-black text-slate-800 uppercase break-words">{deg.education_program || '—'}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="flex gap-4 items-start">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
+                                                                                            <FiCalendar size={18} />
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Year Graduated</span>
+                                                                                            <span className="text-[12px] font-black text-slate-800 uppercase break-words">{deg.education_year_graduated || '—'}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {profile.other_courses && profile.other_courses.length > 0 && (
+                                                                        <div className="mt-8 bg-[#F8FAFC] rounded-2xl p-6 lg:p-8 border border-slate-100">
+                                                                            <div className="flex items-center gap-3 mb-6">
+                                                                                <div className="w-8 h-8 bg-blue-100/70 text-[#004a99] rounded-full flex items-center justify-center shrink-0">
+                                                                                    <FiLayers size={14} />
+                                                                                </div>
+                                                                                <h3 className="text-[11px] font-black text-[#004a99] uppercase tracking-widest">Other Courses</h3>
+                                                                            </div>
+                                                                            
+                                                                            <div className="space-y-4">
+                                                                                {profile.other_courses.map((course, idx) => (
+                                                                                    <div key={idx} className={`flex items-start gap-5 ${idx !== profile.other_courses.length - 1 ? 'pb-4 border-b border-dashed border-slate-200' : ''}`}>
+                                                                                        <div className="bg-blue-50/80 text-[#004a99] px-3 py-2 rounded-xl text-[11px] font-black shrink-0 min-w-[70px] text-center uppercase tracking-wider border border-blue-100/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                                                                            {course.course ? (course.course.length > 8 ? course.course.substring(0,8)+'...' : course.course) + ':' : '—:'}
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-0.5 mt-1">
+                                                                                            <span className="text-[12px] font-black text-[#08315F]">
+                                                                                                {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
+                                                                                            </span>
+                                                                                            {course.details && <span className="text-[11px] font-bold text-slate-500">{course.details}</span>}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {/* PERFORMANCE HISTORY */}
+                                                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                                                                <div className="flex items-center gap-3 mb-6">
+                                                                    <FiBarChart2 className="text-[#08315F]" size={20} />
+                                                                    <h2 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Performance History</h2>
+                                                                </div>
+                                                
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                                    {/* Ratings */}
+                                                                    <div className="border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4">
+                                                                        <p className="text-[10px] text-slate-400 mb-1">Latest Rating (1st)</p>
+                                                                        <div className="flex items-center justify-between">
+                                                                            <p className="text-[14px] font-black text-slate-800">{profile.performance_rating_1 ? `${profile.performance_rating_1} (${profile.performance_rating_1_period})` : '—'}</p>
+                                                                            <FiTrendingUp className="text-emerald-500" size={16} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4">
+                                                                        <p className="text-[10px] text-slate-400 mb-1">Previous Rating (2nd)</p>
+                                                                        <div className="flex items-center justify-between">
+                                                                            <p className="text-[14px] font-black text-slate-800">{profile.performance_rating_2 ? `${profile.performance_rating_2} (${profile.performance_rating_2_period})` : '—'}</p>
+                                                                            <FiTrendingUp className="text-emerald-500" size={16} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="pb-4 md:pb-0">
+                                                                        <p className="text-[10px] text-slate-400 mb-1">Oldest Rating (3rd)</p>
+                                                                        <div className="flex items-center justify-between">
+                                                                            <p className="text-[14px] font-black text-slate-800">{profile.performance_rating_3 ? `${profile.performance_rating_3} (${profile.performance_rating_3_period})` : '—'}</p>
+                                                                            <FiTrendingUp className="text-emerald-500" size={16} />
+                                                                        </div>
+                                                                    </div>
+                                                
+                                                                    {/* CSPMS */}
+                                                                    <div className="border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4 md:-mt-4">
+                                                                        <p className="text-[10px] text-slate-400 mb-1">CSPMS 1st Sem</p>
+                                                                        <div className="flex items-center justify-between">
+                                                                            <p className="text-[14px] font-black text-slate-800">{profile.cespes_1_rating ? `${profile.cespes_1_rating} (${profile.cespes_rating_1_period})` : '—'}</p>
+                                                                            <FiTrendingUp className="text-emerald-500" size={16} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4 md:-mt-4">
+                                                                        <p className="text-[10px] text-slate-400 mb-1">CSPMS 2nd Sem</p>
+                                                                        <div className="flex items-center justify-between">
+                                                                            <p className="text-[14px] font-black text-slate-800">{profile.cespes_2_rating ? `${profile.cespes_2_rating} (${profile.cespes_rating_2_period})` : '—'}</p>
+                                                                            <FiTrendingUp className="text-emerald-500" size={16} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="pb-4 md:pb-0 md:-mt-4">
+                                                                        <p className="text-[10px] text-slate-400 mb-1">Total Managerial Experience</p>
+                                                                        <div className="flex items-center justify-between">
+                                                                            <p className="text-[14px] font-black text-slate-800">{profile.managerial_experience_total || '—'}</p>
+                                                                            <FiBriefcase className="text-blue-500" size={16} />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                
+                                                                {/* Achievements */}
+                                                                <div className="mt-8">
+                                                                    <div className="flex items-center gap-2 mb-3">
+                                                                        <FiAward className="text-amber-500" size={14} />
+                                                                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Notable Achievements</h3>
+                                                                    </div>
+                                                                    <p className="text-[12px] font-black text-slate-800 uppercase pl-6">{profile.notable_achievements || '—'}</p>
+                                                                </div>
+                                                
+                                                                {/* Previous Positions */}
+                                                                {prevPositions.length > 0 && (
+                                                                    <div className="mt-8">
+                                                                        <div className="flex items-center gap-2 mb-3">
+                                                                            <FiRotateCcw className="text-blue-500" size={14} />
+                                                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Previous Position ({prevPositions.length})</h3>
+                                                                        </div>
+                                                                        <div className="pl-6 space-y-2">
+                                                                            {prevPositions.map((p, i) => (
+                                                                                <div key={i} className="bg-slate-50 border border-slate-100 rounded-lg p-4 flex gap-4">
+                                                                                    <span className="text-[12px] font-black text-slate-800">{i + 1}.</span>
+                                                                                    <div>
+                                                                                        <p className="text-[12px] font-black text-slate-800 uppercase">{p.position_name || '—'}</p>
+                                                                                        <p className="text-[10px] text-slate-500 uppercase mt-0.5">{p.office} | {p.start_date ? `${p.start_date} - ${p.end_date || 'Present'}` : ''}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                
+                                                            {/* DOCUMENTS */}
+                                                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                                                                <div className="flex items-center gap-3 mb-6">
+                                                                    <FiFileText className="text-[#08315F]" size={20} />
+                                                                    <h2 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Documents</h2>
+                                                                </div>
+                                                
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                     {[
                                                                         { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*' },
                                                                         { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },
-                                                                        { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan', accept: '.pdf' },
-                                                                        { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf' },
-                                                                        { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf' },
-                                                                        { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman', accept: '.pdf' },
-                                                                        { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Exec. Summary', accept: '.pdf' },
+                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Performance Rating', accept: '.pdf' },
                                                                     ].map(d => (
-                                                                        <div key={d.key} className={`flex flex-col items-center gap-2 p-4 rounded-[1.5rem] border-2 text-center ${profile[d.dbKey] ? 'bg-emerald-50 border-emerald-200' : 'bg-transparent border-slate-100'}`}>
-                                                                            <FiFileText size={20} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} />
-                                                                            <span className="text-[9px] font-black uppercase tracking-wider leading-tight" style={{ color: profile[d.dbKey] ? '#059669' : '#94a3b8' }}>{d.label}</span>
-                                                                            <span className={`text-[8px] font-black uppercase tracking-widest ${profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} mb-2`}>{profile[d.dbKey] ? 'Uploaded' : 'Missing'}</span>
+                                                                        <div key={d.key} className={`flex flex-col items-center gap-3 p-6 rounded-2xl border ${profile[d.dbKey] ? 'bg-emerald-50/30 border-emerald-200' : 'bg-transparent border-slate-200'}`}>
+                                                                            {d.key === 'photo' ? <FiCamera size={24} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} /> : <FiFileText size={24} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} />}
+                                                                            <div className="text-center">
+                                                                                <p className={`text-[12px] font-black uppercase tracking-wider ${profile[d.dbKey] ? 'text-emerald-700' : 'text-slate-500'}`}>{d.label}</p>
+                                                                                <p className={`text-[9px] font-bold uppercase tracking-widest mt-1 ${profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-400'}`}>{profile[d.dbKey] ? 'Uploaded' : 'Missing'}</p>
+                                                                            </div>
                                                                             
-                                                                            <div className="flex flex-col gap-2 w-full mt-auto">
-                                                                                <div className="relative group/upload w-full">
+                                                                            <div className="flex gap-2 w-full mt-4">
+                                                                                <div className="relative group/upload flex-1">
                                                                                     <input type="file" accept={d.accept} onChange={(e) => { const file = e.target.files[0]; if (file) handleFileUpload(file, d.key); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full" />
-                                                                                    <div className="flex items-center justify-center gap-1.5 border border-dashed rounded-lg px-2 py-1.5 text-[9px] font-bold transition-all bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F] w-full">
-                                                                                        <FiUpload size={10} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
-                                                                                        <span className="truncate">{uploadingDocs[d.key] ? 'Processing...' : 'Upload'}</span>
+                                                                                    <div className="flex items-center justify-center gap-1.5 border border-slate-200 rounded-lg px-2 py-2 text-[10px] font-bold transition-all bg-white text-blue-700 hover:border-blue-300 w-full">
+                                                                                        <FiUpload size={12} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
+                                                                                        <span>{uploadingDocs[d.key] ? '...' : 'Upload'}</span>
                                                                                     </div>
                                                                                 </div>
                                                                                 {profile[d.dbKey] && (
-                                                                                    <button onClick={() => handleViewDocument(profile[d.dbKey])} className="flex items-center justify-center gap-1.5 border border-slate-200 rounded-lg px-2 py-1.5 text-[9px] font-bold transition-all bg-white hover:border-[#08315F] text-[#08315F] w-full">
-                                                                                        <FiEye size={10} />
+                                                                                    <button onClick={() => handleViewDocument(profile[d.dbKey])} className="flex-1 flex items-center justify-center gap-1.5 border border-slate-200 rounded-lg px-2 py-2 text-[10px] font-bold transition-all bg-white hover:border-blue-300 text-blue-700">
+                                                                                        <FiEye size={12} />
                                                                                         <span>View</span>
                                                                                     </button>
                                                                                 )}
@@ -3126,188 +3339,152 @@ const OfficialProfiling = () => {
                                                                     ))}
                                                                 </div>
                                                             </div>
-
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Legal Disclosures</p>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                    <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case === 'Yes' ? 'Yes' : 'No'} />
-                                                                    <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                    <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                    <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* ── Career Progression (Summary Tab) ── */}
-                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
-                                                            <div className="flex items-center gap-3 mb-8">
-                                                                <div className="w-10 h-10 bg-[#F4F8FB] text-[#075985] rounded-2xl flex items-center justify-center">
-                                                                    <FiClock size={20} />
-                                                                </div>
-                                                                <div>
-                                                                    <h3 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
-                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Professional Journey</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="space-y-6 relative">
-                                                                <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-100"></div>
-                                                                {historyLoading ? (
-                                                                    <div className="py-12 text-center">
-                                                                        <div className="w-6 h-6 border-2 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+                                                
+                                                            {/* LEGAL DISCLOSURES */}
+                                                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                                                                <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => {
+                                                                    // Let's implement an inline toggle state for Legal Disclosures
+                                                                    const el = document.getElementById('legal-collapse');
+                                                                    if (el) {
+                                                                        el.classList.toggle('hidden');
+                                                                        document.getElementById('legal-chevron').classList.toggle('rotate-180');
+                                                                    }
+                                                                }}>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <FiShield className="text-blue-600" size={20} />
+                                                                        <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Legal Disclosures</h2>
                                                                     </div>
-                                                                ) : history.length === 0 ? (
-                                                                    <div className="py-12 text-center bg-transparent rounded-3xl border border-dashed border-slate-200">
-                                                                        <FiClock className="mx-auto text-slate-200 mb-2" size={24} />
-                                                                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Initial Entry Record</p>
-                                                                    </div>
-                                                                ) : (
-                                                                    history.map((item, idx) => (
-                                                                        <div key={idx} className="flex gap-6 relative z-10">
-                                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0 ${idx === 0 ? 'bg-[#08315F] text-white shadow-blue-500/30' : 'bg-slate-200 text-slate-500'}`}>
-                                                                                {idx === 0 ? <FiAward size={14} /> : <FiActivity size={14} />}
-                                                                            </div>
-                                                                            <div className="flex-1 pt-1">
-                                                                                <div className="flex justify-between items-start">
-                                                                                    <h4 className="text-[11px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
-                                                                                    <span className="text-[8px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
-                                                                                </div>
-                                                                                <p className="text-[10px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
-                                                                                {item.previous_incumbent && (
-                                                                                    <p className="text-[9px] font-bold text-slate-400 mt-1 flex items-center gap-1">
-                                                                                        <FiChevronLeft size={10} className="rotate-180" />
-                                                                                        Prev. Incumbent: <span className="text-slate-600">{item.previous_incumbent}</span>
-                                                                                    </p>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))
-                                                                )}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* ── Masterlist Status (Verified Officials only) ── */}
-                                                        {dataSource === 'masterlist' && (
-                                                            <div className="bg-gradient-to-br from-[#0038A8] to-[#002878] rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden">
-                                                                <FiShield className="text-white/20 absolute -top-4 -right-4 rotate-12" size={80} />
-                                                                <div className="relative z-10">
-                                                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 opacity-60">Masterlist Status</h4>
-                                                                    <p className="text-xl font-black italic uppercase leading-tight tracking-tighter">Verified Official</p>
-                                                                    <p className="text-[10px] font-bold mt-4 opacity-80 leading-relaxed">This record is synchronized with the Central Office Masterlist. Any changes will be logged to the update ledger for audit transparency.</p>
+                                                                    <FiChevronDown id="legal-chevron" className="text-slate-400 transition-transform" size={20} />
+                                                                </div>
+                                                                
+                                                                <div id="legal-collapse" className="hidden border-t border-slate-100 pt-6 mt-4">
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                                                                                                    <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case === 'Yes' ? 'Yes' : 'No'} />
+                                                                                                                    <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                                                                    <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                                                                    <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                                                                </div>
+                                                                    {/* Actually, the image just shows "LEGAL DISCLOSURES" in a collapsed state. I will put a placeholder or basic view here, or append the Data Privacy form */}
+                                                                    {/* I'll use the existing Data Privacy block after this file rewrite */}
                                                                 </div>
                                                             </div>
-                                                        )}
-
-                                                        {/* ── Data Privacy & Certification ── */}
-                                                        <div className="bg-white rounded-[2.5rem] border-2 border-[#0038A8]/20 shadow-sm overflow-hidden">
-
-                                                            {/* Header */}
-                                                            <div className="bg-[#08315F] px-8 py-6 flex items-center gap-4">
-                                                                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
-                                                                    <FiShield size={18} className="text-white" />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-white font-black text-sm uppercase tracking-widest">Data Privacy Notice & Certification</p>
-                                                                    <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest mt-0.5">Republic Act No. 10173 — Data Privacy Act of 2012</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="p-8 space-y-6">
-                                                                {/* DepEd DPA Notice */}
-                                                                <div className="bg-transparent rounded-[2rem] p-6 text-[11px] font-bold text-slate-600 leading-relaxed border border-slate-100">
-                                                                    <p>Pursuant to <span className="text-[#08315F] font-black">Republic Act No. 10173</span> or <span className="text-[#08315F] font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
-                                                                </div>
-
-                                                                {/* Certification Checkboxes */}
-                                                                <div className="space-y-4">
-                                                                    <button
-                                                                        onClick={() => setDpaConsent(v => !v)}
-                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-[#F4F8FB] border-[#0038A8]' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
-                                                                    >
-                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-[#08315F] border-[#0038A8]' : 'border-slate-300 bg-white'}`}>
-                                                                            {dpaConsent && <FiCheckCircle size={14} className="text-white" />}
-                                                                        </div>
-                                                                        <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
-                                                                            I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-[#08315F] font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
-                                                                        </p>
-                                                                    </button>
-
-                                                                    <button
-                                                                        onClick={() => setTruthConsent(v => !v)}
-                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
-                                                                    >
-                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${truthConsent ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 bg-white'}`}>
-                                                                            {truthConsent && <FiCheckCircle size={14} className="text-white" />}
-                                                                        </div>
-                                                                        <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
-                                                                            I hereby <span className="text-emerald-700 font-black">certify under oath</span> that all information I have provided in this profile is true, correct, and complete to the best of my knowledge. I understand that any false statement or misrepresentation shall subject me to the penalties prescribed under applicable laws and civil service rules.
-                                                                        </p>
-                                                                    </button>
-                                                                </div>
-
-                                                                {/* Action Buttons */}
-                                                                {!certified ? (
-                                                                    <div className="space-y-3 pt-2 w-full">
-                                                                        <div className="flex flex-col sm:flex-row gap-3">
-                                                                            {dataSource === 'masterlist' ? (
-                                                                                <button
-                                                                                    onClick={() => handleCertify(false)}
-                                                                                    disabled={!dpaConsent || !truthConsent || certifying}
-                                                                                    className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                                                                >
-                                                                                    {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiCheckCircle size={16} />}
-                                                                                    {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
-                                                                                </button>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <button
-                                                                                        onClick={() => handleCertify(false)}
-                                                                                        disabled={!dpaConsent || !truthConsent || certifying || applicationStatus === 'applied'}
-                                                                                        className="flex-1 py-5 bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                                                                    >
-                                                                                        {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
-                                                                                        Save Consent Only
-                                                                                    </button>
-                                                                                    {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
-                                                                                        <button
-                                                                                            onClick={targetVacancyId ? handleSubmitApplication : () => setTab('summary')}
-                                                                                            disabled={!dpaConsent || !truthConsent || saving}
-                                                                                            className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
-                                                                                        >
-                                                                                            {saving ? <FiLoader className="animate-spin" size={16} /> : <FiArrowRight size={16} />}
-                                                                                            {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
-                                                                                        </button>
-                                                                                    )}
-                                                                                    {applicationStatus === 'applied' && (
-                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-amber-50 border-2 border-amber-200 rounded-full text-amber-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                            <FiClock size={14} /> Applied (Pending Review)
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {applicationStatus === 'disapproved' && (
-                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-rose-50 border-2 border-rose-200 rounded-full text-rose-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                            <FiXCircle size={14} /> Disapproved
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {applicationStatus === 'approved' && (
-                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-emerald-50 border-2 border-emerald-200 rounded-full text-emerald-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                            <FiCheckCircle size={14} /> Approved
-                                                                                        </div>
-                                                                                    )}
-                                                                                </>
-                                                                            )}
-                                                                        </div>
-                                                                        {(!dpaConsent || !truthConsent) && (
-                                                                            <p className="text-[9px] font-bold text-slate-400 text-center mt-2 w-full">Please check both declarations above to proceed.</p>
-                                                                        )}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="flex items-center justify-center gap-4 py-6 bg-emerald-50 rounded-[2rem] border-2 border-emerald-200">
-                                                                        <FiCheckCircle size={24} className="text-emerald-500" />
-                                                                        <div>
-                                                                            <p className="font-black text-emerald-700 text-sm uppercase tracking-wider">Certified Successfully</p>
-                                                                            <p className="text-[10px] font-bold text-emerald-500 mt-0.5">Your consent and certification have been recorded.</p>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
+                                                
+                                                
+                                                            {/* DATA PRIVACY & CERTIFICATION */}
+                                                            <div className="mt-8">
+                                                                {/* ── Data Privacy & Certification ── */}
+                                                                                                                        <div className="bg-white rounded-[2.5rem] border-2 border-[#0038A8]/20 shadow-sm overflow-hidden">
+                                                                
+                                                                                                                            {/* Header */}
+                                                                                                                            <div className="bg-[#08315F] px-8 py-6 flex items-center gap-4">
+                                                                                                                                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
+                                                                                                                                    <FiShield size={18} className="text-white" />
+                                                                                                                                </div>
+                                                                                                                                <div>
+                                                                                                                                    <p className="text-white font-black text-sm uppercase tracking-widest">Data Privacy Notice & Certification</p>
+                                                                                                                                    <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest mt-0.5">Republic Act No. 10173 — Data Privacy Act of 2012</p>
+                                                                                                                                </div>
+                                                                                                                            </div>
+                                                                
+                                                                                                                            <div className="p-8 space-y-6">
+                                                                                                                                {/* DepEd DPA Notice */}
+                                                                                                                                <div className="bg-transparent rounded-[2rem] p-6 text-[11px] font-bold text-slate-600 leading-relaxed border border-slate-100">
+                                                                                                                                    <p>Pursuant to <span className="text-[#08315F] font-black">Republic Act No. 10173</span> or <span className="text-[#08315F] font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
+                                                                                                                                </div>
+                                                                
+                                                                                                                                {/* Certification Checkboxes */}
+                                                                                                                                <div className="space-y-4">
+                                                                                                                                    <button
+                                                                                                                                        onClick={() => setDpaConsent(v => !v)}
+                                                                                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-[#F4F8FB] border-[#0038A8]' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
+                                                                                                                                    >
+                                                                                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-[#08315F] border-[#0038A8]' : 'border-slate-300 bg-white'}`}>
+                                                                                                                                            {dpaConsent && <FiCheckCircle size={14} className="text-white" />}
+                                                                                                                                        </div>
+                                                                                                                                        <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
+                                                                                                                                            I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-[#08315F] font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
+                                                                                                                                        </p>
+                                                                                                                                    </button>
+                                                                
+                                                                                                                                    <button
+                                                                                                                                        onClick={() => setTruthConsent(v => !v)}
+                                                                                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
+                                                                                                                                    >
+                                                                                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${truthConsent ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 bg-white'}`}>
+                                                                                                                                            {truthConsent && <FiCheckCircle size={14} className="text-white" />}
+                                                                                                                                        </div>
+                                                                                                                                        <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
+                                                                                                                                            I hereby <span className="text-emerald-700 font-black">certify under oath</span> that all information I have provided in this profile is true, correct, and complete to the best of my knowledge. I understand that any false statement or misrepresentation shall subject me to the penalties prescribed under applicable laws and civil service rules.
+                                                                                                                                        </p>
+                                                                                                                                    </button>
+                                                                                                                                </div>
+                                                                
+                                                                                                                                {/* Action Buttons */}
+                                                                                                                                {!certified ? (
+                                                                                                                                    <div className="space-y-3 pt-2 w-full">
+                                                                                                                                        <div className="flex flex-col sm:flex-row gap-3">
+                                                                                                                                            {dataSource === 'masterlist' ? (
+                                                                                                                                                <button
+                                                                                                                                                    onClick={() => handleCertify(false)}
+                                                                                                                                                    disabled={!dpaConsent || !truthConsent || certifying}
+                                                                                                                                                    className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                                                                                                                >
+                                                                                                                                                    {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiCheckCircle size={16} />}
+                                                                                                                                                    {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
+                                                                                                                                                </button>
+                                                                                                                                            ) : (
+                                                                                                                                                <>
+                                                                                                                                                    <button
+                                                                                                                                                        onClick={() => handleCertify(false)}
+                                                                                                                                                        disabled={!dpaConsent || !truthConsent || certifying || applicationStatus === 'applied'}
+                                                                                                                                                        className="flex-1 py-5 bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                                                                                                                    >
+                                                                                                                                                        {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
+                                                                                                                                                        Save Consent Only
+                                                                                                                                                    </button>
+                                                                                                                                                    {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
+                                                                                                                                                        <button
+                                                                                                                                                            onClick={targetVacancyId ? handleSubmitApplication : () => setTab('summary')}
+                                                                                                                                                            disabled={!dpaConsent || !truthConsent || saving}
+                                                                                                                                                            className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
+                                                                                                                                                        >
+                                                                                                                                                            {saving ? <FiLoader className="animate-spin" size={16} /> : <FiArrowRight size={16} />}
+                                                                                                                                                            {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
+                                                                                                                                                        </button>
+                                                                                                                                                    )}
+                                                                                                                                                    {applicationStatus === 'applied' && (
+                                                                                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-amber-50 border-2 border-amber-200 rounded-full text-amber-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                                                                                            <FiClock size={14} /> Applied (Pending Review)
+                                                                                                                                                        </div>
+                                                                                                                                                    )}
+                                                                                                                                                    {applicationStatus === 'disapproved' && (
+                                                                                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-rose-50 border-2 border-rose-200 rounded-full text-rose-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                                                                                            <FiXCircle size={14} /> Disapproved
+                                                                                                                                                        </div>
+                                                                                                                                                    )}
+                                                                                                                                                    {applicationStatus === 'approved' && (
+                                                                                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-emerald-50 border-2 border-emerald-200 rounded-full text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                                                                                            <FiCheckCircle size={14} /> Approved
+                                                                                                                                                        </div>
+                                                                                                                                                    )}
+                                                                                                                                                </>
+                                                                                                                                            )}
+                                                                                                                                        </div>
+                                                                                                                                        {(!dpaConsent || !truthConsent) && (
+                                                                                                                                            <p className="text-[9px] font-bold text-slate-400 text-center mt-2 w-full">Please check both declarations above to proceed.</p>
+                                                                                                                                        )}
+                                                                                                                                    </div>
+                                                                                                                                ) : (
+                                                                                                                                    <div className="flex items-center justify-center gap-4 py-6 bg-emerald-50 rounded-[2rem] border-2 border-emerald-200">
+                                                                                                                                        <FiCheckCircle size={24} className="text-emerald-500" />
+                                                                                                                                        <div>
+                                                                                                                                            <p className="font-black text-emerald-700 text-sm uppercase tracking-wider">Certified Successfully</p>
+                                                                                                                                            <p className="text-[10px] font-bold text-emerald-500 mt-0.5">Your consent and certification have been recorded.</p>
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                )}
+                                                                                                                            </div>
+                                                                                                                        </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3362,15 +3539,7 @@ const OfficialProfiling = () => {
                                     <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database
                                 </span>
                                 <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => {
-                                            const emailParam = searchParams.get('email');
-                                            navigate(`/all-vacancies${emailParam ? `?email=${encodeURIComponent(emailParam)}` : ''}`);
-                                        }}
-                                        className="px-6 py-3 bg-blue-50 hover:bg-blue-100 text-[#0038A8] font-black text-[10px] uppercase tracking-widest rounded-lg shadow-sm hover:shadow-md transition-all duration-300 active:scale-95 flex items-center gap-2 border border-blue-200"
-                                    >
-                                        <FiBriefcase size={14} /> View All Vacancies
-                                    </button>
+
                                     <button
                                         onClick={handleSave}
                                         disabled={saving}

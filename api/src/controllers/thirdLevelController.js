@@ -439,8 +439,7 @@ export const updateProfile = async (req, res) => {
       'strand', 'division', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date', 'age',
-      'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'temporary_address', 'highest_education', 'specific_degree', 'education_program', 'education_year_graduated',
-      'bachelor_degree', 'bachelor_year', 'master_degree', 'master_year', 'doctorate_degree', 'doctorate_year',
+      'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'temporary_address', 'education_degrees',
       'relevant_trainings', 'notable_achievements', 'notable_achievements_year', 'eligibilities', 'individual_accomplishments', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period', 'performance_rating_3', 'performance_rating_3_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
@@ -452,7 +451,7 @@ export const updateProfile = async (req, res) => {
       'other_courses'
     ];
 
-    const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'individual_accomplishments', 'eligibilities', 'other_courses']);
+    const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'individual_accomplishments', 'eligibilities', 'other_courses', 'education_degrees']);
     const updates = [];
     const values = [];
 
@@ -502,6 +501,16 @@ export const updateProfile = async (req, res) => {
           val = val.map(p => ({
             ...p,
             position_name: p.position_name ? p.position_name.toUpperCase() : null
+          }));
+        }
+
+        if (f === 'education_degrees' && Array.isArray(val)) {
+          val = val.map(ed => ({
+            ...ed,
+            highest_education: ed.highest_education ? ed.highest_education.toUpperCase() : null,
+            specific_degree: ed.specific_degree ? ed.specific_degree.toUpperCase() : null,
+            education_program: ed.education_program ? ed.education_program.toUpperCase() : null,
+            education_year_graduated: ed.education_year_graduated ? ed.education_year_graduated.toUpperCase() : null
           }));
         }
 
