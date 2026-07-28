@@ -785,6 +785,70 @@ export const processApplication = async (req, res) => {
   }
 };
 
+export const processRegistration = async (req, res) => {
+  const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office'];
+  if (!adminRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { TLOid, action } = req.body;
+  if (!TLOid || !action) return res.status(400).json({ error: 'TLOid and action are required' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    if (action === 'reject') {
+      await client.query(`
+        UPDATE third_level_official_masterlist 
+        SET status = 'Rejected', updated_at = NOW() 
+        WHERE "TLOid" = $1 AND status = 'For Approval'
+      `, [TLOid]);
+      
+      const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+      if (mlRes.rows.length > 0) {
+        await client.query(`
+          UPDATE tlo_users SET registration_status = 'Rejected' WHERE LOWER(email) = $1
+        `, [mlRes.rows[0].email.toLowerCase()]);
+      }
+    } else if (action === 'approve') {
+      await client.query(`
+        UPDATE third_level_official_masterlist 
+        SET status = 'Active', updated_at = NOW() 
+        WHERE "TLOid" = $1 AND status = 'For Approval'
+      `, [TLOid]);
+      
+      const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+      if (mlRes.rows.length > 0) {
+        await client.query(`
+          UPDATE tlo_users SET registration_status = 'Approved' WHERE LOWER(email) = $1
+        `, [mlRes.rows[0].email.toLowerCase()]);
+      }
+    } else if (action === 'retrieve') {
+      await client.query(`
+        UPDATE third_level_official_masterlist 
+        SET status = 'For Approval', updated_at = NOW() 
+        WHERE "TLOid" = $1 AND status = 'Rejected'
+      `, [TLOid]);
+      
+      const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+      if (mlRes.rows.length > 0) {
+        await client.query(`
+          UPDATE tlo_users SET registration_status = 'For Approval' WHERE LOWER(email) = $1
+        `, [mlRes.rows[0].email.toLowerCase()]);
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+};
+
 const executeReassignment = async (client, official, effTs, justification, assignee_TLOid, target_TLOid) => {
   const TLOid = official.TLOid;
   if (assignee_TLOid) {
@@ -1031,6 +1095,8 @@ export const getOfficials = async (req, res) => {
       params.push(filterStatus);
       conditions.push(`status = $${params.length}`);
     }
+  } else {
+    conditions.push(`status != 'For Approval' AND status != 'Rejected'`);
   }
 
   let filterStrand = Array.isArray(strand) ? strand[strand.length - 1] : strand;
@@ -1200,6 +1266,7 @@ export const getKpiSummary = async (req, res) => {
             ORDER BY m."TLOid" ASC
           ) as rn
         FROM third_level_official_masterlist m
+        WHERE m.status != 'For Approval' AND m.status != 'Rejected'
       )
       SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, region, division, designation, effectivity_date, date_of_birth, created_at, updated_at, "TLOid", vacate_reason, photo_binary_id, pds_binary_id, contact_details, pending_admin_case
       FROM RankedOfficials 

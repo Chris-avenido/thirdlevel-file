@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight, FiChevronDown,
@@ -148,6 +148,7 @@ const THIRD_LEVEL_POSITIONS = [
 
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, logout, token } = useAuth();
 
     // --- SEARCHABLE SELECT COMPONENT ---
@@ -245,11 +246,61 @@ const OfficialsRegistry = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddingPersonnel, setIsAddingPersonnel] = useState(false);
-    const [statusTab, setStatusTab] = useState('All');
+    
+    const [statusTab, setStatusTab] = useState(() => {
+        const params = new URLSearchParams(location.search);
+        return params.get('status') || 'All';
+    });
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const statusParam = params.get('status');
+        if (statusParam) {
+            setStatusTab(statusParam);
+        } else {
+            setStatusTab('All');
+        }
+    }, [location.search]);
+
     const [activeTab, setActiveTab] = useState('All');
     const [levelFilter, setLevelFilter] = useState('All');
     const [regionFilter, setRegionFilter] = useState('All');
     const [strandFilter, setStrandFilter] = useState('All');
+    
+    const handleRegistrationAction = async (TLOid, action) => {
+        const result = await Swal.fire({
+            title: `Confirm ${action}`,
+            text: `Are you sure you want to ${action} this registration?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#08315F',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Yes, proceed!'
+        });
+        
+        if (!result.isConfirmed) return;
+
+        try {
+            const res = await fetch(apiUrl('/api/third-level/process-registration'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ TLOid, action })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire('Success', `Registration ${action}d successfully`, 'success');
+                fetchOfficials();
+            } else {
+                Swal.fire('Error', data.error || 'Failed to process registration', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'An error occurred', 'error');
+        }
+    };
     const [officeFilter, setOfficeFilter] = useState('All');
     const [positionFilter, setPositionFilter] = useState('All');
     const [designationFilter, setDesignationFilter] = useState('All');
@@ -1130,7 +1181,17 @@ const OfficialsRegistry = () => {
 
 
     const handleProcessApplication = async (app_TLOid, action, denial_reason = '') => {
-        if (!window.confirm(`Are you sure you want to ${action} this application?`)) return;
+        const result = await Swal.fire({
+            title: `Confirm ${action}`,
+            text: `Are you sure you want to ${action} this application?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#08315F',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Yes, proceed!'
+        });
+        
+        if (!result.isConfirmed) return;
 
         setProcessingId(app_TLOid);
         try {
@@ -1347,8 +1408,27 @@ const OfficialsRegistry = () => {
                             </div>
                         </div>
 
+                        {/* APPROVAL / REJECTED TABS */}
+                        {(statusTab === 'For Approval' || statusTab === 'Rejected') && (
+                            <div className="flex items-center gap-4 mb-6">
+                                <button
+                                    onClick={() => navigate('/officials-registry?status=For%20Approval')}
+                                    className={`px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${statusTab === 'For Approval' ? 'bg-[#08315F] text-white shadow-md' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    Pending Approvals
+                                </button>
+                                <button
+                                    onClick={() => navigate('/officials-registry?status=Rejected')}
+                                    className={`px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${statusTab === 'Rejected' ? 'bg-rose-600 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}
+                                >
+                                    Rejected
+                                </button>
+                            </div>
+                        )}
+
                         {/* STATS CARDS */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-8 w-full">
+                        {statusTab !== 'For Approval' && statusTab !== 'Rejected' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-8 w-full">
                             {/* Card 1: Third Level Officials */}
                             <div
                                 onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
@@ -1369,6 +1449,7 @@ const OfficialsRegistry = () => {
                                 <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
                         </div>
+                        )}
 
                         {/* MAIN CONTENT AREA */}
 
@@ -1502,12 +1583,27 @@ const OfficialsRegistry = () => {
                                                             <StatusBadge status={item.status} />
 
                                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-slate-200 pointer-events-none group-hover:pointer-events-auto">
-                                                                {item.status !== 'Inactive' && user?.role === 'Central Office' && (
+                                                                {item.status === 'For Approval' && user?.role === 'Central Office' && (
+                                                                    <>
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} title="Approve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm shrink-0">
+                                                                            <FiCheckCircle size={12} />
+                                                                        </button>
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} title="Reject" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
+                                                                            <FiX size={12} />
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                {item.status === 'Rejected' && user?.role === 'Central Office' && (
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} title="Retrieve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-sky-50 text-sky-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-sky-500 hover:text-white transition-all border border-sky-100 shadow-sm shrink-0">
+                                                                        <FiRefreshCw size={12} />
+                                                                    </button>
+                                                                )}
+                                                                {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
                                                                     <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
                                                                         <FiLayers size={12} />
                                                                     </button>
                                                                 )}
-                                                                {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && user?.role === 'Central Office' && (
+                                                                {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
                                                                     <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
                                                                         <FiTrash2 size={12} />
                                                                     </button>
@@ -1559,13 +1655,30 @@ const OfficialsRegistry = () => {
                                                         </div>
                                                     </div>
 
-                                                    {item.status !== 'Inactive' && user?.role === 'Central Office' && (
+                                                    {item.status === 'For Approval' && user?.role === 'Central Office' && (
                                                         <div className="flex items-center gap-2 mt-1">
-                                                            <button onClick={() => openActionModal(item, 'reassign')} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-500 hover:text-white transition-all">
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all">
+                                                                <FiCheckCircle size={12} /> Approve
+                                                            </button>
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                                                                <FiX size={12} /> Reject
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {item.status === 'Rejected' && user?.role === 'Central Office' && (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-sky-100 hover:bg-sky-500 hover:text-white transition-all">
+                                                                <FiRefreshCw size={12} /> Retrieve
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'reassign'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-500 hover:text-white transition-all">
                                                                 <FiLayers size={12} /> Reassign
                                                             </button>
                                                             {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
-                                                                <button onClick={() => openActionModal(item, 'vacate')} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                                                                <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'vacate'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
                                                                     <FiTrash2 size={12} /> Vacate
                                                                 </button>
                                                             )}
@@ -1677,13 +1790,28 @@ const OfficialsRegistry = () => {
 
                                                 <div className="mt-4 pt-3 border-t border-slate-50 flex flex-col gap-3 relative z-20" onClick={e => e.stopPropagation()}>
                                                     <div className="flex flex-wrap justify-center gap-1.5">
-                                                        {item.status !== 'Inactive' && user?.role === 'Central Office' && (
-                                                            <button onClick={() => openActionModal(item, 'reassign')} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
+                                                        {item.status === 'For Approval' && user?.role === 'Central Office' && (
+                                                            <>
+                                                                <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
+                                                                    <FiCheckCircle size={10} /> Approve
+                                                                </button>
+                                                                <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                                    <FiX size={10} /> Reject
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {item.status === 'Rejected' && user?.role === 'Central Office' && (
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} className="flex items-center gap-1 px-2 py-1.5 bg-sky-50 text-sky-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-sky-500 hover:text-white transition-all border border-sky-100 shadow-sm">
+                                                                <FiRefreshCw size={10} /> Retrieve
+                                                            </button>
+                                                        )}
+                                                        {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
+                                                            <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'reassign'); }} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
                                                                 <FiLayers size={10} /> Reassign
                                                             </button>
                                                         )}
-                                                        {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && user?.role === 'Central Office' && (
-                                                            <button onClick={() => openActionModal(item, 'vacate')} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
+                                                        {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
+                                                            <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'vacate'); }} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
                                                                 <FiTrash2 size={10} /> Vacate
                                                             </button>
                                                         )}

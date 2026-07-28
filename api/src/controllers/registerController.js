@@ -151,11 +151,17 @@ export const checkMasterlistEmail = async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
-    const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [email.toLowerCase().trim()]);
+    const normalizedEmail = email.toLowerCase().trim();
+    const userCheck = await pool.query('SELECT uid FROM tlo_users WHERE LOWER(email) = $1', [normalizedEmail]);
+    if (userCheck.rows.length > 0) {
+      return res.json({ alreadyRegistered: true });
+    }
+
+    const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
     if (check.rows.length > 0) {
-      res.json({ inMasterlist: true, official: check.rows[0] });
+      res.json({ alreadyRegistered: false, inMasterlist: true, official: check.rows[0] });
     } else {
-      res.json({ inMasterlist: false });
+      res.json({ alreadyRegistered: false, inMasterlist: false });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -197,12 +203,23 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ error: 'This email is already registered in InsightEd. Please Login instead.' });
     }
 
+    let userRegistrationStatus = 'Approved';
     if (assignedRole === 'TLO Applicant') {
       const mlCheck = await client.query('SELECT "TLOid" FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
       if (mlCheck.rows.length === 0) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'This email is not registered in the Third Level Masterlist. Please contact the Personnel Division for support.' });
+        userRegistrationStatus = 'For Approval';
+        const mlUidRes = await client.query(`
+          SELECT COALESCE(MAX(CAST(SUBSTRING("TLOid" FROM 5) AS INTEGER)), 0) AS max_num
+          FROM third_level_official_masterlist WHERE "TLOid" ~ '^TLO-[0-9]{4}$'
+        `);
+        const nextNum = parseInt(mlUidRes.rows[0].max_num) + 1;
+        const newTloId = `TLO-${String(nextNum).padStart(4, '0')}`;
+
+        await client.query(`
+          INSERT INTO third_level_official_masterlist (
+              "TLOid", first_name, last_name, email, position_title, status, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, '', 'For Approval', NOW(), NOW())
+        `, [newTloId, firstName, lastName, normalizedEmail]);
       }
     }
 
@@ -217,8 +234,8 @@ export const registerUser = async (req, res) => {
     await client.query(
       `INSERT INTO tlo_users (
         uid, email, password_hash, hash_version, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at, passcode
-      ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, $8, $9, 'Approved', NOW(), $10)`,
-      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division, passcode || null]
+      ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, $8, $9, $11, NOW(), $10)`,
+      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division, passcode || null, userRegistrationStatus]
     );
 
     const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
@@ -245,6 +262,29 @@ export const registerUser = async (req, res) => {
       token,
       user: { uid, email: normalizedEmail, role: assignedRole, first_name: firstName, last_name: lastName, assigned_region, assigned_division }
     });
+
+    // Send email notification to officials if registration is pending
+    if (userRegistrationStatus === 'For Approval') {
+      const tloEmail = process.env.TLO_EMAIL;
+      if (tloEmail) {
+        transporter.sendMail({
+          from: `"InsightEd System" <${process.env.EMAIL_USER}>`,
+          to: tloEmail,
+          subject: 'New Official Registration Pending Approval',
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; color: #333;">
+              <h2 style="color: #08315F;">New Registration Pending Approval</h2>
+              <p>A new official has registered and requires Central Office approval:</p>
+              <ul>
+                <li><strong>Name:</strong> ${firstName} ${lastName}</li>
+                <li><strong>Email:</strong> ${normalizedEmail}</li>
+              </ul>
+              <p>Please log in to the dashboard to review this request.</p>
+            </div>
+          `
+        }).catch(err => console.error('[Register] Failed to send notification email:', err.message));
+      }
+    }
   } catch (err) {
     if (client) await client.query('ROLLBACK');
     console.error('[Register] Registration failed:', err.message);

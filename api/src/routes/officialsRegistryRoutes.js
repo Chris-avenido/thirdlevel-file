@@ -13,7 +13,8 @@ import {
   triggerCron,
   createUnassignedPersonnel,
   registerPersonnel,
-  getKpiSummary
+  getKpiSummary,
+  processRegistration
 } from '../controllers/thirdLevelController.js';
 import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
 import { getAllNotableAchievements, createNotableAchievement, updateNotableAchievement, deleteNotableAchievement } from '../controllers/notableAchievementsController.js';
@@ -35,6 +36,7 @@ router.get('/active-officials', authMiddleware, getActiveOfficials);
 router.get('/unassigned-personnel', authMiddleware, getUnassignedPersonnel);
 router.post('/add-unassigned-personnel', authMiddleware, createUnassignedPersonnel);
 router.post('/register-personnel', authMiddleware, registerPersonnel);
+router.post('/process-registration', authMiddleware, processRegistration);
 router.post('/admin-action', authMiddleware, adminAction);
 router.post('/bulk-process-directory', authMiddleware, bulkProcessDirectory);
 router.post('/bulk-process-achievements', authMiddleware, bulkProcessAchievements);

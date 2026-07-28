@@ -59,13 +59,20 @@ const Register = () => {
             return;
         }
 
+        if (!email.toLowerCase().endsWith('@deped.gov.ph')) {
+            setMasterlistCheckStatus('invalid_domain');
+            return;
+        }
+
         const checkMasterlist = async () => {
             setMasterlistCheckStatus('checking');
             try {
                 const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}`));
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.inMasterlist) {
+                    if (data.alreadyRegistered) {
+                        setMasterlistCheckStatus('already_registered');
+                    } else if (data.inMasterlist) {
                         setMasterlistCheckStatus('valid');
                     } else {
                         setMasterlistCheckStatus('invalid');
@@ -96,6 +103,14 @@ const Register = () => {
 
 
     const handleFinalStep = async () => {
+        if (!formData.email.toLowerCase().endsWith('@deped.gov.ph')) {
+            Swal.fire('Notice', 'Only @deped.gov.ph emails are allowed for registration.', 'warning');
+            return;
+        }
+        if (masterlistCheckStatus === 'already_registered') {
+            Swal.fire('Notice', 'This email is already registered. Please login instead.', 'warning');
+            return;
+        }
         setCurrentStep(3);
     };
 
@@ -249,8 +264,21 @@ const Register = () => {
                                             )}
                                         </div>
                                     {!isCO && masterlistCheckStatus === 'invalid' && (
+                                        <div className="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2">
+                                            <FiShield className="text-amber-500 shrink-0 mt-0.5" />
+                                            <p className="text-[10px] font-bold text-amber-600 leading-relaxed">
+                                                Email not found in Masterlist. You may proceed to register, but your account will be set to "For Approval" and requires Central Office review.
+                                            </p>
+                                        </div>
+                                    )}
+                                    {masterlistCheckStatus === 'invalid_domain' && (
                                         <p className="text-[10px] font-bold text-red-500 mt-1 ml-1">
-                                            This email is not registered in the Third Level Masterlist. Please contact the Personnel Division for support.
+                                            Only @deped.gov.ph emails are allowed for registration.
+                                        </p>
+                                    )}
+                                    {masterlistCheckStatus === 'already_registered' && (
+                                        <p className="text-[10px] font-bold text-red-500 mt-1 ml-1">
+                                            This email is already registered. Please sign in instead.
                                         </p>
                                     )}
                                 </div>
