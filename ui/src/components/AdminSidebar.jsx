@@ -103,16 +103,7 @@ const AdminSidebar = () => {
                         <FiCheckCircle size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Pending Approvals</span>
                     </button>
-                    {user?.role === 'Central Office' && (
-                        <button
-                            onClick={() => navigate('/notable-achievements')}
-                            title="Notable Achievements"
-                            className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/notable-achievements' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                        >
-                            <FiAward size={18} className="shrink-0" />
-                            <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Notable Achievements</span>
-                        </button>
-                    )}
+
                     <button
                         onClick={() => navigate('/settings')}
                         title="Account Settings"

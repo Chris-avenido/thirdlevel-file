@@ -1022,6 +1022,13 @@ const Home = () => {
                 >
                   <FiUserPlus />Register Third Level Personnel
                 </button>
+                <button
+                  className="action-btn primary"
+                  style={{ backgroundColor: '#075985', color: 'white' }}
+                  onClick={() => navigate('/notable-achievements')}
+                >
+                  <FiAward />Notable Achievements
+                </button>
 
                 <button className="action-btn">
                   <FiUploadCloud /> Bulk Upload Roster
