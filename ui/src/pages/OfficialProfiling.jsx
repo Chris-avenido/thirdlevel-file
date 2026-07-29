@@ -1171,6 +1171,26 @@ const OfficialProfiling = () => {
         window.open(apiUrl(`/api/binary/${binaryId}`), '_blank');
     };
 
+    const handleEditToggle = () => {
+        if (!isEditing) {
+            Swal.fire({
+                title: 'Edit Profile',
+                text: 'Are you sure you want to edit profile info?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#eab308',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, edit profile'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    setIsEditing(true);
+                }
+            });
+        } else {
+            setIsEditing(false);
+        }
+    };
+
     const handleDownloadDocument = async (binaryId, label) => {
         try {
             Swal.fire({ title: 'Downloading...', text: 'Please wait while we fetch the document.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -1393,8 +1413,8 @@ const OfficialProfiling = () => {
                                     <FiChevronLeft size={16} /> Back
                                 </button>
                                 {!isTlo && (
-                                    <button onClick={() => setIsEditing(!isEditing)} className="px-5 py-2 bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 font-bold rounded-full text-[10px] uppercase tracking-widest transition-all hidden sm:block border border-blue-500/30">
-                                        {isEditing ? "Edit" : "Read Only"}
+                                    <button onClick={handleEditToggle} className={`px-5 py-2 font-bold rounded-full text-[10px] uppercase tracking-widest transition-all hidden sm:block border ${!isEditing ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md' : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'}`}>
+                                        {isEditing ? "Cancel Edit" : "Edit Profile"}
                                     </button>
                                 )}
                             </div>
@@ -1404,8 +1424,8 @@ const OfficialProfiling = () => {
                         </div>
                         {!isTlo && (
                             <div className="sm:hidden flex items-center justify-end w-full mt-2">
-                                <button onClick={() => setIsEditing(!isEditing)} className="px-5 py-2 bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 font-bold rounded-full text-[10px] uppercase tracking-widest transition-all border border-blue-500/30">
-                                    {isEditing ? "Edit" : "Read Only"}
+                                <button onClick={handleEditToggle} className={`px-5 py-2 font-bold rounded-full text-[10px] uppercase tracking-widest transition-all border ${!isEditing ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md' : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'}`}>
+                                    {isEditing ? "Cancel Edit" : "Edit Profile"}
                                 </button>
                             </div>
                         )}
