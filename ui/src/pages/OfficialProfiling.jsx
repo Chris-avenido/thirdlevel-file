@@ -117,7 +117,7 @@ const PREVIOUS_POSITION_OPTIONS = [
     'Principal I'
 ];
 
-const SearchableSelect = ({ value, onChange, options, placeholder, className }) => {
+const SearchableSelect = ({ value, onChange, options, placeholder, className, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState(value || '');
     const containerRef = React.useRef(null);
@@ -149,7 +149,7 @@ const SearchableSelect = ({ value, onChange, options, placeholder, className }) 
 
     return (
         <div ref={containerRef} className="relative w-full">
-            <input
+            <input disabled={disabled}
                 type="text"
                 placeholder={placeholder}
                 value={search}
@@ -201,6 +201,8 @@ const OfficialProfiling = () => {
     const [uploadingDocs, setUploadingDocs] = useState({});
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saved, setSaved] = useState(false);
+    const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
+    const [isEditing, setIsEditing] = useState(isTlo);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [history, setHistory] = useState([]);
@@ -443,7 +445,7 @@ const OfficialProfiling = () => {
             ];
             eligRows.push([{ text: `CES: ${profile.ces_stage || 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.ces_conferment_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
             eligRows.push([{ text: `EMT: ${profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.emt_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
-            
+
             if (profile.eligibilities && profile.eligibilities.length > 0) {
                 profile.eligibilities.forEach(elig => {
                     const name = elig.eligibility || elig.title || 'Untitled';
@@ -469,7 +471,7 @@ const OfficialProfiling = () => {
     useEffect(() => {
         const filledCount = COMPLETENESS_FIELDS.filter(f => !!profile[f]).length;
         setCompleteness(Math.round((filledCount / COMPLETENESS_FIELDS.length) * 100));
-    }, [profile]);    
+    }, [profile]);
     useEffect(() => {
         if (completeness === 100 && profile.profiling_status !== 'profiling completed') {
             setP('profiling_status', 'profiling completed');
@@ -1379,13 +1381,27 @@ const OfficialProfiling = () => {
                     <div className="max-w-[1400px] mx-auto flex flex-col gap-6 relative z-10">
                         {/* Top Navigation Row */}
                         <div className="flex justify-between items-center w-full">
-                            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-300 hover:text-white font-bold text-[10px] uppercase tracking-wider transition-all">
-                                <FiChevronLeft size={16} /> Back
-                            </button>
+                            <div className="flex items-center gap-6">
+                                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-300 hover:text-white font-bold text-[10px] uppercase tracking-wider transition-all">
+                                    <FiChevronLeft size={16} /> Back
+                                </button>
+                                {!isTlo && (
+                                    <button onClick={() => setIsEditing(!isEditing)} className="px-5 py-2 bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 font-bold rounded-full text-[10px] uppercase tracking-widest transition-all hidden sm:block border border-blue-500/30">
+                                        {isEditing ? "Edit" : "Read Only"}
+                                    </button>
+                                )}
+                            </div>
                             <button onClick={logout} className="flex items-center gap-2 text-slate-300 hover:text-red-400 font-bold text-[10px] uppercase tracking-wider transition-all">
                                 <FiLock size={14} /> Sign Out
                             </button>
                         </div>
+                        {!isTlo && (
+                            <div className="sm:hidden flex items-center justify-end w-full mt-2">
+                                <button onClick={() => setIsEditing(!isEditing)} className="px-5 py-2 bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 font-bold rounded-full text-[10px] uppercase tracking-widest transition-all border border-blue-500/30">
+                                    {isEditing ? "Edit" : "Read Only"}
+                                </button>
+                            </div>
+                        )}
 
                         {/* Profile Info Row */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
@@ -1565,7 +1581,7 @@ const OfficialProfiling = () => {
                                                                     <div className="w-full lg:w-[150px] shrink-0">
                                                                         <Field label="CSC Format ID Picture">
                                                                             <div className="relative group/upload w-full aspect-[3.5/4.5] max-w-[150px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
-                                                                                <input
+                                                                                <input disabled={!isEditing}
                                                                                     type="file"
                                                                                     accept="image/*"
                                                                                     onChange={(e) => {
@@ -1597,14 +1613,14 @@ const OfficialProfiling = () => {
 
                                                                     <div className="flex-1 w-full space-y-4">
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                                                            <Field label="First Name"><input type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
-                                                                            <Field label="Last Name"><input type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
-                                                                            <Field label="Middle Name"><input type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
-                                                                            <Field label="Suffix (Type 'Not Applicable' if none)"><input type="text" value={profile.suffix} onChange={e => setP('suffix', e.target.value)} placeholder="e.g. Jr., III" className={inp} /></Field>
+                                                                            <Field label="First Name"><input disabled={!isEditing} type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="Last Name"><input disabled={!isEditing} type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="Middle Name"><input disabled={!isEditing} type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="Suffix (Type 'Not Applicable' if none)"><input disabled={!isEditing} type="text" value={profile.suffix} onChange={e => setP('suffix', e.target.value)} placeholder="e.g. Jr., III" className={inp} /></Field>
                                                                         </div>
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                                                                             <Field label="Gender">
-                                                                                <select value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
+                                                                                <select disabled={!isEditing} value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
                                                                                     <option value="">Select</option>
                                                                                     <option value="MALE">Male</option>
                                                                                     <option value="FEMALE">Female</option>
@@ -1612,7 +1628,7 @@ const OfficialProfiling = () => {
                                                                             </Field>
                                                                             <Field label="Date of Birth">
                                                                                 <div className="relative">
-                                                                                    <ModernDatePicker maxDate={new Date()} value={profile.date_of_birth} onChange={val => setProfile(p => ({ ...p, date_of_birth: val, age: computeAge(val) }))} className={inp} />
+                                                                                    <ModernDatePicker disabled={!isEditing} maxDate={new Date()} value={profile.date_of_birth} onChange={val => setProfile(p => ({ ...p, date_of_birth: val, age: computeAge(val) }))} className={inp} />
                                                                                 </div>
                                                                             </Field>
                                                                             <Field label="Age (auto-computed)">
@@ -1621,7 +1637,7 @@ const OfficialProfiling = () => {
                                                                                 </div>
                                                                             </Field>
                                                                             <Field label="Civil Status">
-                                                                                <select value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
+                                                                                <select disabled={!isEditing} value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
                                                                                     <option value="">Select</option>
                                                                                     {['SINGLE', 'MARRIED', 'WIDOWED', 'SEPARATED'].map(o => <option key={o} value={o}>{o.charAt(0) + o.slice(1).toLowerCase()}</option>)}
                                                                                 </select>
@@ -1635,34 +1651,34 @@ const OfficialProfiling = () => {
                                                                 <SectionLabel>Designation & Appointment</SectionLabel>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                                                                     <Field label="Unique Number">
-                                                                        <input type="text" value={TLOid || ''} disabled className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
+                                                                        <input disabled={!isEditing} type="text" value={TLOid || ''} className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
                                                                     </Field>
                                                                     <Field label="Employment Status">
-                                                                        <select value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
+                                                                        <select disabled={!isEditing} value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
                                                                             <option value="">Select Status</option>
                                                                             <option value="REGULAR">Regular</option>
                                                                             <option value="COTERMINOUS">Coterminous</option>
                                                                         </select>
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
-                                                                        <select value={isPositionOthers ? 'Others' : (profile.position_title?.toUpperCase() || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                        <select disabled={!isEditing} value={isPositionOthers ? 'Others' : (profile.position_title?.toUpperCase() || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                             <option value="">Select Position Title</option>
                                                                             {unifiedList.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
                                                                             <option value="Others">Others</option>
                                                                         </select>
                                                                         {isPositionOthers && (
-                                                                            <input type="text" value={profile.position_title === 'Others' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
+                                                                            <input disabled={!isEditing} type="text" value={profile.position_title === 'Others' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
                                                                         )}
                                                                     </Field>
                                                                     {profile.is_oic && (
                                                                         <Field label="Designation">
-                                                                            <select value={isDesignationOthers ? 'Others' : (profile.designation?.toUpperCase() || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                            <select disabled={!isEditing} value={isDesignationOthers ? 'Others' : (profile.designation?.toUpperCase() || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
                                                                                 <option value="">Select Designation</option>
                                                                                 {unifiedList.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
                                                                                 <option value="Others">Others</option>
                                                                             </select>
                                                                             {isDesignationOthers && (
-                                                                                <input type="text" value={profile.designation === 'Others' ? '' : profile.designation} onChange={e => setP('designation', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
+                                                                                <input disabled={!isEditing} type="text" value={profile.designation === 'Others' ? '' : profile.designation} onChange={e => setP('designation', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
                                                                             )}
                                                                         </Field>
                                                                     )}
@@ -1670,6 +1686,7 @@ const OfficialProfiling = () => {
                                                                         <div className="flex items-center gap-3 py-2 px-1">
                                                                             <button
                                                                                 type="button"
+                                                                                disabled={!isEditing}
                                                                                 onClick={() => {
                                                                                     const newOicStatus = !profile.is_oic;
                                                                                     setP('is_oic', newOicStatus);
@@ -1688,7 +1705,7 @@ const OfficialProfiling = () => {
                                                                     </Field>
                                                                     <Field label="Date of Present Position (Appointment Date)">
                                                                         <div className="relative">
-                                                                            <ModernDatePicker value={profile.appointment_date} onChange={val => setP('appointment_date', val)} className={inp} />
+                                                                            <ModernDatePicker disabled={!isEditing} value={profile.appointment_date} onChange={val => setP('appointment_date', val)} className={inp} />
 
                                                                         </div>
                                                                     </Field>
@@ -1699,15 +1716,15 @@ const OfficialProfiling = () => {
                                                                 <SectionLabel>Contact Details</SectionLabel>
                                                                 <div className="space-y-4">
                                                                     <Field label="Permanent Address">
-                                                                        <input type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
+                                                                        <input disabled={!isEditing} type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
                                                                     <Field label="Temporary Address">
-                                                                        <input type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
+                                                                        <input disabled={!isEditing} type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                                                        <Field label="Phone Number"><input type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
-                                                                        <Field label="Alternative Email 1"><input type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" className={inp} /></Field>
-                                                                        <Field label="Alternative Email 2"><input type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" className={inp} /></Field>
+                                                                        <Field label="Phone Number"><input disabled={!isEditing} type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
+                                                                        <Field label="Alternative Email 1"><input disabled={!isEditing} type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" className={inp} /></Field>
+                                                                        <Field label="Alternative Email 2"><input disabled={!isEditing} type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" className={inp} /></Field>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1721,7 +1738,7 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel color="#0038A8">Career Executive Service (CES)</SectionLabel>
                                                             <Field label="CES Eligibility / Rank Status">
-                                                                <select value={profile.ces_stage || ''} onChange={e => setP('ces_stage', e.target.value)} className={inp}>
+                                                                <select disabled={!isEditing} value={profile.ces_stage || ''} onChange={e => setP('ces_stage', e.target.value)} className={inp}>
                                                                     <option value="">Select Status</option>
                                                                     <option value="STAGE 1 (CES WRITTEN EXAMINATION)">Stage 1 (CES Written Examination)</option>
                                                                     <option value="STAGE 2 (ASSESSMENT CENTER)">Stage 2 (Assessment Center)</option>
@@ -1739,7 +1756,7 @@ const OfficialProfiling = () => {
                                                             </Field>
                                                             <Field label="Date of Conferment (if applicable)">
                                                                 <div className="relative">
-                                                                    <ModernDatePicker value={profile.ces_conferment_date} onChange={val => setP('ces_conferment_date', val)} className={inp} />
+                                                                    <ModernDatePicker disabled={!isEditing} value={profile.ces_conferment_date} onChange={val => setP('ces_conferment_date', val)} className={inp} />
 
                                                                 </div>
                                                             </Field>
@@ -1750,7 +1767,7 @@ const OfficialProfiling = () => {
                                                             <Field label="Are you an EMT Passer?">
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
                                                                     {[{ val: true, label: 'Yes' }, { val: false, label: 'No' }].map(opt => (
-                                                                        <button
+                                                                        <button disabled={!isEditing}
                                                                             key={String(opt.val)}
                                                                             onClick={() => setP('emt_passer', opt.val)}
                                                                             className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
@@ -1772,7 +1789,7 @@ const OfficialProfiling = () => {
                                                             {profile.emt_passer === true && (
                                                                 <Field label="Date passed EMT">
                                                                     <div className="relative">
-                                                                        <ModernDatePicker value={profile.emt_date} onChange={val => setP('emt_date', val)} className={inp} />
+                                                                        <ModernDatePicker disabled={!isEditing} value={profile.emt_date} onChange={val => setP('emt_date', val)} className={inp} />
 
                                                                     </div>
                                                                 </Field>
@@ -1782,12 +1799,12 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <div className="flex items-center justify-between">
                                                                 <SectionLabel>Other Civil Service Eligibility</SectionLabel>
-                                                                <button
+                                                                {isEditing && <button
                                                                     onClick={() => setProfile(p => ({ ...p, eligibilities: [...(p.eligibilities || []), { eligibility: '', date: '', rating: '', place_of_assignment: '' }] }))}
                                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0038A8] text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-[#0038A8] hover:text-white transition-all shadow-sm"
                                                                 >
                                                                     <FiPlus size={12} /> Add Eligibility
-                                                                </button>
+                                                                </button>}
                                                             </div>
 
                                                             {(!profile.eligibilities || profile.eligibilities.length === 0) ? (
@@ -1798,16 +1815,16 @@ const OfficialProfiling = () => {
                                                                 <div className="space-y-4">
                                                                     {profile.eligibilities.map((elig, idx) => (
                                                                         <div key={idx} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
-                                                                            <button
+                                                                            {isEditing && <button
                                                                                 onClick={() => setProfile(p => ({ ...p, eligibilities: p.eligibilities.filter((_, i) => i !== idx) }))}
                                                                                 className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
                                                                                 title="Remove"
                                                                             >
                                                                                 <FiTrash2 size={12} />
-                                                                            </button>
+                                                                            </button>}
                                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                                                 <Field label="Eligibility">
-                                                                                    <input
+                                                                                    <input disabled={!isEditing}
                                                                                         type="text"
                                                                                         value={elig.eligibility || elig.title || ''}
                                                                                         onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value.toUpperCase(), title: undefined } : x) }))}
@@ -1816,7 +1833,7 @@ const OfficialProfiling = () => {
                                                                                     />
                                                                                 </Field>
                                                                                 <Field label="Date of Examination / Conferment">
-                                                                                    <input
+                                                                                    <input disabled={!isEditing}
                                                                                         type="date"
                                                                                         value={elig.date || ''}
                                                                                         onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, date: e.target.value } : x) }))}
@@ -1824,7 +1841,7 @@ const OfficialProfiling = () => {
                                                                                     />
                                                                                 </Field>
                                                                                 <Field label="Rating">
-                                                                                    <input
+                                                                                    <input disabled={!isEditing}
                                                                                         type="text"
                                                                                         value={elig.rating || ''}
                                                                                         onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, rating: e.target.value } : x) }))}
@@ -1833,7 +1850,7 @@ const OfficialProfiling = () => {
                                                                                     />
                                                                                 </Field>
                                                                                 <Field label="Place of Examination / Conferment">
-                                                                                    <input
+                                                                                    <input disabled={!isEditing}
                                                                                         type="text"
                                                                                         value={elig.place_of_assignment || ''}
                                                                                         onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value.toUpperCase() } : x) }))}
@@ -1842,9 +1859,9 @@ const OfficialProfiling = () => {
                                                                                     />
                                                                                 </Field>
                                                                                 {elig.details && !elig.eligibility && (
-                                                                                     <div className="lg:col-span-2 mt-2">
-                                                                                         <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">Legacy Details: {elig.details}</p>
-                                                                                     </div>
+                                                                                    <div className="lg:col-span-2 mt-2">
+                                                                                        <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">Legacy Details: {elig.details}</p>
+                                                                                    </div>
                                                                                 )}
                                                                             </div>
                                                                         </div>
@@ -1939,124 +1956,124 @@ const OfficialProfiling = () => {
                                                                             const isPrevPosOthers = pos.position_name === 'Others' || (pos.position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === pos.position_name.toUpperCase()));
                                                                             return (
                                                                                 <>
-                                                                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm relative z-10">
-                                                                            <div className="flex flex-col gap-1.5 w-full">
-                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
-                                                                                <select 
-                                                                                    value={isPrevPosOthers ? 'Others' : (pos.position_name?.toUpperCase() || '')} 
-                                                                                    onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value } : x))}
-                                                                                    className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
-                                                                                >
-                                                                                    <option value="">Select Position</option>
-                                                                                    {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
-                                                                                    <option value="Others">Others</option>
-                                                                                </select>
-                                                                                {isPrevPosOthers && (
-                                                                                    <input 
-                                                                                        type="text" 
-                                                                                        value={pos.position_name === 'Others' ? '' : pos.position_name} 
-                                                                                        onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value.toUpperCase() || 'Others' } : x))}
-                                                                                        placeholder="Type the position you held" 
-                                                                                        className="bg-white border border-slate-200 focus:border-[#0038A8] rounded-xl px-3 py-2 text-xs font-semibold mt-2 w-full outline-none transition-all shadow-sm"
-                                                                                        autoFocus
-                                                                                    />
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="flex flex-col gap-1.5 w-full">
-                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Office / Division</span>
-                                                                                <input type="text" value={pos.office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, office: e.target.value } : x))} placeholder="Office" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all truncate min-w-0 h-[38px] shadow-sm" />
-                                                                            </div>
-                                                                            <div className="flex flex-col gap-1.5 w-full">
-                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">From Date</span>
-                                                                                <div className="relative">
-                                                                                    <ModernDatePicker value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex flex-col gap-1.5 w-full">
-                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
-                                                                                <div className="relative">
-                                                                                    <ModernDatePicker value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} minDate={pos.start_date ? new Date(pos.start_date) : undefined} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                    {pos.start_date && pos.end_date && new Date(pos.end_date) <= new Date(pos.start_date) && (
-                                                                                        <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex flex-col gap-1.5 w-full">
-                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">OIC Status</span>
-                                                                                <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: [...(x.oic_positions || []), { id: `tmp-oic-${Date.now()}`, oic_position_name: '', oic_office: '', oic_start_date: '', oic_end_date: '' }] } : x))} className="flex items-center justify-center gap-1 text-[9px] font-black uppercase py-2 px-1 rounded-xl transition-all h-[38px] bg-white border border-slate-200 text-slate-400 shadow-sm hover:border-[#FCD116] hover:text-[#FBBF24]">
-                                                                                    <FiPlus size={14} /> Add OIC
-                                                                                </button>
-                                                                            </div>
-                                                                            <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
-                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden md:invisible">Action</span>
-                                                                                <button onClick={() => handleRemovePosition(idx)} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
-                                                                            </div>
-                                                                        </motion.div>
-
-                                                                        {(pos.oic_positions || []).map((oic, oicIdx) => {
-                                                                            const isOicPosOthers = oic.oic_position_name === 'Others' || (oic.oic_position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === oic.oic_position_name.toUpperCase()));
-                                                                            return (
-                                                                            <motion.div key={oic.id || oicIdx} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative">
-                                                                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-white p-4 rounded-2xl border border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
-                                                                                    <div className="absolute -left-6 top-1/2 w-6 h-0.5 border-t-2 border-dashed border-[#FCD116]"></div>
-                                                                                    <div className="flex flex-col gap-1.5 w-full">
-                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Position</span>
-                                                                                        <select 
-                                                                                            value={isOicPosOthers ? 'Others' : (oic.oic_position_name?.toUpperCase() || '')} 
-                                                                                            onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value } : o) } : x))}
-                                                                                            className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
-                                                                                        >
-                                                                                            <option value="">Select OIC Position</option>
-                                                                                            {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
-                                                                                            <option value="Others">Others</option>
-                                                                                        </select>
-                                                                                        {isOicPosOthers && (
-                                                                                            <input 
-                                                                                                type="text" 
-                                                                                                value={oic.oic_position_name === 'Others' ? '' : oic.oic_position_name} 
-                                                                                                onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value.toUpperCase() || 'Others' } : o) } : x))}
-                                                                                                placeholder="Type the position you held" 
-                                                                                                className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] rounded-xl px-3 py-2 text-xs font-semibold mt-2 w-full outline-none transition-all shadow-sm"
-                                                                                                autoFocus
-                                                                                            />
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <div className="flex flex-col gap-1.5 w-full">
-                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Office / Division</span>
-                                                                                        <input type="text" value={oic.oic_office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_office: e.target.value } : o) } : x))} placeholder="OIC Office" className="bg-white border border-[#FCD116]/50 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#FBBF24] transition-all truncate min-w-0 h-[38px] shadow-sm" />
-                                                                                    </div>
-                                                                                    <div className="flex flex-col gap-1.5 w-full">
-                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC From Date</span>
-                                                                                        <div className="relative">
-                                                                                            <ModernDatePicker value={oic.oic_start_date ? oic.oic_start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_start_date: val } : o) } : x))} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="flex flex-col gap-1.5 w-full">
-                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC To Date</span>
-                                                                                        <div className="relative">
-                                                                                            <ModernDatePicker value={oic.oic_end_date ? oic.oic_end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_end_date: val } : o) } : x))} minDate={oic.oic_start_date ? new Date(oic.oic_start_date) : undefined} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                            {oic.oic_start_date && oic.oic_end_date && new Date(oic.oic_end_date) <= new Date(oic.oic_start_date) && (
-                                                                                                <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
+                                                                                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm relative z-10">
+                                                                                        <div className="flex flex-col gap-1.5 w-full">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
+                                                                                            <select disabled={!isEditing}
+                                                                                                value={isPrevPosOthers ? 'Others' : (pos.position_name?.toUpperCase() || '')}
+                                                                                                onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value } : x))}
+                                                                                                className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
+                                                                                            >
+                                                                                                <option value="">Select Position</option>
+                                                                                                {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                                                <option value="Others">Others</option>
+                                                                                            </select>
+                                                                                            {isPrevPosOthers && (
+                                                                                                <input disabled={!isEditing}
+                                                                                                    type="text"
+                                                                                                    value={pos.position_name === 'Others' ? '' : pos.position_name}
+                                                                                                    onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value.toUpperCase() || 'Others' } : x))}
+                                                                                                    placeholder="Type the position you held"
+                                                                                                    className="bg-white border border-slate-200 focus:border-[#0038A8] rounded-xl px-3 py-2 text-xs font-semibold mt-2 w-full outline-none transition-all shadow-sm"
+                                                                                                    autoFocus
+                                                                                                />
                                                                                             )}
                                                                                         </div>
-                                                                                    </div>
-                                                                                    <div className="hidden xl:block"></div>
-                                                                                    <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
-                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden md:invisible">Action</span>
-                                                                                        <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.filter((_, j) => j !== oicIdx) } : x))} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </motion.div>
-                                                                            );
-                                                                        })}
-                                                                        </>
+                                                                                        <div className="flex flex-col gap-1.5 w-full">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Office / Division</span>
+                                                                                            <input disabled={!isEditing} type="text" value={pos.office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, office: e.target.value } : x))} placeholder="Office" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all truncate min-w-0 h-[38px] shadow-sm" />
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1.5 w-full">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">From Date</span>
+                                                                                            <div className="relative">
+                                                                                                <ModernDatePicker disabled={!isEditing} value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: val } : x))} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1.5 w-full">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
+                                                                                            <div className="relative">
+                                                                                                <ModernDatePicker disabled={!isEditing} value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} minDate={pos.start_date ? new Date(pos.start_date) : undefined} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                                {pos.start_date && pos.end_date && new Date(pos.end_date) <= new Date(pos.start_date) && (
+                                                                                                    <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1.5 w-full">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden">OIC Status</span>
+                                                                                            <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: [...(x.oic_positions || []), { id: `tmp-oic-${Date.now()}`, oic_position_name: '', oic_office: '', oic_start_date: '', oic_end_date: '' }] } : x))} className="flex items-center justify-center gap-1 text-[9px] font-black uppercase py-2 px-1 rounded-xl transition-all h-[38px] bg-white border border-slate-200 text-slate-400 shadow-sm hover:border-[#FCD116] hover:text-[#FBBF24]">
+                                                                                                <FiPlus size={14} /> Add OIC
+                                                                                            </button>
+                                                                                        </div>
+                                                                                        <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
+                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden md:invisible">Action</span>
+                                                                                            {isEditing && <button onClick={() => handleRemovePosition(idx)} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
+                                                                                        </div>
+                                                                                    </motion.div>
+
+                                                                                    {(pos.oic_positions || []).map((oic, oicIdx) => {
+                                                                                        const isOicPosOthers = oic.oic_position_name === 'Others' || (oic.oic_position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === oic.oic_position_name.toUpperCase()));
+                                                                                        return (
+                                                                                            <motion.div key={oic.id || oicIdx} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative">
+                                                                                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-white p-4 rounded-2xl border border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
+                                                                                                    <div className="absolute -left-6 top-1/2 w-6 h-0.5 border-t-2 border-dashed border-[#FCD116]"></div>
+                                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Position</span>
+                                                                                                        <select disabled={!isEditing}
+                                                                                                            value={isOicPosOthers ? 'Others' : (oic.oic_position_name?.toUpperCase() || '')}
+                                                                                                            onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value } : o) } : x))}
+                                                                                                            className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
+                                                                                                        >
+                                                                                                            <option value="">Select OIC Position</option>
+                                                                                                            {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                                                            <option value="Others">Others</option>
+                                                                                                        </select>
+                                                                                                        {isOicPosOthers && (
+                                                                                                            <input disabled={!isEditing}
+                                                                                                                type="text"
+                                                                                                                value={oic.oic_position_name === 'Others' ? '' : oic.oic_position_name}
+                                                                                                                onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value.toUpperCase() || 'Others' } : o) } : x))}
+                                                                                                                placeholder="Type the position you held"
+                                                                                                                className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] rounded-xl px-3 py-2 text-xs font-semibold mt-2 w-full outline-none transition-all shadow-sm"
+                                                                                                                autoFocus
+                                                                                                            />
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Office / Division</span>
+                                                                                                        <input disabled={!isEditing} type="text" value={oic.oic_office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_office: e.target.value } : o) } : x))} placeholder="OIC Office" className="bg-white border border-[#FCD116]/50 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#FBBF24] transition-all truncate min-w-0 h-[38px] shadow-sm" />
+                                                                                                    </div>
+                                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC From Date</span>
+                                                                                                        <div className="relative">
+                                                                                                            <ModernDatePicker disabled={!isEditing} value={oic.oic_start_date ? oic.oic_start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_start_date: val } : o) } : x))} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div className="flex flex-col gap-1.5 w-full">
+                                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC To Date</span>
+                                                                                                        <div className="relative">
+                                                                                                            <ModernDatePicker disabled={!isEditing} value={oic.oic_end_date ? oic.oic_end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_end_date: val } : o) } : x))} minDate={oic.oic_start_date ? new Date(oic.oic_start_date) : undefined} className="bg-white border border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                                                            {oic.oic_start_date && oic.oic_end_date && new Date(oic.oic_end_date) <= new Date(oic.oic_start_date) && (
+                                                                                                                <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div className="hidden xl:block"></div>
+                                                                                                    <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
+                                                                                                        <span className="text-[9px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden md:invisible">Action</span>
+                                                                                                        {isEditing && <button onClick={() => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.filter((_, j) => j !== oicIdx) } : x))} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </motion.div>
+                                                                                        );
+                                                                                    })}
+                                                                                </>
                                                                             );
                                                                         })()}
                                                                     </div>
                                                                 ))}
-                                                                <button onClick={handleAddPosition} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
+                                                                {isEditing && <button onClick={handleAddPosition} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
                                                                     <FiPlus size={14} /> Add Position
-                                                                </button>
+                                                                </button>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2068,7 +2085,7 @@ const OfficialProfiling = () => {
                                                         const degrees = (profile[degField] || '').split('\n');
                                                         const years = (profile[yrField] || '').split('\n');
                                                         const count = Math.max(degrees.length, years.length, 1);
-                                                        
+
                                                         const updateEntry = (idx, type, val) => {
                                                             if (type === 'deg') {
                                                                 const newDegs = [...degrees];
@@ -2087,10 +2104,10 @@ const OfficialProfiling = () => {
                                                                 {Array.from({ length: count }).map((_, idx) => (
                                                                     <div key={`${degField}-${idx}`} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
                                                                         <Field label="Degree / Course">
-                                                                            <input type="text" value={degrees[idx] || ''} onChange={e => updateEntry(idx, 'deg', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
+                                                                            <input disabled={!isEditing} type="text" value={degrees[idx] || ''} onChange={e => updateEntry(idx, 'deg', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
                                                                         </Field>
                                                                         <Field label="Year Graduated">
-                                                                            <YearInput value={years[idx] || ''} onChange={val => updateEntry(idx, 'yr', val)} min={prevMin > 0 ? prevMin + 1 : 1900} placeholder="YYYY" />
+                                                                            <YearInput disabled={!isEditing} value={years[idx] || ''} onChange={val => updateEntry(idx, 'yr', val)} min={prevMin > 0 ? prevMin + 1 : 1900} placeholder="YYYY" />
                                                                         </Field>
                                                                     </div>
                                                                 ))}
@@ -2108,16 +2125,16 @@ const OfficialProfiling = () => {
                                                             <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                                 <div className="mb-6 flex justify-between items-center">
                                                                     <SectionLabel>Educational Attainment</SectionLabel>
-                                                                    <div className="relative group/add-degree">
-                                                                       <button type="button" className="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-2">
-                                                                           <FiPlus size={12} /> Add Degree
-                                                                       </button>
-                                                                       <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible group-hover/add-degree:opacity-100 group-hover/add-degree:visible transition-all z-10 flex flex-col p-1">
-                                                                          <button type="button" onClick={() => { setP('bachelor_degree', (profile.bachelor_degree ? profile.bachelor_degree + '\n' : '')); setP('bachelor_year', (profile.bachelor_year ? profile.bachelor_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Bachelor's</button>
-                                                                          <button type="button" onClick={() => { setP('master_degree', (profile.master_degree ? profile.master_degree + '\n' : '')); setP('master_year', (profile.master_year ? profile.master_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Master's</button>
-                                                                          <button type="button" onClick={() => { setP('doctorate_degree', (profile.doctorate_degree ? profile.doctorate_degree + '\n' : '')); setP('doctorate_year', (profile.doctorate_year ? profile.doctorate_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Doctorate</button>
-                                                                       </div>
-                                                                    </div>
+                                                                    {isEditing && <div className="relative group/add-degree">
+                                                                        <button type="button" className="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-2">
+                                                                            <FiPlus size={12} /> Add Degree
+                                                                        </button>
+                                                                        <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible group-hover/add-degree:opacity-100 group-hover/add-degree:visible transition-all z-10 flex flex-col p-1">
+                                                                            <button disabled={!isEditing} type="button" onClick={() => { setP('bachelor_degree', (profile.bachelor_degree ? profile.bachelor_degree + '\n' : '')); setP('bachelor_year', (profile.bachelor_year ? profile.bachelor_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Bachelor's</button>
+                                                                            <button disabled={!isEditing} type="button" onClick={() => { setP('master_degree', (profile.master_degree ? profile.master_degree + '\n' : '')); setP('master_year', (profile.master_year ? profile.master_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Master's</button>
+                                                                            <button disabled={!isEditing} type="button" onClick={() => { setP('doctorate_degree', (profile.doctorate_degree ? profile.doctorate_degree + '\n' : '')); setP('doctorate_year', (profile.doctorate_year ? profile.doctorate_year + '\n' : '')); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg uppercase tracking-wider">Doctorate</button>
+                                                                        </div>
+                                                                    </div>}
                                                                 </div>
 
                                                                 {renderDegreeSection("Baccalaureate / Bachelor's Degree", 'bachelor_degree', 'bachelor_year', 1900)}
@@ -2126,12 +2143,12 @@ const OfficialProfiling = () => {
 
                                                                 <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
                                                                     <SectionLabel>Other Educational / Professional Courses</SectionLabel>
-                                                                    <button
+                                                                    {isEditing && <button
                                                                         onClick={() => setProfile(p => ({ ...p, other_courses: [...(p.other_courses || []), { course: '', date_from: '', date_to: '', details: '' }] }))}
                                                                         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0038A8] text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-[#0038A8] hover:text-white transition-all shadow-sm"
                                                                     >
                                                                         <FiPlus size={12} /> Add Course
-                                                                    </button>
+                                                                    </button>}
                                                                 </div>
 
                                                                 {(!profile.other_courses || profile.other_courses.length === 0) ? (
@@ -2142,16 +2159,16 @@ const OfficialProfiling = () => {
                                                                     <div className="space-y-4">
                                                                         {profile.other_courses.map((course, idx) => (
                                                                             <div key={idx} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
-                                                                                <button
+                                                                                {isEditing && <button
                                                                                     onClick={() => setProfile(p => ({ ...p, other_courses: p.other_courses.filter((_, i) => i !== idx) }))}
                                                                                     className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
                                                                                     title="Remove"
                                                                                 >
                                                                                     <FiTrash2 size={12} />
-                                                                                </button>
+                                                                                </button>}
                                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-4">
                                                                                     <Field label="Course Title">
-                                                                                        <input
+                                                                                        <input disabled={!isEditing}
                                                                                             type="text"
                                                                                             value={course.course || ''}
                                                                                             onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, course: e.target.value } : x) }))}
@@ -2160,7 +2177,7 @@ const OfficialProfiling = () => {
                                                                                         />
                                                                                     </Field>
                                                                                     <Field label="Details">
-                                                                                        <input
+                                                                                        <input disabled={!isEditing}
                                                                                             type="text"
                                                                                             value={course.details || ''}
                                                                                             onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))}
@@ -2172,7 +2189,7 @@ const OfficialProfiling = () => {
                                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                                                     <Field label="Date From">
                                                                                         <div className="relative">
-                                                                                            <ModernDatePicker
+                                                                                            <ModernDatePicker disabled={!isEditing}
                                                                                                 value={course.date_from || ''}
                                                                                                 onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_from: val } : x) }))}
                                                                                                 className={inp}
@@ -2181,7 +2198,7 @@ const OfficialProfiling = () => {
                                                                                     </Field>
                                                                                     <Field label="Date To">
                                                                                         <div className="relative">
-                                                                                            <ModernDatePicker
+                                                                                            <ModernDatePicker disabled={!isEditing}
                                                                                                 value={course.date_to || ''}
                                                                                                 onChange={val => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, date_to: val } : x) }))}
                                                                                                 minDate={course.date_from ? new Date(course.date_from) : undefined}
@@ -2215,11 +2232,11 @@ const OfficialProfiling = () => {
                                                                     <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Latest Rating (1st)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
-                                                                            <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" className={inp} />
+                                                                            <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" className={inp} />
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP('performance_rating_1_period', val)} maxDate={new Date()} minDate={profile.performance_rating_2_period ? new Date(profile.performance_rating_2_period + "-01") : undefined} className={inp} />
+                                                                                <ModernDatePicker disabled={!isEditing} isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP('performance_rating_1_period', val)} maxDate={new Date()} minDate={profile.performance_rating_2_period ? new Date(profile.performance_rating_2_period + "-01") : undefined} className={inp} />
 
                                                                             </div>
                                                                         </Field>
@@ -2231,11 +2248,11 @@ const OfficialProfiling = () => {
                                                                     <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Previous Rating (2nd)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
-                                                                            <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_2} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_2', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_2', n.toString()); } }} placeholder="4.750" className={inp} />
+                                                                            <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_2} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_2', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_2', n.toString()); } }} placeholder="4.750" className={inp} />
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP('performance_rating_2_period', val)} maxDate={profile.performance_rating_1_period ? new Date(profile.performance_rating_1_period + "-01") : new Date()} minDate={profile.performance_rating_3_period ? new Date(profile.performance_rating_3_period + "-01") : undefined} className={inp} />
+                                                                                <ModernDatePicker disabled={!isEditing} isMonthPicker value={profile.performance_rating_2_period} onChange={val => setP('performance_rating_2_period', val)} maxDate={profile.performance_rating_1_period ? new Date(profile.performance_rating_1_period + "-01") : new Date()} minDate={profile.performance_rating_3_period ? new Date(profile.performance_rating_3_period + "-01") : undefined} className={inp} />
 
                                                                             </div>
                                                                         </Field>
@@ -2247,11 +2264,11 @@ const OfficialProfiling = () => {
                                                                     <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">Oldest Rating (3rd)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
-                                                                            <input type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_3} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_3', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_3', n.toString()); } }} placeholder="4.650" className={inp} />
+                                                                            <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_3} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_3', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_3', n.toString()); } }} placeholder="4.650" className={inp} />
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker isMonthPicker value={profile.performance_rating_3_period} onChange={val => setP('performance_rating_3_period', val)} maxDate={profile.performance_rating_2_period ? new Date(profile.performance_rating_2_period + "-01") : new Date()} className={inp} />
+                                                                                <ModernDatePicker disabled={!isEditing} isMonthPicker value={profile.performance_rating_3_period} onChange={val => setP('performance_rating_3_period', val)} maxDate={profile.performance_rating_2_period ? new Date(profile.performance_rating_2_period + "-01") : new Date()} className={inp} />
 
                                                                             </div>
                                                                         </Field>
@@ -2270,7 +2287,7 @@ const OfficialProfiling = () => {
                                                                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">1st Semester</p>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                                         <Field label="CESPES Rating (1st)">
-                                                                            <input
+                                                                            <input disabled={!isEditing}
                                                                                 type="number"
                                                                                 step="0.01"
                                                                                 min="1.0"
@@ -2284,7 +2301,7 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Period (1st)">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker
+                                                                                <ModernDatePicker disabled={!isEditing}
                                                                                     isMonthPicker
                                                                                     value={profile.cespes_rating_1_period}
                                                                                     onChange={val => setP('cespes_rating_1_period', val)}
@@ -2301,7 +2318,7 @@ const OfficialProfiling = () => {
                                                                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">2nd Semester</p>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                                         <Field label="CESPES Rating (2nd)">
-                                                                            <input
+                                                                            <input disabled={!isEditing}
                                                                                 type="number"
                                                                                 step="0.01"
                                                                                 min="1.0"
@@ -2315,7 +2332,7 @@ const OfficialProfiling = () => {
                                                                         </Field>
                                                                         <Field label="Period (2nd)">
                                                                             <div className="relative">
-                                                                                <ModernDatePicker
+                                                                                <ModernDatePicker disabled={!isEditing}
                                                                                     isMonthPicker
                                                                                     value={profile.cespes_rating_2_period}
                                                                                     onChange={val => setP('cespes_rating_2_period', val)}
@@ -2340,7 +2357,7 @@ const OfficialProfiling = () => {
                                                             <SectionLabel color="#FCD116">Notable Achievements (If Any)</SectionLabel>
                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                                                 <Field label="Awards / Recognitions / Notable Achievements (If Any)">
-                                                                    <select
+                                                                    <select disabled={!isEditing}
                                                                         value={profile.notable_achievements}
                                                                         onChange={e => setP('notable_achievements', e.target.value)}
                                                                         className="w-full bg-transparent hover:bg-slate-100/30 border border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-xs font-semibold text-slate-800 outline-none transition-all shadow-sm shadow-slate-50 cursor-pointer"
@@ -2355,7 +2372,7 @@ const OfficialProfiling = () => {
                                                                     </select>
                                                                 </Field>
                                                                 <Field label="Year Received">
-                                                                    <YearInput
+                                                                    <YearInput disabled={!isEditing}
                                                                         value={profile.notable_achievements_year || ''}
                                                                         onChange={val => setP('notable_achievements_year', val)}
                                                                         placeholder="YYYY"
@@ -2376,7 +2393,7 @@ const OfficialProfiling = () => {
                                                             <div className="space-y-3">
                                                                 {(profile.individual_accomplishments || []).map((acc, idx) => (
                                                                     <motion.div key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
-                                                                        <input
+                                                                        <input disabled={!isEditing}
                                                                             type="text"
                                                                             maxLength={100}
                                                                             value={acc}
@@ -2388,7 +2405,7 @@ const OfficialProfiling = () => {
                                                                             placeholder="Notable individual accomplishment (max 100 characters)"
                                                                             className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
                                                                         />
-                                                                        <button
+                                                                        {isEditing && <button
                                                                             onClick={() => {
                                                                                 const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
                                                                                 setP('individual_accomplishments', newAccs);
@@ -2396,15 +2413,15 @@ const OfficialProfiling = () => {
                                                                             className="w-10 h-10 flex items-center justify-center shrink-0 bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"
                                                                         >
                                                                             <FiTrash2 size={14} />
-                                                                        </button>
+                                                                        </button>}
                                                                     </motion.div>
                                                                 ))}
-                                                                <button
+                                                                {isEditing && <button disabled={!isEditing}
                                                                     onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), ''])}
                                                                     className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2"
                                                                 >
                                                                     <FiPlus size={14} /> Add Notable Individual Accomplishment
-                                                                </button>
+                                                                </button>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2437,28 +2454,28 @@ const OfficialProfiling = () => {
                                                                 </div>
                                                                 {trainings.map((tr, idx) => (
                                                                     <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
-                                                                        <input type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
+                                                                        <input disabled={!isEditing} type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
                                                                         <div className="relative">
-                                                                            <ModernDatePicker value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                            <ModernDatePicker disabled={!isEditing} value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                         </div>
                                                                         <div className="relative">
-                                                                            <ModernDatePicker value={tr.date_to ? tr.date_to.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_to', val)} minDate={tr.date_from ? new Date(tr.date_from) : undefined} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
+                                                                            <ModernDatePicker disabled={!isEditing} value={tr.date_to ? tr.date_to.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_to', val)} minDate={tr.date_from ? new Date(tr.date_from) : undefined} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                             {tr.date_from && (tr.date_to || tr.date_completed) && new Date(tr.date_to || tr.date_completed) <= new Date(tr.date_from) && (
                                                                                 <p className="text-red-500 text-[10px] mt-1 font-semibold absolute -bottom-4">Must be after From Date.</p>
                                                                             )}
                                                                         </div>
-                                                                        <select value={tr.hours_per_day || '8'} onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)} className="bg-white border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0 cursor-pointer shadow-sm">
+                                                                        <select disabled={!isEditing} value={tr.hours_per_day || '8'} onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)} className="bg-white border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0 cursor-pointer shadow-sm">
                                                                             <option value="8">8 hrs</option>
                                                                             <option value="4">4 hrs</option>
                                                                             <option value="2">2 hrs</option>
                                                                         </select>
-                                                                        <input type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
-                                                                        <button onClick={() => handleRemoveTraining(idx)} className="w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>
+                                                                        <input disabled={!isEditing} type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
+                                                                        {isEditing && <button onClick={() => handleRemoveTraining(idx)} className="w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
                                                                     </motion.div>
                                                                 ))}
-                                                                <button onClick={handleAddTraining} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
+                                                                {isEditing && <button onClick={handleAddTraining} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
                                                                     <FiPlus size={14} /> Add Training
-                                                                </button>
+                                                                </button>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2493,7 +2510,7 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                     <div className="flex gap-2 h-10">
                                                                         <div className="relative group/upload flex-1 h-full">
-                                                                            <input
+                                                                            <input disabled={!isEditing}
                                                                                 type="file"
                                                                                 accept={accept}
                                                                                 onChange={(e) => {
@@ -2542,7 +2559,7 @@ const OfficialProfiling = () => {
                                                             <Field label="Pending Administrative Case/s?">
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
                                                                     {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
-                                                                        <button
+                                                                        <button disabled={!isEditing}
                                                                             key={opt.val}
                                                                             onClick={() => setP('pending_admin_case', opt.val)}
                                                                             className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
@@ -2560,7 +2577,7 @@ const OfficialProfiling = () => {
                                                                 <Field label="Have you ever been found guilty of any administrative offense?">
                                                                     <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
                                                                         {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
-                                                                            <button
+                                                                            <button disabled={!isEditing}
                                                                                 key={opt.val}
                                                                                 onClick={() => setP('guilty_admin_details', opt.val)}
                                                                                 className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
@@ -2577,7 +2594,7 @@ const OfficialProfiling = () => {
                                                                 <Field label="Have you been criminally charged before any court?">
                                                                     <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
                                                                         {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
-                                                                            <button
+                                                                            <button disabled={!isEditing}
                                                                                 key={opt.val}
                                                                                 onClick={() => setP('criminally_charged_details', opt.val)}
                                                                                 className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
@@ -2594,7 +2611,7 @@ const OfficialProfiling = () => {
                                                                 <Field label="Have you ever been convicted of any crime or violation of any law?">
                                                                     <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border border-slate-200/40">
                                                                         {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
-                                                                            <button
+                                                                            <button disabled={!isEditing}
                                                                                 key={opt.val}
                                                                                 onClick={() => setP('convicted_crime_details', opt.val)}
                                                                                 className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all
@@ -2614,7 +2631,7 @@ const OfficialProfiling = () => {
                                                                     <div className="flex flex-col gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
                                                                         <div className="flex gap-2 h-10">
                                                                             <div className="relative group/upload flex-1 h-full">
-                                                                                <input
+                                                                                <input disabled={!isEditing}
                                                                                     type="file"
                                                                                     accept=".pdf,.doc,.docx"
                                                                                     onChange={(e) => {
@@ -2654,66 +2671,66 @@ const OfficialProfiling = () => {
                                                 {tab === 'summary' && (
                                                     <div className="bg-slate-50 min-h-screen">
                                                         <div className="space-y-6">
-                                                            
+
                                                             {/* PROFILE SUMMARY */}
                                                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 relative">
-                                                            <div className="absolute top-8 right-8 z-[51]">
-                                                                <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#004a99] border border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[11px] transition-all shadow-sm relative z-[51]">
-                                                                    <FiDownload size={14} /> Export Profile
-                                                                </button>
-                                                                <AnimatePresence>
-                                                                    {/* Reusing existing exportModalOpen block logic but keeping it hidden inside this div */}
-                                                                    {exportModalOpen && (
-                                                                        /* existing export modal code will go here - I will retain the original modal code */
-                                                                        <AnimatePresence>
-                                                                                                                        {exportModalOpen && (
-                                                                                                                            <motion.div
-                                                                                                                                initial={{ opacity: 0 }}
-                                                                                                                                animate={{ opacity: 1 }}
-                                                                                                                                exit={{ opacity: 0 }}
-                                                                                                                                className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-slate-900/60 backdrop-blur-sm"
-                                                                                                                            >
-                                                                                                                                <motion.div
-                                                                                                                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                                                                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                                                                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                                                                                                                    className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
-                                                                                                                                    onClick={e => e.stopPropagation()}
-                                                                                                                                >
-                                                                                                                                    {/* Sidebar Options */}
-                                                                                                                                    <div className="w-full lg:w-64 bg-transparent border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
-                                                                                                                                        <div className="flex items-center justify-between mb-4">
-                                                                                                                                            <div>
-                                                                                                                                                <h2 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
-                                                                                                                                            </div>
-                                                                                                                                            <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm">
-                                                                                                                                                <FiX size={16} />
-                                                                                                                                            </button>
-                                                                                                                                        </div>
-                                                                                                                                        {[
-                                                                                                                                            { id: 'csv', label: 'Data Export (CSV)', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-                                                                                                                                            { id: 'pdf', label: 'Document (PDF)', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
-                                                                                                                                            { id: 'ppt', label: 'Presentation (PPT)', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-                                                                                                                                        ].map(opt => (
-                                                                                                                                            <button
-                                                                                                                                                key={opt.id}
-                                                                                                                                                onClick={() => setSelectedExportType(opt.id)}
-                                                                                                                                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                                                                                                                                            >
-                                                                                                                                                <opt.icon size={16} className={selectedExportType === opt.id ? opt.color : 'text-slate-400'} />
-                                                                                                                                                <div>
-                                                                                                                                                    <p className={`text-[10px] font-black uppercase tracking-tight ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
-                                                                                                                                                </div>
-                                                                                                                                            </button>
-                                                                                                                                        ))}
-                                                
-                                                                                                                                        <div className="mt-auto pt-6 flex flex-col gap-3">
-                                                                                                                                            {selectedExportType === 'pdf' && (
-                                                                                                                                                <button
-                                                                                                                                                    onClick={() => {
-                                                                                                                                                        const printContent = document.getElementById('pdf-preview-content').outerHTML;
-                                                                                                                                                        const printWindow = window.open('', '_blank');
-                                                                                                                                                        printWindow.document.write(`
+                                                                <div className="absolute top-8 right-8 z-[51]">
+                                                                    <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#004a99] border border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[11px] transition-all shadow-sm relative z-[51]">
+                                                                        <FiDownload size={14} /> Export Profile
+                                                                    </button>
+                                                                    <AnimatePresence>
+                                                                        {/* Reusing existing exportModalOpen block logic but keeping it hidden inside this div */}
+                                                                        {exportModalOpen && (
+                                                                            /* existing export modal code will go here - I will retain the original modal code */
+                                                                            <AnimatePresence>
+                                                                                {exportModalOpen && (
+                                                                                    <motion.div
+                                                                                        initial={{ opacity: 0 }}
+                                                                                        animate={{ opacity: 1 }}
+                                                                                        exit={{ opacity: 0 }}
+                                                                                        className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-slate-900/60 backdrop-blur-sm"
+                                                                                    >
+                                                                                        <motion.div
+                                                                                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                            className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
+                                                                                            onClick={e => e.stopPropagation()}
+                                                                                        >
+                                                                                            {/* Sidebar Options */}
+                                                                                            <div className="w-full lg:w-64 bg-transparent border-r border-slate-200 p-6 flex flex-col gap-3 shrink-0">
+                                                                                                <div className="flex items-center justify-between mb-4">
+                                                                                                    <div>
+                                                                                                        <h2 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
+                                                                                                    </div>
+                                                                                                    <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm">
+                                                                                                        <FiX size={16} />
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                                {[
+                                                                                                    { id: 'csv', label: 'Data Export (CSV)', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+                                                                                                    { id: 'pdf', label: 'Document (PDF)', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
+                                                                                                    { id: 'ppt', label: 'Presentation (PPT)', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+                                                                                                ].map(opt => (
+                                                                                                    <button
+                                                                                                        key={opt.id}
+                                                                                                        onClick={() => setSelectedExportType(opt.id)}
+                                                                                                        className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                                                                                                    >
+                                                                                                        <opt.icon size={16} className={selectedExportType === opt.id ? opt.color : 'text-slate-400'} />
+                                                                                                        <div>
+                                                                                                            <p className={`text-[10px] font-black uppercase tracking-tight ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
+                                                                                                        </div>
+                                                                                                    </button>
+                                                                                                ))}
+
+                                                                                                <div className="mt-auto pt-6 flex flex-col gap-3">
+                                                                                                    {selectedExportType === 'pdf' && (
+                                                                                                        <button
+                                                                                                            onClick={() => {
+                                                                                                                const printContent = document.getElementById('pdf-preview-content').outerHTML;
+                                                                                                                const printWindow = window.open('', '_blank');
+                                                                                                                printWindow.document.write(`
                                                                                                                                                             <html>
                                                                                                                                                             <head>
                                                                                                                                                                 <title>Print Profile</title>
@@ -2739,215 +2756,215 @@ const OfficialProfiling = () => {
                                                                                                                                                             </body>
                                                                                                                                                             </html>
                                                                                                                                                         `);
-                                                                                                                                                        printWindow.document.close();
-                                                                                                                                                    }}
-                                                                                                                                                    disabled={exporting}
-                                                                                                                                                    className="w-full py-4 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                                                                                                                >
-                                                                                                                                                    <FiPrinter size={16} />
-                                                                                                                                                    Print Document
-                                                                                                                                                </button>
-                                                                                                                                            )}
-                                                                                                                                            <button
-                                                                                                                                                onClick={() => {
-                                                                                                                                                    if (selectedExportType === 'csv') generateCSV();
-                                                                                                                                                    if (selectedExportType === 'pdf') generatePDF();
-                                                                                                                                                    if (selectedExportType === 'ppt') generatePPT();
-                                                                                                                                                }}
-                                                                                                                                                disabled={exporting}
-                                                                                                                                                className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                                                                                                            >
-                                                                                                                                                {exporting ? <FiLoader className="animate-spin" size={16} /> : <FiDownload size={16} />}
-                                                                                                                                                {exporting ? 'Generating...' : `Download`}
-                                                                                                                                            </button>
-                                                                                                                                        </div>
-                                                                                                                                    </div>
-                                                
-                                                                                                                                    {/* Preview Area */}
-                                                                                                                                    <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
-                                                                                                                                        {selectedExportType === 'csv' && (
-                                                                                                                                            <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                                                                                                                                <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
-                                                                                                                                                    <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
-                                                                                                                                                    <span className="text-[11px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
-                                                                                                                                                </div>
-                                                                                                                                                <div className="p-0 overflow-x-auto custom-scrollbar">
-                                                                                                                                                    <table className="w-full text-left border-collapse text-[11px] font-mono whitespace-nowrap">
-                                                                                                                                                        <thead className="bg-transparent sticky top-0">
-                                                                                                                                                            <tr className="border-b border-slate-200 text-slate-500">
-                                                                                                                                                                <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
-                                                                                                                                                            </tr>
-                                                                                                                                                        </thead>
-                                                                                                                                                        <tbody>
-                                                                                                                                                            {[
-                                                                                                                                                                ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
-                                                                                                                                                                ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
-                                                                                                                                                                ['Total Years in Third Level', profile.total_years_third_level],
-                                                                                                                                                                ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
-                                                                                                                                                                ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
-                                                                                                                                                                ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
-                                                                                                                                                            ].map(([k, v], i) => (
-                                                                                                                                                                <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
-                                                                                                                                                                    <td className="px-4 py-3 font-bold text-slate-500 border-r border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
-                                                                                                                                                                </tr>
-                                                                                                                                                            ))}
-                                                                                                                                                        </tbody>
-                                                                                                                                                    </table>
-                                                                                                                                                </div>
-                                                                                                                                            </div>
-                                                                                                                                        )}
-                                                
-                                                                                                                                        {selectedExportType === 'pdf' && (
-                                                                                                                                            <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border border-slate-200 shadow-inner hide-scrollbar">
-                                                                                                                                                <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
-                                                                                                                                                    <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Plus_Jakarta_Sans'] text-black" id="pdf-preview-content">
-                                                                                                                                                        <div className="flex justify-between items-start mb-8">
-                                                                                                                                                            <div className="flex gap-6 items-center">
-                                                                                                                                                                <img src={depedLogo} alt="Logo" className="w-24 h-24 object-contain" />
-                                                                                                                                                                <div>
-                                                                                                                                                                    <h1 className="text-3xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
-                                                                                                                                                                    <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
-                                                                                                                                                                        <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                                                                        {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                                                                        {profile.office ? `, ${profile.office}` : ''}
-                                                                                                                                                                    </h2>
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
-                                                                                                                                                            <div className="flex gap-6 items-start">
-                                                                                                                                                                <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
-                                                                                                                                                                    2x2 Photo
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
-                                                                                                                                                        </div>
-                                                                                                                                                        <div className="grid grid-cols-12 gap-10">
-                                                                                                                                                            <div className="col-span-7 space-y-8">
-                                                                                                                                                                <table className="w-full text-sm border-collapse">
-                                                                                                                                                                    <thead>
-                                                                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Managerial Experience</th></tr>
-                                                                                                                                                                    </thead>
-                                                                                                                                                                    <tbody>
-                                                                                                                                                                        {history.slice(0, 4).map((h, i) => {
-                                                                                                                                                                            const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                                                                                                                                                                            return (
-                                                                                                                                                                                <tr key={i} className="text-slate-800">
-                                                                                                                                                                                    <td className="border border-slate-400 px-3 py-2 font-medium w-1/3">{h.position_title || '—'}</td>
-                                                                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/3">{h.office || '—'}</td>
-                                                                                                                                                                                    <td className="border border-slate-400 px-3 py-2 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
-                                                                                                                                                                                </tr>
-                                                                                                                                                                            );
-                                                                                                                                                                        })}
-                                                                                                                                                                        {history.length === 0 && <tr><td colSpan={3} className="border border-slate-400 px-3 py-2 text-center text-slate-500 italic">No experience listed</td></tr>}
-                                                                                                                                                                    </tbody>
-                                                                                                                                                                </table>
-                                                                                                                                                                <table className="w-full text-sm border-collapse">
-                                                                                                                                                                    <thead>
-                                                                                                                                                                        <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Educational Attainment</th></tr>
-                                                                                                                                                                    </thead>
-                                                                                                                                                                    <tbody className="text-slate-800">
-                                                                                                                                                                        <tr>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Doctorate</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.doctorate_degree || '—'}</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.doctorate_year || '—'}</td>
-                                                                                                                                                                        </tr>
-                                                                                                                                                                        <tr>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Master's Degree</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.master_degree || '—'}</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.master_year || '—'}</td>
-                                                                                                                                                                        </tr>
-                                                                                                                                                                        <tr>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Baccalaureate</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.bachelor_degree || '—'}</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.bachelor_year || '—'}</td>
-                                                                                                                                                                        </tr>
-                                                                                                                                                                    </tbody>
-                                                                                                                                                                </table>
-                                                                                                                                                            </div>
-                                                                                                                                                            <div className="col-span-5 space-y-8 relative">
-                                                                                                                                                                <div className="absolute -top-14 left-0 w-24">
-                                                                                                                                                                    <div className="bg-amber-500 text-white font-bold py-1 text-center text-xs uppercase tracking-widest">Age</div>
-                                                                                                                                                                    <div className="border border-amber-500 py-1.5 text-center font-bold text-lg text-[#08315F] bg-white">{profile.age || '—'}</div>
-                                                                                                                                                                </div>
-                                                                                                                                                                <table className="w-full text-sm border-collapse mt-10">
-                                                                                                                                                                    <thead>
-                                                                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Performance Rating</th></tr>
-                                                                                                                                                                    </thead>
-                                                                                                                                                                    <tbody className="text-slate-800">
-                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_1_rating || '—'}</td></tr>
-                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
-                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
-                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
-                                                                                                                                                                        <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_3 || '—'}</td></tr>
-                                                                                                                                                                    </tbody>
-                                                                                                                                                                </table>
-                                                                                                                                                                <table className="w-full text-sm border-collapse">
-                                                                                                                                                                    <thead>
-                                                                                                                                                                        <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Eligibility</th></tr>
-                                                                                                                                                                    </thead>
-                                                                                                                                                                    <tbody className="text-slate-800">
-                                                                                                                                                                        <tr>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Career Executive Service (CES): {profile.ces_stage || 'Not Applicable'}</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.ces_conferment_date || '—'}</td>
-                                                                                                                                                                        </tr>
-                                                                                                                                                                        <tr>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium">Educational Management Test (EMT): {profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}</td>
-                                                                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.emt_date || '—'}</td>
-                                                                                                                                                                        </tr>
-                                                                                                                                                                    </tbody>
-                                                                                                                                                                </table>
-                                                                                                                                                            </div>
-                                                                                                                                                        </div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
-                                                                                                                                            </div>
-                                                                                                                                        )}
-                                                
-                                                                                                                                        {selectedExportType === 'ppt' && (
-                                                                                                                                            <div className="overflow-hidden w-full rounded-2xl border-2 border-slate-200 bg-slate-50 relative flex items-start justify-center pt-8 pb-4" style={{ height: `${Math.max(350, 562.5 * previewScale + 64)}px` }}>
-                                                                                                                                                <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Plus_Jakarta_Sans'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
-                                                                                                                                                    <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
-                                                                                                                                                        <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
-                                                                                                                                                        <div className="flex gap-4 items-center mb-6">
-                                                                                                                                                            <img src={depedLogo} alt="Logo" className="w-16 h-16 object-contain" />
-                                                                                                                                                            <div>
-                                                                                                                                                                <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
-                                                                                                                                                                <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
-                                                                                                                                                                    <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                                                                    {profile.office ? `, ${profile.office}` : ''}
-                                                                                                                                                                </h2>
-                                                                                                                                                            </div>
-                                                                                                                                                        </div>
-                                                                                                                                                        <div className="flex gap-6 mt-8">
-                                                                                                                                                            <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
-                                                                                                                                                                <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
-                                                                                                                                                                {history.slice(0, 3).map((h, i) => (
-                                                                                                                                                                    <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
-                                                                                                                                                                ))}
-                                                                                                                                                            </div>
-                                                                                                                                                            <div className="w-64 border-2 border-red-700 rounded-xl p-6">
-                                                                                                                                                                <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
-                                                                                                                                                                <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
-                                                                                                                                                                <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
-                                                                                                                                                            </div>
-                                                                                                                                                        </div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
-                                                                                                                                            </div>
-                                                                                                                                        )}
-                                                                                                                                    </div>
-                                                                                                                                </motion.div>
-                                                                                                                            </motion.div>
-                                                                                                                        )}
-                                                                                                                    </AnimatePresence>
-                                                                    )}
-                                                                </AnimatePresence>
-                                                            </div>
-                                                                
+                                                                                                                printWindow.document.close();
+                                                                                                            }}
+                                                                                                            disabled={exporting}
+                                                                                                            className="w-full py-4 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                                        >
+                                                                                                            <FiPrinter size={16} />
+                                                                                                            Print Document
+                                                                                                        </button>
+                                                                                                    )}
+                                                                                                    <button
+                                                                                                        onClick={() => {
+                                                                                                            if (selectedExportType === 'csv') generateCSV();
+                                                                                                            if (selectedExportType === 'pdf') generatePDF();
+                                                                                                            if (selectedExportType === 'ppt') generatePPT();
+                                                                                                        }}
+                                                                                                        disabled={exporting}
+                                                                                                        className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                                    >
+                                                                                                        {exporting ? <FiLoader className="animate-spin" size={16} /> : <FiDownload size={16} />}
+                                                                                                        {exporting ? 'Generating...' : `Download`}
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            {/* Preview Area */}
+                                                                                            <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
+                                                                                                {selectedExportType === 'csv' && (
+                                                                                                    <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                                                                                        <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
+                                                                                                            <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
+                                                                                                            <span className="text-[11px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
+                                                                                                        </div>
+                                                                                                        <div className="p-0 overflow-x-auto custom-scrollbar">
+                                                                                                            <table className="w-full text-left border-collapse text-[11px] font-mono whitespace-nowrap">
+                                                                                                                <thead className="bg-transparent sticky top-0">
+                                                                                                                    <tr className="border-b border-slate-200 text-slate-500">
+                                                                                                                        <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
+                                                                                                                    </tr>
+                                                                                                                </thead>
+                                                                                                                <tbody>
+                                                                                                                    {[
+                                                                                                                        ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
+                                                                                                                        ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
+                                                                                                                        ['Total Years in Third Level', profile.total_years_third_level],
+                                                                                                                        ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
+                                                                                                                        ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
+                                                                                                                        ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
+                                                                                                                    ].map(([k, v], i) => (
+                                                                                                                        <tr key={i} className="border-b border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
+                                                                                                                            <td className="px-4 py-3 font-bold text-slate-500 border-r border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
+                                                                                                                        </tr>
+                                                                                                                    ))}
+                                                                                                                </tbody>
+                                                                                                            </table>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                )}
+
+                                                                                                {selectedExportType === 'pdf' && (
+                                                                                                    <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border border-slate-200 shadow-inner hide-scrollbar">
+                                                                                                        <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
+                                                                                                            <div className="p-10 mx-auto w-[1000px] h-[700px] relative font-['Plus_Jakarta_Sans'] text-black" id="pdf-preview-content">
+                                                                                                                <div className="flex justify-between items-start mb-8">
+                                                                                                                    <div className="flex gap-6 items-center">
+                                                                                                                        <img src={depedLogo} alt="Logo" className="w-24 h-24 object-contain" />
+                                                                                                                        <div>
+                                                                                                                            <h1 className="text-3xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
+                                                                                                                            <h2 className="text-xl font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
+                                                                                                                                <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                                {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                                {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                            </h2>
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                    <div className="flex gap-6 items-start">
+                                                                                                                        <div className="w-[100px] h-[100px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
+                                                                                                                            2x2 Photo
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                                <div className="grid grid-cols-12 gap-10">
+                                                                                                                    <div className="col-span-7 space-y-8">
+                                                                                                                        <table className="w-full text-sm border-collapse">
+                                                                                                                            <thead>
+                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Managerial Experience</th></tr>
+                                                                                                                            </thead>
+                                                                                                                            <tbody>
+                                                                                                                                {history.slice(0, 4).map((h, i) => {
+                                                                                                                                    const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                                                                                                                                    return (
+                                                                                                                                        <tr key={i} className="text-slate-800">
+                                                                                                                                            <td className="border border-slate-400 px-3 py-2 font-medium w-1/3">{h.position_title || '—'}</td>
+                                                                                                                                            <td className="border border-slate-400 px-3 py-2 w-1/3">{h.office || '—'}</td>
+                                                                                                                                            <td className="border border-slate-400 px-3 py-2 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
+                                                                                                                                        </tr>
+                                                                                                                                    );
+                                                                                                                                })}
+                                                                                                                                {history.length === 0 && <tr><td colSpan={3} className="border border-slate-400 px-3 py-2 text-center text-slate-500 italic">No experience listed</td></tr>}
+                                                                                                                            </tbody>
+                                                                                                                        </table>
+                                                                                                                        <table className="w-full text-sm border-collapse">
+                                                                                                                            <thead>
+                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2.5 border border-slate-400 text-center uppercase tracking-widest text-xs">Educational Attainment</th></tr>
+                                                                                                                            </thead>
+                                                                                                                            <tbody className="text-slate-800">
+                                                                                                                                <tr>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Doctorate</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.doctorate_degree || '—'}</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.doctorate_year || '—'}</td>
+                                                                                                                                </tr>
+                                                                                                                                <tr>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Master's Degree</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.master_degree || '—'}</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.master_year || '—'}</td>
+                                                                                                                                </tr>
+                                                                                                                                <tr>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 font-medium text-center">Baccalaureate</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/2">{profile.bachelor_degree || '—'}</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 w-1/4 text-center font-medium">{profile.bachelor_year || '—'}</td>
+                                                                                                                                </tr>
+                                                                                                                            </tbody>
+                                                                                                                        </table>
+                                                                                                                    </div>
+                                                                                                                    <div className="col-span-5 space-y-8 relative">
+                                                                                                                        <div className="absolute -top-14 left-0 w-24">
+                                                                                                                            <div className="bg-amber-500 text-white font-bold py-1 text-center text-xs uppercase tracking-widest">Age</div>
+                                                                                                                            <div className="border border-amber-500 py-1.5 text-center font-bold text-lg text-[#08315F] bg-white">{profile.age || '—'}</div>
+                                                                                                                        </div>
+                                                                                                                        <table className="w-full text-sm border-collapse mt-10">
+                                                                                                                            <thead>
+                                                                                                                                <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Performance Rating</th></tr>
+                                                                                                                            </thead>
+                                                                                                                            <tbody className="text-slate-800">
+                                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_1_rating || '—'}</td></tr>
+                                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
+                                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
+                                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
+                                                                                                                                <tr><td className="border border-slate-400 px-3 py-2">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.performance_rating_3 || '—'}</td></tr>
+                                                                                                                            </tbody>
+                                                                                                                        </table>
+                                                                                                                        <table className="w-full text-sm border-collapse">
+                                                                                                                            <thead>
+                                                                                                                                <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2.5 border border-red-700 text-center uppercase tracking-widest text-xs">Eligibility</th></tr>
+                                                                                                                            </thead>
+                                                                                                                            <tbody className="text-slate-800">
+                                                                                                                                <tr>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 font-medium">Career Executive Service (CES): {profile.ces_stage || 'Not Applicable'}</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.ces_conferment_date || '—'}</td>
+                                                                                                                                </tr>
+                                                                                                                                <tr>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 font-medium">Educational Management Test (EMT): {profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}</td>
+                                                                                                                                    <td className="border border-slate-400 px-3 py-2 text-center font-black">{profile.emt_date || '—'}</td>
+                                                                                                                                </tr>
+                                                                                                                            </tbody>
+                                                                                                                        </table>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                )}
+
+                                                                                                {selectedExportType === 'ppt' && (
+                                                                                                    <div className="overflow-hidden w-full rounded-2xl border-2 border-slate-200 bg-slate-50 relative flex items-start justify-center pt-8 pb-4" style={{ height: `${Math.max(350, 562.5 * previewScale + 64)}px` }}>
+                                                                                                        <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Plus_Jakarta_Sans'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
+                                                                                                            <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
+                                                                                                                <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
+                                                                                                                <div className="flex gap-4 items-center mb-6">
+                                                                                                                    <img src={depedLogo} alt="Logo" className="w-16 h-16 object-contain" />
+                                                                                                                    <div>
+                                                                                                                        <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
+                                                                                                                        <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
+                                                                                                                            <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                            {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                            {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                        </h2>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                                <div className="flex gap-6 mt-8">
+                                                                                                                    <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
+                                                                                                                        <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
+                                                                                                                        {history.slice(0, 3).map((h, i) => (
+                                                                                                                            <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
+                                                                                                                        ))}
+                                                                                                                    </div>
+                                                                                                                    <div className="w-64 border-2 border-red-700 rounded-xl p-6">
+                                                                                                                        <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
+                                                                                                                        <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
+                                                                                                                        <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </motion.div>
+                                                                                    </motion.div>
+                                                                                )}
+                                                                            </AnimatePresence>
+                                                                        )}
+                                                                    </AnimatePresence>
+                                                                </div>
+
                                                                 <div className="flex items-center gap-3 mb-8">
                                                                     <FiUser className="text-[#08315F]" size={20} />
                                                                     <h2 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Profile Summary</h2>
                                                                 </div>
-                                                
+
                                                                 {/* Personal Information */}
                                                                 <div className="mb-8">
                                                                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Personal Information</h3>
@@ -2957,7 +2974,7 @@ const OfficialProfiling = () => {
                                                                         <div><p className="text-[10px] text-slate-400 mb-1">Middle Name</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.middle_name || '—'}</p></div>
                                                                         <div><p className="text-[10px] text-slate-400 mb-1">Suffix</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.suffix || '—'}</p></div>
                                                                         <div></div>{/* Empty column for alignment if needed */}
-                                                                        
+
                                                                         <div className="flex items-start gap-2">
                                                                             <FiUser size={14} className="text-blue-500 mt-0.5" />
                                                                             <div><p className="text-[10px] text-slate-400 mb-1">Gender</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.gender || '—'}</p></div>
@@ -2987,9 +3004,9 @@ const OfficialProfiling = () => {
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                
+
                                                                 <div className="w-full h-px bg-slate-100 my-8"></div>
-                                                
+
                                                                 {/* Designation & Appointment */}
                                                                 <div className="mb-8">
                                                                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Designation & Appointment</h3>
@@ -3015,9 +3032,9 @@ const OfficialProfiling = () => {
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                
+
                                                                 <div className="w-full h-px bg-slate-100 my-8"></div>
-                                                
+
                                                                 {/* Eligibility */}
                                                                 <div>
                                                                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Eligibility</h3>
@@ -3036,7 +3053,7 @@ const OfficialProfiling = () => {
                                                                             <div><p className="text-[10px] text-slate-400 mb-1">EMT Date</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.emt_date || '—'}</p></div>
                                                                         </div>
                                                                     </div>
-                                                                    
+
                                                                     {/* Eligibilities List */}
                                                                     {profile.eligibilities && profile.eligibilities.length > 0 && (
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3">
@@ -3047,7 +3064,7 @@ const OfficialProfiling = () => {
                                                                                     elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
                                                                                     elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
                                                                                 ].filter(Boolean).join(' | ');
-                                                                                
+
                                                                                 return (
                                                                                     <div key={idx} className="flex items-center justify-between">
                                                                                         <div className="flex items-center gap-2 text-[11px]">
@@ -3056,7 +3073,7 @@ const OfficialProfiling = () => {
                                                                                         </div>
                                                                                         {/* Star Rating Visualization (dummy logic if not real rating format, but image shows stars) */}
                                                                                         <div className="flex text-yellow-400 gap-0.5">
-                                                                                            {[1,2,3,4,5].map(star => (
+                                                                                            {[1, 2, 3, 4, 5].map(star => (
                                                                                                 <FiStar key={star} size={10} fill={(elig.rating && parseInt(elig.rating) >= star) ? 'currentColor' : 'none'} className={(elig.rating && parseInt(elig.rating) >= star) ? '' : 'text-slate-200'} />
                                                                                             ))}
                                                                                         </div>
@@ -3067,7 +3084,7 @@ const OfficialProfiling = () => {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                
+
                                                             {/* EDUCATION */}
                                                             <div className="mb-10">
                                                                 <div className="flex items-center gap-4 mb-6 px-2">
@@ -3079,7 +3096,7 @@ const OfficialProfiling = () => {
                                                                         <p className="text-xs font-medium text-slate-400 mt-0.5">Your academic background and qualifications</p>
                                                                     </div>
                                                                 </div>
-                                                                
+
                                                                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 lg:p-8">
                                                                     {(!profile.education_degrees || profile.education_degrees.length === 0) ? (
                                                                         (profile.highest_education || profile.education_program) ? (
@@ -3102,9 +3119,9 @@ const OfficialProfiling = () => {
                                                                                         <span className="text-[12px] font-black text-slate-800 uppercase break-words">{profile.specific_degree || '—'}</span>
                                                                                     </div>
                                                                                 </div>
-                                                                                
+
                                                                                 <div className="col-span-1 lg:col-span-2 border-t border-slate-100/80 my-[-1rem] hidden lg:block" />
-                                                                                
+
                                                                                 <div className="flex gap-4 items-start">
                                                                                     <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
                                                                                         <FiBookOpen size={18} />
@@ -3149,9 +3166,9 @@ const OfficialProfiling = () => {
                                                                                             <span className="text-[12px] font-black text-slate-800 uppercase break-words">{deg.specific_degree || '—'}</span>
                                                                                         </div>
                                                                                     </div>
-                                                                                    
+
                                                                                     <div className="col-span-1 lg:col-span-2 border-t border-slate-100/80 my-[-1rem] hidden lg:block" />
-                                                                                    
+
                                                                                     <div className="flex gap-4 items-start">
                                                                                         <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border border-blue-100/50">
                                                                                             <FiBookOpen size={18} />
@@ -3174,7 +3191,7 @@ const OfficialProfiling = () => {
                                                                             ))}
                                                                         </div>
                                                                     )}
-                                                                    
+
                                                                     {profile.other_courses && profile.other_courses.length > 0 && (
                                                                         <div className="mt-8 bg-[#F8FAFC] rounded-2xl p-6 lg:p-8 border border-slate-100">
                                                                             <div className="flex items-center gap-3 mb-6">
@@ -3183,12 +3200,12 @@ const OfficialProfiling = () => {
                                                                                 </div>
                                                                                 <h3 className="text-[11px] font-black text-[#004a99] uppercase tracking-widest">Other Courses</h3>
                                                                             </div>
-                                                                            
+
                                                                             <div className="space-y-4">
                                                                                 {profile.other_courses.map((course, idx) => (
                                                                                     <div key={idx} className={`flex items-start gap-5 ${idx !== profile.other_courses.length - 1 ? 'pb-4 border-b border-dashed border-slate-200' : ''}`}>
                                                                                         <div className="bg-blue-50/80 text-[#004a99] px-3 py-2 rounded-xl text-[11px] font-black shrink-0 min-w-[70px] text-center uppercase tracking-wider border border-blue-100/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                                                                                            {course.course ? (course.course.length > 8 ? course.course.substring(0,8)+'...' : course.course) + ':' : '—:'}
+                                                                                            {course.course ? (course.course.length > 8 ? course.course.substring(0, 8) + '...' : course.course) + ':' : '—:'}
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-0.5 mt-1">
                                                                                             <span className="text-[12px] font-black text-[#08315F]">
@@ -3209,7 +3226,7 @@ const OfficialProfiling = () => {
                                                                     <FiBarChart2 className="text-[#08315F]" size={20} />
                                                                     <h2 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Performance History</h2>
                                                                 </div>
-                                                
+
                                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                                                     {/* Ratings */}
                                                                     <div className="border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4">
@@ -3233,7 +3250,7 @@ const OfficialProfiling = () => {
                                                                             <FiTrendingUp className="text-emerald-500" size={16} />
                                                                         </div>
                                                                     </div>
-                                                
+
                                                                     {/* CSPMS */}
                                                                     <div className="border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4 md:-mt-4">
                                                                         <p className="text-[10px] text-slate-400 mb-1">CSPMS 1st Sem</p>
@@ -3257,7 +3274,7 @@ const OfficialProfiling = () => {
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                
+
                                                                 {/* Achievements */}
                                                                 <div className="mt-8">
                                                                     <div className="flex items-center gap-2 mb-3">
@@ -3266,7 +3283,7 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                     <p className="text-[12px] font-black text-slate-800 uppercase pl-6">{profile.notable_achievements || '—'}</p>
                                                                 </div>
-                                                
+
                                                                 {/* Previous Positions */}
                                                                 {prevPositions.length > 0 && (
                                                                     <div className="mt-8">
@@ -3288,14 +3305,14 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                
+
                                                             {/* DOCUMENTS */}
                                                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                                                                 <div className="flex items-center gap-3 mb-6">
                                                                     <FiFileText className="text-[#08315F]" size={20} />
                                                                     <h2 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Documents</h2>
                                                                 </div>
-                                                
+
                                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                     {[
                                                                         { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*' },
@@ -3308,10 +3325,10 @@ const OfficialProfiling = () => {
                                                                                 <p className={`text-[12px] font-black uppercase tracking-wider ${profile[d.dbKey] ? 'text-emerald-700' : 'text-slate-500'}`}>{d.label}</p>
                                                                                 <p className={`text-[9px] font-bold uppercase tracking-widest mt-1 ${profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-400'}`}>{profile[d.dbKey] ? 'Uploaded' : 'Missing'}</p>
                                                                             </div>
-                                                                            
+
                                                                             <div className="flex gap-2 w-full mt-4">
                                                                                 <div className="relative group/upload flex-1">
-                                                                                    <input type="file" accept={d.accept} onChange={(e) => { const file = e.target.files[0]; if (file) handleFileUpload(file, d.key); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full" />
+                                                                                    <input disabled={!isEditing} type="file" accept={d.accept} onChange={(e) => { const file = e.target.files[0]; if (file) handleFileUpload(file, d.key); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full" />
                                                                                     <div className="flex items-center justify-center gap-1.5 border border-slate-200 rounded-lg px-2 py-2 text-[10px] font-bold transition-all bg-white text-blue-700 hover:border-blue-300 w-full">
                                                                                         <FiUpload size={12} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
                                                                                         <span>{uploadingDocs[d.key] ? '...' : 'Upload'}</span>
@@ -3328,7 +3345,7 @@ const OfficialProfiling = () => {
                                                                     ))}
                                                                 </div>
                                                             </div>
-                                                
+
                                                             {/* LEGAL DISCLOSURES */}
                                                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                                                                 <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => {
@@ -3345,135 +3362,135 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                     <FiChevronDown id="legal-chevron" className="text-slate-400 transition-transform" size={20} />
                                                                 </div>
-                                                                
+
                                                                 <div id="legal-collapse" className="hidden border-t border-slate-100 pt-6 mt-4">
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                                                                    <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case === 'Yes' ? 'Yes' : 'No'} />
-                                                                                                                    <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                                                                    <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                                                                    <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                                                                </div>
+                                                                        <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case === 'Yes' ? 'Yes' : 'No'} />
+                                                                        <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                        <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                        <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                    </div>
                                                                     {/* Actually, the image just shows "LEGAL DISCLOSURES" in a collapsed state. I will put a placeholder or basic view here, or append the Data Privacy form */}
                                                                     {/* I'll use the existing Data Privacy block after this file rewrite */}
                                                                 </div>
                                                             </div>
-                                                
-                                                
+
+
                                                             {/* DATA PRIVACY & CERTIFICATION */}
                                                             <div className="mt-8">
                                                                 {/* ── Data Privacy & Certification ── */}
-                                                                                                                        <div className="bg-white rounded-[2.5rem] border-2 border-[#0038A8]/20 shadow-sm overflow-hidden">
-                                                                
-                                                                                                                            {/* Header */}
-                                                                                                                            <div className="bg-[#08315F] px-8 py-6 flex items-center gap-4">
-                                                                                                                                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
-                                                                                                                                    <FiShield size={18} className="text-white" />
-                                                                                                                                </div>
-                                                                                                                                <div>
-                                                                                                                                    <p className="text-white font-black text-sm uppercase tracking-widest">Data Privacy Notice & Certification</p>
-                                                                                                                                    <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest mt-0.5">Republic Act No. 10173 — Data Privacy Act of 2012</p>
-                                                                                                                                </div>
-                                                                                                                            </div>
-                                                                
-                                                                                                                            <div className="p-8 space-y-6">
-                                                                                                                                {/* DepEd DPA Notice */}
-                                                                                                                                <div className="bg-transparent rounded-[2rem] p-6 text-[11px] font-bold text-slate-600 leading-relaxed border border-slate-100">
-                                                                                                                                    <p>Pursuant to <span className="text-[#08315F] font-black">Republic Act No. 10173</span> or <span className="text-[#08315F] font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
-                                                                                                                                </div>
-                                                                
-                                                                                                                                {/* Certification Checkboxes */}
-                                                                                                                                <div className="space-y-4">
-                                                                                                                                    <button
-                                                                                                                                        onClick={() => setDpaConsent(v => !v)}
-                                                                                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-[#F4F8FB] border-[#0038A8]' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
-                                                                                                                                    >
-                                                                                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-[#08315F] border-[#0038A8]' : 'border-slate-300 bg-white'}`}>
-                                                                                                                                            {dpaConsent && <FiCheckCircle size={14} className="text-white" />}
-                                                                                                                                        </div>
-                                                                                                                                        <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
-                                                                                                                                            I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-[#08315F] font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
-                                                                                                                                        </p>
-                                                                                                                                    </button>
-                                                                
-                                                                                                                                    <button
-                                                                                                                                        onClick={() => setTruthConsent(v => !v)}
-                                                                                                                                        className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
-                                                                                                                                    >
-                                                                                                                                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${truthConsent ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 bg-white'}`}>
-                                                                                                                                            {truthConsent && <FiCheckCircle size={14} className="text-white" />}
-                                                                                                                                        </div>
-                                                                                                                                        <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
-                                                                                                                                            I hereby <span className="text-emerald-700 font-black">certify under oath</span> that all information I have provided in this profile is true, correct, and complete to the best of my knowledge. I understand that any false statement or misrepresentation shall subject me to the penalties prescribed under applicable laws and civil service rules.
-                                                                                                                                        </p>
-                                                                                                                                    </button>
-                                                                                                                                </div>
-                                                                
-                                                                                                                                {/* Action Buttons */}
-                                                                                                                                {!certified ? (
-                                                                                                                                    <div className="space-y-3 pt-2 w-full">
-                                                                                                                                        <div className="flex flex-col sm:flex-row gap-3">
-                                                                                                                                            {dataSource === 'masterlist' ? (
-                                                                                                                                                <button
-                                                                                                                                                    onClick={() => handleCertify(false)}
-                                                                                                                                                    disabled={!dpaConsent || !truthConsent || certifying}
-                                                                                                                                                    className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                                                                                                                                >
-                                                                                                                                                    {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiCheckCircle size={16} />}
-                                                                                                                                                    {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
-                                                                                                                                                </button>
-                                                                                                                                            ) : (
-                                                                                                                                                <>
-                                                                                                                                                    <button
-                                                                                                                                                        onClick={() => handleCertify(false)}
-                                                                                                                                                        disabled={!dpaConsent || !truthConsent || certifying || applicationStatus === 'applied'}
-                                                                                                                                                        className="flex-1 py-5 bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                                                                                                                                    >
-                                                                                                                                                        {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
-                                                                                                                                                        Save Consent Only
-                                                                                                                                                    </button>
-                                                                                                                                                    {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
-                                                                                                                                                        <button
-                                                                                                                                                            onClick={targetVacancyId ? handleSubmitApplication : () => setTab('summary')}
-                                                                                                                                                            disabled={!dpaConsent || !truthConsent || saving}
-                                                                                                                                                            className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
-                                                                                                                                                        >
-                                                                                                                                                            {saving ? <FiLoader className="animate-spin" size={16} /> : <FiArrowRight size={16} />}
-                                                                                                                                                            {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
-                                                                                                                                                        </button>
-                                                                                                                                                    )}
-                                                                                                                                                    {applicationStatus === 'applied' && (
-                                                                                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-amber-50 border-2 border-amber-200 rounded-full text-amber-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                                                                                            <FiClock size={14} /> Applied (Pending Review)
-                                                                                                                                                        </div>
-                                                                                                                                                    )}
-                                                                                                                                                    {applicationStatus === 'disapproved' && (
-                                                                                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-rose-50 border-2 border-rose-200 rounded-full text-rose-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                                                                                            <FiXCircle size={14} /> Disapproved
-                                                                                                                                                        </div>
-                                                                                                                                                    )}
-                                                                                                                                                    {applicationStatus === 'approved' && (
-                                                                                                                                                        <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-emerald-50 border-2 border-emerald-200 rounded-full text-emerald-600 text-[10px] font-black uppercase tracking-widest">
-                                                                                                                                                            <FiCheckCircle size={14} /> Approved
-                                                                                                                                                        </div>
-                                                                                                                                                    )}
-                                                                                                                                                </>
-                                                                                                                                            )}
-                                                                                                                                        </div>
-                                                                                                                                        {(!dpaConsent || !truthConsent) && (
-                                                                                                                                            <p className="text-[9px] font-bold text-slate-400 text-center mt-2 w-full">Please check both declarations above to proceed.</p>
-                                                                                                                                        )}
-                                                                                                                                    </div>
-                                                                                                                                ) : (
-                                                                                                                                    <div className="flex items-center justify-center gap-4 py-6 bg-emerald-50 rounded-[2rem] border-2 border-emerald-200">
-                                                                                                                                        <FiCheckCircle size={24} className="text-emerald-500" />
-                                                                                                                                        <div>
-                                                                                                                                            <p className="font-black text-emerald-700 text-sm uppercase tracking-wider">Certified Successfully</p>
-                                                                                                                                            <p className="text-[10px] font-bold text-emerald-500 mt-0.5">Your consent and certification have been recorded.</p>
-                                                                                                                                        </div>
-                                                                                                                                    </div>
-                                                                                                                                )}
-                                                                                                                            </div>
-                                                                                                                        </div>
+                                                                <div className="bg-white rounded-[2.5rem] border-2 border-[#0038A8]/20 shadow-sm overflow-hidden">
+
+                                                                    {/* Header */}
+                                                                    <div className="bg-[#08315F] px-8 py-6 flex items-center gap-4">
+                                                                        <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
+                                                                            <FiShield size={18} className="text-white" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-white font-black text-sm uppercase tracking-widest">Data Privacy Notice & Certification</p>
+                                                                            <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest mt-0.5">Republic Act No. 10173 — Data Privacy Act of 2012</p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="p-8 space-y-6">
+                                                                        {/* DepEd DPA Notice */}
+                                                                        <div className="bg-transparent rounded-[2rem] p-6 text-[11px] font-bold text-slate-600 leading-relaxed border border-slate-100">
+                                                                            <p>Pursuant to <span className="text-[#08315F] font-black">Republic Act No. 10173</span> or <span className="text-[#08315F] font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
+                                                                        </div>
+
+                                                                        {/* Certification Checkboxes */}
+                                                                        <div className="space-y-4">
+                                                                            <button
+                                                                                onClick={() => setDpaConsent(v => !v)}
+                                                                                className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-[#F4F8FB] border-[#0038A8]' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
+                                                                            >
+                                                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-[#08315F] border-[#0038A8]' : 'border-slate-300 bg-white'}`}>
+                                                                                    {dpaConsent && <FiCheckCircle size={14} className="text-white" />}
+                                                                                </div>
+                                                                                <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
+                                                                                    I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-[#08315F] font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
+                                                                                </p>
+                                                                            </button>
+
+                                                                            <button
+                                                                                onClick={() => setTruthConsent(v => !v)}
+                                                                                className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
+                                                                            >
+                                                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${truthConsent ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 bg-white'}`}>
+                                                                                    {truthConsent && <FiCheckCircle size={14} className="text-white" />}
+                                                                                </div>
+                                                                                <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
+                                                                                    I hereby <span className="text-emerald-700 font-black">certify under oath</span> that all information I have provided in this profile is true, correct, and complete to the best of my knowledge. I understand that any false statement or misrepresentation shall subject me to the penalties prescribed under applicable laws and civil service rules.
+                                                                                </p>
+                                                                            </button>
+                                                                        </div>
+
+                                                                        {/* Action Buttons */}
+                                                                        {!certified ? (
+                                                                            <div className="space-y-3 pt-2 w-full">
+                                                                                <div className="flex flex-col sm:flex-row gap-3">
+                                                                                    {dataSource === 'masterlist' ? (
+                                                                                        <button
+                                                                                            onClick={() => handleCertify(false)}
+                                                                                            disabled={!dpaConsent || !truthConsent || certifying}
+                                                                                            className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                                                        >
+                                                                                            {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiCheckCircle size={16} />}
+                                                                                            {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
+                                                                                        </button>
+                                                                                    ) : (
+                                                                                        <>
+                                                                                            <button
+                                                                                                onClick={() => handleCertify(false)}
+                                                                                                disabled={!dpaConsent || !truthConsent || certifying || applicationStatus === 'applied'}
+                                                                                                className="flex-1 py-5 bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                                                            >
+                                                                                                {certifying ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
+                                                                                                Save Consent Only
+                                                                                            </button>
+                                                                                            {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
+                                                                                                <button
+                                                                                                    onClick={targetVacancyId ? handleSubmitApplication : () => setTab('summary')}
+                                                                                                    disabled={!dpaConsent || !truthConsent || saving}
+                                                                                                    className="flex-1 py-5 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
+                                                                                                >
+                                                                                                    {saving ? <FiLoader className="animate-spin" size={16} /> : <FiArrowRight size={16} />}
+                                                                                                    {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
+                                                                                                </button>
+                                                                                            )}
+                                                                                            {applicationStatus === 'applied' && (
+                                                                                                <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-amber-50 border-2 border-amber-200 rounded-full text-amber-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                                    <FiClock size={14} /> Applied (Pending Review)
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {applicationStatus === 'disapproved' && (
+                                                                                                <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-rose-50 border-2 border-rose-200 rounded-full text-rose-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                                    <FiXCircle size={14} /> Disapproved
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {applicationStatus === 'approved' && (
+                                                                                                <div className="flex-1 flex items-center justify-center gap-3 py-5 bg-emerald-50 border-2 border-emerald-200 rounded-full text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+                                                                                                    <FiCheckCircle size={14} /> Approved
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </>
+                                                                                    )}
+                                                                                </div>
+                                                                                {(!dpaConsent || !truthConsent) && (
+                                                                                    <p className="text-[9px] font-bold text-slate-400 text-center mt-2 w-full">Please check both declarations above to proceed.</p>
+                                                                                )}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex items-center justify-center gap-4 py-6 bg-emerald-50 rounded-[2rem] border-2 border-emerald-200">
+                                                                                <FiCheckCircle size={24} className="text-emerald-500" />
+                                                                                <div>
+                                                                                    <p className="font-black text-emerald-700 text-sm uppercase tracking-wider">Certified Successfully</p>
+                                                                                    <p className="text-[10px] font-bold text-emerald-500 mt-0.5">Your consent and certification have been recorded.</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3531,7 +3548,7 @@ const OfficialProfiling = () => {
 
                                     <button
                                         onClick={handleSave}
-                                        disabled={saving}
+                                        disabled={saving || !isEditing}
                                         className="px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
                                     >
                                         {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}

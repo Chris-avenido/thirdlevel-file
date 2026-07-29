@@ -12,7 +12,7 @@ const currentYear = new Date().getFullYear();
 const startYear = 1900;
 const YEARS = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
 
-const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, className, isMonthPicker, isYearPicker }) => {
+const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, className, isMonthPicker, isYearPicker, disabled }) => {
     // Convert string to Date object
     let selectedDate = null;
     if (value) {
@@ -51,6 +51,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, clas
     return (
         <div className="relative w-full">
             <DatePicker
+                disabled={disabled}
                 selected={selectedDate}
                 onChange={handleChange}
                 minDate={minDate}

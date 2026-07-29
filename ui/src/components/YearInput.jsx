@@ -9,7 +9,8 @@ const YearInput = ({
     placeholder = "YYYY",
     required = false,
     label = "",
-    errorText = ""
+    errorText = "",
+    disabled = false
 }) => {
     const [inputValue, setInputValue] = useState(value || '');
     const [error, setError] = useState('');
@@ -66,7 +67,8 @@ const YearInput = ({
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder={placeholder}
-                    className={`w-full bg-white border ${error || errorText ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#08315F]'} rounded-xl py-2 pl-10 pr-3 text-sm text-slate-800 focus:outline-none transition-all shadow-sm`}
+                    disabled={disabled}
+                    className={`w-full bg-white border ${error || errorText ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#08315F]'} rounded-xl py-2 pl-10 pr-3 text-sm text-slate-800 focus:outline-none transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed`}
                 />
                 {(error || errorText) && (
                     <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500" />
