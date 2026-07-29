@@ -1031,13 +1031,13 @@ const OfficialProfiling = () => {
             if (data.success) {
                 const validPositions = (data.positions || []).filter(p => {
                     const upper = p.toUpperCase();
-                    return upper !== 'N/A' && upper !== 'NA' && !/\bOIC\b/i.test(upper);
+                    return upper !== 'N/A' && upper !== 'NA' && upper !== 'OTHERS' && !/\bOIC\b/i.test(upper);
                 });
                 setPositionsList(validPositions);
-                
+
                 const validDesignations = (data.designations || []).filter(d => {
                     const upper = d.toUpperCase();
-                    return upper !== 'N/A' && upper !== 'NA' && !/\bOIC\b/i.test(upper);
+                    return upper !== 'N/A' && upper !== 'NA' && upper !== 'OTHERS' && !/\bOIC\b/i.test(upper);
                 });
                 setDesignationsList(validDesignations);
             }
@@ -1059,16 +1059,31 @@ const OfficialProfiling = () => {
         'Chief Administrative Officer'
     ];
 
-    // Merge positions and designations
-    const combinedPositions = new Set([...positionsList, ...designationsList]);
-    if (positionsList.length === 0 && designationsList.length === 0) {
-        defaultPositions.forEach(p => combinedPositions.add(p));
+    // Merge positions and designations case-insensitively
+    const positionMap = new Map();
+    const addPos = (p) => {
+        if (!p) return;
+        const up = p.toUpperCase();
+        const existing = positionMap.get(up);
+        if (!existing) {
+            positionMap.set(up, p);
+        } else if (existing === up && p !== up) {
+            // Replace all-uppercase version with mixed-case/title-case version
+            positionMap.set(up, p);
+        }
+    };
+    
+    positionsList.forEach(addPos);
+    designationsList.forEach(addPos);
+
+    if (positionMap.size === 0) {
+        defaultPositions.forEach(addPos);
     }
 
-    const unifiedList = Array.from(combinedPositions).sort();
+    const unifiedList = Array.from(positionMap.values()).sort();
 
-    const isPositionOthers = profile.position_title === 'Others' || (profile.position_title && !unifiedList.some(u => u.toUpperCase() === profile.position_title.toUpperCase()));
-    const isDesignationOthers = profile.designation === 'Others' || (profile.designation && !unifiedList.some(u => u.toUpperCase() === profile.designation.toUpperCase()));
+    const isPositionOthers = profile.position_title?.toUpperCase() === 'OTHERS' || (profile.position_title && !unifiedList.some(u => u.toUpperCase() === profile.position_title.toUpperCase()));
+    const isDesignationOthers = profile.designation?.toUpperCase() === 'OTHERS' || (profile.designation && !unifiedList.some(u => u.toUpperCase() === profile.designation.toUpperCase()));
 
     const fetchNotableAchievements = async () => {
         try {
@@ -1412,15 +1427,17 @@ const OfficialProfiling = () => {
                                 <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-300 hover:text-white font-bold text-[10px] uppercase tracking-wider transition-all">
                                     <FiChevronLeft size={16} /> Back
                                 </button>
+                            </div>
+                            <div className="flex items-center gap-4">
                                 {!isTlo && (
                                     <button onClick={handleEditToggle} className={`px-5 py-2 font-bold rounded-full text-[10px] uppercase tracking-widest transition-all hidden sm:block border ${!isEditing ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md' : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'}`}>
                                         {isEditing ? "Cancel Edit" : "Edit Profile"}
                                     </button>
                                 )}
+                                <button onClick={logout} className="flex items-center gap-2 text-slate-300 hover:text-red-400 font-bold text-[10px] uppercase tracking-wider transition-all">
+                                    <FiLock size={14} /> Sign Out
+                                </button>
                             </div>
-                            <button onClick={logout} className="flex items-center gap-2 text-slate-300 hover:text-red-400 font-bold text-[10px] uppercase tracking-wider transition-all">
-                                <FiLock size={14} /> Sign Out
-                            </button>
                         </div>
                         {!isTlo && (
                             <div className="sm:hidden flex items-center justify-end w-full mt-2">
@@ -1688,24 +1705,24 @@ const OfficialProfiling = () => {
                                                                         </select>
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
-                                                                        <select disabled={!isEditing} value={isPositionOthers ? 'Others' : (profile.position_title?.toUpperCase() || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                        <select disabled={!isEditing} value={isPositionOthers ? 'Others' : (unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                             <option value="">Select Position Title</option>
-                                                                            {unifiedList.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                            {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
                                                                             <option value="Others">Others</option>
                                                                         </select>
                                                                         {isPositionOthers && (
-                                                                            <input disabled={!isEditing} type="text" value={profile.position_title === 'Others' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
+                                                                            <input disabled={!isEditing} type="text" value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
                                                                         )}
                                                                     </Field>
                                                                     {profile.is_oic && (
                                                                         <Field label="Designation">
-                                                                            <select disabled={!isEditing} value={isDesignationOthers ? 'Others' : (profile.designation?.toUpperCase() || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                            <select disabled={!isEditing} value={isDesignationOthers ? 'Others' : (unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
                                                                                 <option value="">Select Designation</option>
-                                                                                {unifiedList.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                                {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
                                                                                 <option value="Others">Others</option>
                                                                             </select>
                                                                             {isDesignationOthers && (
-                                                                                <input disabled={!isEditing} type="text" value={profile.designation === 'Others' ? '' : profile.designation} onChange={e => setP('designation', e.target.value.toUpperCase() || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
+                                                                                <input disabled={!isEditing} type="text" value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation} onChange={e => setP('designation', e.target.value || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
                                                                             )}
                                                                         </Field>
                                                                     )}
