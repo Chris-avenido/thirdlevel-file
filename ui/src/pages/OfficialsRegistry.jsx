@@ -432,7 +432,7 @@ const OfficialsRegistry = () => {
 
             // Map the frontend tab to backend category
             let backendCategory = 'Third Level';
-            if (activeTab === 'Third Level (OIC)' || activeTab === 'Division Chiefs (OIC)') {
+            if (activeTab === 'Officer in Charge' || activeTab === 'Division Chiefs (OIC)') {
                 backendCategory = 'OIC / Chiefs';
             } else if (activeTab === 'Division Chiefs') {
                 backendCategory = 'Division Chiefs';
@@ -447,7 +447,7 @@ const OfficialsRegistry = () => {
             const data = await res.json();
             if (data.success) {
                 let filteredData = data.data;
-                if (activeTab === 'Third Level (OIC)') {
+                if (activeTab === 'Officer in Charge') {
                     filteredData = data.data.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC')));
                 } else if (activeTab === 'Division Chiefs (OIC)') {
                     filteredData = data.data.filter(o => !(THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC'))));
@@ -1022,16 +1022,23 @@ const OfficialsRegistry = () => {
         {
             key: 'position_title',
             label: 'Position',
-            width: 'w-[22%]',
-            value: (item) => item.position_title || '',
-            filterValue: (item) => item.position_title || 'Unassigned'
+            width: 'w-[20%]',
+            value: (item) => (item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || '',
+            filterValue: (item) => (item.position_title || 'Unassigned').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned'
         },
         {
             key: 'designation',
             label: 'Designation',
-            width: 'w-[16%]',
-            value: (item) => item.designation || '',
-            filterValue: (item) => item.designation || 'No Designation'
+            width: 'w-[12%]',
+            value: (item) => (item.designation || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || '',
+            filterValue: (item) => (item.designation || 'No Designation').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation'
+        },
+        {
+            key: 'is_oic',
+            label: 'OIC',
+            width: 'w-[6%]',
+            value: (item) => (item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? 'Yes' : 'No',
+            filterValue: (item) => (item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? 'Yes' : 'No'
         },
         {
             key: 'status',
@@ -1074,7 +1081,7 @@ const OfficialsRegistry = () => {
             if (activeTab !== 'All') {
                 if (activeTab === 'Third Level Officials') {
                     dataForColumn = dataForColumn.filter(item => !item.is_oic && THIRD_LEVEL_POSITIONS.includes(item.position_title));
-                } else if (activeTab === 'Third Level (OIC)') {
+                } else if (activeTab === 'Officer in Charge') {
                     dataForColumn = dataForColumn.filter(item => item.is_oic && THIRD_LEVEL_POSITIONS.includes(item.position_title));
                 } else if (activeTab === 'Division Chiefs (OIC)') {
                     dataForColumn = dataForColumn.filter(item => item.is_oic && !THIRD_LEVEL_POSITIONS.includes(item.position_title));
@@ -1439,12 +1446,12 @@ const OfficialsRegistry = () => {
                                 <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
 
-                            {/* Card 2: Third Level (OIC) */}
+                            {/* Card 2: Officer in Charge */}
                             <div
-                                onClick={() => { setActiveTab(prev => prev === 'Third Level (OIC)' ? 'All' : 'Third Level (OIC)'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Third Level (OIC)' ? 'border-l-amber-500 shadow-md ring-1 ring-amber-200' : 'border-l-amber-400 hover:shadow-sm'}`}
+                                onClick={() => { setActiveTab(prev => prev === 'Officer in Charge' ? 'All' : 'Officer in Charge'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
+                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Officer in Charge' ? 'border-l-amber-500 shadow-md ring-1 ring-amber-200' : 'border-l-amber-400 hover:shadow-sm'}`}
                             >
-                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Third Level (OIC)</div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Officer in Charge</div>
                                 <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{thirdLevelOicActiveCount}</div>
                                 <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                             </div>
@@ -1473,7 +1480,7 @@ const OfficialsRegistry = () => {
                                                     {tableColumns.map((column, index) => (
                                                         <th key={column.key} className={`px-2 py-4 text-left align-top relative ${column.width || ''}`}>
 
-                                                            <div className="flex flex-col gap-3 mt-1 pr-4">
+                                                            <div className={`flex flex-col gap-3 mt-1 ${column.key === 'is_oic' ? 'pr-1' : 'pr-4'}`}>
                                                                 <button
                                                                     onClick={() => handleSort(column.key)}
                                                                     className="flex items-center justify-between h-5 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left group"
@@ -1488,7 +1495,7 @@ const OfficialsRegistry = () => {
                                                                 <select
                                                                     value={tableFilters[column.key] || ''}
                                                                     onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                                                                    className="w-full bg-white border border-sky-200 rounded-lg px-3 py-1.5 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors"
+                                                                    className={`w-full bg-white border border-sky-200 rounded-lg py-1.5 font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors ${column.key === 'is_oic' ? 'px-1 text-[9px] text-center' : 'px-3 text-[11px]'}`}
                                                                 >
                                                                     <option value="">All</option>
                                                                     {(tableFilterOptions[column.key] || []).map(option => (
@@ -1560,23 +1567,31 @@ const OfficialsRegistry = () => {
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-1 py-4 align-middle max-w-[220px]">
+                                                        <td className="px-1 py-4 align-middle max-w-[200px]">
                                                             <div
                                                                 onClick={() => handlePositionClick(item)}
-                                                                title={item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')}
+                                                                title={item.status === 'Inactive' ? 'N/A' : ((item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned')}
                                                                 className="flex w-fit max-w-full items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50/80 border border-amber-300 text-amber-600 text-[9px] font-black uppercase tracking-widest shadow-sm cursor-pointer hover:bg-amber-100 hover:border-amber-400 transition-colors"
                                                             >
-                                                                <span className="truncate">{item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')}</span>
-                                                                {item.status !== 'Inactive' && item.is_oic && <span className="px-1.5 py-0.5 rounded-full bg-[#FCD116] text-[#0038A8] text-[8px] font-black uppercase tracking-widest shrink-0">OIC</span>}
+                                                                <span className="truncate">{item.status === 'Inactive' ? 'N/A' : ((item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned')}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-1 py-4 align-middle max-w-[150px]">
+                                                        <td className="px-1 py-4 align-middle max-w-[120px]">
                                                             <div
                                                                 onClick={() => handlePositionClick(item)}
-                                                                title={item.status === 'Inactive' ? 'N/A' : (expandAcronym(item.designation) || 'No Designation')}
+                                                                title={item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
                                                                 className="text-[10px] font-black text-[#08315F] uppercase tracking-widest truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
                                                             >
-                                                                {item.status === 'Inactive' ? 'N/A' : (expandAcronym(item.designation) || 'No Designation')}
+                                                                {item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-1 py-4 align-middle text-center max-w-[60px]">
+                                                            <div className="flex justify-start items-center ml-2">
+                                                                {(item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? (
+                                                                    <span className="px-2 py-1 rounded-full bg-[#FCD116]/20 border border-[#FCD116] text-[#0038A8] text-[9px] font-black uppercase tracking-widest shadow-sm">Yes</span>
+                                                                ) : (
+                                                                    <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-400 text-[9px] font-black uppercase tracking-widest shadow-sm">No</span>
+                                                                )}
                                                             </div>
                                                         </td>
                                                         <td className="px-1 py-4 align-middle static md:relative">

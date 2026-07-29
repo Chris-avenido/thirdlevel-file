@@ -1022,14 +1022,7 @@ const Home = () => {
                 >
                   <FiUserPlus />Register Third Level Personnel
                 </button>
-                <button
-                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
-                  onClick={() => navigate('/notable-achievements')}
-                  disabled={user?.role !== 'Central Office'}
-                  title={user?.role !== 'Central Office' ? 'Only Central Office can upload directory data.' : ''}
-                >
-                  <FiAward />Notable Achievements
-                </button>
+
                 <button className="action-btn">
                   <FiUploadCloud /> Bulk Upload Roster
                 </button>

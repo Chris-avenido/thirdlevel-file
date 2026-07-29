@@ -1482,7 +1482,7 @@ export const registerPersonnel = async (req, res) => {
     alt_contact_2 
   } = req.body;
 
-  if (!email || !first_name || !last_name || !position_title) return res.json({ success: false, error: 'Missing required fields' });
+  if (!email || !first_name || !last_name) return res.json({ success: false, error: 'Missing required fields' });
 
   const client = await pool.connect();
   try {

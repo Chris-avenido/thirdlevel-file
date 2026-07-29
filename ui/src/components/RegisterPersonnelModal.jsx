@@ -24,18 +24,9 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
     first_name: '',
     middle_name: '',
     last_name: '',
-    strand: '',
     region: '',
-    office: '',
     division: '',
-    position_title: '',
-    designation: '',
-    email: '',
-    alt_email_1: '',
-    alt_email_2: '',
-    contact_details: '',
-    alt_contact_1: '',
-    alt_contact_2: ''
+    email: ''
   });
   const [positions, setPositions] = useState([]);
   const [options, setOptions] = useState({
@@ -51,10 +42,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
     if (isOpen) {
       setFormData({
         first_name: '', middle_name: '', last_name: '', 
-        strand: '', region: '', office: '', division: '',
-        position_title: '', designation: '', email: '', 
-        alt_email_1: '', alt_email_2: '', contact_details: '', 
-        alt_contact_1: '', alt_contact_2: ''
+        region: '', division: '', email: ''
       });
       setEmailStatus('idle');
       fetchPositions();
@@ -136,7 +124,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
       Swal.fire('Error', 'This email already exists in the masterlist.', 'error');
       return;
     }
-    if (!formData.first_name || !formData.last_name || !formData.position_title || !formData.email) {
+    if (!formData.first_name || !formData.last_name || !formData.email) {
       Swal.fire('Error', 'Please fill in all required fields.', 'error');
       return;
     }
@@ -225,54 +213,6 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Designation</label>
-              <div className="relative">
-                <FiBriefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={formData.designation}
-                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="e.g. OIC-Director"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Position</label>
-            <div className="relative">
-              <FiBriefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <select
-                required
-                value={formData.position_title}
-                onChange={(e) => setFormData({ ...formData, position_title: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none"
-              >
-                <option value="" disabled>Select a position...</option>
-                {positions.map((pos) => (
-                  <option key={pos} value={pos}>{pos}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Strand</label>
-              <input
-                type="text"
-                list="strands-list"
-                value={formData.strand}
-                onChange={(e) => setFormData({ ...formData, strand: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="Select or Type Strand"
-              />
-              <datalist id="strands-list">
-                {options.strands.map((opt, idx) => <option key={idx} value={opt} />)}
-              </datalist>
-            </div>
-            <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Region</label>
               <input
                 type="text"
@@ -286,34 +226,21 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                 {options.regions.map((opt, idx) => <option key={idx} value={opt} />)}
               </datalist>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Office</label>
-              <input
-                type="text"
-                list="offices-list"
-                value={formData.office}
-                onChange={(e) => setFormData({ ...formData, office: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="Select or Type Office"
-              />
-              <datalist id="offices-list">
-                {options.offices.map((opt, idx) => <option key={idx} value={opt} />)}
-              </datalist>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Division</label>
-              <input
-                type="text"
-                list="divisions-list"
-                value={formData.division}
-                onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="Select or Type Division"
-              />
-              <datalist id="divisions-list">
-                {options.divisions.map((opt, idx) => <option key={idx} value={opt} />)}
-              </datalist>
-            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Division</label>
+            <input
+              type="text"
+              list="divisions-list"
+              value={formData.division}
+              onChange={(e) => setFormData({ ...formData, division: e.target.value })}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              placeholder="Select or Type Division"
+            />
+            <datalist id="divisions-list">
+              {options.divisions.map((opt, idx) => <option key={idx} value={opt} />)}
+            </datalist>
           </div>
 
           <div>
@@ -343,64 +270,6 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
             {emailStatus === 'duplicate' && (
               <p className="text-red-500 text-xs font-bold mt-2">This email already exists in the masterlist.</p>
             )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Alternative Email 1</label>
-              <input
-                type="email"
-                value={formData.alt_email_1}
-                onChange={(e) => setFormData({ ...formData, alt_email_1: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="Alt Email 1"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Alternative Email 2</label>
-              <input
-                type="email"
-                value={formData.alt_email_2}
-                onChange={(e) => setFormData({ ...formData, alt_email_2: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="Alt Email 2"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Contact Details</label>
-              <input
-                type="text"
-                value={formData.contact_details}
-                onChange={(e) => setFormData({ ...formData, contact_details: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="Contact Details"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Alt Contact Details 1</label>
-                <input
-                  type="text"
-                  value={formData.alt_contact_1}
-                  onChange={(e) => setFormData({ ...formData, alt_contact_1: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="Alt Contact 1"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Alt Contact Details 2</label>
-                <input
-                  type="text"
-                  value={formData.alt_contact_2}
-                  onChange={(e) => setFormData({ ...formData, alt_contact_2: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="Alt Contact 2"
-                />
-              </div>
-            </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white/90 backdrop-blur pb-2">
