@@ -304,9 +304,8 @@ const Login = () => {
                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">OR</span>
                                 <div className="h-px bg-slate-200 flex-1"></div>
                             </div>
-                            <Link to="/register" state={{ isCO }} className="block w-full text-center py-4 border-2 border-yellow-500 rounded-lg hover:bg-yellow-50 transition-colors">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Don't have an account?</span>
-                                <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest ml-2">Register Now</span>
+                            <Link to="/register" state={{ isCO }} className="w-full bg-white border-2 border-blue-100 hover:border-blue-600 hover:bg-blue-50 text-blue-700 font-black py-5 rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center">
+                                Create Account
                             </Link>
                         </div>
                     </div>
