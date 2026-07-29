@@ -34,10 +34,11 @@ const Register = () => {
         last_name: '',
         email: '',
         contactNumber: '',
+        auth_code: '',
         password: '',
         confirmPassword: '',
         passcode: '',
-        role: isCO ? 'Personnel Admin' : 'TLO Applicant'
+        role: isCO ? 'Central Office' : 'TLO Applicant'
     });
 
 
@@ -46,14 +47,14 @@ const Register = () => {
     const [success, setSuccess] = useState(false);
 
     const [masterlistCheckStatus, setMasterlistCheckStatus] = useState('idle'); // 'idle' | 'checking' | 'valid' | 'invalid'
-    
+
     // Debounced masterlist check for non-CO accounts
     useEffect(() => {
         if (isCO || currentStep !== 2) return;
-        
+
         const email = formData.email.trim();
         const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        
+
         if (!email || !isValidFormat) {
             setMasterlistCheckStatus('idle');
             return;
@@ -109,6 +110,10 @@ const Register = () => {
         }
         if (masterlistCheckStatus === 'already_registered') {
             Swal.fire('Notice', 'This email is already registered. Please login instead.', 'warning');
+            return;
+        }
+        if (isCO && formData.auth_code !== 'nVxCpLrTqWmK') {
+            Swal.fire('Error', 'Invalid Authorization Code. Please ensure you have the correct code to register as an Administrator.', 'error');
             return;
         }
         setCurrentStep(3);
@@ -249,20 +254,20 @@ const Register = () => {
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                     <div className="relative group">
-                                            <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`} />
-                                            
-                                            {!isCO && masterlistCheckStatus === 'valid' && (
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
-                                                    <FiCheckCircle size={18} />
-                                                </div>
-                                            )}
-                                            {!isCO && masterlistCheckStatus === 'checking' && (
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <div className="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`} />
+
+                                        {!isCO && masterlistCheckStatus === 'valid' && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
+                                                <FiCheckCircle size={18} />
+                                            </div>
+                                        )}
+                                        {!isCO && masterlistCheckStatus === 'checking' && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <div className="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+                                            </div>
+                                        )}
+                                    </div>
                                     {!isCO && masterlistCheckStatus === 'invalid' && (
                                         <div className="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2">
                                             <FiShield className="text-amber-500 shrink-0 mt-0.5" />
@@ -283,8 +288,8 @@ const Register = () => {
                                     )}
                                 </div>
 
-                                {/* Phone & Auth Code (Moved here) */}
-                                <div className="grid gap-4 grid-cols-1">
+                                {/* Phone & Auth Code */}
+                                <div className={`grid gap-4 ${isCO ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
                                         <div className="relative group">
@@ -292,6 +297,15 @@ const Register = () => {
                                             <input type="text" value={formData.contactNumber} onChange={handlePhoneChange} placeholder="09XXXXXXXXX" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
                                         </div>
                                     </div>
+                                    {isCO && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Auth Code</label>
+                                            <div className="relative group">
+                                                <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
+                                                <input type="text" value={formData.auth_code} onChange={e => setFormData({...formData, auth_code: e.target.value})} placeholder="Enter Auth Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
 

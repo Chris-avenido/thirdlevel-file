@@ -207,7 +207,14 @@ export const pinLogin = async (req, res) => {
     );
 
     const registryUser = masterRes.rows[0] || stagingRes.rows[0];
-    const role = masterRes.rows[0] ? 'Third Level Official' : 'Third Level Applicant';
+    
+    let role = centralUser?.central_role;
+    if (normalizedEmail === 'admin_co@deped.gov.ph') {
+      role = 'Central Office';
+    }
+    if (!role || role === 'User') {
+      role = masterRes.rows[0] ? 'Third Level Official' : 'Third Level Applicant';
+    }
 
     const storedPasscode = centralUser.passcode;
     if (!storedPasscode) return res.status(401).json({ error: 'Passcode not set for this account' });

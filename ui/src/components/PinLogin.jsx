@@ -32,8 +32,8 @@ const PinLogin = ({ rememberedUser, onSwitchAccount, onUsePassword }) => {
     if (!role) return '/';
     // Normalized check for standalone
     const r = role.toLowerCase().trim();
-    if (r === 'third level applicant' || r === 'third level official') {
-        return '/official-profiling';
+    if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(r)) {
+      return '/home';
     }
     return '/official-profiling'; // Fallback for this standalone app
   };
