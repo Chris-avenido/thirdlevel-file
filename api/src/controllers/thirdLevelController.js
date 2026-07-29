@@ -257,16 +257,16 @@ export const uploadDocument = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    
+
     // Azure Blob Storage Upload
     let azureData = null;
     try {
       console.log(`[Upload] Calling uploadToAzure...`);
       azureData = await uploadToAzure(
-        req.file.buffer, 
-        req.file.originalname, 
-        mimeType, 
-        TLOid, 
+        req.file.buffer,
+        req.file.originalname,
+        mimeType,
+        TLOid,
         docType
       );
       if (azureData && azureData.url) {
@@ -278,9 +278,9 @@ export const uploadDocument = async (req, res) => {
       // Continuing despite Azure error to satisfy "without removing existing logic" requirement
     }
 
-    res.json({ 
-      success: true, 
-      binary_id, 
+    res.json({
+      success: true,
+      binary_id,
       message: `${docType} uploaded successfully`,
       ...(azureData || {})
     });
@@ -612,14 +612,61 @@ export const getPositions = async (req, res) => {
     const divisionResult = await pool.query(`
       SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' ORDER BY division
     `);
+    const regionDivisionResult = await pool.query(`
+      SELECT DISTINCT region, division 
+      FROM third_level_official_masterlist 
+      WHERE division IS NOT NULL AND division != '' 
+        AND region IS NOT NULL AND region != ''
+    `);
+
+    const deduplicate = (list) => {
+      const map = new Map();
+      list.forEach(item => {
+        if (!item) return;
+        const trimmed = String(item).trim();
+        const up = trimmed.toUpperCase();
+        const existing = map.get(up);
+        if (!existing) {
+          map.set(up, trimmed);
+        } else if (existing === up && trimmed !== up) {
+          map.set(up, trimmed); 
+        }
+      });
+      return Array.from(map.values()).sort();
+    };
+
+    const finalRegions = deduplicate(regionResult.rows.map(r => r.region));
+    const finalDivisions = deduplicate(divisionResult.rows.map(r => r.division));
+
+    const regionDivisionsMap = {};
+    regionDivisionResult.rows.forEach(r => {
+      const regionStr = String(r.region || '').trim();
+      const divStr = String(r.division || '').trim();
+      const upReg = regionStr.toUpperCase();
+      const upDiv = divStr.toUpperCase();
+      
+      const bestReg = finalRegions.find(reg => reg.toUpperCase() === upReg) || regionStr;
+      const bestDiv = finalDivisions.find(div => div.toUpperCase() === upDiv) || divStr;
+
+      if (!regionDivisionsMap[bestReg]) {
+        regionDivisionsMap[bestReg] = new Set();
+      }
+      regionDivisionsMap[bestReg].add(bestDiv);
+    });
+
+    Object.keys(regionDivisionsMap).forEach(k => {
+      regionDivisionsMap[k] = Array.from(regionDivisionsMap[k]).sort();
+    });
+
     res.json({
       success: true,
-      positions: posResult.rows.map(r => displayPositionTitle(r.position_title)),
-      designations: desigResult.rows.map(r => displayPositionTitle(r.designation)),
-      strands: strandResult.rows.map(r => r.strand),
-      regions: regionResult.rows.map(r => r.region),
-      offices: officeResult.rows.map(r => r.office),
-      divisions: divisionResult.rows.map(r => r.division)
+      positions: deduplicate(posResult.rows.map(r => displayPositionTitle(r.position_title))),
+      designations: deduplicate(desigResult.rows.map(r => displayPositionTitle(r.designation))),
+      strands: deduplicate(strandResult.rows.map(r => r.strand)),
+      regions: finalRegions,
+      offices: deduplicate(officeResult.rows.map(r => r.office)),
+      divisions: finalDivisions,
+      regionDivisions: regionDivisionsMap
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -813,7 +860,7 @@ export const processRegistration = async (req, res) => {
         SET status = 'Rejected', updated_at = NOW() 
         WHERE "TLOid" = $1 AND status = 'For Approval'
       `, [TLOid]);
-      
+
       const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
       if (mlRes.rows.length > 0) {
         await client.query(`
@@ -826,7 +873,7 @@ export const processRegistration = async (req, res) => {
         SET status = 'Active', updated_at = NOW() 
         WHERE "TLOid" = $1 AND status = 'For Approval'
       `, [TLOid]);
-      
+
       const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
       if (mlRes.rows.length > 0) {
         await client.query(`
@@ -839,7 +886,7 @@ export const processRegistration = async (req, res) => {
         SET status = 'For Approval', updated_at = NOW() 
         WHERE "TLOid" = $1 AND status = 'Rejected'
       `, [TLOid]);
-      
+
       const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
       if (mlRes.rows.length > 0) {
         await client.query(`
@@ -1464,11 +1511,11 @@ export const registerPersonnel = async (req, res) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const { 
-    first_name, 
+  const {
+    first_name,
     middle_name,
-    last_name, 
-    email, 
+    last_name,
+    email,
     position_title,
     strand,
     region,
@@ -1479,7 +1526,7 @@ export const registerPersonnel = async (req, res) => {
     alt_email_2,
     contact_details,
     alt_contact_1,
-    alt_contact_2 
+    alt_contact_2
   } = req.body;
 
   if (!email || !first_name || !last_name) return res.json({ success: false, error: 'Missing required fields' });

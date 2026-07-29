@@ -33,7 +33,8 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
     strands: [],
     regions: [],
     offices: [],
-    divisions: []
+    divisions: [],
+    regionDivisions: {}
   });
   const [loading, setLoading] = useState(false);
   const [emailStatus, setEmailStatus] = useState('idle'); // 'idle' | 'checking' | 'duplicate' | 'valid'
@@ -41,7 +42,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        first_name: '', middle_name: '', last_name: '', 
+        first_name: '', middle_name: '', last_name: '',
         region: '', division: '', email: ''
       });
       setEmailStatus('idle');
@@ -60,12 +61,13 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
         const fetchedPositions = data.positions || [];
         const mergedPositions = [...new Set([...THIRD_LEVEL_POSITIONS, ...fetchedPositions])].sort();
         setPositions(mergedPositions);
-        
+
         setOptions({
           strands: data.strands || [],
           regions: data.regions || [],
           offices: data.offices || [],
-          divisions: data.divisions || []
+          divisions: data.divisions || [],
+          regionDivisions: data.regionDivisions || {}
         });
       }
     } catch (err) {
@@ -154,6 +156,12 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
     }
   };
 
+  const availableDivisions = React.useMemo(() => {
+    if (!formData.region || !options.regionDivisions) return options.divisions;
+    const regionKey = Object.keys(options.regionDivisions).find(r => r.toUpperCase() === formData.region.toUpperCase());
+    return regionKey ? options.regionDivisions[regionKey] : options.divisions;
+  }, [formData.region, options.regionDivisions, options.divisions]);
+
   if (!isOpen) return null;
 
   return (
@@ -214,33 +222,40 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Region</label>
-              <input
-                type="text"
-                list="regions-list"
+              <select
                 value={formData.region}
-                onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                onChange={(e) => {
+                  const newRegion = e.target.value;
+                  setFormData(prev => {
+                    const regionKey = options.regionDivisions ? Object.keys(options.regionDivisions).find(r => r.toUpperCase() === newRegion.toUpperCase()) : null;
+                    const validDivs = regionKey ? options.regionDivisions[regionKey] : options.divisions;
+                    const keepDivision = prev.division && validDivs && validDivs.includes(prev.division);
+                    return {
+                      ...prev,
+                      region: newRegion,
+                      division: keepDivision ? prev.division : ''
+                    };
+                  });
+                }}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="Select or Type Region"
-              />
-              <datalist id="regions-list">
-                {options.regions.map((opt, idx) => <option key={idx} value={opt} />)}
-              </datalist>
+              >
+                <option value="" disabled>Select Region</option>
+                {options.regions.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
+              </select>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Division</label>
-            <input
-              type="text"
-              list="divisions-list"
+            <select
               value={formData.division}
               onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-              placeholder="Select or Type Division"
-            />
-            <datalist id="divisions-list">
-              {options.divisions.map((opt, idx) => <option key={idx} value={opt} />)}
-            </datalist>
+              disabled={!formData.region}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
+            >
+              <option value="" disabled>Select Division</option>
+              {availableDivisions.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
+            </select>
           </div>
 
           <div>
