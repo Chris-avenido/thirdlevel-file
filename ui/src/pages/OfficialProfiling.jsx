@@ -1029,9 +1029,16 @@ const OfficialProfiling = () => {
             });
             const data = await res.json();
             if (data.success) {
-                const validPositions = (data.positions || []).filter(p => p.toUpperCase() !== 'N/A' && p.toUpperCase() !== 'NA');
+                const validPositions = (data.positions || []).filter(p => {
+                    const upper = p.toUpperCase();
+                    return upper !== 'N/A' && upper !== 'NA' && !/\bOIC\b/i.test(upper);
+                });
                 setPositionsList(validPositions);
-                const validDesignations = (data.designations || []).filter(d => d.toUpperCase() !== 'N/A' && d.toUpperCase() !== 'NA');
+                
+                const validDesignations = (data.designations || []).filter(d => {
+                    const upper = d.toUpperCase();
+                    return upper !== 'N/A' && upper !== 'NA' && !/\bOIC\b/i.test(upper);
+                });
                 setDesignationsList(validDesignations);
             }
         } catch (err) {
