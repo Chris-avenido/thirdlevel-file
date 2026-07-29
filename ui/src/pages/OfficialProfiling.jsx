@@ -2534,14 +2534,24 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                         </div>
                                                                         {profile[`${id}_binary_id`] && (
-                                                                            <button
-                                                                                onClick={() => handleDownloadDocument(profile[`${id}_binary_id`], label)}
-                                                                                className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
-                                                                                title="Download Document"
-                                                                            >
-                                                                                <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
-                                                                                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
-                                                                            </button>
+                                                                            <>
+                                                                                <button
+                                                                                    onClick={() => handleViewDocument(profile[`${id}_binary_id`])}
+                                                                                    className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/view shrink-0"
+                                                                                    title="View Document"
+                                                                                >
+                                                                                    <FiEye size={14} className="group-hover/view:scale-110 transition-transform" />
+                                                                                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">View</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleDownloadDocument(profile[`${id}_binary_id`], label)}
+                                                                                    className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
+                                                                                    title="Download Document"
+                                                                                >
+                                                                                    <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
+                                                                                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
+                                                                                </button>
+                                                                            </>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -2655,14 +2665,24 @@ const OfficialProfiling = () => {
                                                                                 </div>
                                                                             </div>
                                                                             {profile.executive_summary_binary_id && (
-                                                                                <button
-                                                                                    onClick={() => handleDownloadDocument(profile.executive_summary_binary_id, 'Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents')}
-                                                                                    className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
-                                                                                    title="Download Document"
-                                                                                >
-                                                                                    <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
-                                                                                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
-                                                                                </button>
+                                                                                <>
+                                                                                    <button
+                                                                                        onClick={() => handleViewDocument(profile.executive_summary_binary_id)}
+                                                                                        className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/view shrink-0"
+                                                                                        title="View Document"
+                                                                                    >
+                                                                                        <FiEye size={14} className="group-hover/view:scale-110 transition-transform" />
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">View</span>
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => handleDownloadDocument(profile.executive_summary_binary_id, 'Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents')}
+                                                                                        className="h-full flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
+                                                                                        title="Download Document"
+                                                                                    >
+                                                                                        <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
+                                                                                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
+                                                                                    </button>
+                                                                                </>
                                                                             )}
                                                                         </div>
                                                                     </div>
