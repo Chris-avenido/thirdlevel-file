@@ -536,6 +536,13 @@ export const updateProfile = async (req, res) => {
         await client.query(`SET LOCAL "app.current_user" = '${req.user.email.replace(/'/g, "''")}'`);
       }
 
+      console.log('[updateProfile] Running UPDATE query:', {
+        table,
+        updates,
+        education_degrees: req.body.education_degrees,
+        valuesCount: values.length
+      });
+
       await client.query(
         `UPDATE ${table} SET ${updates.join(', ')}, updated_at = $${values.length - 1} WHERE ${idCol} = $${values.length}`,
         values

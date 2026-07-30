@@ -663,12 +663,13 @@ const OfficialProfiling = () => {
                     }
                 });
 
-                const bachelor_degree = bacDegs.length > 0 ? bacDegs.join('\n') : (d.bachelor_degree || '');
-                const bachelor_year = bacYrs.length > 0 ? bacYrs.join('\n') : (d.bachelor_year || '');
-                const master_degree = masDegs.length > 0 ? masDegs.join('\n') : (d.master_degree || '');
-                const master_year = masYrs.length > 0 ? masYrs.join('\n') : (d.master_year || '');
-                const doctorate_degree = docDegs.length > 0 ? docDegs.join('\n') : (d.doctorate_degree || '');
-                const doctorate_year = docYrs.length > 0 ? docYrs.join('\n') : (d.doctorate_year || '');
+                const hasEducationDegrees = Array.isArray(d.education_degrees);
+                const bachelor_degree = hasEducationDegrees ? bacDegs.join('\n') : (d.bachelor_degree || '');
+                const bachelor_year = hasEducationDegrees ? bacYrs.join('\n') : (d.bachelor_year || '');
+                const master_degree = hasEducationDegrees ? masDegs.join('\n') : (d.master_degree || '');
+                const master_year = hasEducationDegrees ? masYrs.join('\n') : (d.master_year || '');
+                const doctorate_degree = hasEducationDegrees ? docDegs.join('\n') : (d.doctorate_degree || '');
+                const doctorate_year = hasEducationDegrees ? docYrs.join('\n') : (d.doctorate_year || '');
 
                 setProfile({
                     last_name: d.last_name || '',
