@@ -1065,7 +1065,7 @@ const OfficialProfiling = () => {
             positionMap.set(up, p);
         }
     };
-    
+
     positionsList.forEach(addPos);
     designationsList.forEach(addPos);
 
@@ -1522,7 +1522,7 @@ const OfficialProfiling = () => {
                 {/* ── Body Content ── */}
                 <div className="w-full flex-1 flex flex-row lg:overflow-hidden bg-transparent">
                     {/* Sidebar (Desktop Only) */}
-                    <aside className="hidden lg:flex flex-col bg-transparent border-r border-slate-200/80 w-[260px] h-full shrink-0 pt-6">
+                    <aside className="hidden lg:flex flex-col bg-transparent border-r border-slate-200/80 w-[260px] h-full shrink-0 pt-6 overflow-hidden">
                         {/* Talent Portal Branding */}
                         <div className="px-5 pt-2 pb-4 border-b border-slate-100">
                             <div className="flex items-center gap-3">
@@ -1536,7 +1536,7 @@ const OfficialProfiling = () => {
                             </div>
                         </div>
                         {/* Navigation */}
-                        <div className="p-4 flex-1">
+                        <div className="p-4 flex-1 overflow-y-auto thin-scrollbar">
                             <p className="px-3 py-2 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Profile Sections</p>
                             <div className="space-y-1">
                                 {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
