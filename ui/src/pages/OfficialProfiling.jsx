@@ -1958,10 +1958,9 @@ const OfficialProfiling = () => {
                                                                                     />
                                                                                 </Field>
                                                                                 <Field label="Date of Examination / Conferment">
-                                                                                    <input disabled={!isEditing}
-                                                                                        type="date"
+                                                                                    <ModernDatePicker disabled={!isEditing}
                                                                                         value={elig.date || ''}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, date: e.target.value } : x) }))}
+                                                                                        onChange={val => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, date: val } : x) }))}
                                                                                         className={inp}
                                                                                     />
                                                                                 </Field>
