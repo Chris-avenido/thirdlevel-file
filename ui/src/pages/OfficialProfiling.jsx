@@ -551,14 +551,7 @@ const OfficialProfiling = () => {
         let totalYears = 0;
         let totalMonths = 0;
 
-        // 1. Current Position
-        if (profile.appointment_date) {
-            const dur = calculateDuration(profile.appointment_date, null);
-            totalYears += dur.years;
-            totalMonths += dur.months;
-        }
-
-        // 2. Previous Positions
+        // 1. Previous Positions
         prevPositions.forEach(pos => {
             if (pos.start_date) {
                 const dur = calculateDuration(pos.start_date, pos.end_date);
@@ -575,7 +568,7 @@ const OfficialProfiling = () => {
         if (profile.managerial_experience_total !== resultStr) {
             setProfile(prev => ({ ...prev, managerial_experience_total: resultStr }));
         }
-    }, [prevPositions, profile.appointment_date]);
+    }, [prevPositions]);
 
     // Training Hours Auto-Computation
     useEffect(() => {
@@ -1926,7 +1919,7 @@ const OfficialProfiling = () => {
                                                                     <div className="bg-[#F4F8FB]/50 p-6 rounded-3xl border border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                                                                         <div>
                                                                             <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest mb-1">Total Managerial Experience</p>
-                                                                            <p className="text-[9px] font-bold text-slate-400 italic leading-tight">Automatically computed based on your current and previous positions.</p>
+                                                                            <p className="text-[9px] font-bold text-slate-400 italic leading-tight">Automatically computed based on your previous positions.</p>
                                                                         </div>
                                                                         <div className="bg-white px-6 py-3 rounded-2xl border-2 border-blue-200 shadow-sm">
                                                                             <p className="text-xl font-black text-[#08315F] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
