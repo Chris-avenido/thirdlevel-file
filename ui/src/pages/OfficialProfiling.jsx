@@ -3596,24 +3596,23 @@ const OfficialProfiling = () => {
                         </div>
 
                         {/* Persistent Bottom Action Bar */}
-                        {applicationStatus !== 'applied' && (
-                            <div className="bg-white border-t border-slate-200 py-4 px-6 lg:px-8 flex items-center justify-between z-20 shrink-0">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database
-                                </span>
-                                <div className="flex items-center gap-3">
+                        <div className="bg-white border-t border-slate-200 py-4 px-6 lg:px-8 flex items-center justify-between z-20 shrink-0">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database
+                            </span>
+                            <div className="flex items-center gap-3">
 
-                                    <button
-                                        onClick={handleSave}
-                                        disabled={saving || !isEditing}
-                                        className="px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                                    >
-                                        {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
-                                        {saving ? 'Saving...' : 'Save Progress'}
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving || !isEditing}
+                                    className="px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
+                                    {saving ? 'Saving...' : 'Save Progress'}
+                                </button>
                             </div>
-                        )}
+                        </div>
+
 
 
 
