@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiAlertCircle } from 'react-icons/fi';
+import React from 'react';
+import { FiCalendar } from 'react-icons/fi';
 
 const YearInput = ({ 
     value, 
@@ -12,73 +12,34 @@ const YearInput = ({
     errorText = "",
     disabled = false
 }) => {
-    const [inputValue, setInputValue] = useState(value || '');
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        setInputValue(value || '');
-        if (value) validate(value);
-    }, [value, min, max]);
-
-    const validate = (val) => {
-        if (!val && required) {
-            setError('This field is required');
-            return false;
-        }
-        if (!val) {
-            setError('');
-            return true;
-        }
-        
-        const num = parseInt(val, 10);
-        if (isNaN(num)) {
-            setError('Please enter a valid year');
-            return false;
-        }
-        if (num < min || num > max) {
-            setError(`Year must be between ${min} and ${max}`);
-            return false;
-        }
-        setError('');
-        return true;
-    };
+    // Generate years from max down to min
+    const years = [];
+    for (let y = max; y >= min; y--) {
+        years.push(y);
+    }
 
     const handleChange = (e) => {
-        const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-        setInputValue(val);
-        validate(val);
-        onChange(val);
-    };
-
-    const handleBlur = () => {
-        validate(inputValue);
+        onChange(e.target.value);
     };
 
     return (
         <div className="w-full">
             <div className="relative group">
-                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={4}
-                    value={inputValue}
+                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+                <select
+                    value={value || ''}
                     onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder={placeholder}
                     disabled={disabled}
-                    className={`w-full bg-white border ${error || errorText ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#08315F]'} rounded-xl py-2 pl-10 pr-3 text-sm text-slate-800 focus:outline-none transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed`}
-                />
-                {(error || errorText) && (
-                    <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500" />
-                )}
+                    className={`w-full bg-white border ${errorText ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#08315F]'} rounded-xl py-2 pl-10 pr-3 text-sm text-slate-800 focus:outline-none transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed appearance-none cursor-pointer`}
+                >
+                    <option value="">{placeholder}</option>
+                    {years.map(y => (
+                        <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                </select>
             </div>
-            {(error || errorText) && (
-                <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium">{error || errorText}</p>
-            )}
-            {!(error || errorText) && (
-                <p className="text-slate-400 text-[10px] mt-1 ml-1 font-medium">Enter a year between {min} and {max}</p>
+            {errorText && (
+                <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium">{errorText}</p>
             )}
         </div>
     );
