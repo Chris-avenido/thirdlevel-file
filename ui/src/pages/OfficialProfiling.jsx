@@ -650,7 +650,7 @@ const OfficialProfiling = () => {
                     const highest = (deg.highest_education || '').toUpperCase();
                     const degreeName = deg.specific_degree || deg.education_program || '';
                     const year = deg.education_year_graduated || '';
-                    
+
                     if (highest.includes('BACHELOR') || highest.includes('BACCALAUREATE')) {
                         if (degreeName) bacDegs.push(degreeName);
                         if (year) bacYrs.push(year);
@@ -816,6 +816,21 @@ const OfficialProfiling = () => {
             today.setHours(0, 0, 0, 0);
             if (dob > today) {
                 Swal.fire('Validation Error', 'Date of Birth cannot be in the future.', 'error');
+                return false;
+            }
+        }
+
+        // 1b. Position Title and Designation "Others" validation
+        const posTitle = (profile.position_title || '').trim();
+        if (posTitle.toUpperCase() === 'OTHERS' || !posTitle) {
+            Swal.fire('Validation Error', 'Please specify your Position Title.', 'error');
+            return false;
+        }
+
+        if (profile.is_oic) {
+            const desig = (profile.designation || '').trim();
+            if (desig.toUpperCase() === 'OTHERS' || !desig) {
+                Swal.fire('Validation Error', 'Please specify your Designation.', 'error');
                 return false;
             }
         }
