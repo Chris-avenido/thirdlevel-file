@@ -636,6 +636,40 @@ const OfficialProfiling = () => {
                 if (urlVacancy) {
                     setTab('summary');
                 }
+
+                // Process education_degrees JSONB array into string inputs for edit tabs
+                const educationDegrees = d.education_degrees || [];
+                let bacDegs = [];
+                let bacYrs = [];
+                let masDegs = [];
+                let masYrs = [];
+                let docDegs = [];
+                let docYrs = [];
+
+                educationDegrees.forEach(deg => {
+                    const highest = (deg.highest_education || '').toUpperCase();
+                    const degreeName = deg.specific_degree || deg.education_program || '';
+                    const year = deg.education_year_graduated || '';
+                    
+                    if (highest.includes('BACHELOR') || highest.includes('BACCALAUREATE')) {
+                        if (degreeName) bacDegs.push(degreeName);
+                        if (year) bacYrs.push(year);
+                    } else if (highest.includes('MASTER')) {
+                        if (degreeName) masDegs.push(degreeName);
+                        if (year) masYrs.push(year);
+                    } else if (highest.includes('DOCTOR')) {
+                        if (degreeName) docDegs.push(degreeName);
+                        if (year) docYrs.push(year);
+                    }
+                });
+
+                const bachelor_degree = bacDegs.length > 0 ? bacDegs.join('\n') : (d.bachelor_degree || '');
+                const bachelor_year = bacYrs.length > 0 ? bacYrs.join('\n') : (d.bachelor_year || '');
+                const master_degree = masDegs.length > 0 ? masDegs.join('\n') : (d.master_degree || '');
+                const master_year = masYrs.length > 0 ? masYrs.join('\n') : (d.master_year || '');
+                const doctorate_degree = docDegs.length > 0 ? docDegs.join('\n') : (d.doctorate_degree || '');
+                const doctorate_year = docYrs.length > 0 ? docYrs.join('\n') : (d.doctorate_year || '');
+
                 setProfile({
                     last_name: d.last_name || '',
                     first_name: d.first_name || '',
@@ -661,12 +695,13 @@ const OfficialProfiling = () => {
                     specific_degree: d.specific_degree || '',
                     education_program: d.education_program || '',
                     education_year_graduated: d.education_year_graduated ?? '',
-                    bachelor_degree: d.bachelor_degree || '',
-                    bachelor_year: d.bachelor_year || '',
-                    master_degree: d.master_degree || '',
-                    master_year: d.master_year || '',
-                    doctorate_degree: d.doctorate_degree || '',
-                    doctorate_year: d.doctorate_year || '',
+                    bachelor_degree,
+                    bachelor_year,
+                    master_degree,
+                    master_year,
+                    doctorate_degree,
+                    doctorate_year,
+                    education_degrees: d.education_degrees || [],
                     notable_achievements: d.notable_achievements || '',
                     notable_achievements_year: d.notable_achievements_year || '',
                     eligibilities: d.eligibilities || [],
@@ -917,10 +952,61 @@ const OfficialProfiling = () => {
                 training_name: t.training_name ? t.training_name.toUpperCase() : ''
             }));
 
+            const degreesList = [];
+
+            const bacDegrees = (profile.bachelor_degree || '').split('\n');
+            const bacYears = (profile.bachelor_year || '').split('\n');
+            const bacCount = Math.max(bacDegrees.length, bacYears.length);
+            for (let i = 0; i < bacCount; i++) {
+                const deg = (bacDegrees[i] || '').trim();
+                const yr = (bacYears[i] || '').trim();
+                if (deg || yr) {
+                    degreesList.push({
+                        highest_education: "BACCALAUREATE / BACHELOR'S DEGREE",
+                        specific_degree: deg,
+                        education_program: deg,
+                        education_year_graduated: yr
+                    });
+                }
+            }
+
+            const masDegrees = (profile.master_degree || '').split('\n');
+            const masYears = (profile.master_year || '').split('\n');
+            const masCount = Math.max(masDegrees.length, masYears.length);
+            for (let i = 0; i < masCount; i++) {
+                const deg = (masDegrees[i] || '').trim();
+                const yr = (masYears[i] || '').trim();
+                if (deg || yr) {
+                    degreesList.push({
+                        highest_education: "MASTER'S DEGREE",
+                        specific_degree: deg,
+                        education_program: deg,
+                        education_year_graduated: yr
+                    });
+                }
+            }
+
+            const docDegrees = (profile.doctorate_degree || '').split('\n');
+            const docYears = (profile.doctorate_year || '').split('\n');
+            const docCount = Math.max(docDegrees.length, docYears.length);
+            for (let i = 0; i < docCount; i++) {
+                const deg = (docDegrees[i] || '').trim();
+                const yr = (docYears[i] || '').trim();
+                if (deg || yr) {
+                    degreesList.push({
+                        highest_education: "DOCTORATE",
+                        specific_degree: deg,
+                        education_program: deg,
+                        education_year_graduated: yr
+                    });
+                }
+            }
+
             const payload = {
                 ...profile,
                 previous_positions: cleanPrevPositions,
                 relevant_trainings: cleanTrainings,
+                education_degrees: degreesList,
                 target_TLOid: targetVacancyId,
                 position_applied_for: targetVacancy ? targetVacancy.position_title : profile.position_applied_for,
                 profiling_status: completeness === 100 ? 'profiling completed' : 'profiling'
@@ -936,6 +1022,7 @@ const OfficialProfiling = () => {
             });
             const data = await res.json();
             if (data.success) {
+                setProfile(prev => ({ ...prev, education_degrees: degreesList }));
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 5000);
             } else {
