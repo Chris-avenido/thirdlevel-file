@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiLogIn, FiUserPlus, FiShield } from 'react-icons/fi';
+import { FiX, FiLogIn, FiUserPlus, FiShield, FiBookOpen, FiExternalLink } from 'react-icons/fi';
 import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
 import modernLogo from '../assets/modern_logo.png';
@@ -15,6 +15,9 @@ const NexusGate = () => {
 
     // Central Office auth gate modal
     const [showCOGate, setShowCOGate] = useState(false);
+
+    // Records Management User Guide modal
+    const [showGuideModal, setShowGuideModal] = useState(false);
 
     // Track clicked card for animation
     const [clickedCard, setClickedCard] = useState(null);
@@ -157,6 +160,20 @@ const NexusGate = () => {
                                                             {portal.icon}
                                                         </div>
                                                         <p className="card-label">{portal.tag}</p>
+                                                        {portal.id === 'records' && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowGuideModal(true);
+                                                                }}
+                                                                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
+                                                                title="Records Management User Guide"
+                                                            >
+                                                                <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
+                                                                <span>User Guide</span>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                     <h2>{portal.title}</h2>
                                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">{portal.roleLabel}</p>
@@ -201,6 +218,20 @@ const NexusGate = () => {
                                                             {portal.icon}
                                                         </div>
                                                         <p className="card-label">{portal.tag}</p>
+                                                        {portal.id === 'records' && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowGuideModal(true);
+                                                                }}
+                                                                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
+                                                                title="Records Management User Guide"
+                                                            >
+                                                                <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
+                                                                <span>User Guide</span>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                     <h2>{portal.title}</h2>
                                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">{portal.roleLabel}</p>
@@ -357,6 +388,66 @@ const NexusGate = () => {
                                             </div>
                                         </motion.div>
                                     </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── RECORDS MANAGEMENT USER GUIDE MODAL ── */}
+                <AnimatePresence>
+                    {showGuideModal && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setShowGuideModal(false)}
+                                className="absolute inset-0 bg-slate-900/70 backdrop-blur-md"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="relative w-full max-w-6xl h-[88vh] bg-white rounded-3xl shadow-2xl border border-white/40 flex flex-col overflow-hidden z-10"
+                            >
+                                {/* Modal Header */}
+                                <div className="px-6 py-4 bg-[#06345F] text-white flex items-center justify-between shrink-0 shadow-md">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-400">
+                                            <FiBookOpen size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black uppercase tracking-wide text-white">Records Management User Guide</h3>
+                                            <p className="text-[10px] text-blue-200 font-medium">Department of Education · Personnel Division</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <a
+                                            href="/guide-template.html"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
+                                        >
+                                            <FiExternalLink size={14} />
+                                            <span>Open Full Tab</span>
+                                        </a>
+                                        <button
+                                            onClick={() => setShowGuideModal(false)}
+                                            className="w-8 h-8 rounded-full bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center transition-colors"
+                                        >
+                                            <FiX size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Modal Body with Iframe */}
+                                <div className="flex-1 w-full h-full bg-slate-100 relative">
+                                    <iframe
+                                        src="/guide-template.html"
+                                        title="Records Management User Guide"
+                                        className="w-full h-full border-0"
+                                    />
                                 </div>
                             </motion.div>
                         </div>
