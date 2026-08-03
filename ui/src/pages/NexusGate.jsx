@@ -424,7 +424,7 @@ const NexusGate = () => {
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <a
-                                            href="/guide-template.html"
+                                            href={`${import.meta.env.BASE_URL}guide-template.html`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
@@ -444,7 +444,7 @@ const NexusGate = () => {
                                 {/* Modal Body with Iframe */}
                                 <div className="flex-1 w-full h-full bg-slate-100 relative">
                                     <iframe
-                                        src="/guide-template.html"
+                                        src={`${import.meta.env.BASE_URL}guide-template.html`}
                                         title="Records Management User Guide"
                                         className="w-full h-full border-0"
                                     />
