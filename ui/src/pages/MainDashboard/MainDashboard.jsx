@@ -379,14 +379,14 @@ const MainDashboard = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] flex-col lg:flex-row relative overflow-hidden">
       <AdminSidebar />
 
-      <div className="mdb-container flex-1">
-        <main className="mdb-main">
-          {/* Topbar Hero Header */}
-          <DashboardHeader recordCount={filteredData.length} />
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative mdb-container">
+        {/* TOP NAVIGATION BAR */}
+        <DashboardHeader recordCount={filteredData.length} />
 
+        <main className="mdb-main">
           {/* Main Content Container */}
           <div className="mdb-content">
             {/* Filter & Data Controls Card */}
