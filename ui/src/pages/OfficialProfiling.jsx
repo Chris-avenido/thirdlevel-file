@@ -391,33 +391,50 @@ const OfficialProfiling = () => {
             slide.addText(`${profile.position_title || ''}, ${profile.office || ''}`, { x: 1.6, y: 0.9, w: 4.3, h: 0.5, fontSize: 22, bold: true, color: '000000' });
 
             // Top Right: Photo
-            slide.addShape(pres.ShapeType.rect, { x: 8.6, y: 0.2, w: 1.2, h: 1.2, fill: { color: 'E2E8F0' } });
-            slide.addText('2x2 Photo', { x: 8.6, y: 0.2, w: 1.2, h: 1.2, align: 'center', color: '64748B', fontSize: 10 });
+            if (profile.photo_binary_id) {
+                slide.addImage({ path: apiUrl(`/api/binary/${profile.photo_binary_id}`), x: 8.6, y: 0.2, w: 1.2, h: 1.2 });
+            } else {
+                slide.addShape(pres.ShapeType.rect, { x: 8.6, y: 0.2, w: 1.2, h: 1.2, fill: { color: 'E2E8F0' } });
+                slide.addText('2x2 Photo', { x: 8.6, y: 0.2, w: 1.2, h: 1.2, align: 'center', color: '64748B', fontSize: 10 });
+            }
 
             // Managerial Experience Table
             let histRows = [
                 [{ text: 'Managerial Experience', options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 14 } }]
             ];
-            const displayHistory = history.slice(0, 4);
-            displayHistory.forEach(h => {
+            const displayHistory = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
+            const filteredHistory = displayHistory.filter(h => h.position_title || h.position_name || h.office).slice(0, 4);
+            filteredHistory.forEach(h => {
+                const title = h.position_title || h.position_name || '—';
+                const officeName = h.office || '—';
                 const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
                 histRows.push([
-                    { text: h.position_title || '', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                    { text: h.office || '', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
+                    { text: title, options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
+                    { text: officeName, options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
                     { text: `${dur.years} yrs., ${dur.months} mos.`, options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } }
                 ]);
             });
-            if (displayHistory.length === 0) histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 10, align: 'center' } }]);
-            slide.addTable(histRows, { x: 0.4, y: 1.6, w: 5.5, colW: [1.2, 2.8, 1.5], border: { pt: 1, color: '64748B' } });
+            if (filteredHistory.length === 0) histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 10, align: 'center' } }]);
+            slide.addTable(histRows, { x: 0.4, y: 1.6, w: 5.5, colW: [1.8, 2.3, 1.4], border: { pt: 1, color: '64748B' } });
 
             // Educational Attainment Table
             let eduRows = [
                 [{ text: 'Educational Attainment', options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 14 } }]
             ];
             eduRows.push([
-                { text: 'N/A', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                { text: profile.specific_degree || profile.education_program || '', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                { text: profile.education_year_graduated || '', options: { fill: 'FFFFFF', fontSize: 10, align: 'center', color: '000000' } }
+                { text: 'Doctorate', options: { fill: 'FFFFFF', fontSize: 10, color: '000000', bold: true } },
+                { text: profile.doctorate_degree || '—', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
+                { text: profile.doctorate_year || '—', options: { fill: 'FFFFFF', fontSize: 10, align: 'center', color: '000000' } }
+            ]);
+            eduRows.push([
+                { text: "Master's Degree", options: { fill: 'FFFFFF', fontSize: 10, color: '000000', bold: true } },
+                { text: profile.master_degree || '—', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
+                { text: profile.master_year || '—', options: { fill: 'FFFFFF', fontSize: 10, align: 'center', color: '000000' } }
+            ]);
+            eduRows.push([
+                { text: 'Baccalaureate', options: { fill: 'FFFFFF', fontSize: 10, color: '000000', bold: true } },
+                { text: profile.bachelor_degree || '—', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
+                { text: profile.bachelor_year || '—', options: { fill: 'FFFFFF', fontSize: 10, align: 'center', color: '000000' } }
             ]);
             slide.addTable(eduRows, { x: 0.4, y: 3.8, w: 5.5, colW: [1.5, 3.0, 1.0], border: { pt: 1, color: '64748B' } });
 
@@ -2989,11 +3006,12 @@ const OfficialProfiling = () => {
                                                                                                     </div>
                                                                                                 )}
 
-                                                                                                {selectedExportType === 'pdf' && (
+                                                                                                {(selectedExportType === 'pdf' || selectedExportType === 'ppt') && (
                                                                                                     <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border border-slate-200 shadow-inner hide-scrollbar">
                                                                                                         <div className="bg-white shadow-2xl border border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale)}px` }}>
-                                                                                                            <div className="p-8 mx-auto w-[1000px] min-h-[700px] relative font-['Plus_Jakarta_Sans'] text-black" id="pdf-preview-content">
-                                                                                                                <div className="flex justify-between items-start mb-5">
+                                                                                                            <div className="p-8 mx-auto w-[1000px] min-h-[700px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id={selectedExportType === 'pdf' ? "pdf-preview-content" : "ppt-preview-content"}>
+                                                                                                                <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
+                                                                                                                <div className="flex justify-between items-start mb-5 pt-2">
                                                                                                                     <div className="flex gap-5 items-center">
                                                                                                                         <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain" />
                                                                                                                         <div>
@@ -3006,8 +3024,12 @@ const OfficialProfiling = () => {
                                                                                                                         </div>
                                                                                                                     </div>
                                                                                                                     <div className="flex gap-6 items-start">
-                                                                                                                        <div className="w-[84px] h-[84px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0">
-                                                                                                                            2x2 Photo
+                                                                                                                        <div className="w-[84px] h-[84px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0 overflow-hidden">
+                                                                                                                            {profile.photo_binary_id ? (
+                                                                                                                                <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Photo" className="w-full h-full object-cover" />
+                                                                                                                            ) : (
+                                                                                                                                "2x2 Photo"
+                                                                                                                            )}
                                                                                                                         </div>
                                                                                                                     </div>
                                                                                                                 </div>
@@ -3018,17 +3040,27 @@ const OfficialProfiling = () => {
                                                                                                                                 <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience</th></tr>
                                                                                                                             </thead>
                                                                                                                             <tbody>
-                                                                                                                                {history.slice(0, 4).map((h, i) => {
-                                                                                                                                    const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                                                                                                                                    return (
-                                                                                                                                        <tr key={i} className="text-slate-800">
-                                                                                                                                            <td className="border border-slate-400 px-3 py-1.5 font-medium w-1/3">{h.position_title || '—'}</td>
-                                                                                                                                            <td className="border border-slate-400 px-3 py-1.5 w-1/3">{h.office || '—'}</td>
-                                                                                                                                            <td className="border border-slate-400 px-3 py-1.5 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
-                                                                                                                                        </tr>
-                                                                                                                                    );
-                                                                                                                                })}
-                                                                                                                                {history.length === 0 && <tr><td colSpan={3} className="border border-slate-400 px-3 py-1.5 text-center text-slate-500 italic">No experience listed</td></tr>}
+                                                                                                                                {(() => {
+                                                                                                                                    const list = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
+                                                                                                                                    const displayList = list.filter(h => h.position_title || h.position_name || h.office).slice(0, 4);
+                                                                                                                                    if (displayList.length === 0) {
+                                                                                                                                        return (
+                                                                                                                                            <tr><td colSpan={3} className="border border-slate-400 px-3 py-1.5 text-center text-slate-500 italic">No experience listed</td></tr>
+                                                                                                                                        );
+                                                                                                                                    }
+                                                                                                                                    return displayList.map((h, i) => {
+                                                                                                                                        const title = h.position_title || h.position_name || '—';
+                                                                                                                                        const officeName = h.office || '—';
+                                                                                                                                        const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                                                                                                                                        return (
+                                                                                                                                            <tr key={i} className="text-slate-800">
+                                                                                                                                                <td className="border border-slate-400 px-3 py-1.5 font-medium w-1/3">{title}</td>
+                                                                                                                                                <td className="border border-slate-400 px-3 py-1.5 w-1/3">{officeName}</td>
+                                                                                                                                                <td className="border border-slate-400 px-3 py-1.5 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
+                                                                                                                                            </tr>
+                                                                                                                                        );
+                                                                                                                                    });
+                                                                                                                                })()}
                                                                                                                             </tbody>
                                                                                                                         </table>
                                                                                                                         <table className="w-full text-xs border-collapse">
@@ -3086,40 +3118,6 @@ const OfficialProfiling = () => {
                                                                                                                                 </tr>
                                                                                                                             </tbody>
                                                                                                                         </table>
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                )}
-
-                                                                                                {selectedExportType === 'ppt' && (
-                                                                                                    <div className="overflow-hidden w-full rounded-2xl border-2 border-slate-200 bg-slate-50 relative flex items-start justify-center pt-8 pb-4" style={{ height: `${Math.max(350, 562.5 * previewScale + 64)}px` }}>
-                                                                                                        <div className="bg-white border border-slate-200 shadow-2xl relative flex flex-col font-['Plus_Jakarta_Sans'] transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top center', marginBottom: `-${562.5 * (1 - previewScale)}px` }}>
-                                                                                                            <div className="w-[1000px] h-[562.5px] p-10 relative" id="ppt-preview-content">
-                                                                                                                <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
-                                                                                                                <div className="flex gap-4 items-center mb-6">
-                                                                                                                    <img src={depedLogo} alt="Logo" className="w-16 h-16 object-contain" />
-                                                                                                                    <div>
-                                                                                                                        <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight">{profile.last_name || ''}, {profile.first_name || ''}</h1>
-                                                                                                                        <h2 className="text-lg font-bold text-slate-700 uppercase flex items-center gap-2">
-                                                                                                                            <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                            {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[8px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                            {profile.office ? `, ${profile.office}` : ''}
-                                                                                                                        </h2>
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                                <div className="flex gap-6 mt-8">
-                                                                                                                    <div className="flex-1 border-2 border-[#0038A8] rounded-xl p-6">
-                                                                                                                        <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest mb-3 border-b border-blue-100 pb-2">Managerial Experience</h3>
-                                                                                                                        {history.slice(0, 3).map((h, i) => (
-                                                                                                                            <p key={i} className="text-sm text-slate-700 mb-2 font-bold">{h.position_title} <span className="font-normal">({h.office})</span></p>
-                                                                                                                        ))}
-                                                                                                                    </div>
-                                                                                                                    <div className="w-64 border-2 border-red-700 rounded-xl p-6">
-                                                                                                                        <h3 className="text-sm font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">Performance</h3>
-                                                                                                                        <p className="text-sm text-slate-700 mb-2 font-bold">CESPES: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.cespes_1_rating || '—'}</span></p>
-                                                                                                                        <p className="text-sm text-slate-700 font-bold">OPCRF: <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F]">{profile.performance_rating_1 || '—'}</span></p>
                                                                                                                     </div>
                                                                                                                 </div>
                                                                                                             </div>
