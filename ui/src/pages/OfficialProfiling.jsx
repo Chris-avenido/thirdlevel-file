@@ -388,7 +388,14 @@ const OfficialProfiling = () => {
             // Header: Logo, Name and Position
             slide.addImage({ path: depedLogo, x: 0.4, y: 0.2, w: 1.1, h: 1.1 });
             slide.addText(`${profile.last_name?.toUpperCase() || ''}, ${profile.first_name?.toUpperCase() || ''} ${profile.middle_name?.toUpperCase() || ''}`, { x: 1.6, y: 0.3, w: 4.3, h: 0.6, fontSize: 32, bold: true, color: '000000' });
-            slide.addText(`${profile.position_title || ''}, ${profile.office || ''}`, { x: 1.6, y: 0.9, w: 4.3, h: 0.5, fontSize: 22, bold: true, color: '000000' });
+            let posText = profile.position_title || '';
+            if (profile.is_oic) {
+                posText += ' (OIC)';
+            }
+            if (profile.office) {
+                posText += `, ${profile.office}`;
+            }
+            slide.addText(posText, { x: 1.6, y: 0.9, w: 6.8, h: 0.5, fontSize: 20, bold: true, color: '000000' });
 
             // Top Right: Photo
             if (profile.photo_binary_id) {
@@ -409,10 +416,26 @@ const OfficialProfiling = () => {
                 const officeName = h.office || '—';
                 const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
                 histRows.push([
-                    { text: title, options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                    { text: officeName, options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                    { text: `${dur.years} yrs., ${dur.months} mos.`, options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } }
+                    { text: title, options: { fill: 'F8FAFC', fontSize: 10, color: '000000', bold: true } },
+                    { text: officeName, options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } },
+                    { text: `${dur.years} yrs., ${dur.months} mos.`, options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } }
                 ]);
+
+                // Nested Child OIC positions under Parent
+                if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
+                    h.oic_positions.forEach(oic => {
+                        if (oic.oic_position_name || oic.oic_office) {
+                            const oicTitle = `   └─ OIC: ${oic.oic_position_name || 'OIC Position'}`;
+                            const oicOffice = oic.oic_office || '—';
+                            const oicDur = oic.oic_start_date && oic.oic_end_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
+                            histRows.push([
+                                { text: oicTitle, options: { fill: 'FEF3C7', fontSize: 9, color: '08315F' } },
+                                { text: oicOffice, options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } },
+                                { text: `${oicDur.years} yrs., ${oicDur.months} mos.`, options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } }
+                            ]);
+                        }
+                    });
+                }
             });
             if (filteredHistory.length === 0) histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 10, align: 'center' } }]);
             slide.addTable(histRows, { x: 0.4, y: 1.6, w: 5.5, colW: [1.8, 2.3, 1.4], border: { pt: 1, color: '64748B' } });
@@ -3016,7 +3039,7 @@ const OfficialProfiling = () => {
                                                                                                                         <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain" />
                                                                                                                         <div>
                                                                                                                             <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
-                                                                                                                            <h2 className="text-lg font-bold uppercase mt-1 text-slate-800 flex items-center gap-2">
+                                                                                                                            <h2 className="text-lg font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap">
                                                                                                                                 <span>{profile.position_title || 'N/A'}</span>
                                                                                                                                 {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                                                                 {profile.office ? `, ${profile.office}` : ''}
@@ -3048,18 +3071,38 @@ const OfficialProfiling = () => {
                                                                                                                                             <tr><td colSpan={3} className="border border-slate-400 px-3 py-1.5 text-center text-slate-500 italic">No experience listed</td></tr>
                                                                                                                                         );
                                                                                                                                     }
-                                                                                                                                    return displayList.map((h, i) => {
+                                                                                                                                    const rows = [];
+                                                                                                                                    displayList.forEach((h, i) => {
                                                                                                                                         const title = h.position_title || h.position_name || '—';
                                                                                                                                         const officeName = h.office || '—';
                                                                                                                                         const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                                                                                                                                        return (
-                                                                                                                                            <tr key={i} className="text-slate-800">
-                                                                                                                                                <td className="border border-slate-400 px-3 py-1.5 font-medium w-1/3">{title}</td>
+                                                                                                                                        rows.push(
+                                                                                                                                            <tr key={`parent-${i}`} className="text-slate-800 bg-slate-50/30 font-semibold">
+                                                                                                                                                <td className="border border-slate-400 px-3 py-1.5 font-bold w-1/3">{title}</td>
                                                                                                                                                 <td className="border border-slate-400 px-3 py-1.5 w-1/3">{officeName}</td>
                                                                                                                                                 <td className="border border-slate-400 px-3 py-1.5 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
                                                                                                                                             </tr>
                                                                                                                                         );
+                                                                                                                                        if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
+                                                                                                                                            h.oic_positions.forEach((oic, oicIdx) => {
+                                                                                                                                                if (oic.oic_position_name || oic.oic_office) {
+                                                                                                                                                    const oicTitle = oic.oic_position_name || 'OIC Position';
+                                                                                                                                                    const oicOffice = oic.oic_office || '—';
+                                                                                                                                                    const oicDur = oic.oic_start_date && oic.oic_end_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
+                                                                                                                                                    rows.push(
+                                                                                                                                                        <tr key={`child-${i}-${oicIdx}`} className="text-slate-700 text-[11px] bg-amber-50/50">
+                                                                                                                                                            <td className="border border-slate-400 px-3 py-1.5 pl-6 font-medium">
+                                                                                                                                                                <span className="text-[#08315F] font-bold">└─ OIC:</span> {oicTitle}
+                                                                                                                                                            </td>
+                                                                                                                                                            <td className="border border-slate-400 px-3 py-1.5 text-slate-600">{oicOffice}</td>
+                                                                                                                                                            <td className="border border-slate-400 px-3 py-1.5 text-center font-normal">{oicDur.years} yrs., {oicDur.months} mos.</td>
+                                                                                                                                                        </tr>
+                                                                                                                                                    );
+                                                                                                                                                }
+                                                                                                                                            });
+                                                                                                                                        }
                                                                                                                                     });
+                                                                                                                                    return rows;
                                                                                                                                 })()}
                                                                                                                             </tbody>
                                                                                                                         </table>
