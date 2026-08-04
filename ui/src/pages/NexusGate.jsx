@@ -190,13 +190,6 @@ const NexusGate = () => {
                                                 className="flex flex-col h-full"
                                             >
                                                 <div className="card-top">
-                                                    <div className="portal-icon" aria-hidden="true">
-                                                        <svg viewBox="0 0 24 24" fill="none">
-                                                            <path d="M8 7V5.8C8 4.8 8.8 4 9.8 4h4.4c1 0 1.8.8 1.8 1.8V7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                                                            <path d="M5.8 7h12.4c1 0 1.8.8 1.8 1.8v9.4c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8V8.8C4 7.8 4.8 7 5.8 7Z" stroke="currentColor" strokeWidth="1.9" />
-                                                            <path d="M9 7v13M15 7v13" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                                                        </svg>
-                                                    </div>
 
                                                     <button
                                                         type="button"
@@ -288,13 +281,6 @@ const NexusGate = () => {
                                                 className="flex flex-col h-full"
                                             >
                                                 <div className="card-top">
-                                                    <div className="portal-icon" aria-hidden="true">
-                                                        <svg viewBox="0 0 24 24" fill="none">
-                                                            <path d="M8 7V5.8C8 4.8 8.8 4 9.8 4h4.4c1 0 1.8.8 1.8 1.8V7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                                                            <path d="M5.8 7h12.4c1 0 1.8.8 1.8 1.8v9.4c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8V8.8C4 7.8 4.8 7 5.8 7Z" stroke="currentColor" strokeWidth="1.9" />
-                                                            <path d="M9 7v13M15 7v13" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                                                        </svg>
-                                                    </div>
 
                                                     <button
                                                         type="button"

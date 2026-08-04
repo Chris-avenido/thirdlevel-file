@@ -1678,26 +1678,42 @@ const OfficialProfiling = () => {
                     {/* Main Content Area */}
                     <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
                         {/* Mobile Toggle Bar */}
-                        <div className="lg:hidden flex items-center justify-between bg-transparent border-b border-slate-200 p-4 shadow-sm shrink-0">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-[#08315F]/10 flex items-center justify-center text-[#08315F]">
-                                    {React.createElement(TABS.find(t => t.id === tab)?.icon || FiUser, { size: 16 })}
+                        <div className="lg:hidden flex flex-col gap-2.5 bg-white/90 backdrop-blur-md border-b border-slate-200 p-3.5 shadow-sm shrink-0">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-lg bg-[#08315F]/10 flex items-center justify-center text-[#08315F]">
+                                        {React.createElement(TABS.find(t => t.id === tab)?.icon || FiUser, { size: 16 })}
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Active Section</p>
+                                        <p className="text-xs font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-wider mt-0.5">{TABS.find(t => t.id === tab)?.label}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Active Section</p>
-                                    <p className="text-xs font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-wider mt-1">{TABS.find(t => t.id === tab)?.label}</p>
-                                </div>
+                                <button
+                                    onClick={() => setIsMobileMenuOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#08315F]/10 hover:bg-[#08315F]/20 text-[#08315F] text-xs font-black rounded-lg transition-all border border-[#0038A8]/10"
+                                >
+                                    <FiList size={14} /> Full Menu
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setIsMobileMenuOpen(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-[#08315F]/15 hover:bg-[#08315F]/20 text-[#08315F] text-xs font-black rounded-xl transition-all border border-[#0038A8]/10"
-                            >
-                                <FiList size={14} /> Change Section
-                            </button>
+                            {/* Mobile Section Selection Dropdown */}
+                            <div className="w-full">
+                                <select
+                                    value={tab}
+                                    onChange={(e) => setTab(e.target.value)}
+                                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#0038A8] outline-none shadow-inner"
+                                >
+                                    {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.label} {isTabCompleted(t.id) ? '✓' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         {/* Scrollable Form Area */}
-                        <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-transparent pb-24">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 bg-transparent pb-32 lg:pb-24">
                             <div className="max-w-[1400px] w-full mx-auto">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                                     <div className="md:col-span-3">
@@ -3698,16 +3714,18 @@ const OfficialProfiling = () => {
                         </div>
 
                         {/* Persistent Bottom Action Bar */}
-                        <div className="bg-white border-t border-slate-200 py-4 px-6 lg:px-8 flex items-center justify-between z-20 shrink-0">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-20 lg:bg-white lg:py-4 lg:px-8 lg:shadow-none flex items-center justify-between shrink-0">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:flex items-center gap-2">
                                 <FiShield className="text-emerald-500" size={12} /> Securely stored in DepEd database
                             </span>
-                            <div className="flex items-center gap-3">
-
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest sm:hidden flex items-center gap-1.5">
+                                    <FiShield className="text-emerald-500" size={12} /> Protected
+                                </span>
                                 <button
                                     onClick={handleSave}
                                     disabled={saving || !isEditing}
-                                    className="px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                    className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[10px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {saving ? <FiLoader className="animate-spin" size={14} /> : <FiSave size={14} />}
                                     {saving ? 'Saving...' : 'Save Progress'}
