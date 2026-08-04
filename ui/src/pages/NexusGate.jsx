@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiLogIn, FiUserPlus, FiShield, FiBookOpen, FiExternalLink } from 'react-icons/fi';
+import { FiX, FiLogIn, FiUserPlus, FiShield, FiBookOpen, FiExternalLink, FiLock } from 'react-icons/fi';
+import Swal from 'sweetalert2';
 import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
 import modernLogo from '../assets/modern_logo.png';
@@ -24,6 +25,20 @@ const NexusGate = () => {
 
     // Layout Swap State
     const [isSwapped, setIsSwapped] = useState(false);
+
+    const handleLockedVacanciesClick = (e) => {
+        e.stopPropagation();
+        Swal.fire({
+            title: 'Vacancies Portal Locked',
+            text: 'The Vacancies module is currently locked and unavailable for public applications. Access is restricted to active hiring cycles.',
+            icon: 'warning',
+            confirmButtonText: 'Understood',
+            confirmButtonColor: '#06345F',
+            customClass: {
+                popup: 'rounded-3xl border-2 border-[#06345F]'
+            }
+        });
+    };
 
     const itemLeft = {
         hidden: { opacity: 0, x: -60 },
@@ -65,9 +80,9 @@ const NexusGate = () => {
                     <path d="M9 7v13M15 7v13" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
                 </svg>
             ),
-            tag: 'Career Path',
+
             roleLabel: 'For Third Level Personnel',
-            title: 'Records Management',
+            title: 'Third Level Portal',
             desc: 'Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.',
             action: 'Continue',
             className: ''
@@ -82,7 +97,7 @@ const NexusGate = () => {
             ),
             tag: 'Administrative Portal',
             roleLabel: 'For Administrators',
-            title: 'Third Level Portal',
+            title: 'Records Management',
             desc: 'Access tools for managing the TLO masterlist, monitoring submissions and performing authorized actions.',
             action: 'Continue',
             className: 'admin'
@@ -108,17 +123,36 @@ const NexusGate = () => {
                         <AnimatePresence mode="wait">
                             {!isSwapped ? (
                                 <motion.section key="normal" className="landing-stage" exit="exit">
-                                    <motion.section 
-                                        className="hero" 
+                                    <motion.section
+                                        className="hero"
                                         aria-labelledby="page-title"
                                         onClick={() => setIsSwapped(true)}
                                         style={{ cursor: 'pointer' }}
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        <motion.div variants={itemLeft} className="flex gap-4 mb-2" aria-label="Logos">
-                                            <div className="logo">
-                                                <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
+                                        <motion.div variants={itemLeft} className="flex gap-4 mb-2 overflow-visible relative z-30" aria-label="Logos">
+                                            <div
+                                                className="deped-logo-wrapper relative group cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePortalClick('admin');
+                                                }}
+                                                title="Access Records Management (Admin Access)"
+                                            >
+                                                <div className="logo transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/60">
+                                                    <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
+                                                </div>
+
+                                                {/* Floating Tooltip / Popover Badge on Hover */}
+                                                <div className="admin-hover-tooltip">
+                                                    <div className="admin-pill-icon" aria-hidden="true">
+                                                        <FiShield size={13} />
+                                                    </div>
+                                                    <span className="admin-pill-text">Records Management</span>
+                                                    <span className="admin-pill-badge">Admin Access</span>
+                                                    <span className="admin-pill-arrow" aria-hidden="true">→</span>
+                                                </div>
                                             </div>
                                             <div className="logo">
                                                 <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
@@ -133,57 +167,97 @@ const NexusGate = () => {
                                         </motion.p>
                                     </motion.section>
 
-                                    <motion.section 
-                                        className="portal-grid" 
+                                    <motion.section
+                                        className="portal-grid"
                                         aria-label="Available portals"
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        {portals.map((portal) => (
-                                            <motion.button
-                                                key={portal.id}
-                                                variants={itemRight}
-                                                onClick={(e) => { e.stopPropagation(); handlePortalClick(portal.id); }}
-                                                className={`portal-card ${portal.className}`}
-                                                style={{ textAlign: 'left' }}
-                                                whileTap={{ scale: 0.96 }}
+                                        {/* Main Records Management Card */}
+                                        <motion.button
+                                            key="records"
+                                            variants={itemRight}
+                                            onClick={(e) => { e.stopPropagation(); handlePortalClick('records'); }}
+                                            className="portal-card"
+                                            style={{ textAlign: 'left' }}
+                                            whileTap={{ scale: 0.96 }}
+                                        >
+                                            <motion.div
+                                                variants={textVariants}
+                                                initial="hidden"
+                                                animate={clickedCard === 'records' ? "exit" : "visible"}
+                                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                                className="flex flex-col h-full"
                                             >
-                                                <motion.div
-                                                    variants={textVariants}
-                                                    initial="hidden"
-                                                    animate={clickedCard === portal.id ? "exit" : "visible"}
-                                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                                    className="flex flex-col h-full"
-                                                >
-                                                    <div className="card-top">
-                                                        <div className="portal-icon" aria-hidden="true">
-                                                            {portal.icon}
-                                                        </div>
-                                                        <p className="card-label">{portal.tag}</p>
-                                                        {portal.id === 'records' && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setShowGuideModal(true);
-                                                                }}
-                                                                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
-                                                                title="Records Management User Guide"
-                                                            >
-                                                                <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
-                                                                <span>User Guide</span>
-                                                            </button>
-                                                        )}
+                                                <div className="card-top">
+                                                    <div className="portal-icon" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" fill="none">
+                                                            <path d="M8 7V5.8C8 4.8 8.8 4 9.8 4h4.4c1 0 1.8.8 1.8 1.8V7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                                                            <path d="M5.8 7h12.4c1 0 1.8.8 1.8 1.8v9.4c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8V8.8C4 7.8 4.8 7 5.8 7Z" stroke="currentColor" strokeWidth="1.9" />
+                                                            <path d="M9 7v13M15 7v13" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                                                        </svg>
                                                     </div>
-                                                    <h2>{portal.title}</h2>
-                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">{portal.roleLabel}</p>
-                                                    <p>{portal.desc}</p>
-                                                    <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
-                                                        {portal.action} <span aria-hidden="true">→</span>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowGuideModal(true);
+                                                        }}
+                                                        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
+                                                        title="Records Management User Guide"
+                                                    >
+                                                        <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
+                                                        <span>User Guide</span>
+                                                    </button>
+                                                </div>
+                                                <h2>Third Level Portal</h2>
+                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">For Third Level Personnel</p>
+                                                <p>Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.</p>
+                                                <div className="portal-link" aria-label="Enter Third Level Portal">
+                                                    Continue <span aria-hidden="true">→</span>
+                                                </div>
+                                            </motion.div>
+                                        </motion.button>
+
+                                        {/* Vacancies Card (Locked) */}
+                                        <motion.button
+                                            key="vacancies"
+                                            variants={itemRight}
+                                            onClick={handleLockedVacanciesClick}
+                                            className="portal-card locked"
+                                            style={{ textAlign: 'left' }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <motion.div
+                                                variants={textVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                                className="flex flex-col h-full"
+                                            >
+                                                <div className="card-top">
+                                                    <div className="portal-icon bg-slate-700 text-slate-200" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" fill="none">
+                                                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.9" />
+                                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.9" />
+                                                            <circle cx="12" cy="13" r="1.5" fill="currentColor" />
+                                                        </svg>
                                                     </div>
-                                                </motion.div>
-                                            </motion.button>
-                                        ))}
+                                                    <p className="card-label !text-slate-500">Recruitment</p>
+                                                    <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/90 text-amber-300 border border-amber-400/30 text-[11px] font-black uppercase tracking-wider shadow-sm group shrink-0 relative z-20">
+                                                        <FiLock size={13} className="text-amber-400" />
+                                                        <span>Locked</span>
+                                                    </div>
+                                                </div>
+                                                <h2>Vacancies</h2>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 opacity-80">Open Positions & Opportunities</p>
+                                                <p>Explore official Third Level executive position vacancies, qualification standards, application requirements, and recruitment announcements across the Department.</p>
+                                                <div className="portal-link !text-slate-500 group-hover:!text-rose-600 transition-colors" aria-label="Vacancies Portal Locked">
+                                                    <span>Restricted Access</span> <FiLock size={12} className="inline ml-1 text-slate-400" />
+                                                </div>
+                                            </motion.div>
+                                        </motion.button>
                                     </motion.section>
                                     <p className="footer-note">
                                         Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
@@ -191,70 +265,129 @@ const NexusGate = () => {
                                 </motion.section>
                             ) : (
                                 <motion.section key="swapped" className="landing-stage swapped" exit="exit">
-                                    <motion.section 
-                                        className="portal-grid" 
+                                    <motion.section
+                                        className="portal-grid"
                                         aria-label="Available portals"
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        {portals.map((portal) => (
-                                            <motion.button
-                                                key={portal.id}
-                                                variants={itemLeft}
-                                                onClick={(e) => { e.stopPropagation(); handlePortalClick(portal.id); }}
-                                                className={`portal-card ${portal.className}`}
-                                                style={{ textAlign: 'left' }}
-                                                whileTap={{ scale: 0.96 }}
+                                        {/* Main Records Management Card */}
+                                        <motion.button
+                                            key="records"
+                                            variants={itemLeft}
+                                            onClick={(e) => { e.stopPropagation(); handlePortalClick('records'); }}
+                                            className="portal-card"
+                                            style={{ textAlign: 'left' }}
+                                            whileTap={{ scale: 0.96 }}
+                                        >
+                                            <motion.div
+                                                variants={textVariants}
+                                                initial="hidden"
+                                                animate={clickedCard === 'records' ? "exit" : "visible"}
+                                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                                className="flex flex-col h-full"
                                             >
-                                                <motion.div
-                                                    variants={textVariants}
-                                                    initial="hidden"
-                                                    animate={clickedCard === portal.id ? "exit" : "visible"}
-                                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                                    className="flex flex-col h-full"
-                                                >
-                                                    <div className="card-top">
-                                                        <div className="portal-icon" aria-hidden="true">
-                                                            {portal.icon}
-                                                        </div>
-                                                        <p className="card-label">{portal.tag}</p>
-                                                        {portal.id === 'records' && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setShowGuideModal(true);
-                                                                }}
-                                                                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
-                                                                title="Records Management User Guide"
-                                                            >
-                                                                <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
-                                                                <span>User Guide</span>
-                                                            </button>
-                                                        )}
+                                                <div className="card-top">
+                                                    <div className="portal-icon" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" fill="none">
+                                                            <path d="M8 7V5.8C8 4.8 8.8 4 9.8 4h4.4c1 0 1.8.8 1.8 1.8V7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                                                            <path d="M5.8 7h12.4c1 0 1.8.8 1.8 1.8v9.4c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8V8.8C4 7.8 4.8 7 5.8 7Z" stroke="currentColor" strokeWidth="1.9" />
+                                                            <path d="M9 7v13M15 7v13" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                                                        </svg>
                                                     </div>
-                                                    <h2>{portal.title}</h2>
-                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">{portal.roleLabel}</p>
-                                                    <p>{portal.desc}</p>
-                                                    <div className="portal-link" aria-label={`Enter ${portal.title} portal`}>
-                                                        {portal.action} <span aria-hidden="true">→</span>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowGuideModal(true);
+                                                        }}
+                                                        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
+                                                        title="Records Management User Guide"
+                                                    >
+                                                        <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
+                                                        <span>User Guide</span>
+                                                    </button>
+                                                </div>
+                                                <h2>Third Level Portal</h2>
+                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">For Third Level Personnel</p>
+                                                <p>Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.</p>
+                                                <div className="portal-link" aria-label="Enter Third Level Portal">
+                                                    Continue <span aria-hidden="true">→</span>
+                                                </div>
+                                            </motion.div>
+                                        </motion.button>
+
+                                        {/* Vacancies Card (Locked) */}
+                                        <motion.button
+                                            key="vacancies"
+                                            variants={itemLeft}
+                                            onClick={handleLockedVacanciesClick}
+                                            className="portal-card locked"
+                                            style={{ textAlign: 'left' }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <motion.div
+                                                variants={textVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                                className="flex flex-col h-full"
+                                            >
+                                                <div className="card-top">
+                                                    <div className="portal-icon bg-slate-700 text-slate-200" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" fill="none">
+                                                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.9" />
+                                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.9" />
+                                                            <circle cx="12" cy="13" r="1.5" fill="currentColor" />
+                                                        </svg>
                                                     </div>
-                                                </motion.div>
-                                            </motion.button>
-                                        ))}
+                                                    <p className="card-label !text-slate-500">Recruitment</p>
+                                                    <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/90 text-amber-300 border border-amber-400/30 text-[11px] font-black uppercase tracking-wider shadow-sm group shrink-0 relative z-20">
+                                                        <FiLock size={13} className="text-amber-400" />
+                                                        <span>Locked</span>
+                                                    </div>
+                                                </div>
+                                                <h2>Vacancies</h2>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 opacity-80">Open Positions & Opportunities</p>
+                                                <p>Explore official Third Level executive position vacancies, qualification standards, application requirements, and recruitment announcements across the Department.</p>
+                                                <div className="portal-link !text-slate-500 group-hover:!text-rose-600 transition-colors" aria-label="Vacancies Portal Locked">
+                                                    <span>Restricted Access</span> <FiLock size={12} className="inline ml-1 text-slate-400" />
+                                                </div>
+                                            </motion.div>
+                                        </motion.button>
                                     </motion.section>
 
-                                    <motion.section 
-                                        className="hero" 
+                                    <motion.section
+                                        className="hero"
                                         aria-labelledby="page-title"
                                         onClick={() => setIsSwapped(false)}
                                         style={{ cursor: 'pointer' }}
                                         initial="hidden" animate="visible" exit="exit"
                                         variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
-                                        <motion.div variants={itemRight} className="flex gap-4 mb-2" aria-label="Logos">
-                                            <div className="logo">
-                                                <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
+                                        <motion.div variants={itemRight} className="flex gap-4 mb-2 overflow-visible relative z-30" aria-label="Logos">
+                                            <div
+                                                className="deped-logo-wrapper relative group cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePortalClick('admin');
+                                                }}
+                                                title="Access Records Management (Admin Access)"
+                                            >
+                                                <div className="logo transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/60">
+                                                    <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
+                                                </div>
+
+                                                {/* Floating Tooltip / Popover Badge on Hover */}
+                                                <div className="admin-hover-tooltip">
+                                                    <div className="admin-pill-icon" aria-hidden="true">
+                                                        <FiShield size={13} />
+                                                    </div>
+                                                    <span className="admin-pill-text">Records Management</span>
+                                                    <span className="admin-pill-badge">Admin Access</span>
+                                                    <span className="admin-pill-arrow" aria-hidden="true">→</span>
+                                                </div>
                                             </div>
                                             <div className="logo">
                                                 <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />

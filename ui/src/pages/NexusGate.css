@@ -393,6 +393,109 @@
   transform: translateX(5px);
 }
 
+/* --- DepEd Logo Hover & Admin Tooltip Popover --- */
+.nexus-gate-wrapper .deped-logo-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.nexus-gate-wrapper .admin-hover-tooltip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 99;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: rgba(6, 52, 95, 0.95);
+  border: 1.5px solid rgba(253, 186, 34, 0.75);
+  color: #ffffff;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 14px 36px rgba(5, 35, 63, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px) scale(0.95);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.nexus-gate-wrapper .deped-logo-wrapper:hover .admin-hover-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.nexus-gate-wrapper .admin-hover-tooltip:hover {
+  background: rgba(5, 35, 63, 0.98);
+  border-color: rgba(253, 186, 34, 0.95);
+  box-shadow: 0 18px 42px rgba(5, 35, 63, 0.55);
+}
+
+.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  color: var(--navy);
+  box-shadow: 0 2px 8px rgba(253, 186, 34, 0.4);
+}
+
+.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-text {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-style: italic;
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: var(--gold);
+  color: var(--navy-2);
+}
+
+.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-arrow {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold);
+  transition: transform 0.25s ease;
+}
+
+.nexus-gate-wrapper .deped-logo-wrapper:hover .admin-pill-arrow {
+  transform: translateX(3px);
+}
+
+/* --- Locked Vacancies Card --- */
+.nexus-gate-wrapper .portal-card.locked {
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(241, 245, 249, 0.42)) !important;
+  opacity: 0.9;
+}
+
+.nexus-gate-wrapper .portal-card.locked:hover {
+  border-color: rgba(245, 158, 11, 0.65) !important;
+  box-shadow: 0 24px 60px rgba(245, 158, 11, 0.14) !important;
+  opacity: 1;
+}
+
+.nexus-gate-wrapper .portal-card.locked .portal-icon {
+  background: linear-gradient(135deg, #475569, #1e293b);
+  box-shadow: 0 10px 22px rgba(30, 41, 59, 0.2);
+}
+
 .nexus-gate-wrapper .footer-note {
   position: absolute;
   left: clamp(24px, 4vw, 62px);
