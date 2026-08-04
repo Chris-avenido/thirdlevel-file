@@ -1,7 +1,7 @@
 // Force HMR
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle } from 'react-icons/fi';
+import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle, FiGrid } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import newLogo from '../assets/modern_logo.png';
 
@@ -86,6 +86,14 @@ const AdminSidebar = () => {
                     >
                         <FiHome size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Executive Dashboard</span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/main-dashboard')}
+                        title="Main Dashboard"
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/main-dashboard' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                    >
+                        <FiGrid size={18} className="shrink-0" />
+                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Main Dashboard</span>
                     </button>
                     <button
                         onClick={() => navigate('/officials-registry')}

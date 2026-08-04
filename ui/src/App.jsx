@@ -17,6 +17,8 @@ import NotableAchievements from './pages/NotableAchievements';
 import LoadingScreen from './components/LoadingScreen';
 import AllVacancies from './pages/AllVacancies';
 
+import MainDashboard from './pages/MainDashboard';
+
 // Public Route Component
 const PublicRoute = ({ children }) => {
     const { user, loading } = useAuth();
@@ -108,6 +110,14 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <AllVacancies />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/main-dashboard" 
+                element={
+                    <ProtectedRoute>
+                        <MainDashboard />
                     </ProtectedRoute>
                 } 
             />
