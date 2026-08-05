@@ -1200,7 +1200,7 @@ export const getOfficials = async (req, res) => {
       conditions.push(`(position_title IS NULL OR position_title = '')`);
     } else {
       params.push(activePosition);
-      conditions.push(`position_title = $${params.length}`);
+      conditions.push(`position_title ILIKE $${params.length}`);
     }
   }
 

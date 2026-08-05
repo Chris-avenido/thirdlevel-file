@@ -51,3 +51,54 @@ export const expandAcronym = (val) => {
   };
   return map[upperVal] || val;
 };
+
+export const formatPositionTitle = (title) => {
+  if (!title || typeof title !== 'string') return '';
+  let trimmed = title.trim();
+  if (!trimmed || trimmed === 'N/A' || trimmed === 'n/a') return '';
+
+  const acronymMap = {
+    'RD': 'Regional Director',
+    'REGIONAL DIRECTOR': 'Regional Director',
+    'REGIONAL DIR': 'Regional Director',
+    'ARD': 'Assistant Regional Director',
+    'ASSISTANT REGIONAL DIRECTOR': 'Assistant Regional Director',
+    'ASSISTANT REGIONAL DIR': 'Assistant Regional Director',
+    'SDS': 'Schools Division Superintendent',
+    'SCHOOLS DIVISION SUPERINTENDENT': 'Schools Division Superintendent',
+    'ASDS': 'Assistant Schools Division Superintendent',
+    'ASSISTANT SCHOOLS DIVISION SUPERINTENDENT': 'Assistant Schools Division Superintendent',
+    'UNDERSECRETARY': 'Undersecretary',
+    'USEC': 'Undersecretary',
+    'SECRETARY': 'Secretary',
+    'OSEC': 'Secretary',
+    'ASSISTANT SECRETARY': 'Assistant Secretary',
+    'ASEC': 'Assistant Secretary',
+    'DIRECTOR IV': 'Director IV',
+    'DIRECTOR III': 'Director III',
+    'EXECUTIVE DIRECTOR II': 'Executive Director II',
+    'SCHOOL PRINCIPAL': 'School Principal',
+    'PRINCIPAL IV': 'Principal IV',
+    'VOCATIONAL SCHOOL ADMINISTRATOR': 'Vocational School Administrator'
+  };
+
+  const upper = trimmed.toUpperCase();
+  if (acronymMap[upper]) return acronymMap[upper];
+
+  if (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed)) {
+    return trimmed
+      .toLowerCase()
+      .split(/\s+/)
+      .map(word => {
+        const wordUpper = word.toUpperCase();
+        if (['IV', 'III', 'II', 'I', 'OIC', 'SDS', 'ASDS', 'RD', 'ARD', 'CO', 'RO', 'SDO'].includes(wordUpper)) {
+          return wordUpper;
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
+  }
+
+  return trimmed;
+};
+

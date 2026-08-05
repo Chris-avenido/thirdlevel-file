@@ -42,13 +42,13 @@ const FilterPanel = ({
             >
               <FiRotateCcw size={14} /> Reset Filters
             </button>
-            <button
+            {/* <button
               type="button"
               className={`mdb-button ${isAdvancedMode ? 'secondary' : 'gold'}`}
               onClick={onToggleAdvancedMode}
             >
               <FiSliders size={14} /> {isAdvancedMode ? 'Toggle Basic Mode' : 'Toggle Advanced Mode'}
-            </button>
+            </button> */}
           </div>
         </div>
 

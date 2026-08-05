@@ -18,7 +18,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
-import { expandAcronym } from '../utils/officialsUtils';
+import { expandAcronym, formatPositionTitle } from '../utils/officialsUtils';
 import ModernDatePicker from '../components/ModernDatePicker';
 import sgMap from '../utils/sgMap.json';
 import newLogo from '../assets/modern_logo.png';
@@ -454,7 +454,10 @@ const OfficialsRegistry = () => {
                 } else if (activeTab === 'Division Chiefs') {
                     filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
                 }
-                let uniquePositions = [...new Set(filteredData.map(o => o.position_title).filter(Boolean))].sort();
+                let formattedPositions = filteredData
+                    .map(o => formatPositionTitle(o.position_title))
+                    .filter(Boolean);
+                let uniquePositions = [...new Set(formattedPositions)].sort();
 
                 // Remove Vacant Tests from selector
                 uniquePositions = uniquePositions.filter(p => !p.toUpperCase().includes('VACANT TEST'));

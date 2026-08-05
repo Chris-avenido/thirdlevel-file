@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiUrl } from '../../utils/api';
 import AdminSidebar from '../../components/AdminSidebar';
+import { formatPositionTitle } from '../../utils/officialsUtils';
 
 // Subcomponents
 import DashboardHeader from './components/DashboardHeader';
@@ -65,7 +66,7 @@ const mapOfficialRecord = (row) => {
     TLO_id: row.TLOid || `TLO-${String(row.id || '').padStart(4, '0')}`,
     TLOid: row.TLOid,
     Name: name,
-    Position: row.position_title || 'Unassigned Position',
+    Position: formatPositionTitle(row.position_title) || 'Unassigned Position',
     Employment_Status: status,
     Region: canonicalCell(row.region || row.strand || 'Central Office'),
     Division: canonicalCell(row.division || 'N/A'),
@@ -174,7 +175,7 @@ const MainDashboard = () => {
   }, [allData]);
 
   const categoryList = useMemo(() => {
-    return Array.from(new Set(allData.map(d => d.Position).filter(Boolean))).sort();
+    return Array.from(new Set(allData.map(d => formatPositionTitle(d.Position)).filter(Boolean))).sort();
   }, [allData]);
 
   // Filter Cascade Handlers
