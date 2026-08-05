@@ -8,7 +8,7 @@ import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
 import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
-import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight } from 'react-icons/fi';
+import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
 import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
 
 const THIRD_LEVEL_POSITIONS = [
@@ -654,7 +654,7 @@ const Home = () => {
           <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                <FiHome size={20} />
+                <FiGrid size={20} />
               </div>
               <div>
                 <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
