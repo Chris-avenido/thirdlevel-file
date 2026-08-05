@@ -104,7 +104,7 @@ const Login = () => {
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
-                    navigate('/home');
+                    navigate('/main-dashboard');
                 } else {
                     navigate('/official-profiling');
                 }
@@ -143,7 +143,7 @@ const Login = () => {
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
-                    navigate('/home');
+                    navigate('/main-dashboard');
                 } else {
                     navigate('/official-profiling');
                 }

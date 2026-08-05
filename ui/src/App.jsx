@@ -26,7 +26,7 @@ const PublicRoute = ({ children }) => {
     if (user) {
         const roleLower = user.role?.toLowerCase() || '';
         if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
-            return <Navigate to="/home" replace />;
+            return <Navigate to="/main-dashboard" replace />;
         } else {
             return <Navigate to="/official-profiling" replace />;
         }
