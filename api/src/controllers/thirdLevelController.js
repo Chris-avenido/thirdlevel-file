@@ -1240,8 +1240,15 @@ export const getOfficials = async (req, res) => {
     conditions.push(`(COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   }
 
-  if (is_oic === 'true') {
-    conditions.push(`COALESCE(is_oic, FALSE) = TRUE`);
+  let filterOic = Array.isArray(is_oic) ? is_oic[is_oic.length - 1] : is_oic;
+  if (filterOic && filterOic !== 'All') {
+    const isYes = ['true', 'yes', '1'].includes(String(filterOic).toLowerCase());
+    const isNo = ['false', 'no', '0'].includes(String(filterOic).toLowerCase());
+    if (isYes) {
+      conditions.push(`(COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
+    } else if (isNo) {
+      conditions.push(`(COALESCE(is_oic, FALSE) = FALSE AND (designation NOT ILIKE '%OIC%' OR designation IS NULL))`);
+    }
   }
 
   if (conditions.length > 0) {
