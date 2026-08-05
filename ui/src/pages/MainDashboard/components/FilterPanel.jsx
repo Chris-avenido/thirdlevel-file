@@ -98,7 +98,7 @@ const FilterPanel = ({
             </label>
 
             <label className="mdb-label">
-              <span>Office / Division Type</span>
+              <span>Office</span>
               <select
                 className="mdb-select"
                 value={selectedOfficeType}

@@ -68,8 +68,8 @@ const mapOfficialRecord = (row) => {
     Position: row.position_title || 'Unassigned Position',
     Employment_Status: status,
     Region: canonicalCell(row.region || row.strand || 'Central Office'),
-    Division: canonicalCell(row.division || row.office || 'N/A'),
-    Office: canonicalCell(row.office || row.strand || 'Main Station'),
+    Division: canonicalCell(row.division || 'N/A'),
+    Office: canonicalCell(row.office || ''),
     Province: canonicalCell(row.province || row.region || 'NCR'),
     Municipality: canonicalCell(row.municipality || row.division || 'Pasig City'),
     Email: row.email || 'N/A',
@@ -165,7 +165,12 @@ const MainDashboard = () => {
   }, [allData, selectedRegion]);
 
   const officeTypes = useMemo(() => {
-    return Array.from(new Set(allData.map(d => d.Office).filter(Boolean))).sort();
+    const divisionNames = new Set(allData.map(d => d.Division).filter(Boolean));
+    return Array.from(new Set(
+      allData
+        .map(d => d.Office)
+        .filter(o => o && o !== 'Main Station' && !divisionNames.has(o))
+    )).sort();
   }, [allData]);
 
   const categoryList = useMemo(() => {
