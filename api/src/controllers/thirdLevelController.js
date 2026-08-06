@@ -433,8 +433,8 @@ export const updateProfile = async (req, res) => {
       if (from && to) {
         const fromDate = new Date(from);
         const toDate = new Date(to);
-        if (toDate <= fromDate) {
-          throw new Error(`Invalid date range in ${context}: TO date must be strictly after FROM date.`);
+        if (toDate < fromDate) {
+          throw new Error(`Invalid date range in ${context}: TO date cannot be before FROM date.`);
         }
       }
     };
@@ -475,7 +475,8 @@ export const updateProfile = async (req, res) => {
       'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
       'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
       'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for',
-      'other_courses'
+      'other_courses',
+      'bachelor_degree', 'bachelor_year', 'master_degree', 'master_year', 'doctorate_degree', 'doctorate_year'
     ];
 
     const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'individual_accomplishments', 'eligibilities', 'other_courses', 'education_degrees']);

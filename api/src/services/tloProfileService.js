@@ -110,9 +110,29 @@ export async function syncAllChildTables(client, sourceTable, tloId, body, updat
   };
 
   // Education: driven by education_degrees array (existing JSONB field name preserved)
+  // Map legacy JSONB field names → relational column names expected by tloEducationRepository.
+  // The DB CHECK constraint requires exactly: 'Bachelor' | 'Master' | 'Doctorate'
   if (body.education_degrees !== undefined && Array.isArray(body.education_degrees)) {
+    const normalizeLevel = (raw) => {
+      if (!raw) return 'Bachelor';
+      const u = raw.toString().toUpperCase();
+      if (u.includes('DOCTORATE') || u.includes('DOCTOR')) return 'Doctorate';
+      if (u.includes('MASTER'))                              return 'Master';
+      return 'Bachelor'; // fallback covers BACCALAUREATE / BACHELOR'S DEGREE
+    };
+    const mappedEducation = body.education_degrees.map(ed => ({
+      id:             ed.id,
+      level:          normalizeLevel(ed.level || ed.highest_education),
+      degree:         ed.degree         || ed.specific_degree   || ed.education_program || '',
+      institution:    ed.institution    || ed.school            || null,
+      year_graduated: ed.year_graduated
+                        ? parseInt(ed.year_graduated, 10) || null
+                        : ed.education_year_graduated
+                          ? parseInt(ed.education_year_graduated, 10) || null
+                          : null,
+    }));
     await safe('education', () =>
-      educationRepo.syncForTloId(client, sourceTable, tloId, body.education_degrees, updatedBy)
+      educationRepo.syncForTloId(client, sourceTable, tloId, mappedEducation, updatedBy)
     );
   }
 
