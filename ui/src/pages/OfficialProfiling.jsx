@@ -677,8 +677,12 @@ const OfficialProfiling = () => {
                     setTab('summary');
                 }
 
-                // Process education_degrees JSONB array into string inputs for edit tabs
-                const educationDegrees = d.education_degrees || [];
+                // ─────────────────────────────────────────────────────────────
+                // EDUCATION: Fallback chain
+                // Priority 1: d.education_records  (relational — new)
+                // Priority 2: d.education_degrees  (JSONB — existing)
+                // Priority 3: d.bachelor_degree     (legacy newline text)
+                // ─────────────────────────────────────────────────────────────
                 let bacDegs = [];
                 let bacYrs = [];
                 let masDegs = [];
@@ -686,30 +690,105 @@ const OfficialProfiling = () => {
                 let docDegs = [];
                 let docYrs = [];
 
-                educationDegrees.forEach(deg => {
-                    const highest = (deg.highest_education || '').toUpperCase();
-                    const degreeName = deg.specific_degree || deg.education_program || '';
-                    const year = deg.education_year_graduated || '';
+                const relationalEdu = Array.isArray(d.education_records) && d.education_records.length > 0;
+                if (relationalEdu) {
+                    // Priority 1: relational rows { id, level, degree, year_graduated }
+                    d.education_records.forEach(rec => {
+                        const lv = (rec.level || '').toUpperCase();
+                        const deg = rec.degree || '';
+                        const yr = rec.year_graduated ? String(rec.year_graduated) : '';
+                        if (lv === 'BACHELOR') {
+                            if (deg) bacDegs.push(deg);
+                            if (yr) bacYrs.push(yr);
+                        } else if (lv === 'MASTER') {
+                            if (deg) masDegs.push(deg);
+                            if (yr) masYrs.push(yr);
+                        } else if (lv === 'DOCTORATE') {
+                            if (deg) docDegs.push(deg);
+                            if (yr) docYrs.push(yr);
+                        }
+                    });
+                } else {
+                    // Priority 2: education_degrees JSONB (existing logic — preserved)
+                    const educationDegrees = d.education_degrees || [];
+                    educationDegrees.forEach(deg => {
+                        const highest = (deg.highest_education || '').toUpperCase();
+                        const degreeName = deg.specific_degree || deg.education_program || '';
+                        const year = deg.education_year_graduated || '';
+                        if (highest.includes('BACHELOR') || highest.includes('BACCALAUREATE')) {
+                            if (degreeName) bacDegs.push(degreeName);
+                            if (year) bacYrs.push(year);
+                        } else if (highest.includes('MASTER')) {
+                            if (degreeName) masDegs.push(degreeName);
+                            if (year) masYrs.push(year);
+                        } else if (highest.includes('DOCTOR')) {
+                            if (degreeName) docDegs.push(degreeName);
+                            if (year) docYrs.push(year);
+                        }
+                    });
+                }
 
-                    if (highest.includes('BACHELOR') || highest.includes('BACCALAUREATE')) {
-                        if (degreeName) bacDegs.push(degreeName);
-                        if (year) bacYrs.push(year);
-                    } else if (highest.includes('MASTER')) {
-                        if (degreeName) masDegs.push(degreeName);
-                        if (year) masYrs.push(year);
-                    } else if (highest.includes('DOCTOR')) {
-                        if (degreeName) docDegs.push(degreeName);
-                        if (year) docYrs.push(year);
-                    }
-                });
-
-                const hasEducationDegrees = Array.isArray(d.education_degrees);
+                const hasEducationDegrees = relationalEdu || Array.isArray(d.education_degrees);
+                // Priority 3 (legacy text) is the fallback inside the ternary below
                 const bachelor_degree = hasEducationDegrees ? bacDegs.join('\n') : (d.bachelor_degree || '');
-                const bachelor_year = hasEducationDegrees ? bacYrs.join('\n') : (d.bachelor_year || '');
-                const master_degree = hasEducationDegrees ? masDegs.join('\n') : (d.master_degree || '');
-                const master_year = hasEducationDegrees ? masYrs.join('\n') : (d.master_year || '');
+                const bachelor_year   = hasEducationDegrees ? bacYrs.join('\n') : (d.bachelor_year || '');
+                const master_degree   = hasEducationDegrees ? masDegs.join('\n') : (d.master_degree || '');
+                const master_year     = hasEducationDegrees ? masYrs.join('\n') : (d.master_year || '');
                 const doctorate_degree = hasEducationDegrees ? docDegs.join('\n') : (d.doctorate_degree || '');
-                const doctorate_year = hasEducationDegrees ? docYrs.join('\n') : (d.doctorate_year || '');
+                const doctorate_year   = hasEducationDegrees ? docYrs.join('\n') : (d.doctorate_year || '');
+
+                // ─────────────────────────────────────────────────────────────
+                // ELIGIBILITIES: Fallback chain
+                // Priority 1: d.eligibility_records (relational)
+                // Priority 2: d.eligibilities        (JSONB — existing)
+                // ─────────────────────────────────────────────────────────────
+                let resolvedEligibilities;
+                if (Array.isArray(d.eligibility_records) && d.eligibility_records.length > 0) {
+                    // Map relational columns back to the frontend object shape
+                    resolvedEligibilities = d.eligibility_records.map(rec => ({
+                        id: rec.id,
+                        eligibility: rec.eligibility_type,
+                        date: rec.conferment_date ? rec.conferment_date.split('T')[0] : '',
+                        rating: rec.rating || '',
+                        place_of_assignment: rec.place_of_assignment || '',
+                        details: rec.details || ''
+                    }));
+                } else {
+                    // Priority 2: existing JSONB (preserved as-is)
+                    resolvedEligibilities = d.eligibilities || [];
+                }
+
+                // ─────────────────────────────────────────────────────────────
+                // ACCOMPLISHMENTS: Fallback chain
+                // Priority 1: d.accomplishment_records (relational)
+                // Priority 2: d.individual_accomplishments (JSONB — existing)
+                // ─────────────────────────────────────────────────────────────
+                let resolvedAccomplishments;
+                if (Array.isArray(d.accomplishment_records) && d.accomplishment_records.length > 0) {
+                    // Relational rows have a description field; frontend uses plain strings
+                    resolvedAccomplishments = d.accomplishment_records.map(rec => rec.description || '');
+                } else {
+                    resolvedAccomplishments = d.individual_accomplishments || [];
+                }
+
+                // ─────────────────────────────────────────────────────────────
+                // OTHER COURSES: Fallback chain
+                // Priority 1: d.other_course_records (relational)
+                // Priority 2: d.other_courses         (JSONB — existing)
+                // ─────────────────────────────────────────────────────────────
+                let resolvedOtherCourses;
+                if (Array.isArray(d.other_course_records) && d.other_course_records.length > 0) {
+                    // Map relational columns back to frontend shape: { course, date_from, date_to, details }
+                    resolvedOtherCourses = d.other_course_records.map(rec => ({
+                        id: rec.id,
+                        course: rec.course_title || '',
+                        date_from: rec.date_from ? rec.date_from.split('T')[0] : '',
+                        date_to: rec.date_to ? rec.date_to.split('T')[0] : '',
+                        details: rec.details || ''
+                    }));
+                } else {
+                    resolvedOtherCourses = d.other_courses || [];
+                }
 
                 setProfile({
                     last_name: d.last_name || '',
@@ -745,9 +824,10 @@ const OfficialProfiling = () => {
                     education_degrees: d.education_degrees || [],
                     notable_achievements: d.notable_achievements || '',
                     notable_achievements_year: d.notable_achievements_year || '',
-                    eligibilities: d.eligibilities || [],
-                    other_courses: d.other_courses || [],
-                    individual_accomplishments: d.individual_accomplishments || [],
+                    // Fallback chain applied above: relational → JSONB
+                    eligibilities: resolvedEligibilities,
+                    other_courses: resolvedOtherCourses,
+                    individual_accomplishments: resolvedAccomplishments,
                     performance_rating_1: d.performance_rating_1 || '',
                     performance_rating_1_period: d.performance_rating_1_period || '',
                     performance_rating_2: d.performance_rating_2 || '',
@@ -780,8 +860,43 @@ const OfficialProfiling = () => {
                     updated_at: d.updated_at || null,
                 });
 
-                setPrevPositions(d.previous_positions || []);
-                setTrainings(d.relevant_trainings || []);
+                // POSITIONS: Fallback chain
+                // Priority 1: d.position_history (relational)
+                // Priority 2: d.previous_positions (JSONB — existing)
+                let resolvedPrevPositions;
+                if (Array.isArray(d.position_history) && d.position_history.length > 0) {
+                    // Map relational columns back to frontend shape
+                    resolvedPrevPositions = d.position_history.map(rec => ({
+                        id: rec.id,
+                        position_name: rec.position_name || '',
+                        office: rec.office || '',
+                        strand: rec.strand || '',
+                        start_date: rec.inclusive_date_start ? rec.inclusive_date_start.split('T')[0] : '',
+                        end_date: rec.inclusive_date_end ? rec.inclusive_date_end.split('T')[0] : '',
+                        oic_positions: rec.oic_positions || []
+                    }));
+                } else {
+                    resolvedPrevPositions = d.previous_positions || [];
+                }
+
+                // TRAININGS: Fallback chain
+                // Priority 1: d.training_records (relational)
+                // Priority 2: d.relevant_trainings (JSONB — existing)
+                let resolvedTrainings;
+                if (Array.isArray(d.training_records) && d.training_records.length > 0) {
+                    resolvedTrainings = d.training_records.map(rec => ({
+                        id: rec.id,
+                        training_name: rec.training_name || '',
+                        date_from: rec.inclusive_date_start ? rec.inclusive_date_start.split('T')[0] : '',
+                        date_to: rec.inclusive_date_end ? rec.inclusive_date_end.split('T')[0] : '',
+                        conducted_by: rec.conducted_by || ''
+                    }));
+                } else {
+                    resolvedTrainings = d.relevant_trainings || [];
+                }
+
+                setPrevPositions(resolvedPrevPositions);
+                setTrainings(resolvedTrainings);
 
                 setStatus('found');
             } else {

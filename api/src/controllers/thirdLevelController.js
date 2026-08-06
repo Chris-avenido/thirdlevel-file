@@ -2,6 +2,13 @@
 import pool from '../config/db.js';
 import { upsertBinary } from '../utils/binaryPipeline.js';
 import { uploadToAzure } from '../utils/azureBlobService.js';
+// Service layer for normalized child tables (Phase 3 — dual-write)
+import {
+  fetchAllChildRecords,
+  syncAllChildTables,
+  cloneChildTablesOnApproval,
+  resolveSourceTable
+} from '../services/tloProfileService.js';
 
 let oicSchemaReady = false;
 const optionalColumnExpressionCache = new Map();
@@ -308,7 +315,27 @@ export const getProfile = async (req, res) => {
     const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
     row.position_title = normalized.position_title;
     row.is_oic = normalized.is_oic;
-    res.json({ success: true, data: row });
+
+    // Phase 3: Fetch normalized child table records (additive — existing fields untouched)
+    // Frontend fallback chain: relational → JSONB → legacy text
+    let childRecords = {};
+    try {
+      const sourceTable = resolveSourceTable(TLOid);
+      childRecords = await fetchAllChildRecords(pool, sourceTable, TLOid);
+    } catch (childErr) {
+      // Graceful degradation: if relational tables not yet available, return empty arrays
+      console.warn('[getProfile] Child records fetch skipped:', childErr.message);
+      childRecords = {
+        education_records: [],
+        eligibility_records: [],
+        position_history: [],
+        training_records: [],
+        accomplishment_records: [],
+        other_course_records: []
+      };
+    }
+
+    res.json({ success: true, data: { ...row, ...childRecords } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -548,6 +575,12 @@ export const updateProfile = async (req, res) => {
         values
       );
     }
+
+    // Phase 3: Dual-write to normalized child tables (inside existing transaction)
+    // Existing JSONB columns are still written above. This adds relational sync.
+    const sourceTable = resolveSourceTable(TLOid);
+    const updatedBy = req.user?.email || null;
+    await syncAllChildTables(client, sourceTable, TLOid, req.body, updatedBy);
 
     await client.query('COMMIT');
     res.json({ success: true });
@@ -836,6 +869,11 @@ export const processApplication = async (req, res) => {
       await client.query(`
         UPDATE tlo_users SET role = 'Third Level Official' WHERE LOWER(email) = $1 AND role = 'Third Level Applicant'
       `, [applicant.email.toLowerCase().trim()]);
+
+      // Phase 3: Clone normalized child table rows from staging → masterlist
+      // Runs inside the existing transaction; gracefully skips if tables not yet available
+      const approvalUpdatedBy = req.user?.email || null;
+      await cloneChildTablesOnApproval(client, app_TLOid, applicant.target_TLOid, approvalUpdatedBy);
     }
 
     await client.query('COMMIT');
