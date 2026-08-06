@@ -39,3 +39,16 @@ Your primary objective when fixing a bug is to fix ONLY the requested bug while 
 - No deleted functions.
 - No deleted validation.
 - No unnecessary refactoring.
+
+# Database Schema Migration Workflow
+
+- **Never modify production database directly.** All schema changes must be applied through SQL migration files.
+- **Local Development Database:** Used during development for testing schema changes.
+- **Migration File Rules:**
+  - Create a new migration file for every schema change.
+  - Never overwrite previous migration files.
+  - Naming convention: YYYYMMDD_###_description.sql
+  - Location: database/migrations/
+  - Must contain comments, transactions (BEGIN/COMMIT), safety checks (IF NOT EXISTS/IF EXISTS), and rollback instructions when possible.
+- **Safety Rules:** Avoid SQL errors on multiple runs. Do not remove user data unless explicitly approved. Warn before any destructive operation.
+- **Deliverables for Schema Changes:** Provide Root Cause, Database Changes list, Migration File path and content, Rollback Script, Impact Analysis, and Files Updated list.
