@@ -466,20 +466,18 @@ export const updateProfile = async (req, res) => {
       'strand', 'division', 'office', 'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date', 'age',
-      'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'temporary_address', 'education_degrees',
-      'relevant_trainings', 'notable_achievements', 'notable_achievements_year', 'eligibilities', 'individual_accomplishments', 'total_training_hours',
+      'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'temporary_address',
+      'notable_achievements', 'notable_achievements_year', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period', 'performance_rating_3', 'performance_rating_3_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
-      'previous_positions', 'is_oic', 'unique_number', 'employment_status',
+      'is_oic', 'unique_number', 'employment_status',
       'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
       'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
-      'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for',
-      'other_courses',
-      'bachelor_degree', 'bachelor_year', 'master_degree', 'master_year', 'doctorate_degree', 'doctorate_year'
+      'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
     ];
 
-    const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'individual_accomplishments', 'eligibilities', 'other_courses', 'education_degrees']);
+    const JSONB_FIELDS = new Set([]);
     const updates = [];
     const values = [];
 
