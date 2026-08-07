@@ -23,7 +23,7 @@ export async function findByTloId(client, sourceTable, tloId) {
     `SELECT id, source_table, tlo_id, course_title, institution, details,
             date_from, date_to, created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
-     WHERE source_table = $1 AND tlo_id = $2
+     WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
      ORDER BY date_from DESC NULLS LAST, id ASC`,
     [sourceTable, tloId]
   );
@@ -42,7 +42,7 @@ export async function findByTloId(client, sourceTable, tloId) {
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
+    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
     [sourceTable, tloId]
   );
   const existingIds = new Set(existingRes.rows.map(r => r.id));
@@ -67,7 +67,7 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
          SET course_title = $1, institution = $2, details = $3,
              date_from = $4, date_to = $5,
              updated_at = NOW(), updated_by = $6
-         WHERE id = $7 AND source_table = $8 AND tlo_id = $9`,
+         WHERE id = $7 AND source_table = $8 AND LOWER(tlo_id) = LOWER($9)`,
         [courseTitle, institution, details, dateFrom || null, dateTo || null,
          updatedBy, item.id, sourceTable, tloId]
       );
@@ -88,10 +88,17 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
 
   const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
   if (idsToDelete.length > 0) {
-    await client.query(
-      `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND tlo_id = $3`,
-      [idsToDelete, sourceTable, tloId]
-    );
+    try {
+      await client.query(`SAVEPOINT sp_del_other_courses`);
+      await client.query(
+        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+        [idsToDelete, sourceTable, tloId]
+      );
+      await client.query(`RELEASE SAVEPOINT sp_del_other_courses`);
+    } catch (delErr) {
+      await client.query(`ROLLBACK TO SAVEPOINT sp_del_other_courses`).catch(() => {});
+      console.warn(`[tloOtherCoursesRepository] Deletion skipped/prohibited: ${delErr.message}`);
+    }
   }
 }
 

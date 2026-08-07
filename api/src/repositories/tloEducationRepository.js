@@ -25,7 +25,7 @@ export async function findByTloId(client, sourceTable, tloId) {
     `SELECT id, source_table, tlo_id, level, degree, institution,
             year_graduated, created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
-     WHERE source_table = $1 AND tlo_id = $2
+     WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
      ORDER BY
        CASE level WHEN 'Bachelor' THEN 1 WHEN 'Master' THEN 2 WHEN 'Doctorate' THEN 3 ELSE 4 END,
        id ASC`,
@@ -45,13 +45,20 @@ export async function findByTloId(client, sourceTable, tloId) {
  * @param {string|null} updatedBy  email of the user performing the update
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
-  // 1. Fetch existing IDs
+  // 1. Fetch existing rows
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
+    `SELECT id, level FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
     [sourceTable, tloId]
   );
-  const existingIds = new Set(existingRes.rows.map(r => r.id));
+  const existingRows = existingRes.rows;
+  const existingIds = new Set(existingRows.map(r => r.id));
   const incomingIds = new Set();
+
+  const availableByLevel = {};
+  existingRows.forEach(r => {
+    if (!availableByLevel[r.level]) availableByLevel[r.level] = [];
+    availableByLevel[r.level].push(r.id);
+  });
 
   for (const item of incomingArray) {
     const level = item.level || 'Bachelor';
@@ -60,16 +67,21 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     const parsedYear = item.year_graduated ? parseInt(item.year_graduated, 10) : null;
     const yearGraduated = (parsedYear && parsedYear >= 1900 && parsedYear <= 2100) ? parsedYear : null;
 
-    if (item.id && existingIds.has(item.id)) {
+    let targetId = item.id && existingIds.has(item.id) ? item.id : null;
+    if (!targetId && availableByLevel[level] && availableByLevel[level].length > 0) {
+      targetId = availableByLevel[level].shift();
+    }
+
+    if (targetId) {
       // UPDATE existing row
       await client.query(
         `UPDATE ${TABLE}
          SET level = $1, degree = $2, institution = $3, year_graduated = $4,
              updated_at = NOW(), updated_by = $5
-         WHERE id = $6 AND source_table = $7 AND tlo_id = $8`,
-        [level, degree, institution, yearGraduated, updatedBy, item.id, sourceTable, tloId]
+         WHERE id = $6 AND source_table = $7 AND LOWER(tlo_id) = LOWER($8)`,
+        [level, degree, institution, yearGraduated, updatedBy, targetId, sourceTable, tloId]
       );
-      incomingIds.add(item.id);
+      incomingIds.add(targetId);
     } else {
       // INSERT new row
       const inserted = await client.query(
@@ -87,10 +99,17 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
   // 3. DELETE orphaned rows (IDs present in DB but not in incoming array)
   const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
   if (idsToDelete.length > 0) {
-    await client.query(
-      `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND tlo_id = $3`,
-      [idsToDelete, sourceTable, tloId]
-    );
+    try {
+      await client.query(`SAVEPOINT sp_del_education`);
+      await client.query(
+        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+        [idsToDelete, sourceTable, tloId]
+      );
+      await client.query(`RELEASE SAVEPOINT sp_del_education`);
+    } catch (delErr) {
+      await client.query(`ROLLBACK TO SAVEPOINT sp_del_education`).catch(() => {});
+      console.warn(`[tloEducationRepository] Deletion skipped/prohibited: ${delErr.message}`);
+    }
   }
 }
 

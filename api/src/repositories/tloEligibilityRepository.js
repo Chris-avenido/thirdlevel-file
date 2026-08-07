@@ -24,7 +24,7 @@ export async function findByTloId(client, sourceTable, tloId) {
             conferment_date, place_of_assignment, details,
             created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
-     WHERE source_table = $1 AND tlo_id = $2
+     WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
      ORDER BY conferment_date ASC NULLS LAST, id ASC`,
     [sourceTable, tloId]
   );
@@ -43,7 +43,7 @@ export async function findByTloId(client, sourceTable, tloId) {
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
+    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
     [sourceTable, tloId]
   );
   const existingIds = new Set(existingRes.rows.map(r => r.id));
@@ -68,7 +68,7 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
          SET eligibility_type = $1, rating = $2, conferment_date = $3,
              place_of_assignment = $4, details = $5,
              updated_at = NOW(), updated_by = $6
-         WHERE id = $7 AND source_table = $8 AND tlo_id = $9`,
+         WHERE id = $7 AND source_table = $8 AND LOWER(tlo_id) = LOWER($9)`,
         [eligibilityType, rating, confermentDate || null, placeOfAssignment, details,
          updatedBy, item.id, sourceTable, tloId]
       );
@@ -89,10 +89,17 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
 
   const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
   if (idsToDelete.length > 0) {
-    await client.query(
-      `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND tlo_id = $3`,
-      [idsToDelete, sourceTable, tloId]
-    );
+    try {
+      await client.query(`SAVEPOINT sp_del_eligibility`);
+      await client.query(
+        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+        [idsToDelete, sourceTable, tloId]
+      );
+      await client.query(`RELEASE SAVEPOINT sp_del_eligibility`);
+    } catch (delErr) {
+      await client.query(`ROLLBACK TO SAVEPOINT sp_del_eligibility`).catch(() => {});
+      console.warn(`[tloEligibilityRepository] Deletion skipped/prohibited: ${delErr.message}`);
+    }
   }
 }
 

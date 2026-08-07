@@ -25,7 +25,7 @@ export async function findByTloId(client, sourceTable, tloId) {
             inclusive_date_start, inclusive_date_end, oic_positions,
             created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
-     WHERE source_table = $1 AND tlo_id = $2
+     WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
      ORDER BY inclusive_date_start DESC NULLS LAST, id DESC`,
     [sourceTable, tloId]
   );
@@ -44,7 +44,7 @@ export async function findByTloId(client, sourceTable, tloId) {
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
+    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
     [sourceTable, tloId]
   );
   const existingIds = new Set(existingRes.rows.map(r => r.id));
@@ -73,7 +73,7 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
          SET position_name = $1, office = $2, strand = $3, division = $4, region = $5,
              inclusive_date_start = $6, inclusive_date_end = $7, oic_positions = $8,
              updated_at = NOW(), updated_by = $9
-         WHERE id = $10 AND source_table = $11 AND tlo_id = $12`,
+         WHERE id = $10 AND source_table = $11 AND LOWER(tlo_id) = LOWER($12)`,
         [positionName, office, strand, division, region,
          dateStart || null, dateEnd || null, oicPositions,
          updatedBy, item.id, sourceTable, tloId]
@@ -96,10 +96,17 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
 
   const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
   if (idsToDelete.length > 0) {
-    await client.query(
-      `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND tlo_id = $3`,
-      [idsToDelete, sourceTable, tloId]
-    );
+    try {
+      await client.query(`SAVEPOINT sp_del_positions`);
+      await client.query(
+        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+        [idsToDelete, sourceTable, tloId]
+      );
+      await client.query(`RELEASE SAVEPOINT sp_del_positions`);
+    } catch (delErr) {
+      await client.query(`ROLLBACK TO SAVEPOINT sp_del_positions`).catch(() => {});
+      console.warn(`[tloPositionRepository] Deletion skipped/prohibited: ${delErr.message}`);
+    }
   }
 }
 

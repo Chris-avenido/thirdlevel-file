@@ -188,7 +188,18 @@ export const getByEmail = async (req, res) => {
           return e;
         });
       }
-      return res.json({ success: true, data: row, source: 'masterlist' });
+
+      let childRecords = {};
+      try {
+        const tloId = row.TLOid;
+        if (tloId) {
+          childRecords = await fetchAllChildRecords(pool, 'masterlist', tloId);
+        }
+      } catch (childErr) {
+        console.warn('[getByEmail] Child records fetch skipped for masterlist:', childErr.message);
+      }
+
+      return res.json({ success: true, data: { ...row, ...childRecords }, source: 'masterlist' });
     }
 
     const stagingRes = await pool.query(`
@@ -208,7 +219,18 @@ export const getByEmail = async (req, res) => {
           return e;
         });
       }
-      return res.json({ success: true, data: row, source: 'staging' });
+
+      let childRecords = {};
+      try {
+        const tloId = row.TLOid || row.app_TLOid;
+        if (tloId) {
+          childRecords = await fetchAllChildRecords(pool, 'staging', tloId);
+        }
+      } catch (childErr) {
+        console.warn('[getByEmail] Child records fetch skipped for staging:', childErr.message);
+      }
+
+      return res.json({ success: true, data: { ...row, ...childRecords }, source: 'staging' });
     }
 
     return res.json({ success: false, data: null });

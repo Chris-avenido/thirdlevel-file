@@ -742,13 +742,20 @@ const OfficialProfiling = () => {
                 // Priority 1: d.eligibility_records (relational)
                 // Priority 2: d.eligibilities        (JSONB — existing)
                 // ─────────────────────────────────────────────────────────────
+                const formatDateStr = (val) => {
+                    if (!val) return '';
+                    if (typeof val === 'string') return val.split('T')[0];
+                    if (val instanceof Date) return val.toISOString().split('T')[0];
+                    return String(val).split('T')[0];
+                };
+
                 let resolvedEligibilities;
                 if (Array.isArray(d.eligibility_records) && d.eligibility_records.length > 0) {
                     // Map relational columns back to the frontend object shape
                     resolvedEligibilities = d.eligibility_records.map(rec => ({
                         id: rec.id,
                         eligibility: rec.eligibility_type,
-                        date: rec.conferment_date ? rec.conferment_date.split('T')[0] : '',
+                        date: formatDateStr(rec.conferment_date),
                         rating: rec.rating || '',
                         place_of_assignment: rec.place_of_assignment || '',
                         details: rec.details || ''
@@ -782,8 +789,8 @@ const OfficialProfiling = () => {
                     resolvedOtherCourses = d.other_course_records.map(rec => ({
                         id: rec.id,
                         course: rec.course_title || '',
-                        date_from: rec.date_from ? rec.date_from.split('T')[0] : '',
-                        date_to: rec.date_to ? rec.date_to.split('T')[0] : '',
+                        date_from: formatDateStr(rec.date_from),
+                        date_to: formatDateStr(rec.date_to),
                         details: rec.details || ''
                     }));
                 } else {
@@ -796,18 +803,18 @@ const OfficialProfiling = () => {
                     middle_name: d.middle_name || '',
                     suffix: d.suffix || '',
                     gender: d.gender || '',
-                    date_of_birth: d.date_of_birth ? d.date_of_birth.split('T')[0] : '',
+                    date_of_birth: formatDateStr(d.date_of_birth),
                     age: d.age ?? '',
                     civil_status: d.civil_status || '',
                     employment_status: d.employment_status || '',
                     position_title: d.position_title || '',
                     designation: d.designation || '',
                     is_oic: (d.designation && typeof d.designation === 'string' && d.designation.toUpperCase().includes('OIC')) ? true : (d.is_oic ?? false),
-                    appointment_date: d.appointment_date ? d.appointment_date.split('T')[0] : '',
+                    appointment_date: formatDateStr(d.appointment_date),
                     emt_passer: d.emt_passer ?? null,
-                    emt_date: d.emt_date ? d.emt_date.split('T')[0] : '',
+                    emt_date: formatDateStr(d.emt_date),
                     ces_stage: d.ces_stage || '',
-                    ces_conferment_date: d.ces_conferment_date ? d.ces_conferment_date.split('T')[0] : '',
+                    ces_conferment_date: formatDateStr(d.ces_conferment_date),
                     total_years_third_level: d.total_years_third_level ?? '',
                     permanent_address: d.permanent_address || '',
                     temporary_address: d.temporary_address || '',
@@ -871,8 +878,8 @@ const OfficialProfiling = () => {
                         position_name: rec.position_name || '',
                         office: rec.office || '',
                         strand: rec.strand || '',
-                        start_date: rec.inclusive_date_start ? rec.inclusive_date_start.split('T')[0] : '',
-                        end_date: rec.inclusive_date_end ? rec.inclusive_date_end.split('T')[0] : '',
+                        start_date: formatDateStr(rec.inclusive_date_start),
+                        end_date: formatDateStr(rec.inclusive_date_end),
                         oic_positions: rec.oic_positions || []
                     }));
                 } else {
@@ -887,8 +894,8 @@ const OfficialProfiling = () => {
                     resolvedTrainings = d.training_records.map(rec => ({
                         id: rec.id,
                         training_name: rec.training_name || '',
-                        date_from: rec.inclusive_date_start ? rec.inclusive_date_start.split('T')[0] : '',
-                        date_to: rec.inclusive_date_end ? rec.inclusive_date_end.split('T')[0] : '',
+                        date_from: formatDateStr(rec.inclusive_date_start),
+                        date_to: formatDateStr(rec.inclusive_date_end),
                         conducted_by: rec.conducted_by || ''
                     }));
                 } else {
@@ -2092,7 +2099,7 @@ const OfficialProfiling = () => {
                                                             ) : (
                                                                 <div className="space-y-4">
                                                                     {profile.eligibilities.map((elig, idx) => (
-                                                                        <div key={idx} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
+                                                                        <div key={elig.id || `elig-${idx}`} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
                                                                             {isEditing && <button
                                                                                 onClick={() => setProfile(p => ({ ...p, eligibilities: p.eligibilities.filter((_, i) => i !== idx) }))}
                                                                                 className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
@@ -2196,7 +2203,7 @@ const OfficialProfiling = () => {
                                                                             </div>
                                                                         ) : (
                                                                             history.map((item, idx) => (
-                                                                                <div key={idx} className="flex gap-6 relative z-10">
+                                                                                <div key={item.id || item.history_id || `hist-${idx}`} className="flex gap-6 relative z-10">
                                                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0 ${idx === 0 ? 'bg-[#08315F] text-white shadow-blue-500/30' : 'bg-slate-200 text-slate-500'}`}>
                                                                                         {idx === 0 ? <FiAward size={14} /> : <FiActivity size={14} />}
                                                                                     </div>
@@ -2228,7 +2235,7 @@ const OfficialProfiling = () => {
                                                                     {['Position', 'Office / Division', 'From', 'To', 'OIC?', ''].map(h => <span key={h} className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{h}</span>)}
                                                                 </div>
                                                                 {prevPositions.map((pos, idx) => (
-                                                                    <div key={pos.position_id || idx} className="relative mb-2">
+                                                                    <div key={pos.id || pos.position_id || `pos-${idx}`} className="relative mb-2">
                                                                         {(() => {
                                                                             const isPrevPosOthers = pos.position_name === 'Others' || (pos.position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === pos.position_name.toUpperCase()));
                                                                             return (
@@ -2282,7 +2289,7 @@ const OfficialProfiling = () => {
                                                                                             </button>
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
-                                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest xl:hidden md:invisible">Action</span>
+                                                                                            <span className="text-[9px] font-black text-slate-[#FBBF24] uppercase tracking-widest xl:hidden md:invisible">Action</span>
                                                                                             {isEditing && <button onClick={() => handleRemovePosition(idx)} className="w-full xl:w-10 h-10 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
                                                                                         </div>
                                                                                     </motion.div>
@@ -2290,7 +2297,7 @@ const OfficialProfiling = () => {
                                                                                     {(pos.oic_positions || []).map((oic, oicIdx) => {
                                                                                         const isOicPosOthers = oic.oic_position_name === 'Others' || (oic.oic_position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === oic.oic_position_name.toUpperCase()));
                                                                                         return (
-                                                                                            <motion.div key={oic.id || oicIdx} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative">
+                                                                                            <motion.div key={oic.id || `oic-${idx}-${oicIdx}`} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative">
                                                                                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-white p-4 rounded-2xl border border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
                                                                                                     <div className="absolute -left-6 top-1/2 w-6 h-0.5 border-t-2 border-dashed border-[#FCD116]"></div>
                                                                                                     <div className="flex flex-col gap-1.5 w-full">
@@ -2435,7 +2442,7 @@ const OfficialProfiling = () => {
                                                                 ) : (
                                                                     <div className="space-y-4">
                                                                         {profile.other_courses.map((course, idx) => (
-                                                                            <div key={idx} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
+                                                                            <div key={course.id || `course-${idx}`} className="relative p-5 bg-slate-50 border border-slate-100 rounded-2xl group">
                                                                                 {isEditing && <button
                                                                                     onClick={() => setProfile(p => ({ ...p, other_courses: p.other_courses.filter((_, i) => i !== idx) }))}
                                                                                     className="absolute -right-2 -top-2 p-1.5 bg-white border border-slate-200 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:border-red-100 shadow-sm"
@@ -2730,7 +2737,7 @@ const OfficialProfiling = () => {
                                                                     ))}
                                                                 </div>
                                                                 {trainings.map((tr, idx) => (
-                                                                    <motion.div key={tr.training_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
+                                                                    <motion.div key={tr.id || tr.training_id || `tr-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
                                                                         <input disabled={!isEditing} type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))} placeholder="Training / Seminar name" className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
                                                                         <div className="relative">
                                                                             <ModernDatePicker disabled={!isEditing} value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
