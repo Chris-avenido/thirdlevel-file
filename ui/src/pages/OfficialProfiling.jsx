@@ -285,13 +285,19 @@ const OfficialProfiling = () => {
             return !!(profile.first_name && profile.last_name && profile.gender && profile.date_of_birth && profile.civil_status);
         }
         if (tabId === 'eligibility') {
-            return !!(profile.ces_stage || profile.emt_passer !== null);
+            return !!(profile.ces_stage || profile.emt_passer !== null || (profile.eligibilities && profile.eligibilities.length > 0));
         }
         if (tabId === 'experience') {
             return prevPositions.length > 0;
         }
         if (tabId === 'education') {
-            return !!(profile.highest_education && profile.education_program && profile.education_year_graduated);
+            return !!(
+                (profile.education_degrees && profile.education_degrees.length > 0) ||
+                profile.bachelor_degree ||
+                profile.master_degree ||
+                profile.doctorate_degree ||
+                profile.highest_education
+            );
         }
         if (tabId === 'performance') {
             return !!(profile.performance_rating_1 && profile.performance_rating_1_period);
@@ -300,10 +306,10 @@ const OfficialProfiling = () => {
             return trainings.length > 0;
         }
         if (tabId === 'achievements') {
-            return !!profile.notable_achievements;
+            return !!(profile.notable_achievements || (profile.individual_accomplishments && profile.individual_accomplishments.length > 0));
         }
         if (tabId === 'documents') {
-            return !!(profile.pds_binary_id || profile.photo_binary_id || profile.service_records_binary_id || profile.executive_summary_binary_id);
+            return !!(profile.pds_binary_id && profile.service_records_binary_id);
         }
         if (tabId === 'legal') {
             return profile.pending_admin_case && profile.guilty_admin_details && profile.criminally_charged_details && profile.convicted_crime_details;
@@ -772,8 +778,12 @@ const OfficialProfiling = () => {
                 // ─────────────────────────────────────────────────────────────
                 let resolvedAccomplishments;
                 if (Array.isArray(d.accomplishment_records) && d.accomplishment_records.length > 0) {
-                    // Relational rows have a description field; frontend uses plain strings
-                    resolvedAccomplishments = d.accomplishment_records.map(rec => rec.description || '');
+                    // Preserve the DB row id so save round-trips use UPDATE, not INSERT+DELETE
+                    resolvedAccomplishments = d.accomplishment_records.map(rec => ({
+                        id: rec.id,
+                        description: rec.description || '',
+                        award_year: rec.award_year || null,
+                    }));
                 } else {
                     resolvedAccomplishments = d.individual_accomplishments || [];
                 }
@@ -2675,31 +2685,39 @@ const OfficialProfiling = () => {
                                                             </div>
 
                                                             <div className="space-y-3">
-                                                                {(profile.individual_accomplishments || []).map((acc, idx) => (
-                                                                    <motion.div key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
-                                                                        <input disabled={!isEditing}
-                                                                            type="text"
-                                                                            maxLength={100}
-                                                                            value={acc}
-                                                                            onChange={e => {
-                                                                                const newAccs = [...(profile.individual_accomplishments || [])];
-                                                                                newAccs[idx] = e.target.value;
-                                                                                setP('individual_accomplishments', newAccs);
-                                                                            }}
-                                                                            placeholder="Notable individual accomplishment (max 100 characters)"
-                                                                            className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
-                                                                        />
-                                                                        {isEditing && <button
-                                                                            onClick={() => {
-                                                                                const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
-                                                                                setP('individual_accomplishments', newAccs);
-                                                                            }}
-                                                                            className="w-10 h-10 flex items-center justify-center shrink-0 bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"
-                                                                        >
-                                                                            <FiTrash2 size={14} />
-                                                                        </button>}
-                                                                    </motion.div>
-                                                                ))}
+                                                                {(profile.individual_accomplishments || []).map((acc, idx) => {
+                                                                    // acc may be a plain string (legacy/new) or { id, description } (loaded from relational table)
+                                                                    const accText = typeof acc === 'object' && acc !== null ? (acc.description || '') : (acc || '');
+                                                                    const accId = typeof acc === 'object' && acc !== null ? acc.id : undefined;
+                                                                    return (
+                                                                        <motion.div key={accId || `acc-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border border-slate-200/50 transition-colors shadow-sm">
+                                                                            <input disabled={!isEditing}
+                                                                                type="text"
+                                                                                maxLength={100}
+                                                                                value={accText}
+                                                                                onChange={e => {
+                                                                                    const newAccs = [...(profile.individual_accomplishments || [])];
+                                                                                    // Preserve the id if this item came from the relational table
+                                                                                    newAccs[idx] = accId !== undefined
+                                                                                        ? { id: accId, description: e.target.value }
+                                                                                        : e.target.value;
+                                                                                    setP('individual_accomplishments', newAccs);
+                                                                                }}
+                                                                                placeholder="Notable individual accomplishment (max 100 characters)"
+                                                                                className="bg-white border border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
+                                                                            />
+                                                                            {isEditing && <button
+                                                                                onClick={() => {
+                                                                                    const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
+                                                                                    setP('individual_accomplishments', newAccs);
+                                                                                }}
+                                                                                className="w-10 h-10 flex items-center justify-center shrink-0 bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"
+                                                                            >
+                                                                                <FiTrash2 size={14} />
+                                                                            </button>}
+                                                                        </motion.div>
+                                                                    );
+                                                                })}
                                                                 {isEditing && <button disabled={!isEditing}
                                                                     onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), ''])}
                                                                     className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2"
