@@ -216,6 +216,7 @@ const Login = () => {
                                                 onFocus={() => setFocusedInput('id')}
                                                 onBlur={() => setFocusedInput(null)}
                                                 placeholder="Registered Email"
+                                                autoComplete="username"
                                                 className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
                                                 required
                                             />
@@ -260,6 +261,7 @@ const Login = () => {
                                                 onBlur={() => setFocusedInput(null)}
                                                 placeholder={loginMode === 'password' ? '••••••••' : '0 0 0 0 0 0'}
                                                 readOnly={loginMode === 'passcode'}
+                                                autoComplete="current-password"
                                                 className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
                                                 required
                                             />

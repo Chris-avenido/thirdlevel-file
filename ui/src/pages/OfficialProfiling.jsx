@@ -731,11 +731,11 @@ const OfficialProfiling = () => {
                 const hasEducationDegrees = relationalEdu || Array.isArray(d.education_degrees);
                 // Priority 3 (legacy text) is the fallback inside the ternary below
                 const bachelor_degree = hasEducationDegrees ? bacDegs.join('\n') : (d.bachelor_degree || '');
-                const bachelor_year   = hasEducationDegrees ? bacYrs.join('\n') : (d.bachelor_year || '');
-                const master_degree   = hasEducationDegrees ? masDegs.join('\n') : (d.master_degree || '');
-                const master_year     = hasEducationDegrees ? masYrs.join('\n') : (d.master_year || '');
+                const bachelor_year = hasEducationDegrees ? bacYrs.join('\n') : (d.bachelor_year || '');
+                const master_degree = hasEducationDegrees ? masDegs.join('\n') : (d.master_degree || '');
+                const master_year = hasEducationDegrees ? masYrs.join('\n') : (d.master_year || '');
                 const doctorate_degree = hasEducationDegrees ? docDegs.join('\n') : (d.doctorate_degree || '');
-                const doctorate_year   = hasEducationDegrees ? docYrs.join('\n') : (d.doctorate_year || '');
+                const doctorate_year = hasEducationDegrees ? docYrs.join('\n') : (d.doctorate_year || '');
 
                 // ─────────────────────────────────────────────────────────────
                 // ELIGIBILITIES: Fallback chain
@@ -900,7 +900,11 @@ const OfficialProfiling = () => {
 
                 setStatus('found');
             } else {
-                setStatus('not-found');
+                if (user?.email && (user?.role === 'Third Level Applicant' || user?.role === 'Regional Office' || user?.role === 'School Division Office')) {
+                    handleInitializeRecord();
+                } else {
+                    setStatus('error');
+                }
             }
         } catch (err) {
             console.error("Lookup Error:", err);
@@ -1543,43 +1547,6 @@ const OfficialProfiling = () => {
         );
     }
 
-    // ── NOT FOUND ──
-    if (status === 'not-found' || status === 'error') {
-        return (
-            <PageTransition>
-                <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8 font-['Plus_Jakarta_Sans'] text-center">
-                    <div className="max-w-md w-full bg-white border-2 border-[#08315F] rounded-[22px] p-12 shadow-none">
-                        <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                            <FiSearch size={40} />
-                        </div>
-                        <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] italic tracking-tighter mb-4">Record Not Found</h2>
-                        <p className="text-sm font-bold text-slate-500 leading-relaxed mb-8">
-                            The profile for email (<span className="text-[#08315F]">{urlEmail || user?.email || 'unknown'}</span>) is not yet linked to an active Third Level Official record in the masterlist.
-                        </p>
-                        <p className="text-[11px] font-bold text-slate-400 italic mb-8">
-                            {(!urlEmail && (user?.role === 'Third Level Applicant' || user?.role === 'Regional Office' || user?.role === 'School Division Office'))
-                                ? "To proceed with recruitment, you need to initialize your candidate profile using your current account email."
-                                : "Please contact the Personnel Division (TLM Section) to have this record linked before it can be accessed."}
-                        </p>
-                        <div className="flex flex-col gap-3">
-                            {(user?.role === 'Third Level Applicant' || user?.role === 'Regional Office' || user?.role === 'School Division Office') && (
-                                <button
-                                    onClick={handleInitializeRecord}
-                                    disabled={saving}
-                                    className="w-full py-4 bg-[#08315F] text-white font-black text-[10px] uppercase tracking-widest rounded-full shadow-xl hover:bg-[#08315F] transition-all flex items-center justify-center gap-3"
-                                >
-                                    {saving ? <FiLoader className="animate-spin" /> : <FiPlus size={16} />} Initialize My Profile
-                                </button>
-                            )}
-                            <button onClick={() => navigate(-1)} className="w-full py-4 bg-slate-100 text-slate-500 font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-slate-200 transition-all flex items-center justify-center gap-3">
-                                <FiChevronLeft size={16} /> Go Back
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </PageTransition>
-        );
-    }
 
     // ── MAIN PROFILING FORM ──
     return (
@@ -1962,7 +1929,7 @@ const OfficialProfiling = () => {
                                                                 <SectionLabel>Designation & Appointment</SectionLabel>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                                                                     <Field label="Unique Number">
-                                                                        <input disabled={!isEditing} type="text" value={TLOid || ''} className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
+                                                                        <input disabled={!isEditing} type="text" value={TLOid || ''} readOnly className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
                                                                     </Field>
                                                                     <Field label="Employment Status">
                                                                         <select disabled={!isEditing} value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>

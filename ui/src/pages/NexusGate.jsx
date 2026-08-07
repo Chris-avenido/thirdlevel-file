@@ -174,13 +174,15 @@ const NexusGate = () => {
                                         variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
                                         {/* Main Records Management Card */}
-                                        <motion.button
+                                        <motion.div
                                             key="records"
                                             variants={itemRight}
                                             onClick={(e) => { e.stopPropagation(); handlePortalClick('records'); }}
                                             className="portal-card"
                                             style={{ textAlign: 'left' }}
                                             whileTap={{ scale: 0.96 }}
+                                            role="button"
+                                            tabIndex={0}
                                         >
                                             <motion.div
                                                 variants={textVariants}
@@ -211,16 +213,18 @@ const NexusGate = () => {
                                                     Continue <span aria-hidden="true">→</span>
                                                 </div>
                                             </motion.div>
-                                        </motion.button>
+                                        </motion.div>
 
                                         {/* Vacancies Card (Locked) */}
-                                        <motion.button
+                                        <motion.div
                                             key="vacancies"
                                             variants={itemRight}
                                             onClick={handleLockedVacanciesClick}
                                             className="portal-card locked"
                                             style={{ textAlign: 'left' }}
                                             whileTap={{ scale: 0.98 }}
+                                            role="button"
+                                            tabIndex={0}
                                         >
                                             <motion.div
                                                 variants={textVariants}
@@ -250,7 +254,7 @@ const NexusGate = () => {
                                                     <span>Restricted Access</span> <FiLock size={12} className="inline ml-1 text-slate-400" />
                                                 </div>
                                             </motion.div>
-                                        </motion.button>
+                                        </motion.div>
                                     </motion.section>
                                     <p className="footer-note">
                                         Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
@@ -265,13 +269,15 @@ const NexusGate = () => {
                                         variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
                                     >
                                         {/* Main Records Management Card */}
-                                        <motion.button
+                                        <motion.div
                                             key="records"
                                             variants={itemLeft}
                                             onClick={(e) => { e.stopPropagation(); handlePortalClick('records'); }}
                                             className="portal-card"
                                             style={{ textAlign: 'left' }}
                                             whileTap={{ scale: 0.96 }}
+                                            role="button"
+                                            tabIndex={0}
                                         >
                                             <motion.div
                                                 variants={textVariants}
@@ -302,16 +308,18 @@ const NexusGate = () => {
                                                     Continue <span aria-hidden="true">→</span>
                                                 </div>
                                             </motion.div>
-                                        </motion.button>
+                                        </motion.div>
 
                                         {/* Vacancies Card (Locked) */}
-                                        <motion.button
+                                        <motion.div
                                             key="vacancies"
                                             variants={itemLeft}
                                             onClick={handleLockedVacanciesClick}
                                             className="portal-card locked"
                                             style={{ textAlign: 'left' }}
                                             whileTap={{ scale: 0.98 }}
+                                            role="button"
+                                            tabIndex={0}
                                         >
                                             <motion.div
                                                 variants={textVariants}
@@ -341,7 +349,7 @@ const NexusGate = () => {
                                                     <span>Restricted Access</span> <FiLock size={12} className="inline ml-1 text-slate-400" />
                                                 </div>
                                             </motion.div>
-                                        </motion.button>
+                                        </motion.div>
                                     </motion.section>
 
                                     <motion.section
