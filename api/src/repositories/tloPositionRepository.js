@@ -4,28 +4,23 @@
  * Repository for tlo_position_history table.
  * Provides: findByTloId, syncForTloId, cloneToNewTloId
  *
- * Current position object shape (from OfficialProfiling.jsx L1001–L1004):
- * { position_name, office, strand, start_date, end_date, oic_positions[] }
- * Backend normalizes position_name → UPPERCASE (thirdLevelController.js L500–L504)
- * oic_positions sub-array is preserved as JSONB in this phase.
+ * Soft-delete pattern: delete_flg = 'No' (active) | 'Yes' (deleted)
+ * Physical DELETE is never performed; the Sentinel prohibition is avoided.
  */
 
 const TABLE = 'tlo_position_history';
 
 /**
- * Fetch all position history records for a person.
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @returns {Promise<Array>}
+ * Fetch all ACTIVE position history records for a person (delete_flg = 'No').
  */
 export async function findByTloId(client, sourceTable, tloId) {
   const result = await client.query(
     `SELECT id, source_table, tlo_id, position_name, office, strand, division, region,
-            inclusive_date_start, inclusive_date_end, oic_positions,
+            inclusive_date_start, inclusive_date_end, oic_positions, delete_flg,
             created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
      WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
+       AND delete_flg = 'No'
      ORDER BY inclusive_date_start DESC NULLS LAST, id DESC`,
     [sourceTable, tloId]
   );
@@ -33,18 +28,11 @@ export async function findByTloId(client, sourceTable, tloId) {
 }
 
 /**
- * Sync position history for a person using INSERT/UPDATE/DELETE.
- * Maps frontend fields: position_name, start_date → inclusive_date_start, end_date → inclusive_date_end.
- *
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @param {Array<{id?, position_name, office?, strand?, start_date?, end_date?, oic_positions?}>} incomingArray
- * @param {string|null} updatedBy
+ * Sync position history using INSERT / UPDATE / soft-DELETE.
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
+    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2) AND delete_flg = 'No'`,
     [sourceTable, tloId]
   );
   const existingIds = new Set(existingRes.rows.map(r => r.id));
@@ -72,7 +60,7 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
         `UPDATE ${TABLE}
          SET position_name = $1, office = $2, strand = $3, division = $4, region = $5,
              inclusive_date_start = $6, inclusive_date_end = $7, oic_positions = $8,
-             updated_at = NOW(), updated_by = $9
+             delete_flg = 'No', updated_at = NOW(), updated_by = $9
          WHERE id = $10 AND source_table = $11 AND LOWER(tlo_id) = LOWER($12)`,
         [positionName, office, strand, division, region,
          dateStart || null, dateEnd || null, oicPositions,
@@ -83,9 +71,9 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
       const inserted = await client.query(
         `INSERT INTO ${TABLE}
            (source_table, tlo_id, position_name, office, strand, division, region,
-            inclusive_date_start, inclusive_date_end, oic_positions,
+            inclusive_date_start, inclusive_date_end, oic_positions, delete_flg,
             created_at, updated_at, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW(), $11, $11)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'No', NOW(), NOW(), $11, $11)
          RETURNING id`,
         [sourceTable, tloId, positionName, office, strand, division, region,
          dateStart || null, dateEnd || null, oicPositions, updatedBy]
@@ -94,40 +82,37 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     }
   }
 
-  const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
-  if (idsToDelete.length > 0) {
-    try {
-      await client.query(`SAVEPOINT sp_del_positions`);
-      await client.query(
-        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
-        [idsToDelete, sourceTable, tloId]
-      );
-      await client.query(`RELEASE SAVEPOINT sp_del_positions`);
-    } catch (delErr) {
-      await client.query(`ROLLBACK TO SAVEPOINT sp_del_positions`).catch(() => {});
-      console.warn(`[tloPositionRepository] Deletion skipped/prohibited: ${delErr.message}`);
-    }
+  // Soft-delete omitted rows
+  const idsToSoftDelete = [...existingIds].filter(id => !incomingIds.has(id));
+  if (idsToSoftDelete.length > 0) {
+    await client.query(
+      `UPDATE ${TABLE}
+       SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+       WHERE id = ANY($2) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
+      [updatedBy, idsToSoftDelete, sourceTable, tloId]
+    );
+    console.log(`[tloPositionRepository] Soft-deleted ${idsToSoftDelete.length} record(s) for ${tloId}`);
   }
 }
 
 /**
- * Clone all position history records from one person to another.
+ * Clone all ACTIVE position history records from one person to another.
  */
 export async function cloneToNewTloId(client, fromSourceTable, fromTloId, toSourceTable, toTloId, updatedBy = null) {
   await client.query(
-    `DELETE FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
-    [toSourceTable, toTloId]
+    `UPDATE ${TABLE} SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+     WHERE source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+    [updatedBy, toSourceTable, toTloId]
   );
   await client.query(
     `INSERT INTO ${TABLE}
        (source_table, tlo_id, position_name, office, strand, division, region,
-        inclusive_date_start, inclusive_date_end, oic_positions,
+        inclusive_date_start, inclusive_date_end, oic_positions, delete_flg,
         created_at, updated_at, created_by, updated_by)
      SELECT $1, $2, position_name, office, strand, division, region,
-            inclusive_date_start, inclusive_date_end, oic_positions,
-            NOW(), NOW(), $3, $3
+            inclusive_date_start, inclusive_date_end, oic_positions, 'No', NOW(), NOW(), $3, $3
      FROM ${TABLE}
-     WHERE source_table = $4 AND tlo_id = $5`,
+     WHERE source_table = $4 AND LOWER(tlo_id) = LOWER($5) AND delete_flg = 'No'`,
     [toSourceTable, toTloId, updatedBy, fromSourceTable, fromTloId]
   );
 }

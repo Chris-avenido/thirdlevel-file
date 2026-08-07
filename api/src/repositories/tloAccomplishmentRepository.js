@@ -4,26 +4,22 @@
  * Repository for tlo_accomplishment_records table.
  * Provides: findByTloId, syncForTloId, cloneToNewTloId
  *
- * Current accomplishments shape (from OfficialProfiling.jsx L750):
- * individual_accomplishments: [] — array of plain strings
- * Incoming items may be plain strings or objects { description, award_year? }
+ * Soft-delete pattern: delete_flg = 'No' (active) | 'Yes' (deleted)
+ * Physical DELETE is never performed; the Sentinel prohibition is avoided.
  */
 
 const TABLE = 'tlo_accomplishment_records';
 
 /**
- * Fetch all accomplishment records for a person.
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @returns {Promise<Array>}
+ * Fetch all ACTIVE accomplishment records for a person (delete_flg = 'No').
  */
 export async function findByTloId(client, sourceTable, tloId) {
   const result = await client.query(
     `SELECT id, source_table, tlo_id, description, award_year,
-            created_at, updated_at, created_by, updated_by
+            delete_flg, created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
      WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
+       AND delete_flg = 'No'
      ORDER BY award_year DESC NULLS LAST, id ASC`,
     [sourceTable, tloId]
   );
@@ -31,25 +27,18 @@ export async function findByTloId(client, sourceTable, tloId) {
 }
 
 /**
- * Sync accomplishment records for a person using INSERT/UPDATE/DELETE.
- * Handles both plain-string array items and object items.
- *
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @param {Array<string|{id?, description, award_year?}>} incomingArray
- * @param {string|null} updatedBy
+ * Sync accomplishment records using INSERT / UPDATE / soft-DELETE.
+ * Rows omitted from incomingArray are soft-deleted (delete_flg = 'Yes').
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
+    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2) AND delete_flg = 'No'`,
     [sourceTable, tloId]
   );
   const existingIds = new Set(existingRes.rows.map(r => r.id));
   const incomingIds = new Set();
 
   for (const rawItem of incomingArray) {
-    // Normalize: support both plain string and object
     const item = typeof rawItem === 'string'
       ? { description: rawItem }
       : rawItem;
@@ -60,58 +49,78 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     const awardYear = item.award_year ? parseInt(item.award_year, 10) : null;
 
     if (item.id && existingIds.has(item.id)) {
+      // UPDATE existing active row
       await client.query(
         `UPDATE ${TABLE}
-         SET description = $1, award_year = $2, updated_at = NOW(), updated_by = $3
+         SET description = $1, award_year = $2, delete_flg = 'No',
+             updated_at = NOW(), updated_by = $3
          WHERE id = $4 AND source_table = $5 AND LOWER(tlo_id) = LOWER($6)`,
         [description, isNaN(awardYear) ? null : awardYear, updatedBy,
          item.id, sourceTable, tloId]
       );
       incomingIds.add(item.id);
     } else {
-      const inserted = await client.query(
-        `INSERT INTO ${TABLE}
-           (source_table, tlo_id, description, award_year,
-            created_at, updated_at, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, NOW(), NOW(), $5, $5)
-         RETURNING id`,
-        [sourceTable, tloId, description, isNaN(awardYear) ? null : awardYear, updatedBy]
+      // Check if there's already a soft-deleted row with the same description we can resurrect
+      const existing = await client.query(
+        `SELECT id FROM ${TABLE}
+         WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
+           AND LOWER(description) = LOWER($3) AND delete_flg = 'Yes'
+         LIMIT 1`,
+        [sourceTable, tloId, description]
       );
-      incomingIds.add(inserted.rows[0].id);
+      if (existing.rows.length > 0) {
+        await client.query(
+          `UPDATE ${TABLE}
+           SET description = $1, award_year = $2, delete_flg = 'No',
+               updated_at = NOW(), updated_by = $3
+           WHERE id = $4`,
+          [description, isNaN(awardYear) ? null : awardYear, updatedBy, existing.rows[0].id]
+        );
+        incomingIds.add(existing.rows[0].id);
+      } else {
+        const inserted = await client.query(
+          `INSERT INTO ${TABLE}
+             (source_table, tlo_id, description, award_year, delete_flg,
+              created_at, updated_at, created_by, updated_by)
+           VALUES ($1, $2, $3, $4, 'No', NOW(), NOW(), $5, $5)
+           RETURNING id`,
+          [sourceTable, tloId, description, isNaN(awardYear) ? null : awardYear, updatedBy]
+        );
+        incomingIds.add(inserted.rows[0].id);
+      }
     }
   }
 
-  const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
-  if (idsToDelete.length > 0) {
-    try {
-      await client.query(`SAVEPOINT sp_del_accomplishments`);
-      await client.query(
-        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
-        [idsToDelete, sourceTable, tloId]
-      );
-      await client.query(`RELEASE SAVEPOINT sp_del_accomplishments`);
-    } catch (delErr) {
-      await client.query(`ROLLBACK TO SAVEPOINT sp_del_accomplishments`).catch(() => {});
-      console.warn(`[tloAccomplishmentRepository] Deletion skipped/prohibited: ${delErr.message}`);
-    }
+  // Soft-delete rows that were omitted from the incoming array
+  const idsToSoftDelete = [...existingIds].filter(id => !incomingIds.has(id));
+  if (idsToSoftDelete.length > 0) {
+    await client.query(
+      `UPDATE ${TABLE}
+       SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+       WHERE id = ANY($2) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
+      [updatedBy, idsToSoftDelete, sourceTable, tloId]
+    );
+    console.log(`[tloAccomplishmentRepository] Soft-deleted ${idsToSoftDelete.length} record(s) for ${tloId}`);
   }
 }
 
 /**
- * Clone all accomplishment records from one person to another.
+ * Clone all ACTIVE accomplishment records from one person to another.
  */
 export async function cloneToNewTloId(client, fromSourceTable, fromTloId, toSourceTable, toTloId, updatedBy = null) {
+  // Soft-delete existing destination records first
   await client.query(
-    `DELETE FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
-    [toSourceTable, toTloId]
+    `UPDATE ${TABLE} SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+     WHERE source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+    [updatedBy, toSourceTable, toTloId]
   );
   await client.query(
     `INSERT INTO ${TABLE}
-       (source_table, tlo_id, description, award_year,
+       (source_table, tlo_id, description, award_year, delete_flg,
         created_at, updated_at, created_by, updated_by)
-     SELECT $1, $2, description, award_year, NOW(), NOW(), $3, $3
+     SELECT $1, $2, description, award_year, 'No', NOW(), NOW(), $3, $3
      FROM ${TABLE}
-     WHERE source_table = $4 AND tlo_id = $5`,
+     WHERE source_table = $4 AND LOWER(tlo_id) = LOWER($5) AND delete_flg = 'No'`,
     [toSourceTable, toTloId, updatedBy, fromSourceTable, fromTloId]
   );
 }

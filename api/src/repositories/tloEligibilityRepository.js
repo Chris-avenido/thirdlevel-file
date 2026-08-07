@@ -4,27 +4,23 @@
  * Repository for tlo_eligibility_records table.
  * Provides: findByTloId, syncForTloId, cloneToNewTloId
  *
- * Current eligibility object shape (from OfficialProfiling.jsx L2026):
- * { eligibility, date, rating, place_of_assignment }
- * Backend normalizes eligibility → UPPERCASE (thirdLevelController.js L484–L492)
+ * Soft-delete pattern: delete_flg = 'No' (active) | 'Yes' (deleted)
+ * Physical DELETE is never performed; the Sentinel prohibition is avoided.
  */
 
 const TABLE = 'tlo_eligibility_records';
 
 /**
- * Fetch all eligibility records for a person.
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @returns {Promise<Array>}
+ * Fetch all ACTIVE eligibility records for a person (delete_flg = 'No').
  */
 export async function findByTloId(client, sourceTable, tloId) {
   const result = await client.query(
     `SELECT id, source_table, tlo_id, eligibility_type, rating,
-            conferment_date, place_of_assignment, details,
+            conferment_date, place_of_assignment, details, delete_flg,
             created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
      WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
+       AND delete_flg = 'No'
      ORDER BY conferment_date ASC NULLS LAST, id ASC`,
     [sourceTable, tloId]
   );
@@ -32,25 +28,17 @@ export async function findByTloId(client, sourceTable, tloId) {
 }
 
 /**
- * Sync eligibility records for a person using INSERT/UPDATE/DELETE.
- * Maps frontend field names: eligibility → eligibility_type, date → conferment_date.
- *
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @param {Array<{id?, eligibility, date?, rating?, place_of_assignment?, details?}>} incomingArray
- * @param {string|null} updatedBy
+ * Sync eligibility records using INSERT / UPDATE / soft-DELETE.
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
+    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2) AND delete_flg = 'No'`,
     [sourceTable, tloId]
   );
   const existingIds = new Set(existingRes.rows.map(r => r.id));
   const incomingIds = new Set();
 
   for (const item of incomingArray) {
-    // Map frontend fields to DB columns
     const eligibilityType = ((item.eligibility || item.eligibility_type || item.title || '')).toUpperCase().trim();
     const rating = item.rating ? String(item.rating).trim() : null;
     const cleanDate = (d) => {
@@ -66,7 +54,7 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
       await client.query(
         `UPDATE ${TABLE}
          SET eligibility_type = $1, rating = $2, conferment_date = $3,
-             place_of_assignment = $4, details = $5,
+             place_of_assignment = $4, details = $5, delete_flg = 'No',
              updated_at = NOW(), updated_by = $6
          WHERE id = $7 AND source_table = $8 AND LOWER(tlo_id) = LOWER($9)`,
         [eligibilityType, rating, confermentDate || null, placeOfAssignment, details,
@@ -77,8 +65,9 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
       const inserted = await client.query(
         `INSERT INTO ${TABLE}
            (source_table, tlo_id, eligibility_type, rating, conferment_date,
-            place_of_assignment, details, created_at, updated_at, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), $8, $8)
+            place_of_assignment, details, delete_flg,
+            created_at, updated_at, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'No', NOW(), NOW(), $8, $8)
          RETURNING id`,
         [sourceTable, tloId, eligibilityType, rating, confermentDate || null,
          placeOfAssignment, details, updatedBy]
@@ -87,38 +76,37 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     }
   }
 
-  const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
-  if (idsToDelete.length > 0) {
-    try {
-      await client.query(`SAVEPOINT sp_del_eligibility`);
-      await client.query(
-        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
-        [idsToDelete, sourceTable, tloId]
-      );
-      await client.query(`RELEASE SAVEPOINT sp_del_eligibility`);
-    } catch (delErr) {
-      await client.query(`ROLLBACK TO SAVEPOINT sp_del_eligibility`).catch(() => {});
-      console.warn(`[tloEligibilityRepository] Deletion skipped/prohibited: ${delErr.message}`);
-    }
+  // Soft-delete omitted rows
+  const idsToSoftDelete = [...existingIds].filter(id => !incomingIds.has(id));
+  if (idsToSoftDelete.length > 0) {
+    await client.query(
+      `UPDATE ${TABLE}
+       SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+       WHERE id = ANY($2) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
+      [updatedBy, idsToSoftDelete, sourceTable, tloId]
+    );
+    console.log(`[tloEligibilityRepository] Soft-deleted ${idsToSoftDelete.length} record(s) for ${tloId}`);
   }
 }
 
 /**
- * Clone all eligibility records from one person to another.
+ * Clone all ACTIVE eligibility records from one person to another.
  */
 export async function cloneToNewTloId(client, fromSourceTable, fromTloId, toSourceTable, toTloId, updatedBy = null) {
   await client.query(
-    `DELETE FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
-    [toSourceTable, toTloId]
+    `UPDATE ${TABLE} SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+     WHERE source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+    [updatedBy, toSourceTable, toTloId]
   );
   await client.query(
     `INSERT INTO ${TABLE}
        (source_table, tlo_id, eligibility_type, rating, conferment_date,
-        place_of_assignment, details, created_at, updated_at, created_by, updated_by)
+        place_of_assignment, details, delete_flg,
+        created_at, updated_at, created_by, updated_by)
      SELECT $1, $2, eligibility_type, rating, conferment_date,
-            place_of_assignment, details, NOW(), NOW(), $3, $3
+            place_of_assignment, details, 'No', NOW(), NOW(), $3, $3
      FROM ${TABLE}
-     WHERE source_table = $4 AND tlo_id = $5`,
+     WHERE source_table = $4 AND LOWER(tlo_id) = LOWER($5) AND delete_flg = 'No'`,
     [toSourceTable, toTloId, updatedBy, fromSourceTable, fromTloId]
   );
 }

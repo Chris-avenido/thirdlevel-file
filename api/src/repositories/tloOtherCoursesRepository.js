@@ -4,26 +4,22 @@
  * Repository for tlo_other_courses table.
  * Provides: findByTloId, syncForTloId, cloneToNewTloId
  *
- * Current other_courses object shape (from OfficialProfiling.jsx L2342):
- * { course, date_from, date_to, details }
- * Mapped to DB columns: course_title, date_from, date_to, details
+ * Soft-delete pattern: delete_flg = 'No' (active) | 'Yes' (deleted)
+ * Physical DELETE is never performed; the Sentinel prohibition is avoided.
  */
 
 const TABLE = 'tlo_other_courses';
 
 /**
- * Fetch all other course records for a person.
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @returns {Promise<Array>}
+ * Fetch all ACTIVE other course records for a person (delete_flg = 'No').
  */
 export async function findByTloId(client, sourceTable, tloId) {
   const result = await client.query(
     `SELECT id, source_table, tlo_id, course_title, institution, details,
-            date_from, date_to, created_at, updated_at, created_by, updated_by
+            date_from, date_to, delete_flg, created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
      WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
+       AND delete_flg = 'No'
      ORDER BY date_from DESC NULLS LAST, id ASC`,
     [sourceTable, tloId]
   );
@@ -31,25 +27,17 @@ export async function findByTloId(client, sourceTable, tloId) {
 }
 
 /**
- * Sync other course records for a person using INSERT/UPDATE/DELETE.
- * Maps frontend field: course → course_title.
- *
- * @param {import('pg').PoolClient} client
- * @param {'masterlist'|'staging'} sourceTable
- * @param {string} tloId
- * @param {Array<{id?, course, date_from?, date_to?, details?, institution?}>} incomingArray
- * @param {string|null} updatedBy
+ * Sync other course records using INSERT / UPDATE / soft-DELETE.
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
+    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2) AND delete_flg = 'No'`,
     [sourceTable, tloId]
   );
   const existingIds = new Set(existingRes.rows.map(r => r.id));
   const incomingIds = new Set();
 
   for (const item of incomingArray) {
-    // Map frontend 'course' field to DB 'course_title'
     const courseTitle = (item.course || item.course_title || '').trim();
     const details = item.details ? item.details.trim() : null;
     const institution = item.institution ? item.institution.trim() : null;
@@ -65,7 +53,7 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
       await client.query(
         `UPDATE ${TABLE}
          SET course_title = $1, institution = $2, details = $3,
-             date_from = $4, date_to = $5,
+             date_from = $4, date_to = $5, delete_flg = 'No',
              updated_at = NOW(), updated_by = $6
          WHERE id = $7 AND source_table = $8 AND LOWER(tlo_id) = LOWER($9)`,
         [courseTitle, institution, details, dateFrom || null, dateTo || null,
@@ -76,8 +64,8 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
       const inserted = await client.query(
         `INSERT INTO ${TABLE}
            (source_table, tlo_id, course_title, institution, details,
-            date_from, date_to, created_at, updated_at, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), $8, $8)
+            date_from, date_to, delete_flg, created_at, updated_at, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'No', NOW(), NOW(), $8, $8)
          RETURNING id`,
         [sourceTable, tloId, courseTitle, institution, details,
          dateFrom || null, dateTo || null, updatedBy]
@@ -86,38 +74,37 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     }
   }
 
-  const idsToDelete = [...existingIds].filter(id => !incomingIds.has(id));
-  if (idsToDelete.length > 0) {
-    try {
-      await client.query(`SAVEPOINT sp_del_other_courses`);
-      await client.query(
-        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
-        [idsToDelete, sourceTable, tloId]
-      );
-      await client.query(`RELEASE SAVEPOINT sp_del_other_courses`);
-    } catch (delErr) {
-      await client.query(`ROLLBACK TO SAVEPOINT sp_del_other_courses`).catch(() => {});
-      console.warn(`[tloOtherCoursesRepository] Deletion skipped/prohibited: ${delErr.message}`);
-    }
+  // Soft-delete omitted rows
+  const idsToSoftDelete = [...existingIds].filter(id => !incomingIds.has(id));
+  if (idsToSoftDelete.length > 0) {
+    await client.query(
+      `UPDATE ${TABLE}
+       SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+       WHERE id = ANY($2) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
+      [updatedBy, idsToSoftDelete, sourceTable, tloId]
+    );
+    console.log(`[tloOtherCoursesRepository] Soft-deleted ${idsToSoftDelete.length} record(s) for ${tloId}`);
   }
 }
 
 /**
- * Clone all other course records from one person to another.
+ * Clone all ACTIVE other course records from one person to another.
  */
 export async function cloneToNewTloId(client, fromSourceTable, fromTloId, toSourceTable, toTloId, updatedBy = null) {
   await client.query(
-    `DELETE FROM ${TABLE} WHERE source_table = $1 AND tlo_id = $2`,
-    [toSourceTable, toTloId]
+    `UPDATE ${TABLE} SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
+     WHERE source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+    [updatedBy, toSourceTable, toTloId]
   );
   await client.query(
     `INSERT INTO ${TABLE}
        (source_table, tlo_id, course_title, institution, details,
-        date_from, date_to, created_at, updated_at, created_by, updated_by)
+        date_from, date_to, delete_flg,
+        created_at, updated_at, created_by, updated_by)
      SELECT $1, $2, course_title, institution, details,
-            date_from, date_to, NOW(), NOW(), $3, $3
+            date_from, date_to, 'No', NOW(), NOW(), $3, $3
      FROM ${TABLE}
-     WHERE source_table = $4 AND tlo_id = $5`,
+     WHERE source_table = $4 AND LOWER(tlo_id) = LOWER($5) AND delete_flg = 'No'`,
     [toSourceTable, toTloId, updatedBy, fromSourceTable, fromTloId]
   );
 }
