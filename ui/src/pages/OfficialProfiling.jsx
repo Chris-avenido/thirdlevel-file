@@ -43,12 +43,9 @@ const SummaryRow = ({ label, value }) => (
     </div>
 );
 
-const COMPLETENESS_FIELDS = [
-    'first_name', 'last_name', 'gender', 'date_of_birth', 'civil_status',
-    'position_title', 'appointment_date',
-    'permanent_address', 'highest_education', 'education_program', 'education_year_graduated',
-    'performance_rating_1', 'performance_rating_1_period', 'pending_admin_case'
-];
+// The 9 content tabs whose completion drives the progress bar.
+// 'summary' is excluded (it's circular — depends on completeness itself).
+const CONTENT_TABS = ['personal', 'eligibility', 'experience', 'education', 'performance', 'trainings', 'achievements', 'documents', 'legal'];
 
 const computeAge = (dob) => {
     if (!dob) return '';
@@ -278,7 +275,8 @@ const OfficialProfiling = () => {
         };
     }, [exportModalOpen, selectedExportType]);
     const fullName = buildFullName(profile) || 'Official Profiling';
-    const completedFields = COMPLETENESS_FIELDS.filter(f => !!profile[f]).length;
+    // completedTabs: how many of the 9 content tabs satisfy isTabCompleted
+    // (isTabCompleted is defined below, so we compute this after it is defined)
 
     const isTabCompleted = (tabId) => {
         if (tabId === 'personal') {
@@ -514,10 +512,11 @@ const OfficialProfiling = () => {
         }
     };
 
+    // Recompute progress whenever any tab dependency changes
     useEffect(() => {
-        const filledCount = COMPLETENESS_FIELDS.filter(f => !!profile[f]).length;
-        setCompleteness(Math.round((filledCount / COMPLETENESS_FIELDS.length) * 100));
-    }, [profile]);
+        const completedCount = CONTENT_TABS.filter(tabId => isTabCompleted(tabId)).length;
+        setCompleteness(Math.round((completedCount / CONTENT_TABS.length) * 100));
+    }, [profile, prevPositions, trainings]);
     useEffect(() => {
         if (completeness === 100 && profile.profiling_status !== 'profiling completed') {
             setP('profiling_status', 'profiling completed');
@@ -901,13 +900,44 @@ const OfficialProfiling = () => {
                 // Priority 2: d.relevant_trainings (JSONB — existing)
                 let resolvedTrainings;
                 if (Array.isArray(d.training_records) && d.training_records.length > 0) {
-                    resolvedTrainings = d.training_records.map(rec => ({
-                        id: rec.id,
-                        training_name: rec.training_name || '',
-                        date_from: formatDateStr(rec.inclusive_date_start),
-                        date_to: formatDateStr(rec.inclusive_date_end),
-                        conducted_by: rec.conducted_by || ''
-                    }));
+                    resolvedTrainings = d.training_records.map(rec => {
+                        const dateFrom = formatDateStr(rec.inclusive_date_start);
+                        const dateTo = formatDateStr(rec.inclusive_date_end);
+                        let hours = rec.hours != null ? String(rec.hours) : '';
+                        let hours_per_day = '8';
+
+                        // Auto-compute hours from date range if hours is missing or zero
+                        if ((!hours || hours === '0') && dateFrom && dateTo) {
+                            const d1 = new Date(dateFrom);
+                            const d2 = new Date(dateTo);
+                            if (!isNaN(d1) && !isNaN(d2) && d1 <= d2) {
+                                const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+                                hours = String(diffDays * 8);
+                                hours_per_day = '8';
+                            }
+                        } else if (hours && hours !== '0' && dateFrom && dateTo) {
+                            // Back-compute hours_per_day from stored hours + date range
+                            const d1 = new Date(dateFrom);
+                            const d2 = new Date(dateTo);
+                            if (!isNaN(d1) && !isNaN(d2) && d1 <= d2) {
+                                const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+                                const derivedHpd = parseFloat(hours) / diffDays;
+                                if ([2, 4, 8].includes(Math.round(derivedHpd))) {
+                                    hours_per_day = String(Math.round(derivedHpd));
+                                }
+                            }
+                        }
+
+                        return {
+                            id: rec.id,
+                            training_name: rec.training_name || '',
+                            date_from: dateFrom,
+                            date_to: dateTo,
+                            conducted_by: rec.conducted_by || '',
+                            hours,
+                            hours_per_day,
+                        };
+                    });
                 } else {
                     resolvedTrainings = d.relevant_trainings || [];
                 }
