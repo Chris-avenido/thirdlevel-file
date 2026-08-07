@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2026-08-07 — Official Approval & Rejection Email Notifications
+
+### Feature
+Added automated professional email notifications when an official's registration or application is approved or rejected in the `OfficialsRegistry` page (`/officials-registry?status=For%20Approval`, "Pending Approvals" tab).
+
+### Components Added/Updated
+- **`api/src/services/emailService.js`**: Created modular HTML email service using `nodemailer` (GMail SMTP transporter). Provides `sendOfficialApprovalEmail` and `sendOfficialRejectionEmail` with executive Department of Education branding.
+- **`api/src/controllers/thirdLevelController.js`**:
+  - Updated `processRegistration` and `processApplication` endpoints to fetch applicant/official details.
+  - Automatically sends an approval or rejection email to the official's email address upon successful transaction commit.
+- **`ui/src/pages/OfficialsRegistry.jsx`**:
+  - `handleRegistrationAction` & `handleProcessApplication`: Prompts admin for rejection reason when clicking the Reject (X) button, and displays feedback when an email notification is dispatched.
+
+---
+
 ## 2026-08-07 — Soft-Delete Pattern for Child Tables
 
 ### Context

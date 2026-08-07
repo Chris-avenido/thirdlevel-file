@@ -9,6 +9,7 @@ import {
   cloneChildTablesOnApproval,
   resolveSourceTable
 } from '../services/tloProfileService.js';
+import { sendOfficialApprovalEmail, sendOfficialRejectionEmail } from '../services/emailService.js';
 
 let oicSchemaReady = false;
 const optionalColumnExpressionCache = new Map();
@@ -834,9 +835,13 @@ export const processApplication = async (req, res) => {
   if (!app_TLOid || !action) return res.status(400).json({ error: 'app_TLOid and action are required' });
 
   const client = await pool.connect();
+  let applicantData = null;
   try {
     await client.query('BEGIN');
     await ensureOicColumn(client);
+
+    const appRes = await client.query('SELECT * FROM third_level_officials_profiling_application WHERE app_TLOid = $1', [app_TLOid]);
+    applicantData = appRes.rows[0];
 
     if (action === 'reject') {
       await client.query(`
@@ -845,8 +850,7 @@ export const processApplication = async (req, res) => {
         WHERE app_TLOid = $2
       `, [denial_reason || 'No reason provided', app_TLOid]);
     } else if (action === 'approve') {
-      const appRes = await client.query('SELECT * FROM third_level_officials_profiling_application WHERE app_TLOid = $1', [app_TLOid]);
-      const applicant = appRes.rows[0];
+      const applicant = applicantData;
       if (!applicant) throw new Error('Applicant not found');
       if (!applicant.target_TLOid) throw new Error('No target vacancy associated with this application');
 
@@ -892,12 +896,35 @@ export const processApplication = async (req, res) => {
       `, [applicant.email.toLowerCase().trim()]);
 
       // Phase 3: Clone normalized child table rows from staging → masterlist
-      // Runs inside the existing transaction; gracefully skips if tables not yet available
       const approvalUpdatedBy = req.user?.email || null;
       await cloneChildTablesOnApproval(client, app_TLOid, applicant.target_TLOid, approvalUpdatedBy);
     }
 
     await client.query('COMMIT');
+
+    // Email notification dispatch
+    if (applicantData && applicantData.email) {
+      if (action === 'approve') {
+        sendOfficialApprovalEmail({
+          email: applicantData.email,
+          firstName: applicantData.first_name,
+          lastName: applicantData.last_name,
+          positionTitle: applicantData.position_title,
+          office: applicantData.office,
+          tloId: applicantData.target_TLOid || app_TLOid
+        }).catch(err => console.error('[processApplication] Approval email error:', err));
+      } else if (action === 'reject') {
+        sendOfficialRejectionEmail({
+          email: applicantData.email,
+          firstName: applicantData.first_name,
+          lastName: applicantData.last_name,
+          positionTitle: applicantData.position_title,
+          office: applicantData.office,
+          reason: denial_reason
+        }).catch(err => console.error('[processApplication] Rejection email error:', err));
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -913,12 +940,18 @@ export const processRegistration = async (req, res) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const { TLOid, action } = req.body;
+  const { TLOid, action, denial_reason } = req.body;
   if (!TLOid || !action) return res.status(400).json({ error: 'TLOid and action are required' });
 
   const client = await pool.connect();
+  let targetOfficial = null;
   try {
     await client.query('BEGIN');
+
+    const mlRes = await client.query('SELECT email, first_name, last_name, position_title, office FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+    if (mlRes.rows.length > 0) {
+      targetOfficial = mlRes.rows[0];
+    }
 
     if (action === 'reject') {
       await client.query(`
@@ -927,11 +960,10 @@ export const processRegistration = async (req, res) => {
         WHERE "TLOid" = $1 AND status = 'For Approval'
       `, [TLOid]);
 
-      const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
-      if (mlRes.rows.length > 0) {
+      if (targetOfficial && targetOfficial.email) {
         await client.query(`
           UPDATE tlo_users SET registration_status = 'Rejected' WHERE LOWER(email) = $1
-        `, [mlRes.rows[0].email.toLowerCase()]);
+        `, [targetOfficial.email.toLowerCase()]);
       }
     } else if (action === 'approve') {
       await client.query(`
@@ -940,11 +972,10 @@ export const processRegistration = async (req, res) => {
         WHERE "TLOid" = $1 AND status = 'For Approval'
       `, [TLOid]);
 
-      const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
-      if (mlRes.rows.length > 0) {
+      if (targetOfficial && targetOfficial.email) {
         await client.query(`
           UPDATE tlo_users SET registration_status = 'Approved' WHERE LOWER(email) = $1
-        `, [mlRes.rows[0].email.toLowerCase()]);
+        `, [targetOfficial.email.toLowerCase()]);
       }
     } else if (action === 'retrieve') {
       await client.query(`
@@ -953,15 +984,38 @@ export const processRegistration = async (req, res) => {
         WHERE "TLOid" = $1 AND status = 'Rejected'
       `, [TLOid]);
 
-      const mlRes = await client.query('SELECT email FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
-      if (mlRes.rows.length > 0) {
+      if (targetOfficial && targetOfficial.email) {
         await client.query(`
           UPDATE tlo_users SET registration_status = 'For Approval' WHERE LOWER(email) = $1
-        `, [mlRes.rows[0].email.toLowerCase()]);
+        `, [targetOfficial.email.toLowerCase()]);
       }
     }
 
     await client.query('COMMIT');
+
+    // Email notification dispatch
+    if (targetOfficial && targetOfficial.email) {
+      if (action === 'approve') {
+        sendOfficialApprovalEmail({
+          email: targetOfficial.email,
+          firstName: targetOfficial.first_name,
+          lastName: targetOfficial.last_name,
+          positionTitle: targetOfficial.position_title,
+          office: targetOfficial.office,
+          tloId: TLOid
+        }).catch(err => console.error('[processRegistration] Approval email error:', err));
+      } else if (action === 'reject') {
+        sendOfficialRejectionEmail({
+          email: targetOfficial.email,
+          firstName: targetOfficial.first_name,
+          lastName: targetOfficial.last_name,
+          positionTitle: targetOfficial.position_title,
+          office: targetOfficial.office,
+          reason: denial_reason || 'Registration rejected by Central Office Administrator.'
+        }).catch(err => console.error('[processRegistration] Rejection email error:', err));
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     await client.query('ROLLBACK');

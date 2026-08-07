@@ -268,37 +268,69 @@ const OfficialsRegistry = () => {
     const [strandFilter, setStrandFilter] = useState('All');
     
     const handleRegistrationAction = async (TLOid, action) => {
-        const result = await Swal.fire({
-            title: `Confirm ${action}`,
-            text: `Are you sure you want to ${action} this registration?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#08315F',
-            cancelButtonColor: '#ef4444',
-            confirmButtonText: 'Yes, proceed!'
-        });
-        
-        if (!result.isConfirmed) return;
+        let denial_reason = '';
+        if (action === 'reject') {
+            const { value: reason, isConfirmed } = await Swal.fire({
+                title: 'Reject Registration',
+                text: 'Please provide a reason for rejecting this registration:',
+                input: 'textarea',
+                inputPlaceholder: 'Type reason for rejection here...',
+                inputValidator: (value) => {
+                    if (!value || !value.trim()) {
+                        return 'You must provide a reason for rejection!';
+                    }
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#08315F',
+                confirmButtonText: 'Confirm Reject'
+            });
+            if (!isConfirmed) return;
+            denial_reason = reason.trim();
+        } else if (action === 'approve') {
+            const result = await Swal.fire({
+                title: 'Confirm Approval',
+                text: 'Are you sure you want to approve this official registration? An official approval notification email will be sent to the official.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#08315F',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, Approve!'
+            });
+            if (!result.isConfirmed) return;
+        } else {
+            const result = await Swal.fire({
+                title: `Confirm ${action}`,
+                text: `Are you sure you want to ${action} this registration?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#08315F',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, proceed!'
+            });
+            if (!result.isConfirmed) return;
+        }
 
         try {
             const res = await fetch(apiUrl('/api/third-level/process-registration'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ TLOid, action })
+                body: JSON.stringify({ TLOid, action, denial_reason })
             });
             const data = await res.json();
             if (data.success) {
-                Swal.fire('Success', `Registration ${action}d successfully`, 'success');
+                const actionLabel = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : `${action}d`;
+                Swal.fire('Success', `Registration ${actionLabel} successfully and notification email dispatched to official.`, 'success');
                 fetchOfficials();
             } else {
                 Swal.fire('Error', data.error || 'Failed to process registration', 'error');
             }
         } catch (err) {
             console.error(err);
-            Swal.fire('Error', 'An error occurred', 'error');
+            Swal.fire('Error', 'An error occurred while processing', 'error');
         }
     };
     const [officeFilter, setOfficeFilter] = useState('All');
@@ -1191,17 +1223,37 @@ const OfficialsRegistry = () => {
 
 
     const handleProcessApplication = async (app_TLOid, action, denial_reason = '') => {
-        const result = await Swal.fire({
-            title: `Confirm ${action}`,
-            text: `Are you sure you want to ${action} this application?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#08315F',
-            cancelButtonColor: '#ef4444',
-            confirmButtonText: 'Yes, proceed!'
-        });
-        
-        if (!result.isConfirmed) return;
+        let finalReason = denial_reason;
+        if (action === 'reject' && !finalReason) {
+            const { value: reason, isConfirmed } = await Swal.fire({
+                title: 'Reject Application',
+                text: 'Please provide a reason for disapproving this application:',
+                input: 'textarea',
+                inputPlaceholder: 'Reason for disapproval...',
+                inputValidator: (value) => {
+                    if (!value || !value.trim()) {
+                        return 'You must provide a reason for disapproval!';
+                    }
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#08315F',
+                confirmButtonText: 'Confirm Disapprove'
+            });
+            if (!isConfirmed) return;
+            finalReason = reason.trim();
+        } else if (action === 'approve') {
+            const result = await Swal.fire({
+                title: 'Confirm Approval',
+                text: 'Are you sure you want to approve this application? An approval notification email will be sent to the official.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#08315F',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, Approve Application!'
+            });
+            if (!result.isConfirmed) return;
+        }
 
         setProcessingId(app_TLOid);
         try {
@@ -1211,12 +1263,13 @@ const OfficialsRegistry = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ app_TLOid, action, denial_reason })
+                body: JSON.stringify({ app_TLOid, action, denial_reason: finalReason })
             });
             const data = await res.json();
             if (data.success) {
                 fetchApplications();
-                Swal.fire('Notice', `Application ${action}d successfully.`, 'info');
+                const actionText = action === 'approve' ? 'approved' : 'disapproved';
+                Swal.fire('Success', `Application ${actionText} successfully and notification email sent.`, 'success');
             } else {
                 Swal.fire('Notice', data.error || 'Processing failed.', 'info');
             }
