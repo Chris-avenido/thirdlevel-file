@@ -56,8 +56,13 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     const strand = item.strand ? item.strand.trim() : null;
     const division = item.division ? item.division.trim() : null;
     const region = item.region ? item.region.trim() : null;
-    const dateStart = item.start_date || item.inclusive_date_start || null;
-    const dateEnd = item.end_date || item.inclusive_date_end || null;
+    const cleanDate = (d) => {
+      if (!d || typeof d !== 'string') return null;
+      const t = d.trim();
+      return (t && t.toUpperCase() !== 'N/A' && t.toUpperCase() !== 'NONE') ? t : null;
+    };
+    const dateStart = cleanDate(item.start_date || item.inclusive_date_start);
+    const dateEnd = cleanDate(item.end_date || item.inclusive_date_end);
     const oicPositions = item.oic_positions && Array.isArray(item.oic_positions) && item.oic_positions.length > 0
       ? JSON.stringify(item.oic_positions)
       : null;

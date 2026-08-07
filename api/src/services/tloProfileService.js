@@ -100,11 +100,13 @@ export async function fetchAllChildRecords(client, sourceTable, tloId) {
  */
 export async function syncAllChildTables(client, sourceTable, tloId, body, updatedBy = null) {
   const safe = async (label, fn) => {
+    const sp = `sp_sync_${label}`;
     try {
+      await client.query(`SAVEPOINT ${sp}`);
       await fn();
+      await client.query(`RELEASE SAVEPOINT ${sp}`);
     } catch (err) {
-      // If the table doesn't exist yet (migration not run), log and continue.
-      // This prevents the migration from blocking the API during the dual-write period.
+      await client.query(`ROLLBACK TO SAVEPOINT ${sp}`).catch(() => {});
       console.warn(`[tloProfileService] syncAllChildTables [${label}] skipped: ${err.message}`);
     }
   };
@@ -183,9 +185,13 @@ export async function syncAllChildTables(client, sourceTable, tloId, body, updat
  */
 export async function cloneChildTablesOnApproval(client, fromAppTloId, toMasterTloId, updatedBy = null) {
   const safe = async (label, fn) => {
+    const sp = `sp_clone_${label}`;
     try {
+      await client.query(`SAVEPOINT ${sp}`);
       await fn();
+      await client.query(`RELEASE SAVEPOINT ${sp}`);
     } catch (err) {
+      await client.query(`ROLLBACK TO SAVEPOINT ${sp}`).catch(() => {});
       console.warn(`[tloProfileService] cloneChildTablesOnApproval [${label}] skipped: ${err.message}`);
     }
   };

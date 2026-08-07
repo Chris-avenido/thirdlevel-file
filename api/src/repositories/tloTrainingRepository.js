@@ -52,8 +52,13 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
   for (const item of incomingArray) {
     const trainingName = ((item.training_name || item.training_title || '')).toUpperCase().trim();
     const hours = item.hours != null ? parseInt(item.hours, 10) : null;
-    const dateStart = item.date_from || item.inclusive_date_start || null;
-    const dateEnd = item.date_to || item.inclusive_date_end || null;
+    const cleanDate = (d) => {
+      if (!d || typeof d !== 'string') return null;
+      const t = d.trim();
+      return (t && t.toUpperCase() !== 'N/A' && t.toUpperCase() !== 'NONE') ? t : null;
+    };
+    const dateStart = cleanDate(item.date_from || item.inclusive_date_start);
+    const dateEnd = cleanDate(item.date_to || item.inclusive_date_end);
     const conductedBy = item.conducted_by ? item.conducted_by.trim() : null;
 
     if (item.id && existingIds.has(item.id)) {

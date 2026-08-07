@@ -57,7 +57,8 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     const level = item.level || 'Bachelor';
     const degree = (item.degree || '').trim();
     const institution = item.institution ? item.institution.trim() : null;
-    const yearGraduated = item.year_graduated ? parseInt(item.year_graduated, 10) : null;
+    const parsedYear = item.year_graduated ? parseInt(item.year_graduated, 10) : null;
+    const yearGraduated = (parsedYear && parsedYear >= 1900 && parsedYear <= 2100) ? parsedYear : null;
 
     if (item.id && existingIds.has(item.id)) {
       // UPDATE existing row

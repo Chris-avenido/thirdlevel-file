@@ -53,8 +53,13 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     const courseTitle = (item.course || item.course_title || '').trim();
     const details = item.details ? item.details.trim() : null;
     const institution = item.institution ? item.institution.trim() : null;
-    const dateFrom = item.date_from || null;
-    const dateTo = item.date_to || null;
+    const cleanDate = (d) => {
+      if (!d || typeof d !== 'string') return null;
+      const t = d.trim();
+      return (t && t.toUpperCase() !== 'N/A' && t.toUpperCase() !== 'NONE') ? t : null;
+    };
+    const dateFrom = cleanDate(item.date_from);
+    const dateTo = cleanDate(item.date_to);
 
     if (item.id && existingIds.has(item.id)) {
       await client.query(

@@ -53,7 +53,12 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     // Map frontend fields to DB columns
     const eligibilityType = ((item.eligibility || item.eligibility_type || item.title || '')).toUpperCase().trim();
     const rating = item.rating ? String(item.rating).trim() : null;
-    const confermentDate = item.date || item.conferment_date || null;
+    const cleanDate = (d) => {
+      if (!d || typeof d !== 'string') return null;
+      const t = d.trim();
+      return (t && t.toUpperCase() !== 'N/A' && t.toUpperCase() !== 'NONE') ? t : null;
+    };
+    const confermentDate = cleanDate(item.date || item.conferment_date);
     const placeOfAssignment = item.place_of_assignment ? item.place_of_assignment.toUpperCase().trim() : null;
     const details = item.details ? item.details.trim() : null;
 
