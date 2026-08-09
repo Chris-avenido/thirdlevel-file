@@ -21,7 +21,7 @@ import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
 import modernLogo from '../assets/modern_logo.png';
 import depedLogo from '../assets/DepED-Logo.png';
-import buildingBg from '../assets/deped_building_bg.png';
+import buildingBg from '../assets/deped_building_bg.jpg';
 
 const NexusGate = () => {
     const navigate = useNavigate();
@@ -182,7 +182,7 @@ const NexusGate = () => {
                     </p>
                 </motion.div>
 
-                {/* Feature Columns matching attached layout */}
+                {/* Feature Columns */}
                 <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-features-row">
                     <div className="nexus-feature-item">
                         <div className="nexus-feature-icon-wrap">
@@ -202,7 +202,7 @@ const NexusGate = () => {
                         <div className="nexus-feature-icon-wrap">
                             <FiDatabase size={18} className="nexus-feature-icon" />
                         </div>
-                        <h4 className="nexus-feature-title">All in One Place</h4>
+                        <h4 className="nexus-feature-title">All In One Place</h4>
                         <p className="nexus-feature-desc">Centralized information for better accuracy and accessibility.</p>
                     </div>
                 </motion.div>

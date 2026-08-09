@@ -19,18 +19,18 @@
   overflow: hidden;
 }
 
-/* ── NORMAL MODE: HERO ON LEFT (48%), CARDS ON RIGHT (52%) ── */
+/* ── NORMAL MODE: HERO ON LEFT (50% width), CARDS ON RIGHT (50%) ── */
 .nexus-hero-panel {
-  width: 48%;
+  width: 50%;
   height: 100%;
   position: relative;
   background-color: #061D3B;
-  /* Sharp diagonal edge extending to the right at bottom */
-  clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%);
+  /* Bold Chevron ( > ) Divider: Top/Bottom corners recede, peak extends to 100% at 50% vertical center */
+  clip-path: polygon(0 0, 84% 0, 100% 50%, 84% 100%, 0 100%);
   z-index: 10;
   display: flex;
   flex-direction: column;
-  box-shadow: 20px 0 60px rgba(0, 0, 0, 0.25);
+  filter: drop-shadow(16px 0 32px rgba(6, 29, 59, 0.28));
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -38,25 +38,26 @@
   position: relative;
   z-index: 5;
   height: 100%;
-  padding: clamp(32px, 4vw, 52px) clamp(44px, 5vw, 90px) clamp(32px, 4vw, 52px) clamp(44px, 5vw, 64px);
+  padding: clamp(28px, 3.5vw, 48px) clamp(72px, 7.5vw, 120px) clamp(28px, 3.5vw, 48px) clamp(36px, 4.5vw, 60px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  max-width: 680px;
+  max-width: 660px;
   box-sizing: border-box;
 }
 
 /* ── SWAPPED MODE: HERO ON RIGHT, CARDS ON LEFT ── */
 .nexus-layout-grid.swapped .nexus-hero-panel {
   width: 50%;
-  /* Angled edge cutting top left (starts at 18%) down to bottom left (0%) */
-  clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
+  /* Inverted Chevron ( < ) pointing left towards center */
+  clip-path: polygon(16% 0, 100% 0, 100% 100%, 16% 100%, 0 50%);
   margin-left: -2%;
+  filter: drop-shadow(-16px 0 32px rgba(6, 29, 59, 0.28));
 }
 
 .nexus-layout-grid.swapped .nexus-hero-content {
-  /* Extra left padding ensures text is 100% clear of the 18% diagonal cut line */
-  padding: clamp(32px, 4vw, 52px) clamp(36px, 4vw, 56px) clamp(32px, 4vw, 52px) clamp(96px, 9vw, 140px);
+  /* Padding ensures text stays clear of the left chevron cut line */
+  padding: clamp(32px, 4vw, 52px) clamp(36px, 4vw, 56px) clamp(32px, 4vw, 52px) clamp(100px, 9.5vw, 150px);
 }
 
 /* Background image & gradient overlay */
@@ -71,37 +72,40 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center center;
-  filter: brightness(0.90) contrast(1.05) saturate(1.05);
-  transform: scale(1.02);
+  object-position: 72% 38%;
+  filter: brightness(1.05) contrast(1.05) saturate(1.1);
+  opacity: 1;
 }
 
 .nexus-bg-gradient-overlay {
   position: absolute;
   inset: 0;
   background:
-    /* Left vignette gradient for text readability and high contrast */
+    /* Directional Left-to-Right Gradient: Darker behind text on left, fading to transparent across center & right building facade */
     linear-gradient(
       to right,
-      rgba(6, 29, 59, 0.94) 0%,
-      rgba(6, 29, 59, 0.82) 45%,
-      rgba(6, 29, 59, 0.62) 100%
+      rgba(6, 29, 59, 0.82) 0%,
+      rgba(6, 29, 59, 0.55) 28%,
+      rgba(6, 29, 59, 0.18) 60%,
+      rgba(6, 29, 59, 0.02) 100%
     ),
-    /* Bottom fade to anchor lower elements */
+    /* Soft vertical Vignette: Soft shading at very top & bottom, keeping building center bright and clear */
     linear-gradient(
-      to top,
-      rgba(6, 29, 59, 0.88) 0%,
-      rgba(6, 29, 59, 0.0) 45%
+      180deg,
+      rgba(6, 29, 59, 0.40) 0%,
+      transparent 35%,
+      transparent 70%,
+      rgba(6, 29, 59, 0.45) 100%
     );
 }
 
-/* ── FEATURE COLUMNS (Save Time / Less Paperwork / All in One Place) ── */
+/* ── FEATURE COLUMNS (Save Time / Less Paperwork / All In One Place) ── */
 .nexus-features-row {
   display: flex;
   gap: 0;
-  margin-top: 24px;
+  margin-top: 20px;
   margin-bottom: 4px;
-  max-width: 520px;
+  max-width: 440px;
   width: 100%;
 }
 
@@ -109,19 +113,19 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-right: 12px;
+  gap: 5px;
+  padding-right: 10px;
   border-right: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .nexus-feature-item:last-child {
   border-right: none;
   padding-right: 0;
-  padding-left: 12px;
+  padding-left: 10px;
 }
 
 .nexus-feature-item:not(:first-child):not(:last-child) {
-  padding-left: 12px;
+  padding-left: 10px;
 }
 
 .nexus-feature-icon-wrap {
@@ -149,16 +153,16 @@
   font-weight: 800;
   letter-spacing: -0.1px;
   line-height: 1.2;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .nexus-feature-desc {
   margin: 0;
-  color: #F1F5F9;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.4;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  color: #FFFFFF;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 }
 
 /* Top Logo Group */
@@ -282,6 +286,7 @@
   line-height: 1.05;
   letter-spacing: -1.2px;
   white-space: nowrap;
+  text-shadow: 0 2px 10px rgba(6, 29, 59, 0.85), 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
 .nexus-title-highlight {
@@ -320,15 +325,15 @@
   font-weight: 600;
   line-height: 1.5;
   max-width: 440px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 6px rgba(6, 29, 59, 0.9), 0 1px 3px rgba(0, 0, 0, 0.95);
 }
 
 /* Trust / Security Card */
 .nexus-trust-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(6, 29, 59, 0.62);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 20px;
   padding: 18px 22px;
   display: flex;
@@ -336,6 +341,7 @@
   gap: 16px;
   margin-top: 24px;
   max-width: 460px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 .nexus-trust-icon-wrapper {
@@ -618,8 +624,10 @@
     width: 100% !important;
     height: auto;
     min-height: 480px;
-    clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%) !important;
+    /* Downward Chevron ( v ) transition for mobile / tablet */
+    clip-path: polygon(0 0, 100% 0, 100% 92%, 50% 100%, 0 92%) !important;
     margin-left: 0 !important;
+    filter: drop-shadow(0 12px 24px rgba(6, 29, 59, 0.3)) !important;
   }
 
   .nexus-hero-content {
