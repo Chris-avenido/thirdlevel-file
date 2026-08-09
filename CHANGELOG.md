@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-08-07 — NexusGate Landing Page Redesign & Records Management Admin Access
+
+### Design & Feature Updates
+- **Records Management Admin Access Bar ([`NexusGate.jsx`](file:///e:/christop/staging/ui/src/pages/NexusGate.jsx), [`NexusGate.css`](file:///e:/christop/staging/ui/src/pages/NexusGate.css))**:
+  - Implemented the dark navy pill capsule bar with golden border (`#FCD116`), yellow shield circle icon, bold white italic "Records Management" text, "ADMIN ACCESS" gold badge, and hover right arrow (`→`).
+  - Positioned directly below the top logos in the hero section to provide clear, elegant, and immediate access to Admin Records Management login.
+- **Subtle Soft Watermark Refinement**:
+  - Reduced government building watermark opacity to a soft `0.20` (`color: #FBBF24`), using refined `2px`/`1.5px` stroke lines and `fill-opacity="0.1"`.
+- **Position Swap Animation Restored**:
+  - Re-integrated `isSwapped` state and Framer Motion `AnimatePresence` layout transitions.
+
+---
+
 ## 2026-08-07 — Official Approval & Rejection Email Notifications
 
 ### Feature

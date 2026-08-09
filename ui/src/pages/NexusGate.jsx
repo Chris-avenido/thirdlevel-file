@@ -1,17 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiLogIn, FiUserPlus, FiShield, FiBookOpen, FiExternalLink, FiLock } from 'react-icons/fi';
+import {
+    FiX,
+    FiLogIn,
+    FiUserPlus,
+    FiShield,
+    FiBookOpen,
+    FiExternalLink,
+    FiLock,
+    FiBriefcase,
+    FiArrowRight,
+    FiCheckCircle,
+    FiClock,
+    FiFileText,
+    FiDatabase
+} from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
 import modernLogo from '../assets/modern_logo.png';
 import depedLogo from '../assets/DepED-Logo.png';
+import buildingBg from '../assets/deped_building_bg.png';
 
 const NexusGate = () => {
     const navigate = useNavigate();
 
-    // Recruitment portal modal (existing)
+    // Layout Swap State for Position Changing Animation
+    const [isSwapped, setIsSwapped] = useState(false);
+
+    // Recruitment portal modal
     const [showRecruitModal, setShowRecruitModal] = useState(false);
 
     // Central Office auth gate modal
@@ -23,8 +41,26 @@ const NexusGate = () => {
     // Track clicked card for animation
     const [clickedCard, setClickedCard] = useState(null);
 
-    // Layout Swap State
-    const [isSwapped, setIsSwapped] = useState(false);
+    // Records Management Capsule visibility state (triggered on DepEd logo hover)
+    const [showAdminCapsule, setShowAdminCapsule] = useState(false);
+    const adminCapsuleTimerRef = useRef(null);
+
+    const handleAdminHoverEnter = () => {
+        if (adminCapsuleTimerRef.current) {
+            clearTimeout(adminCapsuleTimerRef.current);
+            adminCapsuleTimerRef.current = null;
+        }
+        setShowAdminCapsule(true);
+    };
+
+    const handleAdminHoverLeave = () => {
+        if (adminCapsuleTimerRef.current) {
+            clearTimeout(adminCapsuleTimerRef.current);
+        }
+        adminCapsuleTimerRef.current = setTimeout(() => {
+            setShowAdminCapsule(false);
+        }, 1000);
+    };
 
     const handleLockedVacanciesClick = (e) => {
         e.stopPropagation();
@@ -33,23 +69,11 @@ const NexusGate = () => {
             text: 'The Vacancies module is currently locked and unavailable for public applications. Access is restricted to active hiring cycles.',
             icon: 'warning',
             confirmButtonText: 'Understood',
-            confirmButtonColor: '#06345F',
+            confirmButtonColor: '#08315F',
             customClass: {
-                popup: 'rounded-3xl border-2 border-[#06345F]'
+                popup: 'rounded-3xl border-2 border-[#08315F]'
             }
         });
-    };
-
-    const itemLeft = {
-        hidden: { opacity: 0, x: -60 },
-        visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
-        exit: { opacity: 0, x: -60, transition: { duration: 0.3, ease: "easeIn" } }
-    };
-
-    const itemRight = {
-        hidden: { opacity: 0, x: 60 },
-        visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
-        exit: { opacity: 0, x: 60, transition: { duration: 0.3, ease: "easeIn" } }
     };
 
     const closeCOGate = () => {
@@ -58,7 +82,6 @@ const NexusGate = () => {
 
     const handlePortalClick = (portalId) => {
         setClickedCard(portalId);
-        // After animation starts, automatically redirect to login page
         setTimeout(() => {
             if (portalId === 'admin') {
                 navigate('/login', { state: { redirectTo: '/home', isCO: true } });
@@ -67,349 +90,300 @@ const NexusGate = () => {
             } else {
                 navigate('/login');
             }
-        }, 500); // 500ms delay matches the transition duration smoothly
+        }, 350);
     };
 
-    const portals = [
-        {
-            id: 'records',
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M8 7V5.8C8 4.8 8.8 4 9.8 4h4.4c1 0 1.8.8 1.8 1.8V7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                    <path d="M5.8 7h12.4c1 0 1.8.8 1.8 1.8v9.4c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8V8.8C4 7.8 4.8 7 5.8 7Z" stroke="currentColor" strokeWidth="1.9" />
-                    <path d="M9 7v13M15 7v13" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-                </svg>
-            ),
-
-            roleLabel: 'For Third Level Personnel',
-            title: 'Third Level Portal',
-            desc: 'Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.',
-            action: 'Continue',
-            className: ''
-        },
-        {
-            id: 'admin',
-            icon: (
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 3.8 18.5 6v5.1c0 4.1-2.6 7.8-6.5 9.1-3.9-1.3-6.5-5-6.5-9.1V6L12 3.8Z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
-                    <path d="M9.2 12.1 11.1 14l3.8-4.2" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-            ),
-            tag: 'Administrative Portal',
-            roleLabel: 'For Administrators',
-            title: 'Records Management',
-            desc: 'Access tools for managing the TLO masterlist, monitoring submissions and performing authorized actions.',
-            action: 'Continue',
-            className: 'admin'
-        }
-    ];
-
-    const textVariants = {
-        hidden: { opacity: 0, x: -40 },
-        visible: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: 40 }
+    const itemLeft = {
+        hidden: { opacity: 0, x: -50 },
+        visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut" } },
+        exit: { opacity: 0, x: -50, transition: { duration: 0.3, ease: "easeIn" } }
     };
+
+    const itemRight = {
+        hidden: { opacity: 0, x: 50 },
+        visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut" } },
+        exit: { opacity: 0, x: 50, transition: { duration: 0.3, ease: "easeIn" } }
+    };
+
+    // Hero Section Component
+    const renderHeroContent = (direction = 'left') => (
+        <div
+            className="nexus-hero-panel"
+            onClick={() => setIsSwapped(prev => !prev)}
+            title="Click to toggle panel position"
+            style={{ cursor: 'pointer' }}
+        >
+            {/* Background image & gradient overlay */}
+            <div className="nexus-bg-image-wrapper">
+                <img src={buildingBg} alt="DepEd Headquarters" className="nexus-bg-image" />
+                <div className="nexus-bg-gradient-overlay" />
+            </div>
+
+            <div className="nexus-hero-content">
+                {/* Top Logos */}
+                <div className="nexus-logo-group">
+                    <div
+                        className="nexus-logo-box"
+                        onMouseEnter={handleAdminHoverEnter}
+                        onMouseLeave={handleAdminHoverLeave}
+                    >
+                        <img src={depedLogo} alt="DepEd Logo" className="nexus-logo-img" />
+                    </div>
+
+                    <div className="nexus-logo-box">
+                        <img src={modernLogo} alt="InsightED Logo" className="nexus-logo-img" />
+                    </div>
+                </div>
+
+                {/* Admin Access Capsule Bar - Shown on DepEd Logo hover */}
+                <AnimatePresence>
+                    {showAdminCapsule && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.8, ease: "easeOut" } }}
+                            transition={{ duration: 0.3 }}
+                            onMouseEnter={handleAdminHoverEnter}
+                            onMouseLeave={handleAdminHoverLeave}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handlePortalClick('admin');
+                            }}
+                            className="nexus-admin-capsule-bar"
+                            title="Click for Admin Records Management Login"
+                        >
+                            <div className="nexus-admin-shield-icon">
+                                <FiShield size={18} className="text-[#08315F]" />
+                            </div>
+                            <span className="nexus-admin-capsule-title">Records Management</span>
+                            <span className="nexus-admin-access-badge">ADMIN ACCESS</span>
+                            <span className="nexus-admin-arrow">→</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Title Section */}
+                <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-title-section">
+                    <h1 className="nexus-main-title">
+                        Welcome to<br />
+                        <span className="nexus-title-highlight">
+                            Insight<span className="nexus-red-text">ED</span> Nexus
+                        </span>
+                    </h1>
+
+                    {/* Yellow Underline Accent */}
+                    <div className="nexus-yellow-line">
+                        <div className="nexus-line-bar" />
+                        <div className="nexus-line-dots" />
+                    </div>
+
+                    <p className="nexus-subtitle">
+                        The official platform of the Department of Education for managing personnel records and advancing careers.
+                    </p>
+                </motion.div>
+
+                {/* Feature Columns matching attached layout */}
+                <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-features-row">
+                    <div className="nexus-feature-item">
+                        <div className="nexus-feature-icon-wrap">
+                            <FiClock size={18} className="nexus-feature-icon" />
+                        </div>
+                        <h4 className="nexus-feature-title">Save Time</h4>
+                        <p className="nexus-feature-desc">Streamlined processes and quick access to records.</p>
+                    </div>
+                    <div className="nexus-feature-item">
+                        <div className="nexus-feature-icon-wrap">
+                            <FiFileText size={18} className="nexus-feature-icon" />
+                        </div>
+                        <h4 className="nexus-feature-title">Less Paperwork</h4>
+                        <p className="nexus-feature-desc">Digital records reduce manual work and paper use.</p>
+                    </div>
+                    <div className="nexus-feature-item">
+                        <div className="nexus-feature-icon-wrap">
+                            <FiDatabase size={18} className="nexus-feature-icon" />
+                        </div>
+                        <h4 className="nexus-feature-title">All in One Place</h4>
+                        <p className="nexus-feature-desc">Centralized information for better accuracy and accessibility.</p>
+                    </div>
+                </motion.div>
+
+                {/* Bottom Security / Trust Card */}
+                <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-trust-card">
+                    <div className="nexus-trust-icon-wrapper">
+                        <FiCheckCircle size={22} className="nexus-trust-icon" />
+                    </div>
+                    <div className="nexus-trust-text">
+                        <h3>Official Department of Education Platform</h3>
+                        <p>Your data is protected with enterprise-grade security and privacy standards.</p>
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    );
+
+    // Cards Section Component
+    const renderCardsContent = (direction = 'right') => (
+        <div className="nexus-cards-panel">
+            {/* Top Right User Guide Header Button */}
+            <div className="nexus-top-actions">
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowGuideModal(true);
+                    }}
+                    className="nexus-guide-btn"
+                >
+                    <FiBookOpen size={14} className="text-amber-400" />
+                    <span>USER GUIDE</span>
+                </button>
+            </div>
+
+            {/* Cards Container */}
+            <div className="nexus-cards-stack">
+                {/* ── CARD 1: THIRD LEVEL PORTAL ── */}
+                <motion.div
+                    variants={direction === 'right' ? itemRight : itemLeft}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handlePortalClick('records')}
+                    className="nexus-card nexus-card-thirdlevel"
+                >
+                    {/* Watermark Classical Government Building Background Graphic */}
+                    <div className="nexus-watermark nexus-watermark-columns">
+                        <svg viewBox="0 0 280 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            {/* Pediment / Triangular Roof */}
+                            <path d="M140 18 L15 80 H265 Z" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+                            <path d="M140 32 L38 80 H242 Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                            <circle cx="140" cy="58" r="6" fill="currentColor" fillOpacity="0.4" />
+                            {/* Entablature Beam */}
+                            <rect x="20" y="84" width="240" height="12" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+                            {/* 4 Columns */}
+                            <g fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeWidth="2">
+                                <rect x="36" y="104" width="28" height="96" rx="4" />
+                                <rect x="92" y="104" width="28" height="96" rx="4" />
+                                <rect x="148" y="104" width="28" height="96" rx="4" />
+                                <rect x="204" y="104" width="28" height="96" rx="4" />
+                            </g>
+                            {/* Base Steps */}
+                            <rect x="16" y="204" width="248" height="8" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.5" />
+                            <rect x="10" y="215" width="260" height="8" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.5" />
+                            <rect x="4" y="226" width="272" height="8" rx="2" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.5" />
+                        </svg>
+                    </div>
+
+                    <div className="nexus-card-header">
+                        <div className="nexus-card-badge nexus-badge-yellow shadow-md">
+                            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10">
+                                <circle cx="20" cy="16" r="8" fill="#08315F" />
+                                <path d="M8 38C8 30.268 13.3726 24 20 24C22.42 24 24.673 24.836 26.5 26.27" stroke="#08315F" strokeWidth="5" strokeLinecap="round" />
+                                <path d="M34 26L41 29V35C41 38.5 37.5 42 34 43C30.5 42 27 38.5 27 35V29L34 26Z" fill="#08315F" stroke="#FCD116" strokeWidth="2" strokeLinejoin="round" />
+                                <path d="M31 34.5L33 36.5L37 32.5" stroke="#FCD116" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div className="nexus-card-body">
+                        <span className="nexus-role-tag text-[#F59E0B]">FOR THIRD LEVEL PERSONNEL</span>
+                        <h2 className="nexus-card-title">Third Level Portal</h2>
+                        <p className="nexus-card-desc">
+                            Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.
+                        </p>
+                    </div>
+
+                    <div className="nexus-card-footer">
+                        <span className="nexus-action-link text-[#08315F]">
+                            CONTINUE <FiArrowRight size={16} />
+                        </span>
+                    </div>
+                </motion.div>
+
+                {/* ── CARD 2: VACANCIES (LOCKED) ── */}
+                <motion.div
+                    variants={direction === 'right' ? itemRight : itemLeft}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleLockedVacanciesClick}
+                    className="nexus-card nexus-card-vacancies"
+                >
+                    {/* Watermark Executive Chair Background Graphic */}
+                    <div className="nexus-watermark nexus-watermark-chair">
+                        <svg viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="65" y="20" width="70" height="90" rx="16" fill="currentColor" />
+                            <rect x="45" y="115" width="110" height="24" rx="10" fill="currentColor" />
+                            <path d="M45 70 H35 V110 H45" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            <path d="M155 70 H165 V110 H155" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            <rect x="94" y="142" width="12" height="35" rx="3" fill="currentColor" />
+                            <path d="M100 177 L60 200 M100 177 L140 200 M100 177 L100 210 M100 177 L40 185 M100 177 L160 185" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+                        </svg>
+                    </div>
+
+                    <div className="nexus-card-header">
+                        <div className="nexus-card-badge nexus-badge-blue">
+                            <FiBriefcase size={22} className="text-[#0284C7]" />
+                        </div>
+                        <div className="nexus-locked-pill">
+                            <FiLock size={12} className="text-amber-400" />
+                            <span>LOCKED</span>
+                        </div>
+                    </div>
+
+                    <div className="nexus-card-body">
+                        <span className="nexus-role-tag text-[#0284C7]">RECRUITMENT</span>
+                        <h2 className="nexus-card-title">Vacancies</h2>
+                        <span className="nexus-sub-tag text-[#0284C7]">OPEN POSITIONS & OPPORTUNITIES</span>
+                        <p className="nexus-card-desc mt-1">
+                            Explore official Third Level executive position vacancies, qualification standards, application requirements, and recruitment announcements across the Department.
+                        </p>
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    );
 
     return (
         <PageTransition>
-            <div className={`nexus-gate-wrapper ${isSwapped ? 'swapped' : ''}`}>
-                <div className="app-container">
-                    <main className="preview">
-                        <div className="preview-bg" aria-hidden="true"></div>
-                        <div className="bg-orb orb-a" aria-hidden="true"></div>
-                        <div className="bg-orb orb-b" aria-hidden="true"></div>
-                        <div className="bg-orb orb-c" aria-hidden="true"></div>
-
-                        <AnimatePresence mode="wait">
-                            {!isSwapped ? (
-                                <motion.section key="normal" className="landing-stage" exit="exit">
-                                    <motion.section
-                                        className="hero"
-                                        aria-labelledby="page-title"
-                                        onClick={() => setIsSwapped(true)}
-                                        style={{ cursor: 'pointer' }}
-                                        initial="hidden" animate="visible" exit="exit"
-                                        variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
-                                    >
-                                        <motion.div variants={itemLeft} className="flex gap-4 mb-2 overflow-visible relative z-30" aria-label="Logos">
-                                            <div
-                                                className="deped-logo-wrapper relative group cursor-pointer"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handlePortalClick('admin');
-                                                }}
-                                                title="Access Records Management (Admin Access)"
-                                            >
-                                                <div className="logo transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/60">
-                                                    <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
-                                                </div>
-
-                                                {/* Floating Tooltip / Popover Badge on Hover */}
-                                                <div className="admin-hover-tooltip">
-                                                    <div className="admin-pill-icon" aria-hidden="true">
-                                                        <FiShield size={13} />
-                                                    </div>
-                                                    <span className="admin-pill-text">Records Management</span>
-                                                    <span className="admin-pill-badge">Admin Access</span>
-                                                    <span className="admin-pill-arrow" aria-hidden="true">→</span>
-                                                </div>
-                                            </div>
-                                            <div className="logo">
-                                                <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
-                                            </div>
-                                        </motion.div>
-                                        <motion.h1 variants={itemLeft} id="page-title">
-                                            Welcome to<br />
-                                            <span>Insight<span className="ed-red">ED</span> Nexus</span>
-                                        </motion.h1>
-                                        <motion.p variants={itemLeft}>
-                                            Select the portal that corresponds to your role to access the appropriate services and information.
-                                        </motion.p>
-                                    </motion.section>
-
-                                    <motion.section
-                                        className="portal-grid"
-                                        aria-label="Available portals"
-                                        initial="hidden" animate="visible" exit="exit"
-                                        variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
-                                    >
-                                        {/* Main Records Management Card */}
-                                        <motion.div
-                                            key="records"
-                                            variants={itemRight}
-                                            onClick={(e) => { e.stopPropagation(); handlePortalClick('records'); }}
-                                            className="portal-card"
-                                            style={{ textAlign: 'left' }}
-                                            whileTap={{ scale: 0.96 }}
-                                            role="button"
-                                            tabIndex={0}
-                                        >
-                                            <motion.div
-                                                variants={textVariants}
-                                                initial="hidden"
-                                                animate={clickedCard === 'records' ? "exit" : "visible"}
-                                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                                className="flex flex-col h-full"
-                                            >
-                                                <div className="card-top">
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setShowGuideModal(true);
-                                                        }}
-                                                        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
-                                                        title="Records Management User Guide"
-                                                    >
-                                                        <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
-                                                        <span>User Guide</span>
-                                                    </button>
-                                                </div>
-                                                <h2>Third Level Portal</h2>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">For Third Level Personnel</p>
-                                                <p>Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.</p>
-                                                <div className="portal-link" aria-label="Enter Third Level Portal">
-                                                    Continue <span aria-hidden="true">→</span>
-                                                </div>
-                                            </motion.div>
-                                        </motion.div>
-
-                                        {/* Vacancies Card (Locked) */}
-                                        <motion.div
-                                            key="vacancies"
-                                            variants={itemRight}
-                                            onClick={handleLockedVacanciesClick}
-                                            className="portal-card locked"
-                                            style={{ textAlign: 'left' }}
-                                            whileTap={{ scale: 0.98 }}
-                                            role="button"
-                                            tabIndex={0}
-                                        >
-                                            <motion.div
-                                                variants={textVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                                className="flex flex-col h-full"
-                                            >
-                                                <div className="card-top">
-                                                    <div className="portal-icon bg-slate-700 text-slate-200" aria-hidden="true">
-                                                        <svg viewBox="0 0 24 24" fill="none">
-                                                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.9" />
-                                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.9" />
-                                                            <circle cx="12" cy="13" r="1.5" fill="currentColor" />
-                                                        </svg>
-                                                    </div>
-                                                    <p className="card-label !text-slate-500">Recruitment</p>
-                                                    <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/90 text-amber-300 border border-amber-400/30 text-[11px] font-black uppercase tracking-wider shadow-sm group shrink-0 relative z-20">
-                                                        <FiLock size={13} className="text-amber-400" />
-                                                        <span>Locked</span>
-                                                    </div>
-                                                </div>
-                                                <h2>Vacancies</h2>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 opacity-80">Open Positions & Opportunities</p>
-                                                <p>Explore official Third Level executive position vacancies, qualification standards, application requirements, and recruitment announcements across the Department.</p>
-                                                <div className="portal-link !text-slate-500 group-hover:!text-rose-600 transition-colors" aria-label="Vacancies Portal Locked">
-                                                    <span>Restricted Access</span> <FiLock size={12} className="inline ml-1 text-slate-400" />
-                                                </div>
-                                            </motion.div>
-                                        </motion.div>
-                                    </motion.section>
-                                    <p className="footer-note">
-                                        Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
-                                    </p>
-                                </motion.section>
-                            ) : (
-                                <motion.section key="swapped" className="landing-stage swapped" exit="exit">
-                                    <motion.section
-                                        className="portal-grid"
-                                        aria-label="Available portals"
-                                        initial="hidden" animate="visible" exit="exit"
-                                        variants={{ visible: { transition: { staggerChildren: 0.15 } }, exit: { transition: { staggerChildren: 0.05 } } }}
-                                    >
-                                        {/* Main Records Management Card */}
-                                        <motion.div
-                                            key="records"
-                                            variants={itemLeft}
-                                            onClick={(e) => { e.stopPropagation(); handlePortalClick('records'); }}
-                                            className="portal-card"
-                                            style={{ textAlign: 'left' }}
-                                            whileTap={{ scale: 0.96 }}
-                                            role="button"
-                                            tabIndex={0}
-                                        >
-                                            <motion.div
-                                                variants={textVariants}
-                                                initial="hidden"
-                                                animate={clickedCard === 'records' ? "exit" : "visible"}
-                                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                                className="flex flex-col h-full"
-                                            >
-                                                <div className="card-top">
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setShowGuideModal(true);
-                                                        }}
-                                                        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#06345F] text-white hover:bg-[#0A6FA6] border border-blue-400/30 text-[11px] font-black uppercase tracking-wider transition-all shadow-md group shrink-0 relative z-20 active:scale-95"
-                                                        title="Records Management User Guide"
-                                                    >
-                                                        <FiBookOpen size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
-                                                        <span>User Guide</span>
-                                                    </button>
-                                                </div>
-                                                <h2>Third Level Portal</h2>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-80">For Third Level Personnel</p>
-                                                <p>Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.</p>
-                                                <div className="portal-link" aria-label="Enter Third Level Portal">
-                                                    Continue <span aria-hidden="true">→</span>
-                                                </div>
-                                            </motion.div>
-                                        </motion.div>
-
-                                        {/* Vacancies Card (Locked) */}
-                                        <motion.div
-                                            key="vacancies"
-                                            variants={itemLeft}
-                                            onClick={handleLockedVacanciesClick}
-                                            className="portal-card locked"
-                                            style={{ textAlign: 'left' }}
-                                            whileTap={{ scale: 0.98 }}
-                                            role="button"
-                                            tabIndex={0}
-                                        >
-                                            <motion.div
-                                                variants={textVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                                className="flex flex-col h-full"
-                                            >
-                                                <div className="card-top">
-                                                    <div className="portal-icon bg-slate-700 text-slate-200" aria-hidden="true">
-                                                        <svg viewBox="0 0 24 24" fill="none">
-                                                            <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.9" />
-                                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.9" />
-                                                            <circle cx="12" cy="13" r="1.5" fill="currentColor" />
-                                                        </svg>
-                                                    </div>
-                                                    <p className="card-label !text-slate-500">Recruitment</p>
-                                                    <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/90 text-amber-300 border border-amber-400/30 text-[11px] font-black uppercase tracking-wider shadow-sm group shrink-0 relative z-20">
-                                                        <FiLock size={13} className="text-amber-400" />
-                                                        <span>Locked</span>
-                                                    </div>
-                                                </div>
-                                                <h2>Vacancies</h2>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 opacity-80">Open Positions & Opportunities</p>
-                                                <p>Explore official Third Level executive position vacancies, qualification standards, application requirements, and recruitment announcements across the Department.</p>
-                                                <div className="portal-link !text-slate-500 group-hover:!text-rose-600 transition-colors" aria-label="Vacancies Portal Locked">
-                                                    <span>Restricted Access</span> <FiLock size={12} className="inline ml-1 text-slate-400" />
-                                                </div>
-                                            </motion.div>
-                                        </motion.div>
-                                    </motion.section>
-
-                                    <motion.section
-                                        className="hero"
-                                        aria-labelledby="page-title"
-                                        onClick={() => setIsSwapped(false)}
-                                        style={{ cursor: 'pointer' }}
-                                        initial="hidden" animate="visible" exit="exit"
-                                        variants={{ visible: { transition: { staggerChildren: 0.15, delayChildren: 0.2 } }, exit: { transition: { staggerChildren: 0.05 } } }}
-                                    >
-                                        <motion.div variants={itemRight} className="flex gap-4 mb-2 overflow-visible relative z-30" aria-label="Logos">
-                                            <div
-                                                className="deped-logo-wrapper relative group cursor-pointer"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handlePortalClick('admin');
-                                                }}
-                                                title="Access Records Management (Admin Access)"
-                                            >
-                                                <div className="logo transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:border-amber-400/60">
-                                                    <img src={depedLogo} alt="DepEd Logo" className="w-full h-full object-contain p-1" />
-                                                </div>
-
-                                                {/* Floating Tooltip / Popover Badge on Hover */}
-                                                <div className="admin-hover-tooltip">
-                                                    <div className="admin-pill-icon" aria-hidden="true">
-                                                        <FiShield size={13} />
-                                                    </div>
-                                                    <span className="admin-pill-text">Records Management</span>
-                                                    <span className="admin-pill-badge">Admin Access</span>
-                                                    <span className="admin-pill-arrow" aria-hidden="true">→</span>
-                                                </div>
-                                            </div>
-                                            <div className="logo">
-                                                <img src={modernLogo} alt="InsightED Logo" className="w-full h-full object-contain p-1" />
-                                            </div>
-                                        </motion.div>
-                                        <motion.h1 variants={itemRight} id="page-title">
-                                            Welcome to<br />
-                                            <span>Insight<span className="ed-red">ED</span> Nexus</span>
-                                        </motion.h1>
-                                        <motion.p variants={itemRight}>
-                                            Select the portal that corresponds to your role to access the appropriate services and information.
-                                        </motion.p>
-                                    </motion.section>
-                                    <p className="footer-note">
-                                        Use your <strong>official credentials</strong>. Contact your administrator if your portal access is unavailable.
-                                    </p>
-                                </motion.section>
-                            )}
-                        </AnimatePresence>
-                    </main>
-                </div>
+            <div className={`nexus-gate-container ${isSwapped ? 'swapped' : ''}`}>
+                <AnimatePresence mode="wait">
+                    {!isSwapped ? (
+                        <motion.div
+                            key="normal"
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            variants={{
+                                visible: { transition: { staggerChildren: 0.1 } },
+                                exit: { transition: { staggerChildren: 0.05 } }
+                            }}
+                            className="nexus-layout-grid"
+                        >
+                            {renderHeroContent('left')}
+                            {renderCardsContent('right')}
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="swapped"
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            variants={{
+                                visible: { transition: { staggerChildren: 0.1 } },
+                                exit: { transition: { staggerChildren: 0.05 } }
+                            }}
+                            className="nexus-layout-grid swapped"
+                        >
+                            {renderCardsContent('left')}
+                            {renderHeroContent('right')}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* ── RECRUITMENT MODAL ── */}
                 <AnimatePresence>
                     {showRecruitModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRecruitModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[22px] shadow-none border-2 border-[#08315F] overflow-hidden">
+                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[22px] shadow-2xl border-2 border-[#08315F] overflow-hidden">
                                 <div className="p-10">
                                     <div className="flex justify-between items-start mb-8">
                                         <div className="space-y-1">
@@ -432,23 +406,6 @@ const NexusGate = () => {
                                             <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-1">Personnel & Applicants</p>
                                         </button>
                                     </div>
-                                    <div className="mt-8 pt-8 border-t border-slate-100">
-                                        <h4 className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-4 text-center">Mandatory Workflow</h4>
-                                        <div className="flex justify-between items-center px-4">
-                                            {[['1', 'Identity Verified'], ['2', '100% Profiling'], ['3', 'Submit Application']].map(([n, lbl], i) => (
-                                                <React.Fragment key={n}>
-                                                    <div className="flex flex-col items-center gap-1">
-                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold italic ${i === 0 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600'}`}>{n}</div>
-                                                        <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter text-center">{lbl.split(' ').join('\n')}</span>
-                                                    </div>
-                                                    {i < 2 && <div className="h-[1px] flex-1 bg-slate-200 mb-4 mx-2"></div>}
-                                                </React.Fragment>
-                                            ))}
-                                        </div>
-                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center mt-6 leading-relaxed">
-                                            Per existing policy, candidates must complete 100% of their professional profile before being permitted to apply for vacant positions.
-                                        </p>
-                                    </div>
                                 </div>
                             </motion.div>
                         </div>
@@ -460,8 +417,7 @@ const NexusGate = () => {
                     {showCOGate && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeCOGate} className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" />
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-[22px] shadow-none border-2 border-[#08315F] overflow-hidden">
-                                {/* Header bar */}
+                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-[22px] shadow-2xl border-2 border-[#08315F] overflow-hidden">
                                 <div className="bg-[#08315F] px-10 py-8 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -478,43 +434,40 @@ const NexusGate = () => {
                                 </div>
 
                                 <div className="p-10">
-                                    <AnimatePresence mode="wait">
-                                        {/* Access Options */}
-                                        <motion.div key="access-step" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                                            <div>
-                                                <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your existing account or register a new one</p>
-                                            </div>
+                                    <div className="space-y-6">
+                                        <div>
+                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your existing account or register a new one</p>
+                                        </div>
 
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <button
-                                                    onClick={() => navigate('/login', { state: { isCO: true } })}
-                                                    className="group p-6 bg-blue-50 hover:bg-[#08315F] rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
-                                                >
-                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#08315F] shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                                                        <FiLogIn size={22} />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Sign In</h3>
-                                                        <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">I already have an account</p>
-                                                    </div>
-                                                </button>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <button
+                                                onClick={() => navigate('/login', { state: { isCO: true } })}
+                                                className="group p-6 bg-blue-50 hover:bg-[#08315F] rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
+                                            >
+                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#08315F] shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                    <FiLogIn size={22} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Sign In</h3>
+                                                    <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">I already have an account</p>
+                                                </div>
+                                            </button>
 
-                                                <button
-                                                    onClick={() => navigate('/register', { state: { isCO: true } })}
-                                                    className="group p-6 bg-slate-50 hover:bg-[#08315F] rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
-                                                >
-                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-                                                        <FiUserPlus size={22} />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Register New Account</h3>
-                                                        <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">Create a Central Office account</p>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        </motion.div>
-                                    </AnimatePresence>
+                                            <button
+                                                onClick={() => navigate('/register', { state: { isCO: true } })}
+                                                className="group p-6 bg-slate-50 hover:bg-[#08315F] rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
+                                            >
+                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                    <FiUserPlus size={22} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Register New Account</h3>
+                                                    <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">Create a Central Office account</p>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         </div>
@@ -538,8 +491,7 @@ const NexusGate = () => {
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                                 className="relative w-full max-w-6xl h-[88vh] bg-white rounded-3xl shadow-2xl border border-white/40 flex flex-col overflow-hidden z-10"
                             >
-                                {/* Modal Header */}
-                                <div className="px-6 py-4 bg-[#06345F] text-white flex items-center justify-between shrink-0 shadow-md">
+                                <div className="px-6 py-4 bg-[#08315F] text-white flex items-center justify-between shrink-0 shadow-md">
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-400">
                                             <FiBookOpen size={20} />
@@ -568,7 +520,6 @@ const NexusGate = () => {
                                     </div>
                                 </div>
 
-                                {/* Modal Body with Iframe */}
                                 <div className="flex-1 w-full h-full bg-slate-100 relative">
                                     <iframe
                                         src={`${import.meta.env.BASE_URL}guide-template.html`}
@@ -586,4 +537,3 @@ const NexusGate = () => {
 };
 
 export default NexusGate;
-

@@ -1,889 +1,660 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
-.nexus-gate-wrapper {
-  --navy: #06345F;
-  --navy-2: #05233F;
-  --blue: #0A6FA6;
-  --blue-deep: #04557F;
-  --sky: #BFE6F5;
-  --sky-soft: #EAF7FC;
-  --cream: #FFF2C6;
-  --gold: #FDBA22;
-  --gold-deep: #D99100;
-  --ink: #082B4C;
-  --muted: #667A91;
-  --card: #FFFFFF;
-  --radius: 24px;
-
-  --split-a: #05233F;
-  --split-b: #06345F;
-  --split-c: #0A6FA6;
-  --hero-accent: #FDBA22;
-  --hero-copy: #DFF2FB;
-  --hero-title: #FFFFFF;
-  --card-glass-a: rgba(255,255,255,.68);
-  --card-glass-b: rgba(255,255,255,.38);
-  --card-border: rgba(255,255,255,.78);
-  --card-shadow: rgba(8,43,76,.16);
-  --bg-1: #EAF7FC;
-  --bg-2: #F8FCFF;
-  --bg-3: #FFF2C6;
-  --orb-warm: rgba(253,186,34,.30);
-  --orb-cool: rgba(10,111,166,.18);
-
-  --font-heading: "Plus Jakarta Sans", "IBM Plex Sans", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-
-  width: 100%;
+.nexus-gate-container {
+  width: 100vw;
   height: 100vh;
   margin: 0;
-  color: var(--ink);
-  font-family: var(--font-body);
-  background: #EAF6FB;
+  padding: 0;
+  background-color: #F8FAFC;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+.nexus-layout-grid {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  position: relative;
   overflow: hidden;
 }
 
-.nexus-gate-wrapper * {
+/* ── NORMAL MODE: HERO ON LEFT (48%), CARDS ON RIGHT (52%) ── */
+.nexus-hero-panel {
+  width: 48%;
+  height: 100%;
+  position: relative;
+  background-color: #061D3B;
+  /* Sharp diagonal edge extending to the right at bottom */
+  clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 20px 0 60px rgba(0, 0, 0, 0.25);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nexus-hero-content {
+  position: relative;
+  z-index: 5;
+  height: 100%;
+  padding: clamp(32px, 4vw, 52px) clamp(44px, 5vw, 90px) clamp(32px, 4vw, 52px) clamp(44px, 5vw, 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-width: 680px;
   box-sizing: border-box;
 }
 
-.nexus-gate-wrapper a {
-  color: inherit;
-  text-decoration: none;
+/* ── SWAPPED MODE: HERO ON RIGHT, CARDS ON LEFT ── */
+.nexus-layout-grid.swapped .nexus-hero-panel {
+  width: 50%;
+  /* Angled edge cutting top left (starts at 18%) down to bottom left (0%) */
+  clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
+  margin-left: -2%;
 }
 
-.nexus-gate-wrapper .app-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
+.nexus-layout-grid.swapped .nexus-hero-content {
+  /* Extra left padding ensures text is 100% clear of the 18% diagonal cut line */
+  padding: clamp(32px, 4vw, 52px) clamp(36px, 4vw, 56px) clamp(32px, 4vw, 52px) clamp(96px, 9vw, 140px);
 }
 
-.nexus-gate-wrapper .preview {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.nexus-gate-wrapper .preview-bg {
+/* Background image & gradient overlay */
+.nexus-bg-image-wrapper {
   position: absolute;
   inset: 0;
-  z-index: 0;
-  background:
-    radial-gradient(circle at 78% 14%, var(--orb-warm), transparent 32%),
-    radial-gradient(circle at 70% 86%, var(--orb-cool), transparent 34%),
-    linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 52%, var(--bg-3) 100%);
-}
-
-.nexus-gate-wrapper .preview::before {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  left: -18%;
-  top: -18%;
-  width: 68%;
-  height: 136%;
-  border-radius: 0;
-  
-  /* Fixed background to perfectly preserve layout */
-  background:
-    radial-gradient(circle at 18% 18%, rgba(255,255,255,.18), transparent 30%) fixed,
-    linear-gradient(160deg, var(--split-a) 0%, var(--split-b) 58%, var(--split-c) 100%) fixed;
-  
-  clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%);
-  box-shadow: 34px 0 80px rgba(6,52,95,.20);
-  pointer-events: none;
-  
-  /* Pivot exactly at the right edge (center of screen) */
-  transform-origin: 100% 50%;
-  
-  /* Normal state: Left */
-  transform: rotate(0deg) translateZ(0);
-  transition: transform 1.8s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-
-.nexus-gate-wrapper .preview::after {
-  display: none;
-}
-
-.nexus-gate-wrapper .bg-orb {
-  position: absolute;
   z-index: 1;
-  border-radius: 999px;
-  opacity: .68;
-  pointer-events: none;
-  animation: floatOrb 13s ease-in-out infinite alternate;
+  overflow: hidden;
 }
 
-.nexus-gate-wrapper .orb-a {
-  width: 310px;
-  height: 310px;
-  left: 4%;
-  top: 6%;
-  background: radial-gradient(circle, rgba(10,111,166,.24), transparent 68%);
-}
-
-.nexus-gate-wrapper .orb-b {
-  width: 370px;
-  height: 370px;
-  right: -8%;
-  top: -10%;
-  background: radial-gradient(circle, rgba(253,186,34,.34), transparent 68%);
-  animation-delay: .5s;
-}
-
-.nexus-gate-wrapper .orb-c {
-  width: 280px;
-  height: 280px;
-  right: 14%;
-  bottom: -12%;
-  background: radial-gradient(circle, rgba(191,230,245,.34), transparent 68%);
-  animation-delay: 1s;
-}
-
-.nexus-gate-wrapper .landing-stage {
-  position: relative;
-  z-index: 3;
+.nexus-bg-image {
+  width: 100%;
   height: 100%;
-  padding: clamp(20px, 3.2vw, 46px);
-  display: grid;
-  /* Ultimate blowout fix: minmax(0, fr) allows perfect fractional shrinking without min-content blowout */
-  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
-  align-items: center;
-  gap: clamp(22px, 3.5vw, 50px);
+  object-fit: cover;
+  object-position: center center;
+  filter: brightness(0.90) contrast(1.05) saturate(1.05);
+  transform: scale(1.02);
 }
 
-.nexus-gate-wrapper .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr); /* Prevent nested grid blowout */
-  justify-items: start;
-  text-align: left;
-  gap: 9px;
-  align-self: center;
-  margin-block: auto;
-  min-width: 0; /* Fix CSS Grid overflow gotcha */
+.nexus-bg-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    /* Left vignette gradient for text readability and high contrast */
+    linear-gradient(
+      to right,
+      rgba(6, 29, 59, 0.94) 0%,
+      rgba(6, 29, 59, 0.82) 45%,
+      rgba(6, 29, 59, 0.62) 100%
+    ),
+    /* Bottom fade to anchor lower elements */
+    linear-gradient(
+      to top,
+      rgba(6, 29, 59, 0.88) 0%,
+      rgba(6, 29, 59, 0.0) 45%
+    );
 }
 
-.nexus-gate-wrapper .logo {
-  width: 62px;
-  height: 62px;
-  display: grid;
-  place-items: center;
-  border-radius: 21px;
-  background: rgba(255,255,255,.95);
-  color: var(--navy);
-  border: 1px solid rgba(6,52,95,.18);
-  box-shadow: 0 16px 38px rgba(8,43,76,.14);
-  font-family: var(--font-heading);
-  font-weight: 800;
-  letter-spacing: -.08em;
-  backdrop-filter: blur(14px);
-  animation: fadeDown .5s ease both;
+/* ── FEATURE COLUMNS (Save Time / Less Paperwork / All in One Place) ── */
+.nexus-features-row {
+  display: flex;
+  gap: 0;
+  margin-top: 24px;
+  margin-bottom: 4px;
+  max-width: 520px;
+  width: 100%;
 }
 
-.nexus-gate-wrapper .eyebrow {
-  margin: 0;
-  color: var(--hero-accent);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  animation: fadeUp .55s ease .04s both;
-}
-
-.nexus-gate-wrapper .hero h1 {
-  margin: 0;
-  color: var(--hero-title);
-  font-family: var(--font-heading);
-  font-size: clamp(34px, 4.35vw, 58px);
-  font-weight: 800;
-  letter-spacing: -.052em;
-  line-height: .96;
-  animation: fadeUp .55s ease .08s both;
-}
-
-.nexus-gate-wrapper .hero h1 span {
-  color: var(--hero-title);
-  font-style: italic;
-}
-
-.nexus-gate-wrapper .hero h1 .ed-red {
-  color: #E53935 !important;
-}
-
-.nexus-gate-wrapper .hero p {
-  max-width: 456px;
-  margin: 0;
-  color: var(--hero-copy);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.42;
-  animation: fadeUp .55s ease .12s both;
-}
-
-.nexus-gate-wrapper .portal-grid {
-  width: min(760px, 88%);
-  max-height: calc(100vh - 72px);
-  justify-self: center;
-  align-self: center;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  min-width: 0;
-}
-
-.nexus-gate-wrapper .portal-card {
-  position: relative;
-  min-height: clamp(180px, 28vh, 240px);
-  height: auto;
-  padding: 24px 28px 24px;
+.nexus-feature-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border-radius: 22px;
-  color: var(--ink);
-  border: 1.7px solid var(--card-border);
-  background: linear-gradient(135deg, var(--card-glass-a), var(--card-glass-b));
-  backdrop-filter: blur(20px);
-  box-shadow: 0 28px 82px var(--card-shadow);
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
-  animation: cardIn .6s ease both;
-  cursor: pointer;
-  text-decoration: none;
+  gap: 6px;
+  padding-right: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-.nexus-gate-wrapper .portal-card:nth-child(2) {
-  animation-delay: .08s;
+.nexus-feature-item:last-child {
+  border-right: none;
+  padding-right: 0;
+  padding-left: 12px;
 }
 
-.nexus-gate-wrapper .portal-card:hover {
-  transform: translateY(-6px) scale(1.025);
-  box-shadow: 0 34px 90px rgba(8,43,76,.20);
+.nexus-feature-item:not(:first-child):not(:last-child) {
+  padding-left: 12px;
 }
 
-.nexus-gate-wrapper .portal-card::before,
-.nexus-gate-wrapper .portal-card::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-  transition: transform .24s ease, opacity .24s ease;
-}
-
-.nexus-gate-wrapper .portal-card::before {
-  inset: 0;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.42), transparent 38%),
-    linear-gradient(90deg, var(--accent, var(--blue)) 0 6px, transparent 6px),
-    repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 1px, transparent 1px 12px);
-  opacity: .95;
-}
-
-.nexus-gate-wrapper .portal-card::after {
-  width: 154px;
-  height: 154px;
-  right: -62px;
-  bottom: -76px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 34% 34%, rgba(255,255,255,.72), transparent 30%),
-    rgba(10,111,166,.10);
-}
-
-.nexus-gate-wrapper .portal-card:hover::after {
-  transform: scale(1.16);
-}
-
-.nexus-gate-wrapper .portal-card.admin {
-  --accent: var(--gold);
-}
-
-.nexus-gate-wrapper .card-top {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.nexus-gate-wrapper .portal-icon {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 12px;
-  color: white;
-  background: linear-gradient(135deg, var(--blue), var(--blue-deep));
-  box-shadow: 0 14px 28px rgba(10,111,166,.20);
-}
-
-.nexus-gate-wrapper .admin .portal-icon {
-  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
-}
-
-.nexus-gate-wrapper .portal-icon svg {
-  width: 24px;
-  height: 24px;
-}
-
-.nexus-gate-wrapper .card-label {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  color: var(--accent, var(--blue));
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-}
-
-.nexus-gate-wrapper .portal-card h2 {
-  position: relative;
-  z-index: 1;
-  margin: 0 0 10px;
-  color: var(--navy);
-  font-family: var(--font-heading);
-  font-size: clamp(24px, 2.8vw, 36px);
-  font-style: italic;
-  font-weight: 800;
-  letter-spacing: -.038em;
-  line-height: 1.02;
-}
-
-.nexus-gate-wrapper .portal-card p {
-  position: relative;
-  z-index: 1;
-  max-width: 640px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
-  display: block;
-}
-
-.nexus-gate-wrapper .portal-link {
-  position: relative;
-  z-index: 1;
-  min-height: 20px;
-  margin-top: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  align-self: flex-start;
-  color: var(--accent, var(--blue));
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.nexus-gate-wrapper .portal-link span {
-  transition: transform .2s ease;
-}
-
-.nexus-gate-wrapper .portal-card:hover .portal-link span {
-  transform: translateX(5px);
-}
-
-/* --- DepEd Logo Hover & Admin Tooltip Popover --- */
-.nexus-gate-wrapper .deped-logo-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.nexus-gate-wrapper .admin-hover-tooltip {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  z-index: 99;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 9999px;
-  background: rgba(6, 52, 95, 0.95);
-  border: 1.5px solid rgba(253, 186, 34, 0.75);
-  color: #ffffff;
-  font-family: var(--font-body);
-  white-space: nowrap;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 14px 36px rgba(5, 35, 63, 0.45);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(8px) scale(0.95);
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-}
-
-.nexus-gate-wrapper .deped-logo-wrapper:hover .admin-hover-tooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.nexus-gate-wrapper .admin-hover-tooltip:hover {
-  background: rgba(5, 35, 63, 0.98);
-  border-color: rgba(253, 186, 34, 0.95);
-  box-shadow: 0 18px 42px rgba(5, 35, 63, 0.55);
-}
-
-.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-icon {
+.nexus-feature-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(252, 209, 22, 0.15);
+  border: 1px solid rgba(252, 209, 22, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
-  color: var(--navy);
-  box-shadow: 0 2px 8px rgba(253, 186, 34, 0.4);
+  flex-shrink: 0;
+  margin-bottom: 2px;
 }
 
-.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-text {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-style: italic;
-  color: #ffffff;
-  font-size: 12px;
+.nexus-feature-icon {
+  color: #FCD116;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
 }
 
-.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-badge {
-  font-size: 8.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  background: var(--gold);
-  color: var(--navy-2);
-}
-
-.nexus-gate-wrapper .admin-hover-tooltip .admin-pill-arrow {
+.nexus-feature-title {
+  margin: 0;
+  color: #FFFFFF;
   font-size: 13px;
   font-weight: 800;
-  color: var(--gold);
-  transition: transform 0.25s ease;
+  letter-spacing: -0.1px;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-.nexus-gate-wrapper .deped-logo-wrapper:hover .admin-pill-arrow {
-  transform: translateX(3px);
-}
-
-/* --- Locked Vacancies Card --- */
-.nexus-gate-wrapper .portal-card.locked {
-  border-color: rgba(148, 163, 184, 0.45) !important;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(241, 245, 249, 0.42)) !important;
-  opacity: 0.9;
-}
-
-.nexus-gate-wrapper .portal-card.locked:hover {
-  border-color: rgba(245, 158, 11, 0.65) !important;
-  box-shadow: 0 24px 60px rgba(245, 158, 11, 0.14) !important;
-  opacity: 1;
-}
-
-.nexus-gate-wrapper .portal-card.locked .portal-icon {
-  background: linear-gradient(135deg, #475569, #1e293b);
-  box-shadow: 0 10px 22px rgba(30, 41, 59, 0.2);
-}
-
-.nexus-gate-wrapper .footer-note {
-  position: absolute;
-  left: clamp(24px, 4vw, 62px);
-  bottom: 18px;
+.nexus-feature-desc {
   margin: 0;
-  color: var(--muted);
-  font-size: 9px;
+  color: #F1F5F9;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Top Logo Group */
+.nexus-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nexus-logo-box {
+  width: 64px;
+  height: 64px;
+  background: #FFFFFF;
+  border-radius: 18px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.nexus-logo-box:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+}
+
+.nexus-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Admin Access Capsule Bar */
+.nexus-admin-capsule-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(6, 29, 59, 0.96);
+  border: 1.8px solid #FCD116;
+  border-radius: 9999px;
+  padding: 6px 18px 6px 7px;
+  margin-top: 24px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.nexus-admin-capsule-bar:hover {
+  transform: translateY(-2px) scale(1.02);
+  background-color: #08315F;
+  border-color: #FDE047;
+  box-shadow: 0 14px 35px rgba(252, 209, 22, 0.28);
+}
+
+.nexus-admin-shield-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #FCD116;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.nexus-admin-capsule-title {
+  color: #FFFFFF;
+  font-size: 18px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.nexus-admin-access-badge {
+  background-color: #FCD116;
+  color: #08315F;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nexus-admin-arrow {
+  color: #FCD116;
+  font-size: 14px;
+  font-weight: 800;
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+}
+
+.nexus-admin-capsule-bar:hover .nexus-admin-arrow {
+  transform: translateX(4px);
+}
+
+/* Title Section */
+.nexus-title-section {
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+.nexus-main-title {
+  margin: 0;
+  color: #FFFFFF;
+  font-size: clamp(34px, 4.1vw, 54px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -1.2px;
+  white-space: nowrap;
+}
+
+.nexus-title-highlight {
+  color: #FFFFFF;
+}
+
+.nexus-red-text {
+  color: #EF4444;
+}
+
+.nexus-yellow-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 18px 0 20px 0;
+}
+
+.nexus-line-bar {
+  width: 42px;
+  height: 4px;
+  background-color: #FCD116;
+  border-radius: 9999px;
+}
+
+.nexus-line-dots {
+  width: 8px;
+  height: 4px;
+  background-color: #FCD116;
+  border-radius: 9999px;
+}
+
+.nexus-subtitle {
+  margin: 0;
+  color: #F1F5F9;
+  font-size: clamp(12px, 1.1vw, 14px);
   font-weight: 600;
+  line-height: 1.5;
+  max-width: 440px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-.nexus-gate-wrapper .footer-note strong {
-  color: var(--navy);
+/* Trust / Security Card */
+.nexus-trust-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  max-width: 460px;
 }
 
-@keyframes fadeDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
+.nexus-trust-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(252, 209, 22, 0.12);
+  border: 1px solid rgba(252, 209, 22, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+.nexus-trust-icon {
+  color: #FCD116;
 }
 
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(18px) scale(.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+.nexus-trust-text h3 {
+  margin: 0 0 2px 0;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
 }
 
-@keyframes floatOrb {
-  from { transform: translate3d(0,0,0) scale(1); }
-  to { transform: translate3d(18px,-16px,0) scale(1.05); }
+.nexus-trust-text p {
+  margin: 0;
+  color: #94A3B8;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
-/* Mobile optimization */
-@media(max-width:940px) {
-  .nexus-gate-wrapper {
-    height: auto;
-    min-height: 100%;
-    overflow: auto;
-    background:
-      radial-gradient(circle at 80% 16%, var(--orb-warm), transparent 32%),
-      linear-gradient(180deg, var(--bg-1), var(--bg-2) 48%, var(--bg-3));
-  }
+/* ── CARDS PANEL ── */
+.nexus-cards-panel {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px clamp(24px, 4vw, 56px);
+  margin-left: -2%;
+  box-sizing: border-box;
+}
 
-  .nexus-gate-wrapper .app-container,
-  .nexus-gate-wrapper .preview {
+.nexus-layout-grid.swapped .nexus-cards-panel {
+  margin-left: 0;
+  padding-right: clamp(40px, 5vw, 80px);
+}
+
+.nexus-top-actions {
+  position: absolute;
+  top: 36px;
+  right: 48px;
+  z-index: 20;
+}
+
+.nexus-layout-grid.swapped .nexus-top-actions {
+  right: auto;
+  left: 48px;
+}
+
+.nexus-guide-btn {
+  background-color: #08315F;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 22px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(8, 49, 95, 0.2);
+  transition: all 0.2s ease;
+}
+
+.nexus-guide-btn:hover {
+  background-color: #0c427d;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 25px rgba(8, 49, 95, 0.3);
+}
+
+/* Cards Stack */
+.nexus-cards-stack {
+  width: min(600px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Base Card Styling */
+.nexus-card {
+  position: relative;
+  border-radius: 26px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nexus-card:hover {
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.12);
+}
+
+/* Watermarks */
+.nexus-watermark {
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 250px;
+  height: 240px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.nexus-watermark-columns {
+  color: #FBBF24;
+  opacity: 0.20;
+}
+
+.nexus-watermark-chair {
+  color: #38BDF8;
+  opacity: 0.14;
+}
+
+/* Card 1: Third Level Portal */
+.nexus-card-thirdlevel {
+  background: radial-gradient(circle at 88% 25%, #FEF5D9 0%, #FFFBF0 50%, #FFFFFF 100%);
+  border: 1.8px solid #FDE68A;
+  box-shadow: 0 16px 40px rgba(245, 158, 11, 0.07);
+}
+
+.nexus-card-thirdlevel:hover {
+  border-color: #F59E0B;
+  box-shadow: 0 24px 50px rgba(245, 158, 11, 0.14);
+}
+
+/* Card 2: Vacancies (Locked) */
+.nexus-card-vacancies {
+  background: linear-gradient(135deg, #F0F9FF 0%, #FFFFFF 100%);
+  border: 2px solid #BAE6FD;
+}
+
+.nexus-card-vacancies:hover {
+  border-color: #38BDF8;
+}
+
+/* Card Header */
+.nexus-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+
+.nexus-card-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.nexus-badge-yellow {
+  background-color: #FDE89D;
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.12);
+}
+
+.nexus-badge-blue {
+  background-color: #E0F2FE;
+}
+
+.nexus-locked-pill {
+  background-color: #334155;
+  color: #FDE68A;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Card Body */
+.nexus-card-body {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+}
+
+.nexus-role-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.nexus-sub-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.nexus-card-title {
+  margin: 0 0 8px 0;
+  color: #08315F;
+  font-size: clamp(26px, 2.5vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.1;
+}
+
+.nexus-card-desc {
+  margin: 0;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  max-width: 480px;
+}
+
+/* Card Footer */
+.nexus-card-footer {
+  position: relative;
+  z-index: 2;
+  margin-top: 18px;
+}
+
+.nexus-action-link {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s ease;
+}
+
+.nexus-card:hover .nexus-action-link {
+  transform: translateX(4px);
+}
+
+/* ── RESPONSIVE RULES ── */
+@media (max-width: 1024px) {
+  .nexus-gate-container {
     height: auto;
     min-height: 100vh;
-    overflow: visible;
+    overflow-y: auto;
   }
 
-  .nexus-gate-wrapper .preview-bg {
-    position: fixed;
-  }
-
-  .nexus-gate-wrapper .preview::before,
-  .nexus-gate-wrapper .preview::after {
-    display: none;
-  }
-
-  .nexus-gate-wrapper .bg-orb {
-    opacity: .42;
-    transform: scale(.72);
-  }
-
-  .nexus-gate-wrapper .orb-a {
-    left: -110px;
-    top: 30px;
-  }
-
-  .nexus-gate-wrapper .orb-b {
-    right: -170px;
-    top: 110px;
-  }
-
-  .nexus-gate-wrapper .orb-c {
-    right: -120px;
-    bottom: -100px;
-  }
-
-  .nexus-gate-wrapper .landing-stage {
-    min-height: 100vh;
+  .nexus-layout-grid {
+    flex-direction: column;
     height: auto;
-    padding: 22px 16px 28px;
-    grid-template-columns: 1fr;
-    align-content: start;
-    gap: 18px;
   }
 
-  .nexus-gate-wrapper .hero {
+  .nexus-hero-panel {
+    width: 100% !important;
+    height: auto;
+    min-height: 480px;
+    clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%) !important;
+    margin-left: 0 !important;
+  }
+
+  .nexus-hero-content {
+    padding: 40px 24px !important;
+  }
+
+  .nexus-main-title {
+    white-space: normal;
+  }
+
+  .nexus-cards-panel {
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding: 48px 24px !important;
+  }
+
+  .nexus-top-actions {
     position: relative;
-    overflow: hidden;
-    justify-items: center;
-    text-align: center;
-    gap: 8px;
-    padding: 18px 14px 20px;
-    border-radius: 28px;
-    background: linear-gradient(135deg, var(--split-a), var(--split-b) 58%, var(--split-c));
-    box-shadow: 0 22px 56px rgba(8,43,76,.18);
+    top: 0;
+    right: 0;
+    left: 0 !important;
+    margin-bottom: 24px;
+    align-self: flex-end;
   }
 
-  .nexus-gate-wrapper .hero::after {
-    content: "";
-    position: absolute;
-    right: -54px;
-    bottom: -64px;
-    width: 170px;
-    height: 170px;
-    background: rgba(255,255,255,.16);
-    clip-path: polygon(0 0, 100% 50%, 0 100%);
-    pointer-events: none;
+  .nexus-feature-item {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    padding-bottom: 14px;
   }
 
-  .nexus-gate-wrapper .logo {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
-    font-size: 13px;
-  }
-
-  .nexus-gate-wrapper .eyebrow {
-    max-width: 100%;
-    font-size: 9px;
-    letter-spacing: .18em;
-  }
-
-  .nexus-gate-wrapper .hero h1 {
-    font-size: clamp(26px, 10vw, 42px);
-    line-height: .96;
-    letter-spacing: -.05em;
-  }
-
-  .nexus-gate-wrapper .hero p {
-    max-width: 320px;
-    font-size: 10px;
-    line-height: 1.36;
-  }
-
-  .nexus-gate-wrapper .portal-grid {
-    width: 100%;
-    max-width: 500px;
-    justify-self: center;
-    gap: 12px;
-  }
-
-  .nexus-gate-wrapper .portal-card {
-    min-height: auto;
-    padding: 16px 16px 15px;
-    border-radius: 20px;
-    box-shadow: 0 18px 44px var(--card-shadow);
-  }
-
-  .nexus-gate-wrapper .portal-card:hover {
-    transform: none;
-  }
-
-  .nexus-gate-wrapper .card-top {
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .nexus-gate-wrapper .portal-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-  }
-
-  .nexus-gate-wrapper .portal-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  .nexus-gate-wrapper .card-label {
-    font-size: 9px;
-    letter-spacing: .13em;
-  }
-
-  .nexus-gate-wrapper .portal-card h2 {
-    font-size: clamp(20px, 6vw, 26px);
-    margin-bottom: 6px;
-  }
-
-  .nexus-gate-wrapper .portal-card p {
-    font-size: 10px;
-    line-height: 1.34;
-  }
-
-  .nexus-gate-wrapper .portal-link {
-    min-height: 34px;
-    margin-top: 7px;
-    font-size: 9px;
-  }
-
-  .nexus-gate-wrapper .footer-note {
-    position: static;
-    max-width: 320px;
-    justify-self: center;
-    text-align: center;
-    font-size: 10px;
-    line-height: 1.35;
-  }
-}
-
-@media(max-width:520px) {
-  .nexus-gate-wrapper .landing-stage {
-    padding: 16px 12px 24px;
-    gap: 14px;
-  }
-
-  .nexus-gate-wrapper .hero {
-    padding: 16px 12px 18px;
-    border-radius: 24px;
-  }
-
-  .nexus-gate-wrapper .hero h1 {
-    font-size: clamp(26px, 11vw, 38px);
-  }
-
-  .nexus-gate-wrapper .hero p {
-    font-size: 10px;
-  }
-
-  .nexus-gate-wrapper .portal-card {
-    padding: 14px;
-    border-radius: 18px;
-  }
-
-  .nexus-gate-wrapper .portal-card h2 {
-    font-size: 21px;
-  }
-
-  .nexus-gate-wrapper .portal-card p {
-    font-size: 10px;
-  }
-}
-
-@media(prefers-reduced-motion:reduce) {
-  .nexus-gate-wrapper *,
-  .nexus-gate-wrapper *::before,
-  .nexus-gate-wrapper *::after {
-    animation-duration: .001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .001ms !important;
-  }
-}
-
-/* Strong hover enlargement override for desktop / laptop pointers */
-@media (hover:hover) and (pointer:fine) {
-  .nexus-gate-wrapper .portal-card {
-    transform-origin: center center;
-    will-change: transform;
-  }
-
-  .nexus-gate-wrapper .portal-card:hover,
-  .nexus-gate-wrapper .portal-card:focus-within {
-    animation: none;
-    transform: translateY(-10px) scale(1.06) !important;
-    box-shadow: 0 42px 110px rgba(8,43,76,.26) !important;
-    z-index: 10;
-  }
-
-  .nexus-gate-wrapper .portal-card:hover::after,
-  .nexus-gate-wrapper .portal-card:focus-within::after {
-    transform: scale(1.2);
-  }
-}
-
-/* Fluid hover fix: keeps transform out of the intro animation so hover can interpolate smoothly */
-@keyframes cardIn {
-  from { opacity: 0; filter: blur(2px); }
-  to { opacity: 1; filter: blur(0); }
-}
-
-@media (hover:hover) and (pointer:fine) {
-  .nexus-gate-wrapper .portal-card {
-    transform: translate3d(0,0,0) scale(1);
-    transform-origin: center center;
-    backface-visibility: hidden;
-    will-change: transform, box-shadow;
-    transition: transform .55s cubic-bezier(.16,1,.3,1), box-shadow .55s cubic-bezier(.16,1,.3,1), border-color .55s cubic-bezier(.16,1,.3,1) !important;
-  }
-
-  .nexus-gate-wrapper .portal-card:hover,
-  .nexus-gate-wrapper .portal-card:focus-within {
-    animation: none;
-    transform: translate3d(0,-8px,0) scale(1.04) !important;
-    box-shadow: 0 38px 96px rgba(8,43,76,.22) !important;
-    z-index: 10;
-  }
-
-  .nexus-gate-wrapper .portal-card::after {
-    transition: transform .55s cubic-bezier(.16,1,.3,1) !important;
-  }
-
-  .nexus-gate-wrapper .portal-card:hover::after,
-  .nexus-gate-wrapper .portal-card:focus-within::after {
-    transform: scale(1.16) !important;
-  }
-}
-
-/* Remove hover-exit blink by preventing card animation from replaying */
-.nexus-gate-wrapper .portal-card {
-  animation: none !important;
-}
-
-@media (hover:hover) and (pointer:fine) {
-  .nexus-gate-wrapper .portal-card,
-  .nexus-gate-wrapper .portal-card:hover,
-  .nexus-gate-wrapper .portal-card:focus-within {
-    animation: none !important;
-  }
-}
-
-/* Card outline enhancement */
-.nexus-gate-wrapper .portal-card {
-  border: 2px solid rgba(6,52,95,.55) !important;
-  outline: 1px solid rgba(255,255,255,.85);
-  outline-offset: -6px;
-}
-
-.nexus-gate-wrapper .portal-card.admin {
-  border-color: rgba(253,186,34,.72) !important;
-}
-
-.nexus-gate-wrapper .portal-card:hover,
-.nexus-gate-wrapper .portal-card:focus-within {
-  border-color: rgba(6,52,95,.78) !important;
-  outline-color: rgba(255,255,255,.95);
-}
-
-.nexus-gate-wrapper .portal-card.admin:hover,
-.nexus-gate-wrapper .portal-card.admin:focus-within {
-  border-color: rgba(253,186,34,.92) !important;
-}
-
-/* Hero enlargement + hover animation */
-@media (min-width:941px) {
-  .nexus-gate-wrapper .hero {
-    transform: scale(1.25);
-    transform-origin: left center;
-    transition:
-      transform .55s cubic-bezier(.16,1,.3,1),
-      filter .55s cubic-bezier(.16,1,.3,1);
-    will-change: transform, filter;
-  }
-
-  .nexus-gate-wrapper .hero:hover,
-  .nexus-gate-wrapper .hero:focus-within {
-    transform: scale(1.31) translate3d(6px,-4px,0);
-    filter: drop-shadow(0 26px 42px rgba(0,0,0,.18));
-  }
-
-  .nexus-gate-wrapper .hero .logo,
-  .nexus-gate-wrapper .hero h1 {
-    transition:
-      transform .55s cubic-bezier(.16,1,.3,1),
-      letter-spacing .55s cubic-bezier(.16,1,.3,1),
-      box-shadow .55s cubic-bezier(.16,1,.3,1);
-  }
-
-  .nexus-gate-wrapper .hero:hover .logo,
-  .nexus-gate-wrapper .hero:focus-within .logo {
-    transform: rotate(-3deg) scale(1.06);
-    box-shadow: 0 20px 48px rgba(255,255,255,.18);
-  }
-
-  .nexus-gate-wrapper .hero:hover h1,
-  .nexus-gate-wrapper .hero:focus-within h1 {
-    letter-spacing: -.06em;
-  }
-}
-
-@media (max-width:940px) {
-  .nexus-gate-wrapper .hero:hover,
-  .nexus-gate-wrapper .hero:focus-within {
-    transform: none;
-  }
-}
-
-/* --- Premium Background Swap --- */
-.nexus-gate-wrapper.swapped .preview::before {
-  /* Sweep across the Top (-180) to move to the Right side */
-  transform: rotate(-180deg) translateZ(0);
-}
-
-@media (min-width: 941px) {
-  .nexus-gate-wrapper .landing-stage.swapped {
-    grid-template-columns: minmax(0, 1.18fr) minmax(0, .82fr);
+  .nexus-feature-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 }
