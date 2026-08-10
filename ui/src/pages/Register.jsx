@@ -144,8 +144,8 @@ const Register = () => {
                 login(data.user, data.token);
                 setSuccess(true);
 
-                const redirectPath = (['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'].includes(data.user.role))
-                    ? '/home'
+                const redirectPath = (['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'CO_PD', 'RO_HRMO', 'SDO_HRMO'].includes(data.user.role))
+                    ? '/main-dashboard'
                     : '/official-profiling';
 
                 setTimeout(() => navigate(redirectPath), 2000);

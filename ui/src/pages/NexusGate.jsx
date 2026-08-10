@@ -84,7 +84,7 @@ const NexusGate = () => {
         setClickedCard(portalId);
         setTimeout(() => {
             if (portalId === 'admin') {
-                navigate('/login', { state: { redirectTo: '/home', isCO: true } });
+                navigate('/login', { state: { redirectTo: '/main-dashboard', isCO: true } });
             } else if (portalId === 'records') {
                 navigate('/login', { state: { redirectTo: '/official-profiling', isCO: false } });
             } else {
