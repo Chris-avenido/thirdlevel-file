@@ -68,7 +68,7 @@ const Register = () => {
         const checkMasterlist = async () => {
             setMasterlistCheckStatus('checking');
             try {
-                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}`));
+                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}&isCO=${isCO}`));
                 if (res.ok) {
                     const data = await res.json();
                     if (data.alreadyRegistered) {
@@ -109,7 +109,7 @@ const Register = () => {
             return;
         }
         if (masterlistCheckStatus === 'already_registered') {
-            Swal.fire('Notice', 'This email is already registered. Please login instead.', 'warning');
+            Swal.fire('Notice', 'This email is already registered for this portal. Please login instead.', 'warning');
             return;
         }
         if (isCO && formData.auth_code !== 'nVxCpLrTqWmK') {
@@ -135,7 +135,8 @@ const Register = () => {
                     lastName: formData.last_name,
                     contactNumber: formData.contactNumber,
                     role: formData.role,
-                    passcode: formData.passcode
+                    passcode: formData.passcode,
+                    isCO
                 })
             });
             const data = await res.json();

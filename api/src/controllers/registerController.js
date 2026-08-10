@@ -136,11 +136,37 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
+const ADMIN_ROLES = [
+  'Central Office',
+  'Personnel Admin',
+  'Admin',
+  'Super User',
+  'Regional Office',
+  'School Division Office',
+  'CO_PD',
+  'RO_HRMO',
+  'SDO_HRMO'
+];
+
+const THIRD_LEVEL_ROLES = [
+  'TLO Applicant',
+  'Third Level Official',
+  'Third Level Applicant',
+  'User'
+];
+
 export const checkEmail = async (req, res) => {
-  const { email } = req.query;
+  const { email, isCO, role } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
-    const check = await pool.query('SELECT uid FROM tlo_users WHERE LOWER(email) = $1', [email.toLowerCase().trim()]);
+    const normalizedEmail = email.toLowerCase().trim();
+    const isCOBool = isCO === 'true' || isCO === true || ADMIN_ROLES.includes(role);
+    const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+
+    const check = await pool.query(
+      'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+      [normalizedEmail, targetRoles]
+    );
     res.json({ exists: check.rows.length > 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -148,11 +174,17 @@ export const checkEmail = async (req, res) => {
 };
 
 export const checkMasterlistEmail = async (req, res) => {
-  const { email } = req.query;
+  const { email, isCO, role } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
     const normalizedEmail = email.toLowerCase().trim();
-    const userCheck = await pool.query('SELECT uid FROM tlo_users WHERE LOWER(email) = $1', [normalizedEmail]);
+    const isCOBool = isCO === 'true' || isCO === true || ADMIN_ROLES.includes(role);
+    const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+
+    const userCheck = await pool.query(
+      'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+      [normalizedEmail, targetRoles]
+    );
     if (userCheck.rows.length > 0) {
       return res.json({ alreadyRegistered: true });
     }
@@ -169,7 +201,7 @@ export const checkMasterlistEmail = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division, passcode } = req.body;
+  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division, passcode, isCO } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and Password are required' });
@@ -196,11 +228,17 @@ export const registerUser = async (req, res) => {
 
     await client.query('BEGIN');
 
-    const userCheck = await client.query('SELECT uid FROM tlo_users WHERE LOWER(email) = $1', [normalizedEmail]);
+    const isAdminRole = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(assignedRole);
+    const targetRoles = isAdminRole ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+
+    const userCheck = await client.query(
+      'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+      [normalizedEmail, targetRoles]
+    );
     if (userCheck.rows.length > 0) {
       await client.query('ROLLBACK');
       client.release();
-      return res.status(400).json({ error: 'This email is already registered in InsightEd. Please Login instead.' });
+      return res.status(400).json({ error: 'This email is already registered in InsightEd for this portal. Please Login instead.' });
     }
 
     let userRegistrationStatus = 'Approved';

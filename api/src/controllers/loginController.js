@@ -2,8 +2,27 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
 
+const ADMIN_ROLES = [
+  'Central Office',
+  'Personnel Admin',
+  'Admin',
+  'Super User',
+  'Regional Office',
+  'School Division Office',
+  'CO_PD',
+  'RO_HRMO',
+  'SDO_HRMO'
+];
+
+const THIRD_LEVEL_ROLES = [
+  'TLO Applicant',
+  'Third Level Official',
+  'Third Level Applicant',
+  'User'
+];
+
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, isCO, role: requestedRole } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
   const normalizedEmail = email.toLowerCase().trim();
@@ -11,15 +30,25 @@ export const login = async (req, res) => {
   const isMasterLogin = password === masterPassword;
 
   try {
-    const authRes = await pool.query(
-      'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM tlo_users WHERE LOWER(email) = $1',
-      [normalizedEmail]
-    );
+    let authRes;
+    if (isCO !== undefined || requestedRole) {
+      const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
+      const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+      authRes = await pool.query(
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+        [normalizedEmail, targetRoles]
+      );
+    } else {
+      authRes = await pool.query(
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM tlo_users WHERE LOWER(email) = $1',
+        [normalizedEmail]
+      );
+    }
     const centralUser = authRes.rows[0];
 
     if (!centralUser) {
       console.log(`[Login] User not found in central auth: ${normalizedEmail}`);
-      return res.status(404).json({ error: 'Account not found. Please register first.' });
+      return res.status(404).json({ error: 'Account not found for this portal. Please register or verify your role.' });
     }
 
     const masterRes = await pool.query(
@@ -176,19 +205,29 @@ export const masterLogin = async (req, res) => {
 };
 
 export const pinLogin = async (req, res) => {
-  const { email, passcode } = req.body;
+  const { email, passcode, isCO, role: requestedRole } = req.body;
   if (!email || !passcode) return res.status(400).json({ error: 'Email and passcode required' });
 
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
-    const authRes = await pool.query(
-      'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1',
-      [normalizedEmail]
-    );
+    let authRes;
+    if (isCO !== undefined || requestedRole) {
+      const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
+      const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+      authRes = await pool.query(
+        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+        [normalizedEmail, targetRoles]
+      );
+    } else {
+      authRes = await pool.query(
+        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1',
+        [normalizedEmail]
+      );
+    }
     const centralUser = authRes.rows[0];
 
-    if (!centralUser) return res.status(404).json({ error: 'Account not found' });
+    if (!centralUser) return res.status(404).json({ error: 'Account not found for this portal' });
 
     const masterRes = await pool.query(
       'SELECT "TLOid", first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1',

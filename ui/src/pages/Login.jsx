@@ -79,21 +79,21 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const data = await loginWithCredentials(loginId, password);
+            const data = await loginWithCredentials(loginId, password, isCO);
             if (data.success) {
                 const roleLower = data.user.role?.toLowerCase() || '';
                 // Role enforcement
                 if (isCO) {
-                    if (!['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
+                    if (!['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
                         setLoading(false);
                         logout();
                         return Swal.fire('Access Denied', 'This portal is restricted to Administrative Personnel.', 'error');
                     }
                 } else {
-                    if (roleLower !== 'tlo applicant') {
+                    if (!['tlo applicant', 'third level official', 'third level applicant', 'user'].includes(roleLower)) {
                         setLoading(false);
                         logout();
-                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Applicants.', 'error');
+                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Personnel.', 'error');
                     }
                 }
 
@@ -103,7 +103,7 @@ const Login = () => {
                 // Role-based redirection
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
-                } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
+                } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
                     navigate('/main-dashboard');
                 } else {
                     navigate('/official-profiling');
@@ -121,21 +121,21 @@ const Login = () => {
     const handlePinVerify = async (completedPin) => {
         setLoading(true);
         try {
-            const data = await verifyPin(loginId, completedPin);
+            const data = await verifyPin(loginId, completedPin, isCO);
             if (data.success) {
                 const roleLower = data.user.role?.toLowerCase() || '';
                 // Role enforcement
                 if (isCO) {
-                    if (!['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
+                    if (!['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
                         setLoading(false);
                         logout();
                         return Swal.fire('Access Denied', 'This portal is restricted to Administrative Personnel.', 'error');
                     }
                 } else {
-                    if (roleLower !== 'tlo applicant') {
+                    if (!['tlo applicant', 'third level official', 'third level applicant', 'user'].includes(roleLower)) {
                         setLoading(false);
                         logout();
-                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Applicants.', 'error');
+                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Personnel.', 'error');
                     }
                 }
 

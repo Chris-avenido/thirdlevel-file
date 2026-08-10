@@ -40,13 +40,13 @@ export const AuthProvider = ({ children }) => {
         setToken(token);
     };
 
-    const loginWithCredentials = async (email, password) => {
+    const loginWithCredentials = async (email, password, isCO) => {
         const targetUrl = apiUrl('/api/auth/login');
         try {
             const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password, isCO })
             });
 
             if (!response.ok) {
@@ -76,12 +76,12 @@ export const AuthProvider = ({ children }) => {
     };
 
 
-    const verifyPin = async (email, passcode) => {
+    const verifyPin = async (email, passcode, isCO) => {
         try {
             const response = await fetch(apiUrl('/api/auth/pin-login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, passcode })
+                body: JSON.stringify({ email, passcode, isCO })
             });
             const data = await response.json();
             if (data.success) {
