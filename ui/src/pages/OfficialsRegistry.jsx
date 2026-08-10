@@ -9,7 +9,7 @@ import {
     FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2, FiRefreshCw, FiCalendar
 } from 'react-icons/fi';
 import { GoArrowUpRight } from "react-icons/go";
-import { FaIdBadge } from "react-icons/fa";
+import { FaIdBadge, FaVial } from "react-icons/fa";
 import { LuChefHat } from "react-icons/lu";
 import { MdOutlineToggleOff } from "react-icons/md";
 import { useAuth } from '../context/AuthContext';
@@ -333,6 +333,53 @@ const OfficialsRegistry = () => {
             Swal.fire('Error', 'An error occurred while processing', 'error');
         }
     };
+
+    const handleToggleTestAccount = async (item) => {
+        const targetStatus = !item.is_testaccount;
+        const officialName = item.first_name ? `${item.first_name} ${item.last_name || ''}` : item.TLOid;
+        const confirmText = targetStatus
+            ? `Are you sure you want to mark ${officialName} as a TEST ACCOUNT?`
+            : `Are you sure you want to remove the TEST ACCOUNT flag from ${officialName}?`;
+
+        const confirmRes = await Swal.fire({
+            title: 'Update Test Account Status?',
+            text: confirmText,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#7c3aed',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: targetStatus ? 'Yes, Mark as Test' : 'Yes, Remove Flag'
+        });
+
+        if (!confirmRes.isConfirmed) return;
+
+        try {
+            const res = await fetch(apiUrl('/api/third-level/toggle-test-account'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token || localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ TLOid: item.TLOid, is_testaccount: targetStatus })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: targetStatus ? 'Marked as Test Account' : 'Test Account Flag Removed',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                fetchOfficials();
+            } else {
+                Swal.fire('Error', data.error || 'Failed to update test account status', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'An error occurred while updating status', 'error');
+        }
+    };
     const [officeFilter, setOfficeFilter] = useState('All');
     const [positionFilter, setPositionFilter] = useState('All');
     const [designationFilter, setDesignationFilter] = useState('All');
@@ -553,9 +600,7 @@ const OfficialsRegistry = () => {
     useEffect(() => {
         fetchKpiSummary();
         fetchStrands();
-    }, []);
-
-    useEffect(() => {
+        fetchTabPositions();
         fetchOfficials();
     }, [searchTerm, strandFilter, officeFilter, positionFilter, designationFilter, currentPage, activeTab, statusTab, oicOnly, sortConfig, tableFilters, viewMode, levelFilter, regionFilter]);
 
@@ -1585,12 +1630,20 @@ const OfficialsRegistry = () => {
                                                                     ) : <FiUser size={14} />}
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <div
-                                                                        onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                                        className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
-                                                                        title={item.email ? "View Official Profile" : ""}
-                                                                    >
-                                                                        {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div
+                                                                            onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
+                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                            title={item.email ? "View Official Profile" : ""}
+                                                                        >
+                                                                            {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                                        </div>
+                                                                        {item.is_testaccount && (
+                                                                            <span title="Test Account" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100/90 border border-purple-300 text-purple-700 text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                                                                <FaVial size={10} className="text-purple-600 shrink-0" />
+                                                                                <span>TEST ACCOUNT</span>
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                     <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 truncate">
                                                                         <FiArrowRight className="text-[#075985] shrink-0" size={8} />
@@ -1679,6 +1732,19 @@ const OfficialsRegistry = () => {
                                                                         <FiTrash2 size={12} />
                                                                     </button>
                                                                 )}
+                                                                {user?.role === 'Central Office' && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleToggleTestAccount(item); }}
+                                                                        title={item.is_testaccount ? "Remove Test Account Flag" : "Mark as Test Account"}
+                                                                        className={`flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm shrink-0 ${
+                                                                            item.is_testaccount
+                                                                                ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+                                                                                : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'
+                                                                        }`}
+                                                                    >
+                                                                        <FaVial size={12} />
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -1698,8 +1764,16 @@ const OfficialsRegistry = () => {
                                                                 ) : <FiUser size={16} />}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
-                                                                    {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
+                                                                        {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                                    </div>
+                                                                    {item.is_testaccount && (
+                                                                        <span title="Test Account" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-100/90 border border-purple-300 text-purple-700 text-[8px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                                                            <FaVial size={9} className="text-purple-600 shrink-0" />
+                                                                            <span>TEST</span>
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                                 <div className="text-[10px] font-bold text-slate-400 mt-1 truncate">{item.email || 'No Email'}</div>
                                                             </div>
@@ -1753,6 +1827,16 @@ const OfficialsRegistry = () => {
                                                                     <FiTrash2 size={12} /> Vacate
                                                                 </button>
                                                             )}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleToggleTestAccount(item); }}
+                                                                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                                                    item.is_testaccount
+                                                                        ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+                                                                        : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'
+                                                                }`}
+                                                            >
+                                                                <FaVial size={12} /> {item.is_testaccount ? 'Untest' : 'Test'}
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>

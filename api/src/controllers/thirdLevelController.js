@@ -1207,11 +1207,11 @@ export const getOfficials = async (req, res) => {
 
   processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
 
-  const { search, status, strand, category, position, designation, office, page, limit, sortColumn, sortDirection, is_oic, region, division, name, position_title, level } = req.query;
+  const { search, status, strand, category, position, designation, office, page, limit, sortColumn, sortDirection, is_oic, region, division, name, position_title, level, include_test_accounts } = req.query;
   let query = `
     WITH RankedOfficials AS (
       SELECT 
-        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth,
+        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         ROW_NUMBER() OVER (
@@ -1944,6 +1944,41 @@ export const getNotableAchievements = async (req, res) => {
     const result = await pool.query('SELECT achievement FROM notable_achievements WHERE delete_flg = 0 ORDER BY index_number ASC');
     res.json({ success: true, data: result.rows.map(r => r.achievement) });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const toggleTestAccount = async (req, res) => {
+  const allowedRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { TLOid, is_testaccount } = req.body;
+  if (!TLOid) {
+    return res.status(400).json({ error: 'TLOid is required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE third_level_official_masterlist 
+       SET is_testaccount = $1, updated_at = NOW() 
+       WHERE "TLOid" = $2 
+       RETURNING "TLOid", email, is_testaccount`,
+      [Boolean(is_testaccount), TLOid]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Official record not found' });
+    }
+
+    res.json({
+      success: true,
+      message: `Official ${TLOid} test status updated to ${is_testaccount}`,
+      data: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error toggling test account:', err);
     res.status(500).json({ error: err.message });
   }
 };
