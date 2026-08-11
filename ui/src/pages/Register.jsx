@@ -346,6 +346,7 @@ const Register = () => {
                                                 value={formData.passcode} 
                                                 onChange={(e) => {
                                                     const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                    e.target.value = val;
                                                     setFormData({ ...formData, passcode: val });
                                                 }} 
                                                 placeholder="Enter 6-digit passcode" 
