@@ -340,7 +340,17 @@ const Register = () => {
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Passcode (For account recovery)</label>
                                         <div className="relative group">
                                             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                            <input type="text" value={formData.passcode} onChange={(e) => setFormData({ ...formData, passcode: e.target.value })} placeholder="Enter 6-digit passcode" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] shadow-sm" />
+                                            <input 
+                                                type="text" 
+                                                maxLength={6}
+                                                value={formData.passcode} 
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                    setFormData({ ...formData, passcode: val });
+                                                }} 
+                                                placeholder="Enter 6-digit passcode" 
+                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] shadow-sm" 
+                                            />
                                         </div>
                                     </div>
                                 </div>
