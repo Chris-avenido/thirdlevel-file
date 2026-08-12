@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-08-12 — Notable Achievements JSONB Column Migration
+
+### Architectural Change & Database Migration
+- **Converted `notable_achievements` Column to `JSONB`**:
+  - Applied migration `20260812_014_convert_notable_achievements_to_jsonb.sql` converting `notable_achievements` column in `third_level_official_masterlist` and `third_level_officials_profiling_application` to native PostgreSQL `JSONB` array of objects `[{ title: '...', year: '...' }]`.
+  - Dropped redundant `notable_achievements_year` column to eliminate duplicate data and ensure guaranteed atomic binding between award title and year received.
+- **Backend Controller (`thirdLevelController.js`)**:
+  - Registered `notable_achievements` in `JSONB_FIELDS` set for automatic `JSON.stringify` handling on updates and application approvals.
+  - Added object-based year validation inside `validateYear` loop.
+- **Frontend Page (`OfficialProfiling.jsx`)**:
+  - Updated profile state, `lookupByEmail` parser, Achievements tab multi-layer editor, Summary preview tab renderer, and CSV exporter to seamlessly read and write `notable_achievements` as a `JSONB` array of `{ title, year }` objects.
+
+---
+
 ## 2026-08-07 — NexusGate Landing Page Redesign & Records Management Admin Access
 
 ### Design & Feature Updates

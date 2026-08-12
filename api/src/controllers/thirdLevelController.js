@@ -390,7 +390,11 @@ export const updateProfile = async (req, res) => {
     validateYear(req.body.performance_rating_3_period, currentYear);
     validateYear(req.body.cespes_rating_1_period, currentYear);
     validateYear(req.body.cespes_rating_2_period, currentYear);
-    validateYear(req.body.notable_achievements_year, currentYear);
+    if (Array.isArray(req.body.notable_achievements)) {
+      req.body.notable_achievements.forEach(ach => {
+        if (ach && ach.year) validateYear(ach.year, currentYear);
+      });
+    }
     validateYear(req.body.bachelor_year, currentYear);
     validateYear(req.body.master_year, currentYear);
     validateYear(req.body.doctorate_year, currentYear);
@@ -490,7 +494,7 @@ export const updateProfile = async (req, res) => {
       'last_name', 'first_name', 'middle_name', 'suffix', 'gender', 'date_of_birth', 'civil_status',
       'position_title', 'designation', 'appointment_date', 'emt_passer', 'emt_date', 'ces_stage', 'ces_conferment_date', 'age',
       'total_years_third_level', 'managerial_experience_total', 'permanent_address', 'temporary_address',
-      'notable_achievements', 'notable_achievements_year', 'total_training_hours',
+      'notable_achievements', 'total_training_hours',
       'performance_rating_1', 'performance_rating_1_period', 'performance_rating_2', 'performance_rating_2_period', 'performance_rating_3', 'performance_rating_3_period',
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
@@ -500,7 +504,7 @@ export const updateProfile = async (req, res) => {
       'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
     ];
 
-    const JSONB_FIELDS = new Set([]);
+    const JSONB_FIELDS = new Set(['notable_achievements']);
     const updates = [];
     const values = [];
 
@@ -861,7 +865,7 @@ export const processApplication = async (req, res) => {
       `);
       const masterlistCols = new Set(masterlistColsRes.rows.map(r => r.column_name.toLowerCase()));
 
-      const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings']);
+      const JSONB_FIELDS = new Set(['previous_positions', 'relevant_trainings', 'notable_achievements']);
       const exclude = ['id', 'TLOid', 'created_at', 'updated_at', 'status', 'strand', 'office', 'position_title'];
       const columns = Object.keys(applicant).filter(k => {
         const lowerK = k.toLowerCase();
