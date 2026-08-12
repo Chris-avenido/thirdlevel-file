@@ -2681,7 +2681,6 @@ const OfficialProfiling = () => {
                                                                 </div>
                                                             </div>
                                                         </div>
-
                                                     </div>
                                                 )}
 
@@ -2691,18 +2690,6 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <div className="flex items-center justify-between">
                                                                 <SectionLabel color="#FCD116">Notable Achievements (If Any)</SectionLabel>
-                                                                {isEditing && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const achList = Array.isArray(profile.notable_achievements) ? profile.notable_achievements : [];
-                                                                            setP('notable_achievements', [...achList, { title: '', year: '' }]);
-                                                                        }}
-                                                                        className="py-2 px-4 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 border border-amber-200 shadow-sm cursor-pointer"
-                                                                    >
-                                                                        <FiPlus size={14} /> Add Notable Achievement
-                                                                    </button>
-                                                                )}
                                                             </div>
 
                                                             {(() => {
