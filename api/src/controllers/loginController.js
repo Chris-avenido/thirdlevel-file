@@ -247,7 +247,7 @@ export const pinLogin = async (req, res) => {
     );
 
     const registryUser = masterRes.rows[0] || stagingRes.rows[0];
-    
+
     let role = centralUser?.central_role;
     if (normalizedEmail === 'admin_co@deped.gov.ph') {
       role = 'Central Office';
@@ -320,7 +320,7 @@ export const forgotPassword = async (req, res) => {
       return res.json({ success: true, message: 'If the email exists, a reset link will be sent.' });
     }
 
-    const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
+    const secret = process.env.JWT_SECRET;
     const reqOrigin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null);
     const frontendUrl = process.env.url || process.env.URL || process.env.FRONTEND_URL || reqOrigin || 'http://localhost:5173';
 
@@ -375,7 +375,7 @@ export const resetPassword = async (req, res) => {
   try {
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
     const decoded = jwt.verify(token, secret);
-    
+
     if (!decoded.email || !decoded.role) {
       return res.status(400).json({ error: 'Invalid token payload' });
     }
