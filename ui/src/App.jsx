@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import NotableAchievements from './pages/NotableAchievements';
 import LoadingScreen from './components/LoadingScreen';
 import AllVacancies from './pages/AllVacancies';
+import ResetPassword from './pages/ResetPassword';
 
 import MainDashboard from './pages/MainDashboard';
 
@@ -55,6 +56,7 @@ const App = () => {
             {/* Auth Routes */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             
             {/* Protected Routes */}
             <Route 

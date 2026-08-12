@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import nodemailer from 'nodemailer';
 
 const ADMIN_ROLES = [
   'Central Office',
@@ -296,5 +297,106 @@ export const pinLogin = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  const { email, isCO } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  try {
+    const isCOBool = isCO === true || isCO === 'true';
+    const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+
+    const authRes = await pool.query(
+      'SELECT uid, email, role, first_name FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+      [normalizedEmail, targetRoles]
+    );
+
+    if (authRes.rows.length === 0) {
+      // Return success anyway to prevent email enumeration
+      return res.json({ success: true, message: 'If the email exists, a reset link will be sent.' });
+    }
+
+    const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    let linksHtml = '';
+    authRes.rows.forEach(user => {
+      const resetToken = jwt.sign({
+        email: user.email,
+        role: user.role
+      }, secret, { expiresIn: '1h' });
+      const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+      linksHtml += `<li><strong>${user.role}</strong>: <a href="${resetLink}">Reset Password</a></li>`;
+    });
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    const mailOptions = {
+      from: `"Department of Education — InsightEd" <${process.env.EMAIL_USER}>`,
+      to: normalizedEmail,
+      subject: 'Password Reset Request',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #08315F;">Password Reset</h2>
+          <p>Hello,</p>
+          <p>We received a request to reset the password for your account. Please click the link corresponding to the role you want to reset:</p>
+          <ul>
+            ${linksHtml}
+          </ul>
+          <p>This link will expire in 1 hour.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.json({ success: true, message: 'If the email exists, a reset link will be sent.' });
+  } catch (err) {
+    console.error('[LoginController] Forgot Password Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password required' });
+
+  try {
+    const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
+    const decoded = jwt.verify(token, secret);
+    
+    if (!decoded.email || !decoded.role) {
+      return res.status(400).json({ error: 'Invalid token payload' });
+    }
+
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    const updateRes = await pool.query(
+      'UPDATE tlo_users SET password_hash = $1, passcode = NULL WHERE LOWER(email) = $2 AND role = $3 RETURNING uid',
+      [passwordHash, decoded.email.toLowerCase(), decoded.role]
+    );
+
+    if (updateRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Account not found or role mismatch' });
+    }
+
+    res.json({ success: true, message: 'Password has been reset successfully.' });
+  } catch (err) {
+    console.error('[LoginController] Reset Password Error:', err);
+    if (err.name === 'TokenExpiredError') {
+      return res.status(400).json({ error: 'Token expired' });
+    }
+    res.status(500).json({ error: 'Invalid or expired token' });
   }
 };

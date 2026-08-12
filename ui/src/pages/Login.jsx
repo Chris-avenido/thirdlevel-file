@@ -37,6 +37,8 @@ const Login = () => {
     const [isPortalEnforced, setIsPortalEnforced] = useState(true);
     const [showBackPrompt, setShowBackPrompt] = useState(false);
     const [showDialpadModal, setShowDialpadModal] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
 
     // UI flows
     const [rememberedUser, setRememberedUser] = useState(() => {
@@ -142,18 +144,46 @@ const Login = () => {
                 // Role-based redirection
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
-                } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
+                } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
                     navigate('/main-dashboard');
                 } else {
                     navigate('/official-profiling');
                 }
             } else {
-                Swal.fire('Failed', data.error || 'Invalid passcode', 'error');
+                Swal.fire('Login Failed', data.error || 'Invalid passcode', 'error');
             }
         } catch (err) {
-            Swal.fire('Error', 'Verification failed', 'error');
+            Swal.fire('Error', 'Login failed. Please check your connection.', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        if (!forgotEmail) {
+            Swal.fire('Error', 'Please enter your email.', 'error');
+            return;
+        }
+        setForgotLoading(true);
+        try {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await fetch(`${baseUrl}/api/auth/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: forgotEmail, isCO })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                Swal.fire('Success', data.message, 'success');
+                setShowForgotModal(false);
+                setForgotEmail('');
+            } else {
+                Swal.fire('Error', data.error || 'Request failed.', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Failed to send reset link.', 'error');
+        } finally {
+            setForgotLoading(false);
         }
     };
 
@@ -350,10 +380,32 @@ const Login = () => {
                                 className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl text-center"
                             >
                                 <div className="w-20 h-20 bg-blue-50 text-[#08315F] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner"><FiKey className="w-10 h-10" /></div>
-                                <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic mb-4">Forgot Password?</h2>
-                                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">Try logging in with your <span className="font-bold text-[#08315F]">6-digit Passcode</span> instead. It's the faster alternative for secure access.</p>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic mb-4">Reset Password</h2>
+                                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">Enter your email address and we'll send you a link to reset your password.</p>
+                                
+                                <div className="mb-6 text-left">
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <FiMail className="h-5 w-5 text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            value={forgotEmail}
+                                            onChange={(e) => setForgotEmail(e.target.value)}
+                                            placeholder="Email address"
+                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-3">
-                                    <button onClick={() => { setLoginMode('passcode'); setShowForgotModal(false); }} className="w-full bg-[#08315F] text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-[10px] uppercase tracking-widest">Switch to Passcode</button>
+                                    <button 
+                                        onClick={handleForgotPassword} 
+                                        disabled={forgotLoading}
+                                        className="w-full bg-[#08315F] text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-[12px] uppercase tracking-widest disabled:opacity-70"
+                                    >
+                                        {forgotLoading ? 'Sending...' : 'Send Reset Link'}
+                                    </button>
                                     <button onClick={() => setShowForgotModal(false)} className="w-full bg-slate-50 text-slate-400 font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest">Cancel</button>
                                 </div>
                             </motion.div>
