@@ -320,6 +320,7 @@ export const forgotPassword = async (req, res) => {
       return res.json({ success: true, message: 'If the email exists, a reset link will be sent.' });
     }
 
+    const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
     const reqOrigin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null);
     const frontendUrl = process.env.url || process.env.URL || process.env.FRONTEND_URL || reqOrigin || 'http://localhost:5173';
 
