@@ -111,10 +111,10 @@ body {
   border-radius: 1rem !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
   overflow: hidden;
-  z-index: 50 !important;
+  z-index: 99999 !important;
 }
 .react-datepicker-popper {
-  z-index: 50 !important;
+  z-index: 99999 !important;
 }
 .react-datepicker__header {
   background-color: #f8fafc !important;
