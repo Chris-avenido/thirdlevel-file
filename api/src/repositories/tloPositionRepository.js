@@ -15,7 +15,9 @@ const TABLE = 'tlo_position_history';
  */
 export async function findByTloId(client, sourceTable, tloId) {
   const result = await client.query(
-    `SELECT id, source_table, tlo_id, position_name, office, strand, division, region,
+    `SELECT id, source_table, tlo_id, position_name, 
+            COALESCE(NULLIF(office, ''), division) AS office,
+            strand, division, region,
             inclusive_date_start, inclusive_date_end, oic_positions, delete_flg,
             created_at, updated_at, created_by, updated_by
      FROM ${TABLE}

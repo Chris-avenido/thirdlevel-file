@@ -77,10 +77,16 @@ const calculateDuration = (start, end) => {
 const inp = 'w-full bg-white hover:bg-transparent border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400/80 shadow-none';
 const sel = 'w-full bg-white hover:bg-transparent border border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all shadow-none';
 
-const Field = ({ label, children }) => (
-    <div className="flex flex-col gap-1.5 group">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest transition-colors duration-200 group-focus-within:text-[#08315F]">{label}</label>
-        {children}
+const Field = ({ label, children, className = '' }) => (
+    <div className={`flex flex-col justify-end gap-1.5 group h-full ${className}`}>
+        {label && (
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest transition-colors duration-200 group-focus-within:text-[#08315F] min-h-[22px] flex items-end">
+                {label}
+            </label>
+        )}
+        <div className="w-full">
+            {children}
+        </div>
     </div>
 );
 
@@ -951,14 +957,18 @@ const OfficialProfiling = () => {
                     resolvedPrevPositions = d.position_history.map(rec => ({
                         id: rec.id,
                         position_name: rec.position_name || '',
-                        office: rec.office || '',
+                        office: rec.office || rec.division || '',
+                        division: rec.division || '',
                         strand: rec.strand || '',
                         start_date: formatDateStr(rec.inclusive_date_start),
                         end_date: formatDateStr(rec.inclusive_date_end),
                         oic_positions: rec.oic_positions || []
                     }));
                 } else {
-                    resolvedPrevPositions = d.previous_positions || [];
+                    resolvedPrevPositions = (d.previous_positions || []).map(p => ({
+                        ...p,
+                        office: p.office || p.division || ''
+                    }));
                 }
 
                 // TRAININGS: Fallback chain
@@ -2134,29 +2144,76 @@ const OfficialProfiling = () => {
                                                                         </div>
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
-                                                                        <select disabled={!isEditing} value={isPositionOthers ? 'Others' : (unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
-                                                                            <option value="">Select Position Title</option>
-                                                                            {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
-                                                                            <option value="Others">Others</option>
-                                                                        </select>
-                                                                        {isPositionOthers && (
-                                                                            <input disabled={!isEditing} type="text" value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value || 'Others')} placeholder="Please specify position title" className={`${inp} mt-2`} autoFocus />
-                                                                        )}
-                                                                    </Field>
-                                                                    {profile.is_oic && (
-                                                                        <Field label="Designation">
-                                                                            <select disabled={!isEditing} value={isDesignationOthers ? 'Others' : (unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || '')} onChange={e => setP('designation', e.target.value)} className={sel}>
-                                                                                <option value="">Select Designation</option>
+                                                                        {isPositionOthers ? (
+                                                                            <div className="relative flex items-center">
+                                                                                <input
+                                                                                    disabled={!isEditing}
+                                                                                    type="text"
+                                                                                    value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title}
+                                                                                    onChange={e => setP('position_title', e.target.value || 'Others')}
+                                                                                    placeholder="Please specify position title"
+                                                                                    className={`${inp} pr-9`}
+                                                                                    autoFocus
+                                                                                />
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={!isEditing}
+                                                                                    onClick={() => setP('position_title', '')}
+                                                                                    className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
+                                                                                    title="Switch back to list selection"
+                                                                                >
+                                                                                    <FiRotateCcw size={13} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                                <option value="">Select Position Title</option>
                                                                                 {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
                                                                                 <option value="Others">Others</option>
                                                                             </select>
-                                                                            {isDesignationOthers && (
-                                                                                <input disabled={!isEditing} type="text" value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation} onChange={e => setP('designation', e.target.value || 'Others')} placeholder="Please specify designation" className={`${inp} mt-2`} autoFocus />
-                                                                            )}
-                                                                        </Field>
-                                                                    )}
+                                                                        )}
+                                                                    </Field>
+                                                                    <Field label="Designation">
+                                                                        {profile.is_oic ? (
+                                                                            isDesignationOthers ? (
+                                                                                <div className="relative flex items-center">
+                                                                                    <input
+                                                                                        disabled={!isEditing}
+                                                                                        type="text"
+                                                                                        value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation}
+                                                                                        onChange={e => setP('designation', e.target.value || 'Others')}
+                                                                                        placeholder="Please specify designation"
+                                                                                        className={`${inp} pr-9`}
+                                                                                        autoFocus
+                                                                                    />
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        disabled={!isEditing}
+                                                                                        onClick={() => setP('designation', '')}
+                                                                                        className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
+                                                                                        title="Switch back to list selection"
+                                                                                    >
+                                                                                        <FiRotateCcw size={13} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || ''} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                                    <option value="">Select Designation</option>
+                                                                                    {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
+                                                                                    <option value="Others">Others</option>
+                                                                                </select>
+                                                                            )
+                                                                        ) : (
+                                                                            <div className="w-full bg-slate-50/70 border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-semibold text-slate-400 min-h-[38px] h-[38px] flex items-center italic">
+                                                                                Not Applicable (Regular)
+                                                                            </div>
+                                                                        )}
+                                                                    </Field>
                                                                     <Field label="Officer-in-Charge (OIC) Status">
-                                                                        <div className="flex items-center gap-3 py-2 px-1">
+                                                                        <div className="flex items-center justify-between px-3.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50/60 min-h-[38px] h-[38px]">
+                                                                            <span className={`text-xs font-bold ${profile.is_oic ? 'text-[#08315F]' : 'text-slate-500'}`}>
+                                                                                {profile.is_oic ? 'Officer-in-Charge (OIC)' : 'Regular Appointment'}
+                                                                            </span>
                                                                             <button
                                                                                 type="button"
                                                                                 disabled={!isEditing}
@@ -2167,19 +2224,15 @@ const OfficialProfiling = () => {
                                                                                         setP('designation', '');
                                                                                     }
                                                                                 }}
-                                                                                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-200'}`}
+                                                                                className={`w-11 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-300'}`}
                                                                             >
-                                                                                <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                                                <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
                                                                             </button>
-                                                                            <span className="text-xs font-bold text-slate-700">
-                                                                                {profile.is_oic ? 'Officer-in-Charge (OIC)' : 'Regular Appointment'}
-                                                                            </span>
                                                                         </div>
                                                                     </Field>
                                                                     <Field label="Date of Present Position (Appointment Date)">
                                                                         <div className="relative">
                                                                             <ModernDatePicker disabled={!isEditing} value={profile.appointment_date} onChange={val => setP('appointment_date', val)} className={inp} />
-
                                                                         </div>
                                                                     </Field>
                                                                 </div>
@@ -2400,7 +2453,7 @@ const OfficialProfiling = () => {
                                                                                             <h4 className="text-[11px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
                                                                                             <span className="text-[8px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
                                                                                         </div>
-                                                                                        <p className="text-[10px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || 'Department of Education'}</p>
+                                                                                        <p className="text-[10px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || item.division || 'Department of Education'}</p>
                                                                                         {item.previous_incumbent && (
                                                                                             <p className="text-[9px] font-bold text-slate-400 mt-1 flex items-center gap-1">
                                                                                                 <FiChevronLeft size={10} className="rotate-180" />

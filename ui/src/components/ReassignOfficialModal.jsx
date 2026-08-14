@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiX, FiSearch, FiArrowRight, FiUploadCloud, FiAlertCircle, FiCheck } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
+import ModernDatePicker from './ModernDatePicker';
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 const fullName = (o) =>
@@ -18,6 +19,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
   const [newRegion, setNewRegion] = useState('');
   const [newDivision, setNewDivision] = useState('');
   const [newDesignation, setNewDesignation] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Lookup options (reuse GET /api/third-level/positions)
   const [options, setOptions] = useState({ regions: [], regionDivisions: {}, designations: [] });
@@ -50,6 +53,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
     setNewRegion('');
     setNewDivision('');
     setNewDesignation('');
+    setFromDate('');
+    setToDate('');
     setFile(null);
     setDropdownOpen(false);
     fetchOfficials();
@@ -108,6 +113,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
     setNewRegion('');
     setNewDivision('');
     setNewDesignation('');
+    setFromDate(o?.appointment_date ? String(o.appointment_date).split('T')[0] : '');
+    setToDate(new Date().toISOString().split('T')[0]);
   };
 
   // ── Divisions for selected region ──
@@ -154,6 +161,10 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
       formData.append('newRegion', newRegion.trim());
       formData.append('newDivision', newDivision.trim());
       formData.append('newDesignation', newDesignation.trim());
+      formData.append('inclusiveDateStart', fromDate || '');
+      formData.append('inclusiveDateEnd', toDate || '');
+      formData.append('inclusive_date_start', fromDate || '');
+      formData.append('inclusive_date_end', toDate || '');
 
       const reassignRes = await fetch(apiUrl('/api/third-level/reassign-official'), {
         method: 'POST',
@@ -423,6 +434,33 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                       <option key={d} value={d} />
                     ))}
                   </datalist>
+                </div>
+
+                {/* Inclusive Dates (Previous Position Period) */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      From Date (Inclusive Start)
+                    </label>
+                    <ModernDatePicker
+                      value={fromDate}
+                      onChange={(val) => setFromDate(val)}
+                      placeholder="Start date"
+                      className="!rounded-[14px] !py-2.5 !px-3 !text-[13px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      To Date (Inclusive End)
+                    </label>
+                    <ModernDatePicker
+                      value={toDate}
+                      onChange={(val) => setToDate(val)}
+                      placeholder="End date"
+                      minDate={fromDate ? new Date(fromDate) : undefined}
+                      className="!rounded-[14px] !py-2.5 !px-3 !text-[13px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
+                    />
+                  </div>
                 </div>
               </div>
 

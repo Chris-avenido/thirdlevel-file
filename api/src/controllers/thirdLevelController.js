@@ -2042,7 +2042,18 @@ export const reassignOfficial = async (req, res) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const { tloId, newRegion, newDivision, newDesignation } = req.body;
+  const {
+    tloId,
+    newRegion,
+    newDivision,
+    newDesignation,
+    inclusiveDateStart,
+    inclusiveDateEnd,
+    inclusive_date_start,
+    inclusive_date_end,
+    fromDate,
+    toDate
+  } = req.body;
 
   // ── Input validation ──────────────────────────────────────────────────────
   if (!tloId || typeof tloId !== 'string' || !tloId.trim()) {
@@ -2064,13 +2075,24 @@ export const reassignOfficial = async (req, res) => {
   const safeTloId = tloId.trim();
   const actorEmail = req.user?.email || null;
 
+  const cleanDate = (d) => {
+    if (!d || typeof d !== 'string') return null;
+    const t = d.trim();
+    return (t && t.toUpperCase() !== 'N/A' && t.toUpperCase() !== 'NONE') ? t : null;
+  };
+
+  const rawStart = inclusiveDateStart || inclusive_date_start || fromDate || null;
+  const rawEnd = inclusiveDateEnd || inclusive_date_end || toDate || null;
+  const dateStart = cleanDate(rawStart);
+  const dateEnd = cleanDate(rawEnd);
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     // ── Step A: Fetch current official record ─────────────────────────────
     const fetchRes = await client.query(
-      `SELECT "TLOid", position_title, office, strand, division, region, designation
+      `SELECT "TLOid", position_title, office, strand, division, region, designation, appointment_date
        FROM third_level_official_masterlist
        WHERE "TLOid" = $1`,
       [safeTloId]
@@ -2082,23 +2104,27 @@ export const reassignOfficial = async (req, res) => {
     }
 
     const current = fetchRes.rows[0];
+    const finalStart = dateStart || (current.appointment_date ? new Date(current.appointment_date).toISOString().split('T')[0] : null);
+    const finalEnd = dateEnd || new Date().toISOString().split('T')[0];
 
     // ── Step B: Archive old assignment to tlo_position_history & RETURNING id ──
     const historyRes = await client.query(
       `INSERT INTO tlo_position_history (
          source_table, tlo_id, position_name, office, strand, division, region,
-         inclusive_date_end, delete_flg, created_at, updated_at, created_by, updated_by
+         inclusive_date_start, inclusive_date_end, delete_flg, created_at, updated_at, created_by, updated_by
        ) VALUES (
          'masterlist', $1, $2, $3, $4, $5, $6,
-         NOW(), 'No', NOW(), NOW(), $7, $7
+         $7, $8, 'No', NOW(), NOW(), $9, $9
        ) RETURNING id`,
       [
         safeTloId,
         (current.position_title || '').toUpperCase() || '',
-        current.office  || null,
-        current.strand  || null,
+        current.office   || null,
+        current.strand   || null,
         current.division || null,
-        current.region  || null,
+        current.region   || null,
+        finalStart,
+        finalEnd,
         actorEmail
       ]
     );
@@ -2163,10 +2189,11 @@ export const reassignOfficial = async (req, res) => {
     await client.query(
       `UPDATE third_level_official_masterlist
        SET region = $1, division = $2, designation = $3,
-           reassignment_order_binary_id = COALESCE($4, reassignment_order_binary_id),
+           appointment_date = COALESCE($4, appointment_date),
+           reassignment_order_binary_id = COALESCE($5, reassignment_order_binary_id),
            updated_at = NOW()
-       WHERE "TLOid" = $5`,
-      [safeRegion, safeDivision, safeDesignation, binaryId, safeTloId]
+       WHERE "TLOid" = $6`,
+      [safeRegion, safeDivision, safeDesignation, finalEnd, binaryId, safeTloId]
     );
 
     await client.query('COMMIT');
