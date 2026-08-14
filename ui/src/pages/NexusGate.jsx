@@ -21,7 +21,8 @@ import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
 import modernLogo from '../assets/modern_logo.png';
 import depedLogo from '../assets/DepED-Logo.png';
-import buildingBg from '../assets/deped_building_bg.jpg';
+import buildingBg from '../assets/deped_building_bg.png';
+// import buildingBg from '../assets/deped_building_bg.jpeg';
 
 const NexusGate = () => {
     const navigate = useNavigate();
@@ -284,7 +285,7 @@ const NexusGate = () => {
                     </div>
 
                     <div className="nexus-card-body">
-                        <span className="nexus-role-tag text-[#F59E0B]">FOR THIRD LEVEL PERSONNEL</span>
+                        <span className="nexus-role-tag text-[#D97706]">FOR THIRD LEVEL PERSONNEL</span>
                         <h2 className="nexus-card-title">Third Level Portal</h2>
                         <p className="nexus-card-desc">
                             Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.
@@ -309,12 +310,17 @@ const NexusGate = () => {
                     {/* Watermark Executive Chair Background Graphic */}
                     <div className="nexus-watermark nexus-watermark-chair">
                         <svg viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="65" y="20" width="70" height="90" rx="16" fill="currentColor" />
-                            <rect x="45" y="115" width="110" height="24" rx="10" fill="currentColor" />
-                            <path d="M45 70 H35 V110 H45" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                            <path d="M155 70 H165 V110 H155" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                            <rect x="94" y="142" width="12" height="35" rx="3" fill="currentColor" />
-                            <path d="M100 177 L60 200 M100 177 L140 200 M100 177 L100 210 M100 177 L40 185 M100 177 L160 185" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+                            <rect x="65" y="20" width="70" height="90" rx="16" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="2.5" />
+                            <rect x="45" y="115" width="110" height="24" rx="10" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="2.5" />
+                            <path d="M45 70 H35 V110 H45" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            <path d="M155 70 H165 V110 H155" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            <rect x="94" y="142" width="12" height="35" rx="3" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+                            <path d="M100 177 L60 200 M100 177 L140 200 M100 177 L100 210 M100 177 L40 185 M100 177 L160 185" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                            <circle cx="60" cy="200" r="4" fill="currentColor" />
+                            <circle cx="140" cy="200" r="4" fill="currentColor" />
+                            <circle cx="100" cy="210" r="4" fill="currentColor" />
+                            <circle cx="40" cy="185" r="4" fill="currentColor" />
+                            <circle cx="160" cy="185" r="4" fill="currentColor" />
                         </svg>
                     </div>
 
@@ -323,7 +329,7 @@ const NexusGate = () => {
                             <FiBriefcase size={22} className="text-[#0284C7]" />
                         </div>
                         <div className="nexus-locked-pill">
-                            <FiLock size={12} className="text-amber-400" />
+                            <FiLock size={12} className="text-[#FCD116]" />
                             <span>LOCKED</span>
                         </div>
                     </div>

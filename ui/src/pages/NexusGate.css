@@ -19,18 +19,17 @@
   overflow: hidden;
 }
 
-/* ── NORMAL MODE: HERO ON LEFT (50% width), CARDS ON RIGHT (50%) ── */
+/* ── NORMAL MODE: HERO ON LEFT (55% width), CARDS ON RIGHT (45%) ── */
 .nexus-hero-panel {
-  width: 50%;
+  width: 55%;
   height: 100%;
   position: relative;
   background-color: #061D3B;
-  /* Bold Chevron ( > ) Divider: Top/Bottom corners recede, peak extends to 100% at 50% vertical center */
-  clip-path: polygon(0 0, 84% 0, 100% 50%, 84% 100%, 0 100%);
+  overflow: hidden;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  filter: drop-shadow(16px 0 32px rgba(6, 29, 59, 0.28));
+  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.08);
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -38,7 +37,7 @@
   position: relative;
   z-index: 5;
   height: 100%;
-  padding: clamp(28px, 3.5vw, 48px) clamp(72px, 7.5vw, 120px) clamp(28px, 3.5vw, 48px) clamp(36px, 4.5vw, 60px);
+  padding: clamp(24px, 3.2vw, 44px) clamp(28px, 4vw, 56px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -48,19 +47,15 @@
 
 /* ── SWAPPED MODE: HERO ON RIGHT, CARDS ON LEFT ── */
 .nexus-layout-grid.swapped .nexus-hero-panel {
-  width: 50%;
-  /* Inverted Chevron ( < ) pointing left towards center */
-  clip-path: polygon(16% 0, 100% 0, 100% 100%, 16% 100%, 0 50%);
-  margin-left: -2%;
-  filter: drop-shadow(-16px 0 32px rgba(6, 29, 59, 0.28));
+  width: 55%;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.08);
 }
 
 .nexus-layout-grid.swapped .nexus-hero-content {
-  /* Padding ensures text stays clear of the left chevron cut line */
-  padding: clamp(32px, 4vw, 52px) clamp(36px, 4vw, 56px) clamp(32px, 4vw, 52px) clamp(100px, 9.5vw, 150px);
+  padding: clamp(24px, 3.2vw, 44px) clamp(28px, 4vw, 56px);
 }
 
-/* Background image & gradient overlay */
+/* Background image & natural daylight texture overlay */
 .nexus-bg-image-wrapper {
   position: absolute;
   inset: 0;
@@ -72,8 +67,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 72% 38%;
-  filter: brightness(1.05) contrast(1.05) saturate(1.1);
+  object-position: 8% 40%;
+  filter: brightness(1.02) contrast(1.04) saturate(1.12);
   opacity: 1;
 }
 
@@ -81,22 +76,17 @@
   position: absolute;
   inset: 0;
   background:
-    /* Directional Left-to-Right Gradient: Darker behind text on left, fading to transparent across center & right building facade */
-    linear-gradient(
-      to right,
-      rgba(6, 29, 59, 0.82) 0%,
-      rgba(6, 29, 59, 0.55) 28%,
-      rgba(6, 29, 59, 0.18) 60%,
-      rgba(6, 29, 59, 0.02) 100%
-    ),
-    /* Soft vertical Vignette: Soft shading at very top & bottom, keeping building center bright and clear */
-    linear-gradient(
-      180deg,
-      rgba(6, 29, 59, 0.40) 0%,
-      transparent 35%,
-      transparent 70%,
-      rgba(6, 29, 59, 0.45) 100%
-    );
+    /* Localized bottom-left dark glow specifically behind text & feature items */
+    radial-gradient(ellipse at 18% 76%,
+      rgba(0, 0, 0, 0.82) 0%,
+      rgba(0, 0, 0, 0.55) 45%,
+      rgba(0, 0, 0, 0.12) 75%,
+      transparent 100%),
+    /* Gentle bottom gradient for trust card */
+    linear-gradient(to top,
+      rgba(0, 0, 0, 0.50) 0%,
+      rgba(0, 0, 0, 0.15) 22%,
+      transparent 50%);
 }
 
 /* ── FEATURE COLUMNS (Save Time / Less Paperwork / All In One Place) ── */
@@ -143,7 +133,7 @@
 
 .nexus-feature-icon {
   color: #FCD116;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 .nexus-feature-title {
@@ -379,6 +369,7 @@
 /* ── CARDS PANEL ── */
 .nexus-cards-panel {
   flex: 1;
+  width: 45%;
   height: 100%;
   position: relative;
   display: flex;
@@ -386,12 +377,11 @@
   justify-content: center;
   align-items: center;
   padding: 40px clamp(24px, 4vw, 56px);
-  margin-left: -2%;
   box-sizing: border-box;
+  background-color: #FFFFFF;
 }
 
 .nexus-layout-grid.swapped .nexus-cards-panel {
-  margin-left: 0;
   padding-right: clamp(40px, 5vw, 80px);
 }
 
@@ -432,27 +422,27 @@
 
 /* Cards Stack */
 .nexus-cards-stack {
-  width: min(600px, 100%);
+  width: min(580px, 100%);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 /* Base Card Styling */
 .nexus-card {
   position: relative;
-  border-radius: 26px;
-  padding: 28px 32px;
+  border-radius: 24px;
+  padding: 26px 32px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nexus-card:hover {
-  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.10);
 }
 
 /* Watermarks */
@@ -469,34 +459,36 @@
 
 .nexus-watermark-columns {
   color: #FBBF24;
-  opacity: 0.20;
+  opacity: 0.22;
 }
 
 .nexus-watermark-chair {
   color: #38BDF8;
-  opacity: 0.14;
+  opacity: 0.16;
 }
 
 /* Card 1: Third Level Portal */
 .nexus-card-thirdlevel {
-  background: radial-gradient(circle at 88% 25%, #FEF5D9 0%, #FFFBF0 50%, #FFFFFF 100%);
-  border: 1.8px solid #FDE68A;
-  box-shadow: 0 16px 40px rgba(245, 158, 11, 0.07);
+  background: linear-gradient(135deg, #FEFCE8 0%, #FFFDF5 50%, #FEF9C3 100%);
+  border: 1.5px solid #FDE68A;
+  box-shadow: 0 14px 36px rgba(245, 158, 11, 0.06);
 }
 
 .nexus-card-thirdlevel:hover {
   border-color: #F59E0B;
-  box-shadow: 0 24px 50px rgba(245, 158, 11, 0.14);
+  box-shadow: 0 22px 48px rgba(245, 158, 11, 0.12);
 }
 
 /* Card 2: Vacancies (Locked) */
 .nexus-card-vacancies {
   background: linear-gradient(135deg, #F0F9FF 0%, #FFFFFF 100%);
-  border: 2px solid #BAE6FD;
+  border: 1.5px solid #BAE6FD;
+  box-shadow: 0 14px 36px rgba(2, 132, 199, 0.05);
 }
 
 .nexus-card-vacancies:hover {
   border-color: #38BDF8;
+  box-shadow: 0 22px 48px rgba(2, 132, 199, 0.12);
 }
 
 /* Card Header */
@@ -509,8 +501,8 @@
 }
 
 .nexus-card-badge {
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -529,17 +521,17 @@
 }
 
 .nexus-locked-pill {
-  background-color: #334155;
-  color: #FDE68A;
+  background-color: #08315F;
+  color: #FCD116;
   border-radius: 9999px;
   padding: 6px 14px;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 900;
   letter-spacing: 1px;
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
 /* Card Body */
@@ -559,7 +551,7 @@
 }
 
 .nexus-sub-tag {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -570,9 +562,9 @@
 .nexus-card-title {
   margin: 0 0 8px 0;
   color: #08315F;
-  font-size: clamp(26px, 2.5vw, 34px);
+  font-size: clamp(24px, 2.3vw, 30px);
   font-weight: 800;
-  letter-spacing: -0.8px;
+  letter-spacing: -0.6px;
   line-height: 1.1;
 }
 
