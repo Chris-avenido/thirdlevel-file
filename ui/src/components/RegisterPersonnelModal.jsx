@@ -157,10 +157,17 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
   };
 
   const availableDivisions = React.useMemo(() => {
-    if (!formData.region || !options.regionDivisions) return options.divisions;
+    if (!formData.region || !options.regionDivisions) return (options.divisions || []);
     const regionKey = Object.keys(options.regionDivisions).find(r => r.toUpperCase() === formData.region.toUpperCase());
-    return regionKey ? options.regionDivisions[regionKey] : options.divisions;
-  }, [formData.region, options.regionDivisions, options.divisions]);
+    const raw = regionKey ? options.regionDivisions[regionKey] : (options.divisions || []);
+    return (raw || []).filter(d => {
+      if (!d) return false;
+      const up = String(d).trim().toUpperCase();
+      if (formData.region && up === formData.region.trim().toUpperCase()) return false;
+      if ((options.regions || []).some(r => r.toUpperCase() === up)) return false;
+      return !/^REGION\s+/i.test(up) && up !== 'REGIONAL OFFICE' && up !== 'CENTRAL OFFICE' && up !== 'N/A';
+    });
+  }, [formData.region, options.regionDivisions, options.divisions, options.regions]);
 
   if (!isOpen) return null;
 

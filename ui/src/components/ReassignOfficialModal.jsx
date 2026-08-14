@@ -111,9 +111,18 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
   };
 
   // ── Divisions for selected region ──
-  const availableDivisions = newRegion
+  const isRegionOrOfficeName = (str) => {
+    if (!str) return true;
+    const up = String(str).trim().toUpperCase();
+    if (newRegion && up === newRegion.trim().toUpperCase()) return true;
+    if ((options.regions || []).some(r => r.toUpperCase() === up)) return true;
+    return /^REGION\s+/i.test(up) || up === 'REGIONAL OFFICE' || up === 'CENTRAL OFFICE' || up === 'N/A';
+  };
+
+  const availableDivisions = (newRegion
     ? (options.regionDivisions[newRegion] || [])
-    : [];
+    : []
+  ).filter(d => !isRegionOrOfficeName(d));
 
   // ── Same-assignment guard ──
   const isSameAssignment =

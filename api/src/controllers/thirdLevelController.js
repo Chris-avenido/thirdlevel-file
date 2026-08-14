@@ -734,12 +734,29 @@ export const getPositions = async (req, res) => {
     };
 
     const finalRegions = deduplicate(regionResult.rows.map(r => r.region));
-    const finalDivisions = deduplicate(divisionResult.rows.map(r => r.division));
+
+    // Exclude region names and non-division office labels from divisions
+    const regionUpperSet = new Set(finalRegions.map(r => r.toUpperCase()));
+    ['REGIONAL OFFICE', 'REGIONAL OFFICES', 'CENTRAL OFFICE', 'CENTRAL OFFICES', 'N/A', 'NONE', 'NOT APPLICABLE'].forEach(term => regionUpperSet.add(term));
+
+    const isRegionOrOffice = (str) => {
+      if (!str) return true;
+      const up = String(str).trim().toUpperCase();
+      return regionUpperSet.has(up) || /^REGION\s+[0-9IVXLCDM\-\sA-Z]+$/i.test(up);
+    };
+
+    const finalDivisions = deduplicate(
+      divisionResult.rows
+        .map(r => r.division)
+        .filter(d => !isRegionOrOffice(d))
+    );
 
     const regionDivisionsMap = {};
     regionDivisionResult.rows.forEach(r => {
       const regionStr = String(r.region || '').trim();
       const divStr = String(r.division || '').trim();
+      if (!divStr || isRegionOrOffice(divStr)) return;
+
       const upReg = regionStr.toUpperCase();
       const upDiv = divStr.toUpperCase();
       

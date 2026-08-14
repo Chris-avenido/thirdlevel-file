@@ -1455,11 +1455,18 @@ const OfficialProfiling = () => {
     const unifiedList = Array.from(positionMap.values()).sort();
 
     const availableDivisions = React.useMemo(() => {
-        if (profile.region && regionDivisions[profile.region] && Array.isArray(regionDivisions[profile.region])) {
-            return regionDivisions[profile.region];
-        }
-        return divisionsList || [];
-    }, [profile.region, regionDivisions, divisionsList]);
+        const rawList = (profile.region && regionDivisions[profile.region] && Array.isArray(regionDivisions[profile.region]))
+            ? regionDivisions[profile.region]
+            : (divisionsList || []);
+        
+        return rawList.filter(d => {
+            if (!d) return false;
+            const up = String(d).trim().toUpperCase();
+            if (profile.region && up === profile.region.trim().toUpperCase()) return false;
+            if ((regionsList || []).some(r => r.toUpperCase() === up)) return false;
+            return !/^REGION\s+/i.test(up) && up !== 'REGIONAL OFFICE' && up !== 'CENTRAL OFFICE' && up !== 'N/A';
+        });
+    }, [profile.region, regionDivisions, divisionsList, regionsList]);
 
     const isPositionOthers = profile.position_title?.toUpperCase() === 'OTHERS' || (profile.position_title && !unifiedList.some(u => u.toUpperCase() === profile.position_title.toUpperCase()));
     const isDesignationOthers = profile.designation?.toUpperCase() === 'OTHERS' || (profile.designation && !unifiedList.some(u => u.toUpperCase() === profile.designation.toUpperCase()));
