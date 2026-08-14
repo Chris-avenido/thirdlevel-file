@@ -5,7 +5,7 @@ import {
     FiUser, FiAward, FiBriefcase, FiBook, FiFileText, FiShield,
     FiChevronLeft, FiChevronRight, FiSave, FiPlus, FiTrash2, FiCheckCircle,
     FiAlertTriangle, FiInfo, FiUpload, FiToggleLeft, FiToggleRight,
-    FiSearch, FiLoader, FiList, FiLock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
+    FiSearch, FiLoader, FiList, FiLock, FiUnlock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
     FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye,
     FiEdit2, FiHeart, FiBookOpen, FiRotateCcw, FiCamera, FiBarChart2, FiChevronDown, FiHome, FiMapPin, FiLayers
 } from 'react-icons/fi';
@@ -209,6 +209,7 @@ const OfficialProfiling = () => {
         last_name: '', first_name: '', middle_name: '', suffix: '',
         gender: '', date_of_birth: '', age: '', civil_status: '',
         employment_status: '', position_title: '', designation: '', is_oic: false, appointment_date: '',
+        region: '', division: '', office: '', strand: '',
         emt_passer: null, emt_date: '', ces_stage: '', ces_conferment_date: '',
         total_years_third_level: '', permanent_address: '', temporary_address: '',
         highest_education: '', specific_degree: '', education_program: '', education_year_graduated: '',
@@ -236,6 +237,11 @@ const OfficialProfiling = () => {
     const [vacanciesLoading, setVacanciesLoading] = useState(false);
     const [positionsList, setPositionsList] = useState([]);
     const [designationsList, setDesignationsList] = useState([]);
+    const [regionsList, setRegionsList] = useState([]);
+    const [regionDivisions, setRegionDivisions] = useState({});
+    const [divisionsList, setDivisionsList] = useState([]);
+    const [isLocationLocked, setIsLocationLocked] = useState(true);
+    const [showLocationUnlockModal, setShowLocationUnlockModal] = useState(false);
     const [targetVacancyId, setTargetVacancyId] = useState(null);
     const [notableAchievementsOptions, setNotableAchievementsOptions] = useState([]);
 
@@ -400,7 +406,19 @@ const OfficialProfiling = () => {
             if (profile.office) {
                 posText += `, ${profile.office}`;
             }
-            slide.addText(posText, { x: 1.6, y: 0.9, w: 6.8, h: 0.5, fontSize: 20, bold: true, color: '000000' });
+
+            const hasCustomDesignation = profile.designation &&
+                profile.designation.trim() !== '' &&
+                profile.designation.trim().toLowerCase() !== 'no designation' &&
+                profile.designation.trim().toLowerCase() !== 'none' &&
+                profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase();
+
+            if (hasCustomDesignation) {
+                slide.addText(posText, { x: 1.6, y: 0.85, w: 6.8, h: 0.35, fontSize: 18, bold: true, color: '000000' });
+                slide.addText(profile.designation, { x: 1.6, y: 1.2, w: 6.8, h: 0.3, fontSize: 13, italic: true, bold: true, color: '08315F' });
+            } else {
+                slide.addText(posText, { x: 1.6, y: 0.9, w: 6.8, h: 0.5, fontSize: 20, bold: true, color: '000000' });
+            }
 
             // Top Right: Photo
             if (profile.photo_binary_id) {
@@ -473,16 +491,49 @@ const OfficialProfiling = () => {
             slide.addText(`${profile.age || ''}`, { x: 6.2, y: 1.85, w: 1.0, h: 0.4, align: 'center', fontSize: 14, color: '000000' });
 
             // Performance Rating Table
-            let perfRows = [
-                [{ text: 'Performance Rating', options: { colspan: 2, fill: 'B91C1C', color: 'FFFFFF', bold: true, align: 'center', fontSize: 12 } }]
-            ];
-            if (profile.cespes_1_rating) perfRows.push([{ text: `${profile.cespes_rating_1_period || ''} 1st sem (CESPES)`, options: { fontSize: 10, color: '000000' } }, { text: profile.cespes_1_rating, options: { fontSize: 10, align: 'center', color: '000000' } }]);
-            if (profile.cespes_2_rating) perfRows.push([{ text: `${profile.cespes_rating_2_period || ''} 2nd sem (CESPES)`, options: { fontSize: 10, color: '000000' } }, { text: profile.cespes_2_rating, options: { fontSize: 10, align: 'center', color: '000000' } }]);
-            if (profile.performance_rating_1) perfRows.push([{ text: `${profile.performance_rating_1_period || ''} (OPCRF)`, options: { fontSize: 10, color: '000000' } }, { text: profile.performance_rating_1, options: { fontSize: 10, align: 'center', color: '000000' } }]);
-            if (profile.performance_rating_2) perfRows.push([{ text: `${profile.performance_rating_2_period || ''} (OPCRF)`, options: { fontSize: 10, color: '000000' } }, { text: profile.performance_rating_2, options: { fontSize: 10, align: 'center', color: '000000' } }]);
+            const extractPptYear = (period) => {
+                if (!period) return '—';
+                const match = String(period).match(/\b(19\d\d|20\d\d)\b/);
+                return match ? match[1] : (String(period).split('-')[0] || String(period));
+            };
 
-            if (perfRows.length === 1) perfRows.push([{ text: 'No ratings', options: { colspan: 2, fontSize: 10, align: 'center', color: '000000' } }]);
-            slide.addTable(perfRows, { x: 6.2, y: 2.4, w: 3.6, colW: [2.6, 1.0], border: { pt: 1, color: 'B91C1C' }, fill: 'FFFFFF' });
+            let perfRows = [
+                [{ text: 'Performance Rating', options: { colspan: 3, fill: 'B91C1C', color: 'FFFFFF', bold: true, align: 'center', fontSize: 12 } }],
+                [
+                    { text: 'Period / Type', options: { fill: 'FEE2E2', fontSize: 9, bold: true, color: '991B1B' } },
+                    { text: 'Year', options: { fill: 'FEE2E2', fontSize: 9, bold: true, align: 'center', color: '991B1B' } },
+                    { text: 'Rating', options: { fill: 'FEE2E2', fontSize: 9, bold: true, align: 'center', color: '991B1B' } }
+                ]
+            ];
+
+            if (profile.cespes_1_rating) perfRows.push([
+                { text: `${profile.cespes_rating_1_period || ''} 1st sem (CESPES)`, options: { fontSize: 9, color: '000000' } },
+                { text: extractPptYear(profile.cespes_rating_1_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.cespes_1_rating), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+            ]);
+            if (profile.cespes_2_rating) perfRows.push([
+                { text: `${profile.cespes_rating_2_period || ''} 2nd sem (CESPES)`, options: { fontSize: 9, color: '000000' } },
+                { text: extractPptYear(profile.cespes_rating_2_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.cespes_2_rating), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+            ]);
+            if (profile.performance_rating_1) perfRows.push([
+                { text: `${profile.performance_rating_1_period || ''} (OPCRF)`, options: { fontSize: 9, color: '000000' } },
+                { text: extractPptYear(profile.performance_rating_1_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.performance_rating_1), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+            ]);
+            if (profile.performance_rating_2) perfRows.push([
+                { text: `${profile.performance_rating_2_period || ''} (OPCRF)`, options: { fontSize: 9, color: '000000' } },
+                { text: extractPptYear(profile.performance_rating_2_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.performance_rating_2), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+            ]);
+            if (profile.performance_rating_3) perfRows.push([
+                { text: `${profile.performance_rating_3_period || ''} (OPCRF)`, options: { fontSize: 9, color: '000000' } },
+                { text: extractPptYear(profile.performance_rating_3_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.performance_rating_3), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+            ]);
+
+            if (perfRows.length === 2) perfRows.push([{ text: 'No ratings', options: { colspan: 3, fontSize: 10, align: 'center', color: '000000' } }]);
+            slide.addTable(perfRows, { x: 6.2, y: 2.4, w: 3.6, colW: [2.1, 0.7, 0.8], border: { pt: 1, color: 'B91C1C' }, fill: 'FFFFFF' });
 
             // Eligibility Table
             let eligRows = [
@@ -819,6 +870,10 @@ const OfficialProfiling = () => {
                     employment_status: d.employment_status || '',
                     position_title: d.position_title || '',
                     designation: d.designation || '',
+                    region: d.region || '',
+                    division: d.division || '',
+                    office: d.office || '',
+                    strand: d.strand || '',
                     is_oic: (d.designation && typeof d.designation === 'string' && d.designation.toUpperCase().includes('OIC')) ? true : (d.is_oic ?? false),
                     appointment_date: formatDateStr(d.appointment_date),
                     emt_passer: d.emt_passer ?? null,
@@ -1353,6 +1408,10 @@ const OfficialProfiling = () => {
                     return upper !== 'N/A' && upper !== 'NA' && upper !== 'OTHERS' && !/\bOIC\b/i.test(upper);
                 });
                 setDesignationsList(validDesignations);
+
+                if (Array.isArray(data.regions)) setRegionsList(data.regions);
+                if (data.regionDivisions && typeof data.regionDivisions === 'object') setRegionDivisions(data.regionDivisions);
+                if (Array.isArray(data.divisions)) setDivisionsList(data.divisions);
             }
         } catch (err) {
             console.error('Failed to fetch positions:', err);
@@ -1394,6 +1453,13 @@ const OfficialProfiling = () => {
     }
 
     const unifiedList = Array.from(positionMap.values()).sort();
+
+    const availableDivisions = React.useMemo(() => {
+        if (profile.region && regionDivisions[profile.region] && Array.isArray(regionDivisions[profile.region])) {
+            return regionDivisions[profile.region];
+        }
+        return divisionsList || [];
+    }, [profile.region, regionDivisions, divisionsList]);
 
     const isPositionOthers = profile.position_title?.toUpperCase() === 'OTHERS' || (profile.position_title && !unifiedList.some(u => u.toUpperCase() === profile.position_title.toUpperCase()));
     const isDesignationOthers = profile.designation?.toUpperCase() === 'OTHERS' || (profile.designation && !unifiedList.some(u => u.toUpperCase() === profile.designation.toUpperCase()));
@@ -1984,7 +2050,26 @@ const OfficialProfiling = () => {
                                                             </div>
 
                                                             <div className="border-t border-slate-100 pt-8">
-                                                                <SectionLabel>Designation & Appointment</SectionLabel>
+                                                                <div className="flex items-center justify-between mb-4">
+                                                                    <SectionLabel>Designation & Appointment</SectionLabel>
+                                                                    <div className="flex items-center gap-2">
+                                                                        {isLocationLocked ? (
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled={!isEditing}
+                                                                                onClick={() => setShowLocationUnlockModal(true)}
+                                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                                                                            >
+                                                                                <FiLock size={12} className="text-amber-600" /> Unlock Location
+                                                                            </button>
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-wider">
+                                                                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                                                <FiUnlock size={12} className="text-emerald-600" /> Location Unlocked
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                                                                     <Field label="Unique Number">
                                                                         <input disabled={!isEditing} type="text" value={TLOid || ''} readOnly className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
@@ -1995,6 +2080,51 @@ const OfficialProfiling = () => {
                                                                             <option value="REGULAR">Regular</option>
                                                                             <option value="COTERMINOUS">Coterminous</option>
                                                                         </select>
+                                                                    </Field>
+                                                                    <Field label="Region">
+                                                                        <div className="relative">
+                                                                            <select
+                                                                                disabled={!isEditing || isLocationLocked}
+                                                                                value={profile.region || ''}
+                                                                                onChange={e => {
+                                                                                    setP('region', e.target.value);
+                                                                                    setP('division', '');
+                                                                                }}
+                                                                                className={`${sel} ${isLocationLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
+                                                                            >
+                                                                                <option value="">Select Region</option>
+                                                                                {(regionsList || []).map(r => (
+                                                                                    <option key={r} value={r}>{r}</option>
+                                                                                ))}
+                                                                                {profile.region && !(regionsList || []).includes(profile.region) && (
+                                                                                    <option value={profile.region}>{profile.region}</option>
+                                                                                )}
+                                                                            </select>
+                                                                            {isLocationLocked && (
+                                                                                <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
+                                                                            )}
+                                                                        </div>
+                                                                    </Field>
+                                                                    <Field label="Division">
+                                                                        <div className="relative">
+                                                                            <select
+                                                                                disabled={!isEditing || isLocationLocked || !profile.region}
+                                                                                value={profile.division || ''}
+                                                                                onChange={e => setP('division', e.target.value)}
+                                                                                className={`${sel} ${(isLocationLocked || !profile.region) ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
+                                                                            >
+                                                                                <option value="">{profile.region ? 'Select Division' : 'Select Region First'}</option>
+                                                                                {(availableDivisions || []).map(d => (
+                                                                                    <option key={d} value={d}>{d}</option>
+                                                                                ))}
+                                                                                {profile.division && !(availableDivisions || []).includes(profile.division) && (
+                                                                                    <option value={profile.division}>{profile.division}</option>
+                                                                                )}
+                                                                            </select>
+                                                                            {isLocationLocked && (
+                                                                                <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
+                                                                            )}
+                                                                        </div>
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
                                                                         <select disabled={!isEditing} value={isPositionOthers ? 'Others' : (unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || '')} onChange={e => setP('position_title', e.target.value)} className={sel}>
@@ -3274,6 +3404,15 @@ const OfficialProfiling = () => {
                                                                                                                                 {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                                                                 {profile.office ? `, ${profile.office}` : ''}
                                                                                                                             </h2>
+                                                                                                                            {profile.designation &&
+                                                                                                                                profile.designation.trim() !== '' &&
+                                                                                                                                profile.designation.trim().toLowerCase() !== 'no designation' &&
+                                                                                                                                profile.designation.trim().toLowerCase() !== 'none' &&
+                                                                                                                                profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
+                                                                                                                                <p className="text-sm font-semibold italic text-[#08315F] mt-0.5">
+                                                                                                                                    {profile.designation}
+                                                                                                                                </p>
+                                                                                                                            )}
                                                                                                                         </div>
                                                                                                                     </div>
                                                                                                                     <div className="flex gap-6 items-start">
@@ -3366,14 +3505,41 @@ const OfficialProfiling = () => {
                                                                                                                         </div>
                                                                                                                         <table className="w-full text-xs border-collapse mt-8">
                                                                                                                             <thead>
-                                                                                                                                <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2 border border-red-700 text-center uppercase tracking-widest text-[11px]">Performance Rating</th></tr>
+                                                                                                                                <tr><th colSpan={3} className="bg-red-700 text-white font-bold py-2 border border-red-700 text-center uppercase tracking-widest text-[11px]">Performance Rating</th></tr>
+                                                                                                                                <tr className="bg-red-50 text-[10px] font-black text-red-900 border border-slate-400">
+                                                                                                                                    <th className="px-3 py-1 text-left border border-slate-400">Period / Type</th>
+                                                                                                                                    <th className="px-2 py-1 text-center border border-slate-400 w-16">Year</th>
+                                                                                                                                    <th className="px-2 py-1 text-center border border-slate-400 w-16">Rating</th>
+                                                                                                                                </tr>
                                                                                                                             </thead>
                                                                                                                             <tbody className="text-slate-800">
-                                                                                                                                <tr><td className="border border-slate-400 px-3 py-1.5">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_1_rating || '—'}</td></tr>
-                                                                                                                                <tr><td className="border border-slate-400 px-3 py-1.5">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_2_rating || '—'}</td></tr>
-                                                                                                                                <tr><td className="border border-slate-400 px-3 py-1.5">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_1 || '—'}</td></tr>
-                                                                                                                                <tr><td className="border border-slate-400 px-3 py-1.5">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_2 || '—'}</td></tr>
-                                                                                                                                <tr><td className="border border-slate-400 px-3 py-1.5">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_3 || '—'}</td></tr>
+                                                                                                                                {(() => {
+                                                                                                                                    const extractPdfYear = (p) => {
+                                                                                                                                        if (!p) return '—';
+                                                                                                                                        const m = String(p).match(/\b(19\d\d|20\d\d)\b/);
+                                                                                                                                        return m ? m[1] : (String(p).split('-')[0] || String(p));
+                                                                                                                                    };
+                                                                                                                                    const rows = [];
+                                                                                                                                    if (profile.cespes_1_rating) rows.push(
+                                                                                                                                        <tr key="cespes-1"><td className="border border-slate-400 px-3 py-1.5">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.cespes_rating_1_period)}</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_1_rating}</td></tr>
+                                                                                                                                    );
+                                                                                                                                    if (profile.cespes_2_rating) rows.push(
+                                                                                                                                        <tr key="cespes-2"><td className="border border-slate-400 px-3 py-1.5">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.cespes_rating_2_period)}</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_2_rating}</td></tr>
+                                                                                                                                    );
+                                                                                                                                    if (profile.performance_rating_1) rows.push(
+                                                                                                                                        <tr key="opcrf-1"><td className="border border-slate-400 px-3 py-1.5">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_1_period)}</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_1}</td></tr>
+                                                                                                                                    );
+                                                                                                                                    if (profile.performance_rating_2) rows.push(
+                                                                                                                                        <tr key="opcrf-2"><td className="border border-slate-400 px-3 py-1.5">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_2_period)}</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_2}</td></tr>
+                                                                                                                                    );
+                                                                                                                                    if (profile.performance_rating_3) rows.push(
+                                                                                                                                        <tr key="opcrf-3"><td className="border border-slate-400 px-3 py-1.5">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_3_period)}</td><td className="border border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_3}</td></tr>
+                                                                                                                                    );
+                                                                                                                                    if (rows.length === 0) {
+                                                                                                                                        return <tr><td colSpan={3} className="border border-slate-400 px-3 py-2 text-center text-slate-400 italic">No ratings listed</td></tr>;
+                                                                                                                                    }
+                                                                                                                                    return rows;
+                                                                                                                                })()}
                                                                                                                             </tbody>
                                                                                                                         </table>
                                                                                                                         <table className="w-full text-xs border-collapse">
@@ -4012,6 +4178,52 @@ const OfficialProfiling = () => {
 
 
 
+
+                        {/* Location Unlock Confirmation Modal */}
+                        <AnimatePresence>
+                            {showLocationUnlockModal && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-5 relative"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                                                <FiAlertTriangle size={24} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-black text-slate-800 tracking-tight">Confirm Location Change</h3>
+                                                <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider mt-0.5">Location Access Verification</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                            Are you sure you want to unlock and modify your Region and Division? Changing these fields may alter your profile assignment and jurisdiction.
+                                        </p>
+                                        <div className="flex items-center justify-end gap-3 pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowLocationUnlockModal(false)}
+                                                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-100 transition-all active:scale-95"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsLocationLocked(false);
+                                                    setShowLocationUnlockModal(false);
+                                                }}
+                                                className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-amber-600/20 active:scale-95 flex items-center gap-2"
+                                            >
+                                                <FiUnlock size={14} /> Yes, Unlock
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
 
                         {/* Removed Global Export Modal because it was moved into Summary Tab as an inline popover */}
                     </div>
