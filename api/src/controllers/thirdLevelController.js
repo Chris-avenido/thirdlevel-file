@@ -1,4 +1,6 @@
 
+import fs from 'fs';
+import path from 'path';
 import pool from '../config/db.js';
 import { upsertBinary } from '../utils/binaryPipeline.js';
 import { uploadToAzure } from '../utils/azureBlobService.js';
@@ -268,7 +270,8 @@ export const uploadDocument = async (req, res) => {
       'nbi_clearance': 'nbi_clearance_binary_id',
       'csc_clearance': 'csc_clearance_binary_id',
       'ombudsman_clearance': 'ombudsman_clearance_binary_id',
-      'executive_summary': 'executive_summary_binary_id'
+      'executive_summary': 'executive_summary_binary_id',
+      'reassignment_order': 'reassignment_order_binary_id'
     };
 
     const columnName = docMap[docType];
@@ -288,8 +291,31 @@ export const uploadDocument = async (req, res) => {
 
     await client.query('COMMIT');
 
-    // Azure Blob Storage Upload
+    // 1. Save file to local folder path on disk
+    let localFolderPath = null;
+    try {
+      const pad = (n) => n.toString().padStart(2, '0');
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
+      const filename = `${docType}_${TLOid}_${timestamp}${ext}`;
+
+      const folderRelative = path.join('uploads', TLOid, docType);
+      const folderAbsolute = path.join(process.cwd(), folderRelative);
+      if (!fs.existsSync(folderAbsolute)) {
+        fs.mkdirSync(folderAbsolute, { recursive: true });
+      }
+      const fileAbsolute = path.join(folderAbsolute, filename);
+      fs.writeFileSync(fileAbsolute, req.file.buffer);
+      localFolderPath = `/uploads/${TLOid}/${docType}/${filename}`;
+      console.log(`[Upload] File saved to folder path: ${localFolderPath}`);
+    } catch (fsErr) {
+      console.warn(`[Upload] Local folder path write skipped/failed: ${fsErr.message}`);
+    }
+
+    // 2. Azure Blob Storage Upload
     let azureData = null;
+    let finalBlobUrlOrPath = localFolderPath;
     try {
       console.log(`[Upload] Calling uploadToAzure...`);
       azureData = await uploadToAzure(
@@ -299,18 +325,24 @@ export const uploadDocument = async (req, res) => {
         TLOid,
         docType
       );
-      if (azureData && azureData.url) {
-        await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [azureData.url, binary_id]);
+      if (azureData && (azureData.blobUrl || azureData.url)) {
+        finalBlobUrlOrPath = azureData.blobUrl || azureData.url;
       }
-      console.log(`[Upload] Azure upload successful for ${azureData.filename}`);
+      console.log(`[Upload] Azure upload successful: ${azureData.filename}`);
     } catch (azureErr) {
-      console.error(`[Upload] Azure upload failed: ${azureErr.message}`);
-      // Continuing despite Azure error to satisfy "without removing existing logic" requirement
+      console.error(`[Upload] Azure upload skipped/failed: ${azureErr.message}`);
+    }
+
+    // 3. Update database record in unified_binaries with folder path or Azure Blob URL
+    if (finalBlobUrlOrPath) {
+      await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [finalBlobUrlOrPath, binary_id]);
     }
 
     res.json({
       success: true,
       binary_id,
+      filePath: localFolderPath,
+      blobUrl: azureData?.blobUrl || null,
       message: `${docType} uploaded successfully`,
       ...(azureData || {})
     });
@@ -1984,6 +2016,165 @@ export const toggleTestAccount = async (req, res) => {
   } catch (err) {
     console.error('Error toggling test account:', err);
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const reassignOfficial = async (req, res) => {
+  const allowedRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office'];
+  if (!allowedRoles.includes(req.user?.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { tloId, newRegion, newDivision, newDesignation } = req.body;
+
+  // ── Input validation ──────────────────────────────────────────────────────
+  if (!tloId || typeof tloId !== 'string' || !tloId.trim()) {
+    return res.status(400).json({ error: 'tloId is required' });
+  }
+  if (!newRegion || typeof newRegion !== 'string' || !newRegion.trim()) {
+    return res.status(400).json({ error: 'newRegion is required' });
+  }
+  if (!newDivision || typeof newDivision !== 'string' || !newDivision.trim()) {
+    return res.status(400).json({ error: 'newDivision is required' });
+  }
+  if (!newDesignation || typeof newDesignation !== 'string' || !newDesignation.trim()) {
+    return res.status(400).json({ error: 'newDesignation is required' });
+  }
+
+  const safeRegion = newRegion.trim().toUpperCase();
+  const safeDivision = newDivision.trim().toUpperCase();
+  const safeDesignation = newDesignation.trim().toUpperCase();
+  const safeTloId = tloId.trim();
+  const actorEmail = req.user?.email || null;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // ── Step A: Fetch current official record ─────────────────────────────
+    const fetchRes = await client.query(
+      `SELECT "TLOid", position_title, office, strand, division, region, designation
+       FROM third_level_official_masterlist
+       WHERE "TLOid" = $1`,
+      [safeTloId]
+    );
+
+    if (fetchRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Official with TLOid '${safeTloId}' not found.` });
+    }
+
+    const current = fetchRes.rows[0];
+
+    // ── Step B: Archive old assignment to tlo_position_history & RETURNING id ──
+    const historyRes = await client.query(
+      `INSERT INTO tlo_position_history (
+         source_table, tlo_id, position_name, office, strand, division, region,
+         inclusive_date_end, delete_flg, created_at, updated_at, created_by, updated_by
+       ) VALUES (
+         'masterlist', $1, $2, $3, $4, $5, $6,
+         NOW(), 'No', NOW(), NOW(), $7, $7
+       ) RETURNING id`,
+      [
+        safeTloId,
+        (current.position_title || '').toUpperCase() || '',
+        current.office  || null,
+        current.strand  || null,
+        current.division || null,
+        current.region  || null,
+        actorEmail
+      ]
+    );
+
+    const historyId = historyRes.rows[0].id;
+    let binaryId = null;
+    let savedFilePath = null;
+
+    // ── Step C: Process Reassignment Order PDF with tlo_position_history id ──
+    if (req.file) {
+      const mimeType = req.file.mimetype;
+      const { binary_id } = await upsertBinary(client, req.file.buffer, mimeType, req.file.buffer.length);
+      binaryId = binary_id;
+
+      const pad = (n) => n.toString().padStart(2, '0');
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
+      
+      // Include tlo_position_history ID in filename and path
+      const filename = `reassignment_order_${safeTloId}_history_${historyId}_${timestamp}${ext}`;
+      const folderRelative = path.join('uploads', safeTloId, 'reassignment_order');
+      const folderAbsolute = path.join(process.cwd(), folderRelative);
+
+      if (!fs.existsSync(folderAbsolute)) {
+        fs.mkdirSync(folderAbsolute, { recursive: true });
+      }
+      const fileAbsolute = path.join(folderAbsolute, filename);
+      fs.writeFileSync(fileAbsolute, req.file.buffer);
+      savedFilePath = `/uploads/${safeTloId}/reassignment_order/${filename}`;
+
+      let azureData = null;
+      let finalBlobUrlOrPath = savedFilePath;
+      try {
+        azureData = await uploadToAzure(
+          req.file.buffer,
+          filename,
+          mimeType,
+          safeTloId,
+          `reassignment_order_history_${historyId}`
+        );
+        if (azureData && (azureData.blobUrl || azureData.url)) {
+          finalBlobUrlOrPath = azureData.blobUrl || azureData.url;
+        }
+      } catch (azureErr) {
+        console.warn('[reassignOfficial] Azure upload skipped/failed:', azureErr.message);
+      }
+
+      // Save folder path / blob url to unified_binaries
+      if (finalBlobUrlOrPath) {
+        await client.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [finalBlobUrlOrPath, binaryId]);
+      }
+
+      // Link binary to tlo_position_history
+      await client.query(
+        `UPDATE tlo_position_history SET reassignment_order_binary_id = $1 WHERE id = $2`,
+        [binaryId, historyId]
+      );
+    }
+
+    // ── Step D: Update masterlist with new assignment & binary reference ─────
+    await client.query(
+      `UPDATE third_level_official_masterlist
+       SET region = $1, division = $2, designation = $3,
+           reassignment_order_binary_id = COALESCE($4, reassignment_order_binary_id),
+           updated_at = NOW()
+       WHERE "TLOid" = $5`,
+      [safeRegion, safeDivision, safeDesignation, binaryId, safeTloId]
+    );
+
+    await client.query('COMMIT');
+
+    console.log(`[reassignOfficial] ${safeTloId} reassigned to ${safeRegion} / ${safeDivision} / ${safeDesignation} (Position History ID: ${historyId}) by ${actorEmail}`);
+
+    res.json({
+      success: true,
+      message: `Official ${safeTloId} successfully reassigned.`,
+      data: {
+        tloId: safeTloId,
+        historyId: historyId,
+        newRegion: safeRegion,
+        newDivision: safeDivision,
+        newDesignation: safeDesignation,
+        binaryId: binaryId,
+        filePath: savedFilePath
+      }
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[reassignOfficial] Transaction rolled back:', err.message);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 };
 

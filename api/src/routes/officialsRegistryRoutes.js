@@ -1,6 +1,8 @@
-// backend restart trigger 1
 import express from 'express';
+import multer from 'multer';
 import authMiddleware from '../middleware/authMiddleware.js';
+
+const memoryUpload = multer({ storage: multer.memoryStorage() });
 import {
   adminAction,
   getActiveOfficials,
@@ -15,7 +17,8 @@ import {
   registerPersonnel,
   getKpiSummary,
   processRegistration,
-  toggleTestAccount
+  toggleTestAccount,
+  reassignOfficial
 } from '../controllers/thirdLevelController.js';
 import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
 import { getAllNotableAchievements, createNotableAchievement, updateNotableAchievement, deleteNotableAchievement } from '../controllers/notableAchievementsController.js';
@@ -39,6 +42,7 @@ router.post('/add-unassigned-personnel', authMiddleware, createUnassignedPersonn
 router.post('/register-personnel', authMiddleware, registerPersonnel);
 router.post('/process-registration', authMiddleware, processRegistration);
 router.post('/toggle-test-account', authMiddleware, toggleTestAccount);
+router.post('/reassign-official', authMiddleware, memoryUpload.single('file'), reassignOfficial);
 router.post('/admin-action', authMiddleware, adminAction);
 router.post('/bulk-process-directory', authMiddleware, bulkProcessDirectory);
 router.post('/bulk-process-achievements', authMiddleware, bulkProcessAchievements);

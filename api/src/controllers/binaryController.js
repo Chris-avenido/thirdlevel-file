@@ -1,4 +1,6 @@
 import pool from '../config/db.js';
+import fs from 'fs';
+import path from 'path';
 
 export const getBinary = async (req, res) => {
     try {
@@ -9,7 +11,14 @@ export const getBinary = async (req, res) => {
         const { content, mime_type, azure_blob_url } = result.rows[0];
         
         if (azure_blob_url) {
-            return res.redirect(302, azure_blob_url);
+            if (azure_blob_url.startsWith('http://') || azure_blob_url.startsWith('https://')) {
+                return res.redirect(302, azure_blob_url);
+            }
+            const cleanRelative = azure_blob_url.startsWith('/') ? azure_blob_url.slice(1) : azure_blob_url;
+            const localFilePath = path.join(process.cwd(), cleanRelative);
+            if (fs.existsSync(localFilePath)) {
+                return res.sendFile(localFilePath);
+            }
         }
 
         res.setHeader('Content-Type', mime_type || 'application/octet-stream');

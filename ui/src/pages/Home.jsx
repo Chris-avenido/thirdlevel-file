@@ -8,6 +8,7 @@ import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
 import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
+import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
 import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
 
@@ -46,6 +47,7 @@ const Home = () => {
   const [isNotableModalOpen, setIsNotableModalOpen] = useState(false);
   const [isRetireesModalOpen, setIsRetireesModalOpen] = useState(false);
   const [isRegisterPersonnelOpen, setIsRegisterPersonnelOpen] = useState(false);
+  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1023,6 +1025,15 @@ const Home = () => {
                   <FiUserPlus />Register Third Level Personnel
                 </button>
                 <button
+                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                  style={{ backgroundColor: '#0c4a6e', borderColor: '#0c4a6e' }}
+                  onClick={() => setIsReassignModalOpen(true)}
+                  disabled={user?.role !== 'Central Office'}
+                  title={user?.role !== 'Central Office' ? 'Only Central Office can reassign officials.' : ''}
+                >
+                  <FiList />Reassign Official
+                </button>
+                <button
                   className="action-btn primary"
                   style={{ backgroundColor: '#075985', color: 'white' }}
                   onClick={() => navigate('/notable-achievements')}
@@ -1058,6 +1069,12 @@ const Home = () => {
         isOpen={isRegisterPersonnelOpen}
         onClose={() => setIsRegisterPersonnelOpen(false)}
         onSuccess={() => setRefreshTrigger(prev => prev + 1)}
+        token={token}
+      />
+      <ReassignOfficialModal
+        isOpen={isReassignModalOpen}
+        onClose={() => setIsReassignModalOpen(false)}
+        onRefresh={() => setRefreshTrigger(prev => prev + 1)}
         token={token}
       />
       <NotableAchievementsModal
