@@ -1026,7 +1026,6 @@ const Home = () => {
                 </button>
                 <button
                   className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
-                  style={{ backgroundColor: '#0c4a6e', borderColor: '#0c4a6e' }}
                   onClick={() => setIsReassignModalOpen(true)}
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can reassign officials.' : ''}
@@ -1035,7 +1034,6 @@ const Home = () => {
                 </button>
                 <button
                   className="action-btn primary"
-                  style={{ backgroundColor: '#075985', color: 'white' }}
                   onClick={() => navigate('/notable-achievements')}
                 >
                   <FiAward />Notable Achievements
