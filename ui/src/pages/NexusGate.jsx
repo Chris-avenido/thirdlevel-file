@@ -12,6 +12,7 @@ import {
     FiBriefcase,
     FiArrowRight,
     FiCheckCircle,
+    FiCheck,
     FiClock,
     FiFileText,
     FiDatabase
@@ -163,61 +164,64 @@ const NexusGate = () => {
                     )}
                 </AnimatePresence>
 
-                {/* Title Section */}
-                <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-title-section">
-                    <h1 className="nexus-main-title">
-                        Welcome to<br />
-                        <span className="nexus-title-highlight">
-                            Insight<span className="nexus-red-text">ED</span> Nexus
-                        </span>
-                    </h1>
+                {/* Bottom Hero Section */}
+                <div className="nexus-hero-bottom-content">
+                    {/* Title Section */}
+                    <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-title-section">
+                        <h1 className="nexus-main-title">
+                            Welcome to<br />
+                            <span className="nexus-title-highlight">
+                                Insight<span className="nexus-red-text">ED</span> Nexus
+                            </span>
+                        </h1>
 
-                    {/* Yellow Underline Accent */}
-                    <div className="nexus-yellow-line">
-                        <div className="nexus-line-bar" />
-                        <div className="nexus-line-dots" />
-                    </div>
-
-                    <p className="nexus-subtitle">
-                        The official platform of the Department of Education for managing personnel records and advancing careers.
-                    </p>
-                </motion.div>
-
-                {/* Feature Columns */}
-                <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-features-row">
-                    <div className="nexus-feature-item">
-                        <div className="nexus-feature-icon-wrap">
-                            <FiClock size={18} className="nexus-feature-icon" />
+                        {/* Yellow Underline Accent */}
+                        <div className="nexus-yellow-line">
+                            <div className="nexus-line-bar" />
                         </div>
-                        <h4 className="nexus-feature-title">Save Time</h4>
-                        <p className="nexus-feature-desc">Streamlined processes and quick access to records.</p>
-                    </div>
-                    <div className="nexus-feature-item">
-                        <div className="nexus-feature-icon-wrap">
-                            <FiFileText size={18} className="nexus-feature-icon" />
-                        </div>
-                        <h4 className="nexus-feature-title">Less Paperwork</h4>
-                        <p className="nexus-feature-desc">Digital records reduce manual work and paper use.</p>
-                    </div>
-                    <div className="nexus-feature-item">
-                        <div className="nexus-feature-icon-wrap">
-                            <FiDatabase size={18} className="nexus-feature-icon" />
-                        </div>
-                        <h4 className="nexus-feature-title">All In One Place</h4>
-                        <p className="nexus-feature-desc">Centralized information for better accuracy and accessibility.</p>
-                    </div>
-                </motion.div>
 
-                {/* Bottom Security / Trust Card */}
-                <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-trust-card">
-                    <div className="nexus-trust-icon-wrapper">
-                        <FiCheckCircle size={22} className="nexus-trust-icon" />
-                    </div>
-                    <div className="nexus-trust-text">
-                        <h3>Official Department of Education Platform</h3>
-                        <p>Your data is protected with enterprise-grade security and privacy standards.</p>
-                    </div>
-                </motion.div>
+                        <p className="nexus-subtitle">
+                            The official platform of the Department of Education for managing personnel records and advancing careers.
+                        </p>
+                    </motion.div>
+
+                    {/* Feature Columns */}
+                    <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-features-row">
+                        <div className="nexus-feature-item">
+                            <div className="nexus-feature-icon-wrap">
+                                <FiClock size={28} className="nexus-feature-icon" strokeWidth={1.75} />
+                            </div>
+                            <h4 className="nexus-feature-title">Save Time</h4>
+                            <p className="nexus-feature-desc">Streamlined processes and quick access to records.</p>
+                        </div>
+                        <div className="nexus-feature-item">
+                            <div className="nexus-feature-icon-wrap">
+                                <FiFileText size={28} className="nexus-feature-icon" strokeWidth={1.75} />
+                            </div>
+                            <h4 className="nexus-feature-title">Less Paperwork</h4>
+                            <p className="nexus-feature-desc">Digital records reduce manual work and paper use.</p>
+                        </div>
+                        <div className="nexus-feature-item">
+                            <div className="nexus-feature-icon-wrap">
+                                <FiDatabase size={28} className="nexus-feature-icon" strokeWidth={1.75} />
+                            </div>
+                            <h4 className="nexus-feature-title">All in One Place</h4>
+                            <p className="nexus-feature-desc">Centralized information for better accuracy and accessibility.</p>
+                        </div>
+                    </motion.div>
+
+                    {/* Bottom Security / Trust Card */}
+                    <motion.div variants={direction === 'left' ? itemLeft : itemRight} className="nexus-trust-card">
+                        <div className="nexus-trust-icon-wrapper">
+                            <FiShield size={32} className="nexus-trust-icon" strokeWidth={1.75} />
+                            <FiCheck size={16} className="nexus-trust-icon" strokeWidth={2.75} style={{ position: 'absolute' }} />
+                        </div>
+                        <div className="nexus-trust-text">
+                            <h3>Official Department of Education Platform</h3>
+                            <p>Your data is protected with enterprise-grade security and privacy standards.</p>
+                        </div>
+                    </motion.div>
+                </div>
             </div>
         </div>
     );
