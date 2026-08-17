@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiSearch, FiArrowRight, FiUploadCloud, FiAlertCircle, FiCheck } from 'react-icons/fi';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { FiX, FiSearch, FiArrowRight, FiUploadCloud, FiAlertCircle, FiCheck, FiChevronDown } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import ModernDatePicker from './ModernDatePicker';
@@ -7,6 +7,320 @@ import ModernDatePicker from './ModernDatePicker';
 // ─── Helper ──────────────────────────────────────────────────────────────────
 const fullName = (o) =>
   `${o?.first_name || ''} ${o?.middle_name ? o.middle_name + ' ' : ''}${o?.last_name || ''}${o?.suffix ? ' ' + o.suffix : ''}`.trim();
+
+// ─── Designation Combobox Component ─────────────────────────────────────────
+const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g. Officer-in-Charge, Regional Director…' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'regular' | 'oic'
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const containerRef = useRef(null);
+  const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 300 });
+
+  const updatePosition = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const preferredHeight = 320;
+      
+      // Flip up if space below is limited
+      if (spaceBelow < 220 && rect.top > spaceBelow) {
+        const topPos = Math.max(10, rect.top - Math.min(preferredHeight, rect.top - 20) - 6);
+        setDropdownPos({
+          top: topPos,
+          left: rect.left,
+          width: rect.width,
+          maxHeight: Math.min(preferredHeight, rect.top - 20)
+        });
+      } else {
+        setDropdownPos({
+          top: rect.bottom + 6,
+          left: rect.left,
+          width: rect.width,
+          maxHeight: Math.min(preferredHeight, Math.max(180, spaceBelow - 16))
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      const handleScroll = () => updatePosition();
+      const handleResize = () => updatePosition();
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [isOpen, value]);
+
+  // Click outside detection
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        containerRef.current && !containerRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  const query = (value || '').trim().toLowerCase();
+  
+  const filteredOptions = useMemo(() => {
+    let list = options;
+    if (filterTab === 'regular') {
+      list = list.filter(item => !/^OIC\b/i.test(item.trim()));
+    } else if (filterTab === 'oic') {
+      list = list.filter(item => /^OIC\b/i.test(item.trim()));
+    }
+
+    if (!query) return list;
+    return list.filter(item => item.toLowerCase().includes(query));
+  }, [options, filterTab, query]);
+
+  const regularCount = useMemo(() => options.filter(item => !/^OIC\b/i.test(item.trim())).length, [options]);
+  const oicCount = useMemo(() => options.filter(item => /^OIC\b/i.test(item.trim())).length, [options]);
+
+  const handleSelect = (item) => {
+    onChange(item);
+    setIsOpen(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!isOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        setIsOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev > 0 ? prev - 1 : filteredOptions.length - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
+        handleSelect(filteredOptions[highlightedIndex]);
+      } else {
+        setIsOpen(false);
+      }
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
+  const renderHighlighted = (text) => {
+    if (!query) return text;
+    const idx = text.toLowerCase().indexOf(query);
+    if (idx === -1) return text;
+    const before = text.substring(0, idx);
+    const match = text.substring(idx, idx + query.length);
+    const after = text.substring(idx + query.length);
+    return (
+      <>
+        {before}
+        <span className="bg-sky-200/80 text-[#075985] font-black rounded-[4px] px-0.5">{match}</span>
+        {after}
+      </>
+    );
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <div className="relative flex items-center">
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            if (!isOpen) setIsOpen(true);
+          }}
+          onFocus={() => {
+            updatePosition();
+            setIsOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="w-full pl-4 pr-16 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400"
+          style={{
+            background: '#f8fafc',
+            border: isOpen ? '2px solid #075985' : '2px solid #e2e8f0',
+            boxShadow: isOpen ? '0 0 0 3px rgba(7,89,133,0.12)' : 'none'
+          }}
+        />
+
+        <div className="absolute right-2 flex items-center gap-1">
+          {value && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                inputRef.current?.focus();
+              }}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+              title="Clear selection"
+            >
+              <FiX size={13} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (isOpen) {
+                setIsOpen(false);
+              } else {
+                updatePosition();
+                setIsOpen(true);
+                inputRef.current?.focus();
+              }
+            }}
+            className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-transform duration-200"
+            style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          >
+            <FiChevronDown size={15} />
+          </button>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+            maxHeight: dropdownPos.maxHeight || 300,
+            zIndex: 999999
+          }}
+          className="flex flex-col bg-white rounded-[18px] border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgba(8,49,95,0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        >
+          {/* Header Category Filter Tabs */}
+          <div className="flex items-center gap-1.5 p-2 bg-gradient-to-r from-sky-50 to-slate-50 border-b border-sky-100 shrink-0">
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); setFilterTab('all'); }}
+              className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all flex items-center gap-1 ${
+                filterTab === 'all'
+                  ? 'bg-[#075985] text-white shadow-sm'
+                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border border-slate-200/60'
+              }`}
+            >
+              <span>All</span>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'all' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                {options.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); setFilterTab('regular'); }}
+              className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all flex items-center gap-1 ${
+                filterTab === 'regular'
+                  ? 'bg-[#075985] text-white shadow-sm'
+                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border border-slate-200/60'
+              }`}
+            >
+              <span>Regular</span>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'regular' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                {regularCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); setFilterTab('oic'); }}
+              className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all flex items-center gap-1 ${
+                filterTab === 'oic'
+                  ? 'bg-[#075985] text-white shadow-sm'
+                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border border-slate-200/60'
+              }`}
+            >
+              <span>OIC</span>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'oic' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                {oicCount}
+              </span>
+            </button>
+          </div>
+
+          {/* Options Scrollable List */}
+          <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((opt, idx) => {
+                const isSelected = opt.toLowerCase() === (value || '').trim().toLowerCase();
+                const isHighlighted = idx === highlightedIndex;
+                const isOIC = /^OIC\b/i.test(opt.trim());
+
+                return (
+                  <div
+                    key={opt}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(opt);
+                    }}
+                    onMouseEnter={() => setHighlightedIndex(idx)}
+                    className={`flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-sky-100/80 text-[#075985] font-black'
+                        : isHighlighted
+                        ? 'bg-sky-50/90 text-slate-800 font-bold'
+                        : 'hover:bg-sky-50/50 text-slate-700 font-semibold'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-[6px] shrink-0 tracking-wider uppercase ${
+                        isOIC
+                          ? 'bg-amber-100/80 text-amber-800 border border-amber-300/60'
+                          : 'bg-sky-100/80 text-sky-800 border border-sky-300/60'
+                      }`}>
+                        {isOIC ? 'OIC' : 'EXEC'}
+                      </span>
+                      <span className="text-[12.5px] truncate">
+                        {renderHighlighted(opt)}
+                      </span>
+                    </div>
+
+                    {isSelected && (
+                      <div className="w-5 h-5 rounded-full bg-[#075985] text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <FiCheck size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-4 text-center">
+                <p className="text-[12px] font-bold text-slate-600">
+                  No preset matching "{value}"
+                </p>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  You can use this custom designation. Press Enter or click outside.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
@@ -22,7 +336,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  // Lookup options (reuse GET /api/third-level/positions)
+  // Lookup options
   const [options, setOptions] = useState({ regions: [], regionDivisions: {}, designations: [] });
   const [allOfficials, setAllOfficials] = useState([]);
 
@@ -34,7 +348,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
   const [submitting, setSubmitting] = useState(false);
   const [loadingOfficials, setLoadingOfficials] = useState(false);
 
-  // Dropdown positioning — escapes overflow-y:auto clip boundary
+  // Dropdown positioning for official search
   const inputRef = useRef(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
 
@@ -226,13 +540,13 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
         >
           <div className="flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-inner"
               style={{ background: 'rgba(255,255,255,0.12)' }}
             >
               <FiArrowRight size={18} color="white" />
             </div>
             <div>
-              <p className="text-[9px] font-black text-blue-300 uppercase tracking-[0.2em] leading-none mb-0.5">
+              <p className="text-[9px] font-black text-sky-300 uppercase tracking-[0.2em] leading-none mb-0.5">
                 Executive Dashboard
               </p>
               <h2 className="text-base font-black text-white leading-none tracking-tight">
@@ -242,7 +556,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/20"
             style={{ background: 'rgba(255,255,255,0.1)' }}
           >
             <FiX size={16} color="white" />
@@ -272,9 +586,9 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                   if (!e.target.value) setSelected(null);
                 }}
                 onFocus={() => setDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+                onBlur={() => setTimeout(() => setDropdownOpen(false), 180)}
                 placeholder={loadingOfficials ? 'Loading officials…' : 'Search by name or email…'}
-                className="w-full pl-9 pr-4 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all"
+                className="w-full pl-9 pr-8 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985]"
                 style={{
                   background: '#f0f9ff',
                   border: '2px solid #bae6fd',
@@ -282,6 +596,18 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                 }}
                 disabled={loadingOfficials}
               />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    setSelected(null);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <FiX size={13} />
+                </button>
+              )}
               {dropdownOpen && filteredOfficials.length > 0 && (
                 <ul
                   style={{
@@ -293,7 +619,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                     border: '2px solid #bae6fd',
                     background: 'white',
                     borderRadius: '16px',
-                    boxShadow: '0 10px 30px -5px rgba(8,49,95,0.18)',
+                    boxShadow: '0 12px 36px -5px rgba(8,49,95,0.22)',
                     overflow: 'hidden',
                     maxHeight: '240px',
                     overflowY: 'auto'
@@ -306,7 +632,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                       className="flex flex-col px-4 py-3 cursor-pointer transition-colors hover:bg-sky-50 border-b border-slate-50 last:border-0"
                     >
                       <span className="font-black text-[13px] text-slate-800">{fullName(o)}</span>
-                      <span className="text-[11px] text-slate-400 font-semibold">
+                      <span className="text-[11px] text-slate-400 font-semibold mt-0.5">
                         {o.position_title || o.designation || '—'} · {o.region || '—'}
                       </span>
                     </li>
@@ -327,28 +653,33 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                     padding: '12px 16px',
                     fontSize: '12px',
                     fontWeight: 600,
-                    color: '#94a3b8'
+                    color: '#94a3b8',
+                    boxShadow: '0 12px 36px -5px rgba(8,49,95,0.18)'
                   }}
                 >
                   No active officials found for "{query}"
                 </div>
               )}
-
             </div>
           </section>
 
-          {/* — Current Assignment (read-only) — */}
+          {/* — Current Assignment (read-only card) — */}
           {selected && (
             <section
-              className="rounded-[18px] px-5 py-4"
+              className="rounded-[18px] px-5 py-4 transition-all animate-in fade-in duration-150"
               style={{
                 background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
                 border: '2px solid #bae6fd'
               }}
             >
-              <p className="text-[9px] font-black text-sky-600 uppercase tracking-[0.2em] mb-3">
-                Current Assignment
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[9px] font-black text-sky-600 uppercase tracking-[0.2em]">
+                  Current Assignment
+                </p>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-sky-200/60 text-sky-800">
+                  {selected.TLOid}
+                </span>
+              </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 <InfoRow label="Name" value={fullName(selected)} span={2} />
                 <InfoRow label="Position" value={selected.position_title || '—'} />
@@ -361,21 +692,21 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
 
           {/* — Destination Fields — */}
           {selected && (
-            <section>
+            <section className="space-y-4 pt-1">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">
                 New Assignment
               </p>
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {/* Region */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                    New Region <span className="text-rose-400">*</span>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                    New Region <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <select
                       value={newRegion}
                       onChange={(e) => { setNewRegion(e.target.value); setNewDivision(''); }}
-                      className="w-full appearance-none pl-4 pr-8 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all"
+                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
                       style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
                     >
                       <option value="">Select Region…</option>
@@ -383,24 +714,24 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                         <option key={r} value={r}>{r}</option>
                       ))}
                     </select>
-                    <FiArrowRight
-                      size={12}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90"
+                    <FiChevronDown
+                      size={14}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                     />
                   </div>
                 </div>
 
                 {/* Division */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                    New Division <span className="text-rose-400">*</span>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                    New Division <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <select
                       value={newDivision}
                       onChange={(e) => setNewDivision(e.target.value)}
                       disabled={!newRegion}
-                      className="w-full appearance-none pl-4 pr-8 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all disabled:opacity-40 disabled:cursor-not-allowed focus:border-[#075985]"
                       style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
                     >
                       <option value="">{newRegion ? 'Select Division…' : 'Select a region first…'}</option>
@@ -408,38 +739,30 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                         <option key={d} value={d}>{d}</option>
                       ))}
                     </select>
-                    <FiArrowRight
-                      size={12}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90"
+                    <FiChevronDown
+                      size={14}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                     />
                   </div>
                 </div>
 
-                {/* Designation */}
+                {/* Designation Combobox (Clean Autocomplete) */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                    New Designation <span className="text-rose-400">*</span>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                    New Designation <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <DesignationCombobox
                     value={newDesignation}
-                    onChange={(e) => setNewDesignation(e.target.value)}
-                    placeholder="e.g. Officer-in-Charge, Division Chief…"
-                    className="w-full pl-4 pr-4 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all"
-                    style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
-                    list="designation-suggestions-rm"
+                    onChange={(val) => setNewDesignation(val)}
+                    options={options.designations}
+                    placeholder="e.g. Officer-in-Charge, Regional Director…"
                   />
-                  <datalist id="designation-suggestions-rm">
-                    {options.designations.map(d => (
-                      <option key={d} value={d} />
-                    ))}
-                  </datalist>
                 </div>
 
                 {/* Inclusive Dates (Previous Position Period) */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 pt-1">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                       From Date (Inclusive Start)
                     </label>
                     <ModernDatePicker
@@ -450,7 +773,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                       To Date (Inclusive End)
                     </label>
                     <ModernDatePicker
@@ -464,12 +787,12 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                 </div>
               </div>
 
-              {/* Same-assignment guard */}
+              {/* Same-assignment warning guard */}
               {isSameAssignment && (
-                <div className="flex items-start gap-2 mt-3 px-4 py-2.5 rounded-[12px] bg-amber-50 border border-amber-200">
-                  <FiAlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
-                  <p className="text-[11px] font-bold text-amber-700">
-                    New assignment is identical to the current one. Please change at least one field.
+                <div className="flex items-start gap-2.5 mt-3 px-4 py-3 rounded-[14px] bg-amber-50/90 border-2 border-amber-200">
+                  <FiAlertCircle size={15} className="text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-[11.5px] font-bold text-amber-800 leading-snug">
+                    New assignment is identical to the current one. Please adjust at least one field (Region, Division, or Designation).
                   </p>
                 </div>
               )}
@@ -478,13 +801,13 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
 
           {/* — Reassignment Order Upload — */}
           {selected && (
-            <section>
+            <section className="pt-1">
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                Reassignment Order (PDF) <span className="text-rose-400">*</span>
+                Reassignment Order (PDF) <span className="text-rose-500">*</span>
               </label>
               <div
                 onClick={() => fileRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-2 rounded-[18px] px-5 py-6 cursor-pointer transition-all"
+                className="flex flex-col items-center justify-center gap-2 rounded-[18px] px-5 py-6 cursor-pointer transition-all hover:scale-[1.005]"
                 style={{
                   border: file ? '2px solid #22c55e' : '2px dashed #bae6fd',
                   background: file ? '#f0fdf4' : '#f0f9ff'
@@ -492,17 +815,21 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
               >
                 {file ? (
                   <>
-                    <FiCheck size={22} className="text-green-500" />
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                      <FiCheck size={20} strokeWidth={3} />
+                    </div>
                     <p className="text-[12px] font-black text-green-700">{file.name}</p>
                     <p className="text-[10px] text-slate-400 font-semibold">
-                      {(file.size / 1024).toFixed(1)} KB · Click to change
+                      {(file.size / 1024).toFixed(1)} KB · Click to change PDF
                     </p>
                   </>
                 ) : (
                   <>
-                    <FiUploadCloud size={22} className="text-sky-400" />
-                    <p className="text-[12px] font-black text-slate-600">Click to upload PDF</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">PDF only, max 10 MB</p>
+                    <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
+                      <FiUploadCloud size={20} />
+                    </div>
+                    <p className="text-[12px] font-black text-slate-700">Click to upload Reassignment Order</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">PDF document only, max 10 MB</p>
                   </>
                 )}
               </div>
@@ -524,7 +851,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
         >
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-[14px] text-[12px] font-black text-slate-500 transition-colors"
+            className="px-5 py-2.5 rounded-[14px] text-[12px] font-black text-slate-500 transition-colors hover:bg-slate-200/60"
             style={{ background: '#f1f5f9', border: '1px solid #e2e8f0' }}
           >
             Cancel
@@ -532,7 +859,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-[14px] text-[12px] font-black text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-[14px] text-[12px] font-black text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
             style={{
               background: 'linear-gradient(135deg, #075985 0%, #0c4a6e 100%)',
               boxShadow: canSubmit ? '0 4px 14px rgba(7,89,133,0.35)' : 'none'
@@ -561,8 +888,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
 // ── InfoRow sub-component ──────────────────────────────────────────────────
 const InfoRow = ({ label, value, span = 1 }) => (
   <div className={`flex flex-col gap-0.5 ${span === 2 ? 'col-span-2' : ''}`}>
-    <span className="text-[9px] font-black text-sky-500 uppercase tracking-widest">{label}</span>
-    <span className="text-[12px] font-bold text-slate-700">{value}</span>
+    <span className="text-[9px] font-black text-sky-600 uppercase tracking-widest">{label}</span>
+    <span className="text-[12.5px] font-bold text-slate-700">{value}</span>
   </div>
 );
 

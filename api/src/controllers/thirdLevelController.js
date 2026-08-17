@@ -99,6 +99,74 @@ const displayPositionTitle = (positionTitle) => (
   POSITION_TITLE_DISPLAY[positionTitle] || positionTitle
 );
 
+export const cleanDesignationOrPosition = (str) => {
+  if (!str || typeof str !== 'string') return '';
+  let cleaned = str.trim();
+  if (!cleaned || cleaned.toUpperCase() === 'N/A' || cleaned.toUpperCase() === 'NONE' || cleaned === '-') {
+    return '';
+  }
+
+  // 1. Remove footnotes / superscripts / special trailing symbols (¹, ², ³, *, #, etc.)
+  cleaned = cleaned.replace(/[¹²³⁴⁵⁶⁷⁸⁹⁰*#†‡]/g, '');
+
+  // 2. Remove parenthetical status notes like (excess), (concurrent), etc.
+  cleaned = cleaned.replace(/\s*\(\s*excess\s*\)/gi, '');
+  cleaned = cleaned.replace(/\s*\(\s*concurrent\s*\)/gi, '');
+
+  // 3. Normalize OIC prefixes
+  cleaned = cleaned.replace(/^OIC\s*-\s*/i, 'OIC ');
+  cleaned = cleaned.replace(/^OIC\s+/i, 'OIC ');
+
+  // 4. Clean multiple whitespace
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+  // 5. Proper Title Casing while preserving Acronyms & Roman Numerals
+  const words = cleaned.split(' ');
+  const romanOrAcronym = new Set([
+    'OIC', 'RD', 'ARD', 'SDS', 'ASDS', 'CESO', 'DEPED', 'RO', 'SDO', 'CO',
+    'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'
+  ]);
+  const lowerWords = new Set(['of', 'the', 'in', 'and', 'for', 'to', 'a', 'an']);
+
+  const casedWords = words.map((w, idx) => {
+    const hasParen = w.startsWith('(') && w.endsWith(')');
+    const inner = hasParen ? w.slice(1, -1) : w;
+    const innerUpper = inner.toUpperCase();
+
+    if (romanOrAcronym.has(innerUpper)) {
+      return hasParen ? `(${innerUpper})` : innerUpper;
+    }
+    if (idx > 0 && lowerWords.has(inner.toLowerCase()) && !hasParen) {
+      return inner.toLowerCase();
+    }
+    const capitalized = inner.charAt(0).toUpperCase() + inner.slice(1).toLowerCase();
+    return hasParen ? `(${capitalized})` : capitalized;
+  });
+
+  return casedWords.join(' ').trim();
+};
+
+export const STANDARD_DESIGNATIONS = [
+  'Secretary',
+  'Undersecretary',
+  'Assistant Secretary',
+  'Director IV',
+  'Director III',
+  'Regional Director',
+  'Assistant Regional Director',
+  'Schools Division Superintendent',
+  'Assistant Schools Division Superintendent',
+  'OIC Secretary',
+  'OIC Undersecretary',
+  'OIC Assistant Secretary',
+  'OIC Director IV',
+  'OIC Director III',
+  'OIC Regional Director',
+  'OIC Assistant Regional Director',
+  'OIC Schools Division Superintendent',
+  'OIC Assistant Schools Division Superintendent'
+];
+
 const getOptionalColumnExpression = async (table, alias, columns, fallback = 'NULL::TEXT') => {
   const cacheKey = `${table}:${alias}:${columns.join(',')}`;
   if (optionalColumnExpressionCache.has(cacheKey)) {
@@ -554,7 +622,7 @@ export const updateProfile = async (req, res) => {
       'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'password', 'password_hash', 'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
       'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
-      'target_tloid', 'application_status', 'profiling_status'
+      'target_tloid', 'application_status', 'profiling_status', 'designation'
     ]);
 
     const toUpper = (val) => {
@@ -565,6 +633,10 @@ export const updateProfile = async (req, res) => {
     allFields.forEach(f => {
       if (req.body[f] !== undefined && validCols.has(f.toLowerCase())) {
         let val = req.body[f] === '' ? null : req.body[f];
+
+        if (f === 'designation' && typeof val === 'string') {
+          val = cleanDesignationOrPosition(val);
+        }
 
         if (f === 'eligibilities' && Array.isArray(val)) {
           val = val.map(e => {
@@ -733,6 +805,21 @@ export const getPositions = async (req, res) => {
       return Array.from(map.values()).sort();
     };
 
+    const deduplicateClean = (list) => {
+      const map = new Map();
+      list.forEach(item => {
+        if (!item) return;
+        const cleaned = cleanDesignationOrPosition(displayPositionTitle(item));
+        if (cleaned) {
+          const up = cleaned.toUpperCase();
+          if (!map.has(up)) {
+            map.set(up, cleaned);
+          }
+        }
+      });
+      return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
+    };
+
     const finalRegions = deduplicate(regionResult.rows.map(r => r.region));
 
     // Exclude region names and non-division office labels from divisions
@@ -773,10 +860,13 @@ export const getPositions = async (req, res) => {
       regionDivisionsMap[k] = Array.from(regionDivisionsMap[k]).sort();
     });
 
+    const rawPositions = [...THIRD_LEVEL_POSITIONS, ...posResult.rows.map(r => r.position_title)];
+    const rawDesignations = [...STANDARD_DESIGNATIONS, ...desigResult.rows.map(r => r.designation)];
+
     res.json({
       success: true,
-      positions: deduplicate(posResult.rows.map(r => displayPositionTitle(r.position_title))),
-      designations: deduplicate(desigResult.rows.map(r => displayPositionTitle(r.designation))),
+      positions: deduplicateClean(rawPositions),
+      designations: deduplicateClean(rawDesignations),
       strands: deduplicate(strandResult.rows.map(r => r.strand)),
       regions: finalRegions,
       offices: deduplicate(officeResult.rows.map(r => r.office)),
@@ -2071,7 +2161,7 @@ export const reassignOfficial = async (req, res) => {
 
   const safeRegion = newRegion.trim().toUpperCase();
   const safeDivision = newDivision.trim().toUpperCase();
-  const safeDesignation = newDesignation.trim().toUpperCase();
+  const safeDesignation = cleanDesignationOrPosition(newDesignation) || newDesignation.trim();
   const safeTloId = tloId.trim();
   const actorEmail = req.user?.email || null;
 
