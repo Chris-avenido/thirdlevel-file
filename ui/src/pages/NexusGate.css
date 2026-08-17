@@ -21,7 +21,7 @@
 
 /* ── NORMAL MODE: HERO ON LEFT (55% width), CARDS ON RIGHT (45%) ── */
 .nexus-hero-panel {
-  width: 55%;
+  width: calc(55% + 20px);
   height: 100%;
   position: relative;
   background-color: #061D3B;
@@ -31,6 +31,7 @@
   flex-direction: column;
   box-shadow: 6px 0 24px rgba(0, 0, 0, 0.08);
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  clip-path: polygon(0 0, calc(100% - 40px) 0, 100% 50%, calc(100% - 40px) 100%, 0 100%);
 }
 
 .nexus-hero-content {
@@ -47,8 +48,10 @@
 
 /* ── SWAPPED MODE: HERO ON RIGHT, CARDS ON LEFT ── */
 .nexus-layout-grid.swapped .nexus-hero-panel {
-  width: 55%;
+  width: calc(55% + 20px);
   box-shadow: -6px 0 24px rgba(0, 0, 0, 0.08);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 40px 50%);
+  margin-left: -40px;
 }
 
 .nexus-layout-grid.swapped .nexus-hero-content {
@@ -369,7 +372,7 @@
 /* ── CARDS PANEL ── */
 .nexus-cards-panel {
   flex: 1;
-  width: 45%;
+  width: calc(45% + 20px);
   height: 100%;
   position: relative;
   display: flex;
@@ -377,12 +380,18 @@
   justify-content: center;
   align-items: center;
   padding: 40px clamp(24px, 4vw, 56px);
+  padding-left: calc(clamp(24px, 4vw, 56px) + 40px);
   box-sizing: border-box;
   background-color: #FFFFFF;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 40px 50%);
+  margin-left: -40px;
 }
 
 .nexus-layout-grid.swapped .nexus-cards-panel {
   padding-right: clamp(40px, 5vw, 80px);
+  padding-left: clamp(24px, 4vw, 56px);
+  clip-path: polygon(0 0, calc(100% - 40px) 0, 100% 50%, calc(100% - 40px) 100%, 0 100%);
+  margin-left: 0;
 }
 
 .nexus-top-actions {
@@ -619,6 +628,7 @@
     /* Downward Chevron ( v ) transition for mobile / tablet */
     clip-path: polygon(0 0, 100% 0, 100% 92%, 50% 100%, 0 92%) !important;
     margin-left: 0 !important;
+    margin-bottom: -40px !important;
     filter: drop-shadow(0 12px 24px rgba(6, 29, 59, 0.3)) !important;
   }
 
@@ -634,6 +644,8 @@
     width: 100% !important;
     margin-left: 0 !important;
     padding: 48px 24px !important;
+    padding-top: 88px !important;
+    clip-path: polygon(0 0, 50% 40px, 100% 0, 100% 100%, 0 100%) !important;
   }
 
   .nexus-top-actions {
