@@ -435,15 +435,24 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
   const isRegionOrOfficeName = (str) => {
     if (!str) return true;
     const up = String(str).trim().toUpperCase();
+    if (newRegion && newRegion.trim().toUpperCase() === 'CENTRAL OFFICE') {
+      return false; // Central Office is valid division for Central Office region
+    }
     if (newRegion && up === newRegion.trim().toUpperCase()) return true;
-    if ((options.regions || []).some(r => r.toUpperCase() === up)) return true;
-    return /^REGION\s+/i.test(up) || up === 'REGIONAL OFFICE' || up === 'CENTRAL OFFICE' || up === 'N/A';
+    if ((options.regions || []).some(r => r.toUpperCase() !== 'CENTRAL OFFICE' && r.toUpperCase() === up)) return true;
+    return /^REGION\s+/i.test(up) || up === 'REGIONAL OFFICE' || up === 'N/A';
   };
 
-  const availableDivisions = (newRegion
-    ? (options.regionDivisions[newRegion] || [])
-    : []
-  ).filter(d => !isRegionOrOfficeName(d));
+  const availableDivisions = useMemo(() => {
+    if (!newRegion) return [];
+    if (newRegion.trim().toUpperCase() === 'CENTRAL OFFICE') {
+      const coDivs = (options.regionDivisions?.['Central Office'] || options.regionDivisions?.['CENTRAL OFFICE'] || ['Central Office']);
+      return coDivs.length > 0 ? coDivs : ['Central Office'];
+    }
+    const regionKey = Object.keys(options.regionDivisions || {}).find(r => r.toUpperCase() === newRegion.toUpperCase());
+    const raw = regionKey ? options.regionDivisions[regionKey] : (options.divisions || []);
+    return (raw || []).filter(d => !isRegionOrOfficeName(d));
+  }, [newRegion, options.regionDivisions, options.divisions, options.regions]);
 
   // ── Same-assignment guard ──
   const isSameAssignment =
@@ -705,7 +714,15 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                   <div className="relative">
                     <select
                       value={newRegion}
-                      onChange={(e) => { setNewRegion(e.target.value); setNewDivision(''); }}
+                      onChange={(e) => {
+                        const reg = e.target.value;
+                        setNewRegion(reg);
+                        if (reg.trim().toUpperCase() === 'CENTRAL OFFICE') {
+                          setNewDivision('Central Office');
+                        } else {
+                          setNewDivision('');
+                        }
+                      }}
                       className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
                       style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
                     >

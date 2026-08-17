@@ -1465,6 +1465,10 @@ const OfficialProfiling = () => {
     const unifiedList = Array.from(positionMap.values()).sort();
 
     const availableDivisions = React.useMemo(() => {
+        if (profile.region && profile.region.trim().toUpperCase() === 'CENTRAL OFFICE') {
+            const coDivs = (regionDivisions?.['Central Office'] || regionDivisions?.['CENTRAL OFFICE'] || ['Central Office']);
+            return coDivs.length > 0 ? coDivs : ['Central Office'];
+        }
         const rawList = (profile.region && regionDivisions[profile.region] && Array.isArray(regionDivisions[profile.region]))
             ? regionDivisions[profile.region]
             : (divisionsList || []);
@@ -1473,8 +1477,8 @@ const OfficialProfiling = () => {
             if (!d) return false;
             const up = String(d).trim().toUpperCase();
             if (profile.region && up === profile.region.trim().toUpperCase()) return false;
-            if ((regionsList || []).some(r => r.toUpperCase() === up)) return false;
-            return !/^REGION\s+/i.test(up) && up !== 'REGIONAL OFFICE' && up !== 'CENTRAL OFFICE' && up !== 'N/A';
+            if ((regionsList || []).some(r => r.toUpperCase() !== 'CENTRAL OFFICE' && r.toUpperCase() === up)) return false;
+            return !/^REGION\s+/i.test(up) && up !== 'REGIONAL OFFICE' && up !== 'N/A';
         });
     }, [profile.region, regionDivisions, divisionsList, regionsList]);
 

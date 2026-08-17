@@ -822,21 +822,23 @@ export const getPositions = async (req, res) => {
 
     const finalRegions = deduplicate(regionResult.rows.map(r => r.region));
 
-    // Exclude region names and non-division office labels from divisions
-    const regionUpperSet = new Set(finalRegions.map(r => r.toUpperCase()));
-    ['REGIONAL OFFICE', 'REGIONAL OFFICES', 'CENTRAL OFFICE', 'CENTRAL OFFICES', 'N/A', 'NONE', 'NOT APPLICABLE'].forEach(term => regionUpperSet.add(term));
+    // Exclude region names and non-division office labels from divisions (except Central Office)
+    const regionUpperSet = new Set(finalRegions.filter(r => r.toUpperCase() !== 'CENTRAL OFFICE').map(r => r.toUpperCase()));
+    ['REGIONAL OFFICE', 'REGIONAL OFFICES', 'N/A', 'NONE', 'NOT APPLICABLE'].forEach(term => regionUpperSet.add(term));
 
     const isRegionOrOffice = (str) => {
       if (!str) return true;
       const up = String(str).trim().toUpperCase();
+      if (up === 'CENTRAL OFFICE') return false;
       return regionUpperSet.has(up) || /^REGION\s+[0-9IVXLCDM\-\sA-Z]+$/i.test(up);
     };
 
-    const finalDivisions = deduplicate(
-      divisionResult.rows
+    const finalDivisions = deduplicate([
+      'Central Office',
+      ...divisionResult.rows
         .map(r => r.division)
         .filter(d => !isRegionOrOffice(d))
-    );
+    ]);
 
     const regionDivisionsMap = {};
     regionDivisionResult.rows.forEach(r => {
@@ -855,6 +857,12 @@ export const getPositions = async (req, res) => {
       }
       regionDivisionsMap[bestReg].add(bestDiv);
     });
+
+    if (!regionDivisionsMap['Central Office'] || regionDivisionsMap['Central Office'].size === 0) {
+      regionDivisionsMap['Central Office'] = new Set(['Central Office']);
+    } else {
+      regionDivisionsMap['Central Office'].add('Central Office');
+    }
 
     Object.keys(regionDivisionsMap).forEach(k => {
       regionDivisionsMap[k] = Array.from(regionDivisionsMap[k]).sort();

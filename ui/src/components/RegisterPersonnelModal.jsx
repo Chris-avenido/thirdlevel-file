@@ -157,15 +157,19 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
   };
 
   const availableDivisions = React.useMemo(() => {
-    if (!formData.region || !options.regionDivisions) return (options.divisions || []);
-    const regionKey = Object.keys(options.regionDivisions).find(r => r.toUpperCase() === formData.region.toUpperCase());
+    if (!formData.region) return (options.divisions || []);
+    if (formData.region.toUpperCase() === 'CENTRAL OFFICE') {
+      const coDivs = (options.regionDivisions?.['Central Office'] || options.regionDivisions?.['CENTRAL OFFICE'] || ['Central Office']);
+      return coDivs.length > 0 ? coDivs : ['Central Office'];
+    }
+    const regionKey = options.regionDivisions ? Object.keys(options.regionDivisions).find(r => r.toUpperCase() === formData.region.toUpperCase()) : null;
     const raw = regionKey ? options.regionDivisions[regionKey] : (options.divisions || []);
     return (raw || []).filter(d => {
       if (!d) return false;
       const up = String(d).trim().toUpperCase();
       if (formData.region && up === formData.region.trim().toUpperCase()) return false;
-      if ((options.regions || []).some(r => r.toUpperCase() === up)) return false;
-      return !/^REGION\s+/i.test(up) && up !== 'REGIONAL OFFICE' && up !== 'CENTRAL OFFICE' && up !== 'N/A';
+      if ((options.regions || []).some(r => r.toUpperCase() !== 'CENTRAL OFFICE' && r.toUpperCase() === up)) return false;
+      return !/^REGION\s+/i.test(up) && up !== 'REGIONAL OFFICE' && up !== 'N/A';
     });
   }, [formData.region, options.regionDivisions, options.divisions, options.regions]);
 
@@ -234,6 +238,13 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                 onChange={(e) => {
                   const newRegion = e.target.value;
                   setFormData(prev => {
+                    if (newRegion.toUpperCase() === 'CENTRAL OFFICE') {
+                      return {
+                        ...prev,
+                        region: newRegion,
+                        division: 'Central Office'
+                      };
+                    }
                     const regionKey = options.regionDivisions ? Object.keys(options.regionDivisions).find(r => r.toUpperCase() === newRegion.toUpperCase()) : null;
                     const validDivs = regionKey ? options.regionDivisions[regionKey] : options.divisions;
                     const keepDivision = prev.division && validDivs && validDivs.includes(prev.division);
