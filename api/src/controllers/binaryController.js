@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import fs from 'fs';
 import path from 'path';
+import { downloadFromAzure } from '../utils/azureBlobService.js';
 
 export const getBinary = async (req, res) => {
     try {
@@ -10,22 +11,41 @@ export const getBinary = async (req, res) => {
         
         const { content, mime_type, azure_blob_url } = result.rows[0];
         
-        if (azure_blob_url) {
-            if (azure_blob_url.startsWith('http://') || azure_blob_url.startsWith('https://')) {
-                return res.redirect(302, azure_blob_url);
-            }
+        // 1. Database binary content (Primary Source of Truth)
+        if (content && content.length > 0) {
+            res.setHeader('Content-Type', mime_type || 'application/octet-stream');
+            res.setHeader('Cache-Control', 'public, max-age=31536000');
+            return res.send(content);
+        }
+
+        // 2. Local disk storage fallback
+        if (azure_blob_url && !azure_blob_url.startsWith('http://') && !azure_blob_url.startsWith('https://')) {
             const cleanRelative = azure_blob_url.startsWith('/') ? azure_blob_url.slice(1) : azure_blob_url;
             const localFilePath = path.join(process.cwd(), cleanRelative);
             if (fs.existsSync(localFilePath)) {
+                res.setHeader('Content-Type', mime_type || 'application/octet-stream');
+                res.setHeader('Cache-Control', 'public, max-age=31536000');
                 return res.sendFile(localFilePath);
             }
         }
 
-        res.setHeader('Content-Type', mime_type || 'application/octet-stream');
-        res.setHeader('Cache-Control', 'public, max-age=31536000');
-        res.send(content || Buffer.from(''));
+        // 3. Azure Blob Storage fallback (Stream via authenticated SDK)
+        if (azure_blob_url && (azure_blob_url.startsWith('http://') || azure_blob_url.startsWith('https://'))) {
+            const azureStream = await downloadFromAzure(azure_blob_url);
+            if (azureStream && azureStream.readableStream) {
+                res.setHeader('Content-Type', azureStream.contentType || mime_type || 'application/octet-stream');
+                res.setHeader('Cache-Control', 'public, max-age=31536000');
+                if (azureStream.contentLength) {
+                    res.setHeader('Content-Length', azureStream.contentLength);
+                }
+                return azureStream.readableStream.pipe(res);
+            }
+        }
+
+        return res.status(404).json({ error: 'Binary content unavailable' });
     } catch (err) {
         console.error('[BinaryController] Fetch error:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+

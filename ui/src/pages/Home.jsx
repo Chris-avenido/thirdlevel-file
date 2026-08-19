@@ -9,7 +9,7 @@ import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
 import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
-import { FiUserPlus, FiUploadCloud, FiDownload, FiFlag, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
+import { FiUserPlus, FiUploadCloud, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
 import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
 
 const THIRD_LEVEL_POSITIONS = [
@@ -1037,21 +1037,6 @@ const Home = () => {
                   onClick={() => navigate('/notable-achievements')}
                 >
                   <FiAward />Notable Achievements
-                </button>
-
-                <button className="action-btn">
-                  <FiUploadCloud /> Bulk Upload Roster
-                </button>
-                <button className="action-btn">
-                  <FiDownload /> Export Compliance Report
-                </button>
-                <button className="action-btn">
-                  <FiFlag /> Review Flagged Profiles
-                  {flaggedProfiles > 0 && (
-                    <span className="ml-auto bg-red-100 text-red-600 text-[10px] py-1 px-2 rounded-full font-black">
-                      {flaggedProfiles}
-                    </span>
-                  )}
                 </button>
               </aside>
             </section>

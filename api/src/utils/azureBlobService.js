@@ -77,3 +77,46 @@ export const uploadToAzure = async (fileBuffer, originalName, mimeType, tloId, d
         filename: filename
     };
 };
+
+/**
+ * Downloads/streams a document from Azure Blob Storage using authenticated SDK
+ * 
+ * @param {string} blobUrlOrPath - The blob URL or relative blob path
+ * @returns {Promise<{ readableStream: NodeJS.ReadableStream, contentType: string, contentLength: number }|null>}
+ */
+export const downloadFromAzure = async (blobUrlOrPath) => {
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    const containerName = process.env.AZURE_FOLDER_NAME;
+
+    if (!connectionString || !containerName || !blobUrlOrPath) {
+        return null;
+    }
+
+    try {
+        let blobPath = blobUrlOrPath;
+        if (blobUrlOrPath.startsWith('http://') || blobUrlOrPath.startsWith('https://')) {
+            const urlObj = new URL(blobUrlOrPath);
+            const pathParts = urlObj.pathname.split('/').filter(Boolean);
+            if (pathParts.length > 0 && pathParts[0] === containerName) {
+                blobPath = pathParts.slice(1).join('/');
+            } else {
+                blobPath = pathParts.join('/');
+            }
+        }
+
+        const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+        const containerClient = blobServiceClient.getContainerClient(containerName);
+        const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
+
+        const downloadBlockBlobResponse = await blockBlobClient.download(0);
+        return {
+            readableStream: downloadBlockBlobResponse.readableStreamBody,
+            contentType: downloadBlockBlobResponse.contentType,
+            contentLength: downloadBlockBlobResponse.contentLength
+        };
+    } catch (err) {
+        console.error(`[AzureDownload] Failed to download blob (${blobUrlOrPath}):`, err.message);
+        return null;
+    }
+};
+

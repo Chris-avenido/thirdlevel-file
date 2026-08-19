@@ -292,7 +292,21 @@ const OfficialProfiling = () => {
 
     const isTabCompleted = (tabId) => {
         if (tabId === 'personal') {
-            return !!(profile.first_name && profile.last_name && profile.gender && profile.date_of_birth && profile.civil_status);
+            return !!(
+                profile.first_name &&
+                profile.last_name &&
+                profile.gender &&
+                profile.date_of_birth &&
+                profile.civil_status &&
+                profile.photo_binary_id &&
+                profile.employment_status &&
+                profile.region &&
+                profile.position_title &&
+                profile.appointment_date &&
+                (!profile.is_oic || profile.designation) &&
+                profile.permanent_address &&
+                (profile.alt_contact_details_1 || profile.contact_details)
+            );
         }
         if (tabId === 'eligibility') {
             return !!(profile.ces_stage || profile.emt_passer !== null || (profile.eligibilities && profile.eligibilities.length > 0));
@@ -933,8 +947,9 @@ const OfficialProfiling = () => {
                     convicted_crime_details: d.convicted_crime_details || '',
                     alt_email_1: d.alt_email_1 || '',
                     alt_email_2: d.alt_email_2 || '',
-                    alt_contact_details_1: d.alt_contact_details_1 || '',
+                    alt_contact_details_1: d.alt_contact_details_1 || d.contact_details || '',
                     alt_contact_details_2: d.alt_contact_details_2 || '',
+                    contact_details: d.contact_details || d.alt_contact_details_1 || '',
                     photo_binary_id: d.photo_binary_id || null,
                     pds_binary_id: d.pds_binary_id || null,
                     profile_word_binary_id: d.profile_word_binary_id || null,
@@ -1302,6 +1317,7 @@ const OfficialProfiling = () => {
 
             const payload = {
                 ...profile,
+                contact_details: profile.alt_contact_details_1 || profile.contact_details || '',
                 previous_positions: cleanPrevPositions,
                 relevant_trainings: cleanTrainings,
                 education_degrees: degreesList,
