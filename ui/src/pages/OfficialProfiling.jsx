@@ -383,6 +383,7 @@ const OfficialProfiling = () => {
             Swal.fire('Notice', "Failed to generate CSV", 'info');
         } finally {
             setExporting(false);
+            setExportModalOpen(false);
         }
     };
 
