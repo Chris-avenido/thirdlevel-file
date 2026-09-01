@@ -43,9 +43,8 @@ const SummaryRow = ({ label, value }) => (
     </div>
 );
 
-// The 9 content tabs whose completion drives the progress bar.
-// 'summary' is excluded (it's circular — depends on completeness itself).
-const CONTENT_TABS = ['personal', 'eligibility', 'experience', 'education', 'performance', 'trainings', 'achievements', 'documents', 'legal'];
+// All side tabs whose completion drives the progress bar.
+const CONTENT_TABS = ['personal', 'eligibility', 'experience', 'education', 'performance', 'trainings', 'achievements', 'documents', 'legal', 'summary'];
 
 const computeAge = (dob) => {
     if (!dob) return '';
@@ -336,13 +335,13 @@ const OfficialProfiling = () => {
             return !!(profile.pds_binary_id && profile.service_records_binary_id);
         }
         if (tabId === 'legal') {
-            return profile.pending_admin_case && profile.guilty_admin_details && profile.criminally_charged_details && profile.convicted_crime_details;
+            return !!(profile.pending_admin_case && profile.guilty_admin_details && profile.criminally_charged_details && profile.convicted_crime_details);
         }
         if (tabId === 'application') {
             return !!targetVacancyId;
         }
         if (tabId === 'summary') {
-            return completeness === 100;
+            return !!(certified || profile.dpa_consented_at || (dpaConsent && truthConsent));
         }
         return false;
     };
@@ -587,9 +586,10 @@ const OfficialProfiling = () => {
 
     // Recompute progress whenever any tab dependency changes
     useEffect(() => {
-        const completedCount = CONTENT_TABS.filter(tabId => isTabCompleted(tabId)).length;
-        setCompleteness(Math.round((completedCount / CONTENT_TABS.length) * 100));
-    }, [profile, prevPositions, trainings]);
+        const progressTabs = TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => t.id);
+        const completedCount = progressTabs.filter(tabId => isTabCompleted(tabId)).length;
+        setCompleteness(Math.round((completedCount / progressTabs.length) * 100));
+    }, [profile, prevPositions, trainings, dpaConsent, truthConsent, certified, dataSource]);
     useEffect(() => {
         if (completeness === 100 && profile.profiling_status !== 'profiling completed') {
             setP('profiling_status', 'profiling completed');
@@ -961,6 +961,7 @@ const OfficialProfiling = () => {
                     csc_clearance_binary_id: d.csc_clearance_binary_id || null,
                     ombudsman_clearance_binary_id: d.ombudsman_clearance_binary_id || null,
                     executive_summary_binary_id: d.executive_summary_binary_id || null,
+                    dpa_consented_at: d.dpa_consented_at || null,
                     updated_at: d.updated_at || null,
                 });
 
@@ -1036,6 +1037,12 @@ const OfficialProfiling = () => {
 
                 setPrevPositions(resolvedPrevPositions);
                 setTrainings(resolvedTrainings);
+
+                if (d.dpa_consented_at) {
+                    setCertified(true);
+                    setDpaConsent(true);
+                    setTruthConsent(true);
+                }
 
                 setStatus('found');
             } else {
@@ -1354,17 +1361,21 @@ const OfficialProfiling = () => {
         if (!TLOid) return;
         setCertifying(true);
         try {
+            const consentTimestamp = new Date().toISOString();
             const res = await fetch(apiUrl(`/api/third-level/${TLOid}/profile`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ dpa_consented_at: new Date().toISOString() })
+                body: JSON.stringify({ dpa_consented_at: consentTimestamp })
             });
             const data = await res.json();
             if (data.success) {
                 setCertified(true);
+                setDpaConsent(true);
+                setTruthConsent(true);
+                setProfile(prev => ({ ...prev, dpa_consented_at: consentTimestamp }));
                 if (thenNavigate) setTab('summary');
             } else {
                 Swal.fire('Notice', data.error || 'Certification failed.', 'info');
@@ -1758,7 +1769,7 @@ const OfficialProfiling = () => {
                                 <div className="p-4 flex-1 overflow-y-auto">
                                     <p className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Sections</p>
                                     <div className="space-y-1">
-                                        {TABS.filter(t => dataSource !== 'masterlist').map(t => {
+                                        {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => {
                                             const isLocked = t.id === 'application' && completeness < 100;
                                             const active = tab === t.id;
                                             const completed = isTabCompleted(t.id);
