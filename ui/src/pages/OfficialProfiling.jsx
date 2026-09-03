@@ -93,8 +93,20 @@ const SectionLabel = ({ children }) => (
     <p className="text-[11px] font-black uppercase tracking-[0.05em] text-[#08315F] mb-4">{children}</p>
 );
 
+const isSuffixPlaceholder = (suffix) => {
+    if (!suffix) return true;
+    const s = String(suffix).trim().toLowerCase();
+    return s === '' || s === 'not applicable' || s === 'not apllicable' || s === 'na' || s === 'n/a' || s === 'none';
+};
+
+const sanitizeSuffix = (suffix) => {
+    if (isSuffixPlaceholder(suffix)) return '';
+    return String(suffix).trim();
+};
+
 const buildFullName = (profile) => {
-    const suffix = profile.suffix && profile.suffix.toLowerCase() !== 'not applicable' ? profile.suffix : '';
+    if (!profile) return '';
+    const suffix = sanitizeSuffix(profile.suffix);
     return [profile.first_name, profile.middle_name, profile.last_name, suffix].filter(Boolean).join(' ').trim();
 };
 
@@ -206,6 +218,7 @@ const OfficialProfiling = () => {
     const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
     const [isEditing, setIsEditing] = useState(isTlo);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isSuffixNA, setIsSuffixNA] = useState(false);
 
     const [history, setHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -341,7 +354,7 @@ const OfficialProfiling = () => {
             return !!targetVacancyId;
         }
         if (tabId === 'summary') {
-            return !!(certified || profile.dpa_consented_at || (dpaConsent && truthConsent));
+            return !!(certified || profile.dpa_consented_at);
         }
         return false;
     };
@@ -360,7 +373,7 @@ const OfficialProfiling = () => {
             ];
             const achFormatted = (Array.isArray(profile.notable_achievements) ? profile.notable_achievements : []).map(a => typeof a === 'object' && a !== null ? `${a.title || ''}${a.year ? ' (' + a.year + ')' : ''}` : String(a)).join(' | ');
             const row = [
-                profile.first_name, profile.last_name, profile.middle_name, profile.suffix, profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
+                profile.first_name, profile.last_name, profile.middle_name, sanitizeSuffix(profile.suffix), profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
                 profile.position_title, profile.designation, profile.appointment_date, profile.permanent_address,
                 profile.ces_stage, profile.ces_conferment_date, profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date,
                 (profile.eligibilities || []).map(e => `${e.eligibility || e.title || 'Untitled'} (${[e.date ? new Date(e.date).toLocaleDateString() : '', e.rating ? 'Rating: ' + e.rating : '', e.place_of_assignment ? 'Place: ' + e.place_of_assignment : '', e.details || ''].filter(Boolean).join(' | ')})`).join('; '),
@@ -418,7 +431,8 @@ const OfficialProfiling = () => {
 
             // Header: Logo, Name and Position
             slide.addImage({ path: depedLogo, x: 0.4, y: 0.2, w: 1.1, h: 1.1 });
-            slide.addText(`${profile.last_name?.toUpperCase() || ''}, ${profile.first_name?.toUpperCase() || ''} ${profile.middle_name?.toUpperCase() || ''}`, { x: 1.6, y: 0.3, w: 4.3, h: 0.6, fontSize: 32, bold: true, color: '000000' });
+            const pSuffix = sanitizeSuffix(profile.suffix);
+            slide.addText(`${profile.last_name?.toUpperCase() || ''}${pSuffix ? ' ' + pSuffix : ''}, ${profile.first_name?.toUpperCase() || ''} ${profile.middle_name?.toUpperCase() || ''}`.trim(), { x: 1.6, y: 0.3, w: 4.3, h: 0.6, fontSize: 32, bold: true, color: '000000' });
             let posText = profile.position_title || '';
             if (profile.is_oic) {
                 posText += ' (OIC)';
@@ -879,11 +893,15 @@ const OfficialProfiling = () => {
                     resolvedOtherCourses = d.other_courses || [];
                 }
 
+                const rawSuffix = d.suffix || '';
+                const isNA = isSuffixPlaceholder(rawSuffix);
+                setIsSuffixNA(isNA);
+
                 setProfile({
                     last_name: d.last_name || '',
                     first_name: d.first_name || '',
                     middle_name: d.middle_name || '',
-                    suffix: d.suffix || '',
+                    suffix: isNA ? '' : rawSuffix,
                     gender: d.gender || '',
                     date_of_birth: formatDateStr(d.date_of_birth),
                     age: d.age ?? '',
@@ -1101,7 +1119,7 @@ const OfficialProfiling = () => {
 
     const setP = (field, value) => {
         const skipFields = new Set([
-            'email', 'alt_email_1', 'alt_email_2',
+            'email', 'alt_email_1', 'alt_email_2', 'suffix',
             'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
             'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
             'target_TLOid', 'application_status', 'profiling_status', 'is_oic',
@@ -1325,6 +1343,7 @@ const OfficialProfiling = () => {
 
             const payload = {
                 ...profile,
+                suffix: (isSuffixNA || isSuffixPlaceholder(profile.suffix)) ? '' : (profile.suffix || '').trim(),
                 contact_details: profile.alt_contact_details_1 || profile.contact_details || '',
                 previous_positions: cleanPrevPositions,
                 relevant_trainings: cleanTrainings,
@@ -2067,7 +2086,40 @@ const OfficialProfiling = () => {
                                                                             <Field label="First Name"><input disabled={!isEditing} type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
                                                                             <Field label="Last Name"><input disabled={!isEditing} type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
                                                                             <Field label="Middle Name"><input disabled={!isEditing} type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
-                                                                            <Field label="Suffix (Type 'Not Applicable' if none)"><input disabled={!isEditing} type="text" value={profile.suffix} onChange={e => setP('suffix', e.target.value)} placeholder="e.g. Jr., III" className={inp} /></Field>
+                                                                            <Field label="Suffix">
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <input
+                                                                                        disabled={!isEditing || isSuffixNA}
+                                                                                        type="text"
+                                                                                        value={isSuffixNA ? '' : (profile.suffix || '')}
+                                                                                        onChange={e => {
+                                                                                            if (isSuffixNA) setIsSuffixNA(false);
+                                                                                            setP('suffix', e.target.value);
+                                                                                        }}
+                                                                                        placeholder={isSuffixNA ? 'Not Applicable' : 'e.g. Jr., III'}
+                                                                                        className={`${inp} ${isSuffixNA ? '!bg-slate-100/80 !text-slate-400 !cursor-not-allowed italic' : ''}`}
+                                                                                    />
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        disabled={!isEditing}
+                                                                                        onClick={() => {
+                                                                                            const nextNA = !isSuffixNA;
+                                                                                            setIsSuffixNA(nextNA);
+                                                                                            if (nextNA) {
+                                                                                                setP('suffix', '');
+                                                                                            }
+                                                                                        }}
+                                                                                        title={isSuffixNA ? "Click to enable Suffix entry" : "Click to mark Suffix as Not Applicable"}
+                                                                                        className={`h-[38px] px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border shrink-0 flex items-center justify-center select-none ${
+                                                                                            isSuffixNA
+                                                                                                ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                                                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-800'
+                                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                                    >
+                                                                                        N/A
+                                                                                    </button>
+                                                                                </div>
+                                                                            </Field>
                                                                         </div>
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                                                                             <Field label="Gender">
@@ -3490,7 +3542,7 @@ const OfficialProfiling = () => {
                                                                                                                     <div className="flex gap-5 items-center">
                                                                                                                         <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain" />
                                                                                                                         <div>
-                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
+                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
                                                                                                                             <h2 className="text-lg font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap">
                                                                                                                                 <span>{profile.position_title || 'N/A'}</span>
                                                                                                                                 {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
@@ -3676,7 +3728,7 @@ const OfficialProfiling = () => {
                                                                         <div><p className="text-[10px] text-slate-400 mb-1">First Name</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.first_name || '—'}</p></div>
                                                                         <div><p className="text-[10px] text-slate-400 mb-1">Last Name</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.last_name || '—'}</p></div>
                                                                         <div><p className="text-[10px] text-slate-400 mb-1">Middle Name</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.middle_name || '—'}</p></div>
-                                                                        <div><p className="text-[10px] text-slate-400 mb-1">Suffix</p><p className="text-[12px] font-black text-slate-800 uppercase">{profile.suffix || '—'}</p></div>
+                                                                        <div><p className="text-[10px] text-slate-400 mb-1">Suffix</p><p className="text-[12px] font-black text-slate-800 uppercase">{sanitizeSuffix(profile.suffix) || '—'}</p></div>
                                                                         <div></div>{/* Empty column for alignment if needed */}
 
                                                                         <div className="flex items-start gap-2">

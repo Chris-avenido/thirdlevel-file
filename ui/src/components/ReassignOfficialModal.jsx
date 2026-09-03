@@ -5,8 +5,21 @@ import { apiUrl } from '../utils/api';
 import ModernDatePicker from './ModernDatePicker';
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
-const fullName = (o) =>
-  `${o?.first_name || ''} ${o?.middle_name ? o.middle_name + ' ' : ''}${o?.last_name || ''}${o?.suffix ? ' ' + o.suffix : ''}`.trim();
+const isSuffixPlaceholder = (suffix) => {
+  if (!suffix) return true;
+  const s = String(suffix).trim().toLowerCase();
+  return s === '' || s === 'not applicable' || s === 'not apllicable' || s === 'na' || s === 'n/a' || s === 'none';
+};
+
+const sanitizeSuffix = (suffix) => {
+  if (isSuffixPlaceholder(suffix)) return '';
+  return String(suffix).trim();
+};
+
+const fullName = (o) => {
+  const suffix = sanitizeSuffix(o?.suffix);
+  return `${o?.first_name || ''} ${o?.middle_name ? o.middle_name + ' ' : ''}${o?.last_name || ''}${suffix ? ' ' + suffix : ''}`.trim();
+};
 
 // ─── Designation Combobox Component ─────────────────────────────────────────
 const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g. Officer-in-Charge, Regional Director…' }) => {

@@ -622,7 +622,7 @@ export const updateProfile = async (req, res) => {
       'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'password', 'password_hash', 'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
       'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
-      'target_tloid', 'application_status', 'profiling_status', 'designation'
+      'target_tloid', 'application_status', 'profiling_status', 'designation', 'suffix'
     ]);
 
     const toUpper = (val) => {
@@ -633,6 +633,19 @@ export const updateProfile = async (req, res) => {
     allFields.forEach(f => {
       if (req.body[f] !== undefined && validCols.has(f.toLowerCase())) {
         let val = req.body[f] === '' ? null : req.body[f];
+
+        if (f === 'suffix') {
+          if (val === null || val === undefined || val === '') {
+            val = null;
+          } else if (typeof val === 'string') {
+            const s = val.trim().toLowerCase();
+            if (['not applicable', 'not apllicable', 'na', 'n/a', 'none'].includes(s) || s === '') {
+              val = null;
+            } else {
+              val = val.trim();
+            }
+          }
+        }
 
         if (f === 'designation' && typeof val === 'string') {
           val = cleanDesignationOrPosition(val);
