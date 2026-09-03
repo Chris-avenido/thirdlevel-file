@@ -393,6 +393,12 @@ const OfficialsRegistry = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [oicOnly, setOicOnly] = useState(false);
     const [kpiSummary, setKpiSummary] = useState([]);
+    const [kpiCounts, setKpiCounts] = useState({
+        totalThirdLevel: 0,
+        totalVacant: 0,
+        totalOic: 0,
+        totalConcurrent: 0
+    });
     const [totalRecords, setTotalRecords] = useState(0);
 
     const isThirdLevel = (o) => THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC'));
@@ -642,15 +648,35 @@ const OfficialsRegistry = () => {
 
     const fetchKpiSummary = async () => {
         try {
-            const res = await fetch(apiUrl('/api/third-level/officials-kpi-summary'), {
+            const queryParams = new URLSearchParams();
+            if (searchTerm) queryParams.append('search', searchTerm);
+            if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
+            if (officeFilter !== 'All') queryParams.append('office', officeFilter);
+            if (positionFilter !== 'All') queryParams.append('position', positionFilter);
+            if (designationFilter !== 'All') queryParams.append('designation', designationFilter);
+            if (levelFilter !== 'All') queryParams.append('level', levelFilter);
+            if (regionFilter !== 'All') queryParams.append('region', regionFilter);
+            if (oicOnly) queryParams.append('is_oic', 'true');
+
+            const res = await fetch(apiUrl(`/api/third-level/officials-kpi-summary?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
             if (data.success) {
-                setKpiSummary(data.data);
+                if (data.kpis) {
+                    setKpiCounts({
+                        totalThirdLevel: parseInt(data.kpis.total_third_level || 0),
+                        totalVacant: parseInt(data.kpis.total_vacant || 0),
+                        totalOic: parseInt(data.kpis.total_oic || 0),
+                        totalConcurrent: parseInt(data.kpis.total_concurrent || 0)
+                    });
+                }
+                if (data.data) {
+                    setKpiSummary(data.data);
+                }
             }
         } catch (err) {
-            console.error(err);
+            console.error('Failed to fetch KPI summary:', err);
         }
     };
 
@@ -1536,27 +1562,79 @@ const OfficialsRegistry = () => {
 
                         {/* STATS CARDS */}
                         {statusTab !== 'For Approval' && statusTab !== 'Rejected' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-8 w-full">
-                            {/* Card 1: Third Level Officials */}
-                            <div
-                                onClick={() => { setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Third Level Officials' ? 'border-l-sky-400 shadow-md ring-1 ring-sky-200' : 'border-l-sky-300 hover:shadow-sm'}`}
-                            >
-                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Third Level Officials</div>
-                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{thirdLevelActiveCount}</div>
-                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
-                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
+                                {/* Card 1: Total Third Level Officials */}
+                                <div
+                                    onClick={() => {
+                                        setActiveTab(prev => prev === 'Third Level Officials' ? 'All' : 'Third Level Officials');
+                                        setStatusTab('Active');
+                                        setPositionFilter('All');
+                                        setStrandFilter('All');
+                                        setOfficeFilter('All');
+                                        setLevelFilter('All');
+                                        setRegionFilter('All');
+                                    }}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Third Level Officials' && statusTab !== 'Vacant' ? 'border-l-sky-400 shadow-md ring-1 ring-sky-200' : 'border-l-sky-300 hover:shadow-sm'}`}
+                                >
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Third Level Officials</div>
+                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalThirdLevel}</div>
+                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
+                                </div>
 
-                            {/* Card 2: Officer in Charge */}
-                            <div
-                                onClick={() => { setActiveTab(prev => prev === 'Officer in Charge' ? 'All' : 'Officer in Charge'); setPositionFilter('All'); setStrandFilter('All'); setOfficeFilter('All'); setLevelFilter('All'); setRegionFilter('All'); }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Officer in Charge' ? 'border-l-amber-500 shadow-md ring-1 ring-amber-200' : 'border-l-amber-400 hover:shadow-sm'}`}
-                            >
-                                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Officer in Charge</div>
-                                <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{thirdLevelOicActiveCount}</div>
-                                <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
+                                {/* Card 2: Total Vacant Positions */}
+                                <div
+                                    onClick={() => {
+                                        setStatusTab(prev => prev === 'Vacant' ? 'Active' : 'Vacant');
+                                        setActiveTab('All');
+                                        setPositionFilter('All');
+                                        setStrandFilter('All');
+                                        setOfficeFilter('All');
+                                        setLevelFilter('All');
+                                        setRegionFilter('All');
+                                    }}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusTab === 'Vacant' ? 'border-l-rose-500 shadow-md ring-1 ring-rose-200' : 'border-l-rose-400 hover:shadow-sm'}`}
+                                >
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Vacant Positions</div>
+                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalVacant}</div>
+                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of vacant in view</div>
+                                </div>
+
+                                {/* Card 3: Total Officers-in-Charge */}
+                                <div
+                                    onClick={() => {
+                                        setActiveTab(prev => prev === 'Officer in Charge' ? 'All' : 'Officer in Charge');
+                                        setStatusTab('Active');
+                                        setPositionFilter('All');
+                                        setStrandFilter('All');
+                                        setOfficeFilter('All');
+                                        setLevelFilter('All');
+                                        setRegionFilter('All');
+                                    }}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Officer in Charge' && statusTab !== 'Vacant' ? 'border-l-amber-500 shadow-md ring-1 ring-amber-200' : 'border-l-amber-400 hover:shadow-sm'}`}
+                                >
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Officers-in-Charge</div>
+                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalOic}</div>
+                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
+                                </div>
+
+                                {/* Card 4: Total Concurrent Position Holders */}
+                                <div
+                                    onClick={() => {
+                                        setActiveTab(prev => prev === 'Concurrent Positions' ? 'All' : 'Concurrent Positions');
+                                        setStatusTab('Active');
+                                        setPositionFilter('All');
+                                        setStrandFilter('All');
+                                        setOfficeFilter('All');
+                                        setLevelFilter('All');
+                                        setRegionFilter('All');
+                                    }}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Concurrent Positions' && statusTab !== 'Vacant' ? 'border-l-indigo-500 shadow-md ring-1 ring-indigo-200' : 'border-l-indigo-400 hover:shadow-sm'}`}
+                                >
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Concurrent Position Holders</div>
+                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalConcurrent}</div>
+                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
+                                </div>
                             </div>
-                        </div>
                         )}
 
                         {/* MAIN CONTENT AREA */}

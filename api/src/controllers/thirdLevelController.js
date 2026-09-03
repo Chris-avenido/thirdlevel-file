@@ -1363,42 +1363,18 @@ export const triggerCron = async (req, res) => {
   }
 };
 
-export const getOfficials = async (req, res) => {
-  const allowedRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'RO HRMO', 'SDO HRMO'];
-  if (!allowedRoles.includes(req.user.role)) {
-    return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
-  }
-
-  processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
-
-  const { search, status, strand, category, position, designation, office, page, limit, sortColumn, sortDirection, is_oic, region, division, name, position_title, level, include_test_accounts } = req.query;
-  let query = `
-    WITH RankedOfficials AS (
-      SELECT 
-        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
-        (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
-        (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
-        ROW_NUMBER() OVER (
-          PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
-          ORDER BY m."TLOid" ASC
-        ) as rn
-      FROM third_level_official_masterlist m
-  `;
+export const buildOfficialsFilterConditions = (query, user) => {
   const params = [];
   const conditions = [];
 
-  try {
-    await ensureOicColumn();
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
+  const { search, status, strand, category, position, designation, office, is_oic, region, division, name, position_title, level } = query;
 
-  const userRole = req.user.role;
+  const userRole = user?.role;
   const isRO = userRole === 'Regional Office' || userRole === 'RO_HRMO' || userRole === 'RO HRMO';
   const isSDO = userRole === 'School Division Office' || userRole === 'SDO_HRMO' || userRole === 'SDO HRMO';
 
-  const targetRegion = req.user.assigned_region || req.user.region;
-  const targetDivision = req.user.assigned_division || req.user.division;
+  const targetRegion = user?.assigned_region || user?.region;
+  const targetDivision = user?.assigned_division || user?.division;
 
   if (isRO && targetRegion) {
     params.push(targetRegion);
@@ -1429,8 +1405,8 @@ export const getOfficials = async (req, res) => {
 
   const filterStatus = Array.isArray(status) ? status[status.length - 1] : status;
   if (filterStatus && filterStatus !== 'All' && filterStatus !== 'Legacy') {
-    if (filterStatus === 'Vacant') {
-      conditions.push(`(status = 'Vacated' OR status = 'Vacant' OR first_name IS NULL OR first_name = '')`);
+    if (filterStatus === 'Vacant' || filterStatus === 'Vacated') {
+      conditions.push(`(status = 'Vacated' OR status = 'Vacant' OR first_name IS NULL OR first_name = '' OR first_name ILIKE '%VACANT%')`);
     } else {
       params.push(filterStatus);
       conditions.push(`status = $${params.length}`);
@@ -1501,10 +1477,10 @@ export const getOfficials = async (req, res) => {
     }
   }
 
-  if (category === 'Third Level') {
+  if (category === 'Third Level' || category === 'Third Level Officials') {
     params.push(THIRD_LEVEL_POSITIONS);
     conditions.push(`position_title = ANY($${params.length}) AND NOT (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
-  } else if (category === 'Third Level (OIC)') {
+  } else if (category === 'Third Level (OIC)' || category === 'Officer in Charge') {
     params.push(THIRD_LEVEL_POSITIONS);
     conditions.push(`(position_title = ANY($${params.length}) OR designation = ANY($${params.length}) OR designation ILIKE '%OIC%') AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'Division Chiefs') {
@@ -1515,6 +1491,14 @@ export const getOfficials = async (req, res) => {
     conditions.push(`position_title != ALL($${params.length}) AND designation != ALL($${params.length}) AND (designation NOT ILIKE '%OIC%' OR designation IS NULL) AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'OIC / Chiefs') {
     conditions.push(`(COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
+  } else if (category === 'Concurrent Positions' || category === 'Concurrent Roles' || query.concurrent === 'true' || query.is_concurrent === 'true') {
+    conditions.push(`status = 'Active' AND email IS NOT NULL AND email != '' AND LOWER(email) IN (
+      SELECT LOWER(email) 
+      FROM third_level_official_masterlist 
+      WHERE status = 'Active' AND email IS NOT NULL AND email != '' 
+      GROUP BY LOWER(email) 
+      HAVING COUNT(*) > 1
+    )`);
   }
 
   let filterOic = Array.isArray(is_oic) ? is_oic[is_oic.length - 1] : is_oic;
@@ -1527,6 +1511,39 @@ export const getOfficials = async (req, res) => {
       conditions.push(`(COALESCE(is_oic, FALSE) = FALSE AND (designation NOT ILIKE '%OIC%' OR designation IS NULL))`);
     }
   }
+
+  return { params, conditions };
+};
+
+export const getOfficials = async (req, res) => {
+  const allowedRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'RO HRMO', 'SDO HRMO'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied. Administrative privileges required.' });
+  }
+
+  processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
+
+  const { page, limit, sortColumn, sortDirection, include_test_accounts } = req.query;
+  let query = `
+    WITH RankedOfficials AS (
+      SELECT 
+        m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
+        (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
+        (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
+        ROW_NUMBER() OVER (
+          PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
+          ORDER BY m."TLOid" ASC
+        ) as rn
+      FROM third_level_official_masterlist m
+  `;
+
+  try {
+    await ensureOicColumn();
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+
+  const { params, conditions } = buildOfficialsFilterConditions(req.query, req.user);
 
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
@@ -1581,11 +1598,6 @@ export const getOfficials = async (req, res) => {
 
   try {
     const result = await pool.query(query, params);
-    // DEBUG: Check if payload actually contains the binary IDs
-    const sample = result.rows.find(r => r.photo_binary_id);
-    console.log('DEBUG getOfficials - Sample row photo:', sample ? sample.photo_binary_id : 'NO PHOTO ID FOUND IN ANY ROW');
-    console.log('DEBUG getOfficials - Total rows:', result.rows.length);
-
     res.json({
       success: true,
       total: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0,
@@ -1602,25 +1614,72 @@ export const getOfficials = async (req, res) => {
 
 export const getKpiSummary = async (req, res) => {
   try {
-    const result = await pool.query(`
-      WITH RankedOfficials AS (
-        SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
-          m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
-          m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case,
-          (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
-          ROW_NUMBER() OVER (
-            PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
-            ORDER BY m."TLOid" ASC
-          ) as rn
-        FROM third_level_official_masterlist m
-        WHERE m.status != 'For Approval' AND m.status != 'Rejected'
-      )
-      SELECT status, is_oic, position_title, first_name, last_name, email, office, strand, region, division, designation, effectivity_date, date_of_birth, created_at, updated_at, "TLOid", vacate_reason, photo_binary_id, pds_binary_id, contact_details, pending_admin_case
-      FROM RankedOfficials 
-      WHERE rn = 1
-    `);
+    await ensureOicColumn();
+    const { params, conditions } = buildOfficialsFilterConditions(req.query, req.user);
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    res.json({ success: true, data: result.rows });
+    const query = `
+      WITH ActivePositions AS (
+        SELECT LOWER(email) as low_email, "TLOid", position_title, office
+        FROM third_level_official_masterlist
+        WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+      ),
+      FilteredMasterlist AS (
+        SELECT 
+          m.*,
+          (
+             SELECT string_agg(t2.position_title || ' (' || COALESCE(t2.office, '') || ')', ' | ')
+             FROM ActivePositions t2 
+             WHERE t2.low_email = LOWER(m.email)
+               AND t2."TLOid" != m."TLOid" 
+          ) as concurrent_positions
+        FROM third_level_official_masterlist m
+        ${whereClause}
+      )
+      SELECT 
+        COUNT(*) FILTER (
+          WHERE status = 'Active' 
+            AND COALESCE(is_oic, FALSE) = FALSE 
+            AND (designation NOT ILIKE '%OIC%' OR designation IS NULL) 
+            AND position_title = ANY($${params.length + 1})
+        ) AS total_third_level,
+        COUNT(*) FILTER (
+          WHERE status = 'Vacant' 
+             OR status = 'Vacated' 
+             OR first_name IS NULL 
+             OR first_name = '' 
+             OR first_name ILIKE '%VACANT%'
+        ) AS total_vacant,
+        COUNT(*) FILTER (
+          WHERE status = 'Active' 
+            AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')
+        ) AS total_oic,
+        COUNT(DISTINCT CASE 
+          WHEN status = 'Active' AND concurrent_positions IS NOT NULL AND email IS NOT NULL AND email != '' 
+          THEN LOWER(TRIM(email)) 
+        END) AS total_concurrent
+      FROM FilteredMasterlist;
+    `;
+    params.push(THIRD_LEVEL_POSITIONS);
+
+    const result = await pool.query(query, params);
+
+    // Also fetch all masterlist rows for filter dropdowns / directory compatibility
+    const allRowsQuery = `
+      SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
+        m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
+        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case
+      FROM third_level_official_masterlist m
+      WHERE m.status != 'For Approval' AND m.status != 'Rejected'
+      ORDER BY m."TLOid" ASC
+    `;
+    const allRows = await pool.query(allRowsQuery);
+
+    res.json({
+      success: true,
+      kpis: result.rows[0],
+      data: allRows.rows
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
