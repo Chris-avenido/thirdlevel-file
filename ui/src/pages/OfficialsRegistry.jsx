@@ -22,6 +22,7 @@ import { expandAcronym, formatPositionTitle } from '../utils/officialsUtils';
 import ModernDatePicker from '../components/ModernDatePicker';
 import sgMap from '../utils/sgMap.json';
 import newLogo from '../assets/modern_logo.png';
+import ReassignOfficialModal from '../components/ReassignOfficialModal';
 const JustificationInput = ({ value, onChange, placeholder }) => {
     const [local, setLocal] = useState(value);
 
@@ -581,6 +582,25 @@ const OfficialsRegistry = () => {
     const unassignedAbortRef = useRef(null);
     const unassignedCacheRef = useRef(new Map());
     const [selectedOffice, setSelectedOffice] = useState('');
+    const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+    const [reassignOfficialTarget, setReassignOfficialTarget] = useState(null);
+
+    const handleOpenReassignModal = (item) => {
+        setReassignOfficialTarget(item);
+        setIsReassignModalOpen(true);
+    };
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('action') === 'reassign') {
+            const tloId = params.get('tloid');
+            if (tloId && officials.length > 0) {
+                const found = officials.find(o => o.TLOid === tloId);
+                if (found) setReassignOfficialTarget(found);
+            }
+            setIsReassignModalOpen(true);
+        }
+    }, [location.search, officials]);
 
     const uniqueOffices = useMemo(() => {
         const offices = vacantSlots.map(slot => slot.office).filter(Boolean);
@@ -1801,7 +1821,7 @@ const OfficialsRegistry = () => {
                                                                     </button>
                                                                 )}
                                                                 {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
-                                                                    <button onClick={() => openActionModal(item, 'reassign')} title="Reassign" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
+                                                                    <button onClick={() => handleOpenReassignModal(item)} title="Reassign" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
                                                                         <FiLayers size={12} />
                                                                     </button>
                                                                 )}
@@ -1897,7 +1917,7 @@ const OfficialsRegistry = () => {
                                                     )}
                                                     {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
                                                         <div className="flex items-center gap-2 mt-1">
-                                                            <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'reassign'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-500 hover:text-white transition-all">
+                                                            <button onClick={(e) => { e.stopPropagation(); handleOpenReassignModal(item); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-500 hover:text-white transition-all">
                                                                 <FiLayers size={12} /> Reassign
                                                             </button>
                                                             {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
@@ -2039,7 +2059,7 @@ const OfficialsRegistry = () => {
                                                             </button>
                                                         )}
                                                         {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
-                                                            <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'reassign'); }} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
+                                                            <button onClick={(e) => { e.stopPropagation(); handleOpenReassignModal(item); }} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
                                                                 <FiLayers size={10} /> Reassign
                                                             </button>
                                                         )}
@@ -2429,6 +2449,17 @@ const OfficialsRegistry = () => {
                         </AnimatePresence>,
                         document.body
                     )}
+
+                    <ReassignOfficialModal
+                        isOpen={isReassignModalOpen}
+                        initialOfficial={reassignOfficialTarget}
+                        onClose={() => {
+                            setIsReassignModalOpen(false);
+                            setReassignOfficialTarget(null);
+                        }}
+                        onRefresh={fetchOfficials}
+                        token={token}
+                    />
 
                     <footer className="mt-auto p-12 text-center bg-white border-t border-slate-100 flex flex-col items-center gap-6">
                         <div className="space-y-1">

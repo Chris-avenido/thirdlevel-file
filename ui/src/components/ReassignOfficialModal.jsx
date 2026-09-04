@@ -336,18 +336,27 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
-const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
+const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOfficial }) => {
   // Step 1 – official search/select
   const [query, setQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  // Step 2 – destination fields
+  // Step 2 – target office & vacant position selection
+  const [vacantSlots, setVacantSlots] = useState([]);
+  const [loadingVacancies, setLoadingVacancies] = useState(false);
+  const [selectedOffice, setSelectedOffice] = useState('');
+  const [selectedVacantItem, setSelectedVacantItem] = useState('');
+
+  // Destination fields
   const [newRegion, setNewRegion] = useState('');
   const [newDivision, setNewDivision] = useState('');
+  const [newOffice, setNewOffice] = useState('');
+  const [newStrand, setNewStrand] = useState('');
   const [newDesignation, setNewDesignation] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [justification, setJustification] = useState('');
 
   // Lookup options
   const [options, setOptions] = useState({ regions: [], regionDivisions: {}, designations: [] });
@@ -372,21 +381,47 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
     }
   }, [dropdownOpen, query]);
 
+  const selectOfficial = (o) => {
+    setSelected(o);
+    setQuery(fullName(o));
+    setDropdownOpen(false);
+    setSelectedOffice('');
+    setSelectedVacantItem('');
+    setNewRegion('');
+    setNewDivision('');
+    setNewOffice('');
+    setNewStrand('');
+    setNewDesignation('');
+    setJustification('');
+    setFromDate(o?.appointment_date ? String(o.appointment_date).split('T')[0] : '');
+    setToDate(new Date().toISOString().split('T')[0]);
+  };
+
   // ── Reset on open/close ──
   useEffect(() => {
     if (!isOpen) return;
-    setQuery('');
-    setSelected(null);
+    if (initialOfficial) {
+      selectOfficial(initialOfficial);
+    } else {
+      setQuery('');
+      setSelected(null);
+    }
+    setSelectedOffice('');
+    setSelectedVacantItem('');
     setNewRegion('');
     setNewDivision('');
+    setNewOffice('');
+    setNewStrand('');
     setNewDesignation('');
+    setJustification('');
     setFromDate('');
-    setToDate('');
+    setToDate(new Date().toISOString().split('T')[0]);
     setFile(null);
     setDropdownOpen(false);
     fetchOfficials();
     fetchOptions();
-  }, [isOpen]);
+    fetchVacancies();
+  }, [isOpen, initialOfficial]);
 
   const fetchOfficials = async () => {
     setLoadingOfficials(true);
@@ -423,6 +458,60 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
     }
   };
 
+  const fetchVacancies = async () => {
+    setLoadingVacancies(true);
+    try {
+      const res = await fetch(apiUrl('/api/third-level/vacancies'), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVacantSlots(data.data || []);
+      }
+    } catch (err) {
+      console.error('[ReassignModal] Failed to fetch vacancies', err);
+    } finally {
+      setLoadingVacancies(false);
+    }
+  };
+
+  // ── Target Offices derived from real vacant positions ──
+  const uniqueTargetOffices = useMemo(() => {
+    const offices = vacantSlots.map(s => s.office).filter(Boolean);
+    return [...new Set(offices)].sort();
+  }, [vacantSlots]);
+
+  // ── Vacant positions scoped to selected office ──
+  const filteredVacantPositions = useMemo(() => {
+    if (!selectedOffice) return [];
+    return vacantSlots.filter(s => s.office === selectedOffice);
+  }, [vacantSlots, selectedOffice]);
+
+  const handleSelectOffice = (off) => {
+    setSelectedOffice(off);
+    setSelectedVacantItem('');
+    const sample = vacantSlots.find(s => s.office === off);
+    if (sample) {
+      setNewRegion(sample.region || '');
+      setNewDivision(sample.division || '');
+      setNewOffice(sample.office || off);
+      setNewStrand(sample.strand || '');
+    }
+  };
+
+  const handleSelectVacantPosition = (itemNum) => {
+    setSelectedVacantItem(itemNum);
+    const slot = vacantSlots.find(s => (s.item_number || s.TLOid) === itemNum);
+    if (slot) {
+      setNewRegion(slot.region || '');
+      setNewDivision(slot.division || '');
+      setNewOffice(slot.office || '');
+      setNewStrand(slot.strand || '');
+      const validTitle = slot.position_title && slot.position_title.toUpperCase() !== 'N/A' ? slot.position_title : (selected?.designation || '');
+      setNewDesignation(validTitle);
+    }
+  };
+
   // ── Official search filtering ──
   const filteredOfficials = query.trim().length < 1
     ? []
@@ -433,23 +522,12 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
         return name.includes(q) || email.includes(q);
       }).slice(0, 10);
 
-  const selectOfficial = (o) => {
-    setSelected(o);
-    setQuery(fullName(o));
-    setDropdownOpen(false);
-    setNewRegion('');
-    setNewDivision('');
-    setNewDesignation('');
-    setFromDate(o?.appointment_date ? String(o.appointment_date).split('T')[0] : '');
-    setToDate(new Date().toISOString().split('T')[0]);
-  };
-
   // ── Divisions for selected region ──
   const isRegionOrOfficeName = (str) => {
     if (!str) return true;
     const up = String(str).trim().toUpperCase();
     if (newRegion && newRegion.trim().toUpperCase() === 'CENTRAL OFFICE') {
-      return false; // Central Office is valid division for Central Office region
+      return false;
     }
     if (newRegion && up === newRegion.trim().toUpperCase()) return true;
     if ((options.regions || []).some(r => r.toUpperCase() !== 'CENTRAL OFFICE' && r.toUpperCase() === up)) return true;
@@ -479,28 +557,34 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
 
   const canSubmit =
     selected &&
-    newRegion.trim() &&
-    newDivision.trim() &&
+    (selectedVacantItem || (newRegion.trim() && newDivision.trim())) &&
     newDesignation.trim() &&
-    file &&
+    toDate &&
     !isSameAssignment &&
     !submitting;
 
-  // ── Submit handler ──
+  // ── Submit handler: Append-only Reassignment ──
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      if (file) {
+        formData.append('file', file);
+      }
       formData.append('tloId', selected.TLOid);
+      formData.append('vacantItemNumber', selectedVacantItem || '');
+      formData.append('target_TLOid', selectedVacantItem || '');
       formData.append('newRegion', newRegion.trim());
       formData.append('newDivision', newDivision.trim());
+      formData.append('newOffice', newOffice || selectedOffice || '');
+      formData.append('newStrand', newStrand || '');
       formData.append('newDesignation', newDesignation.trim());
+      formData.append('effectiveDate', toDate || '');
       formData.append('inclusiveDateStart', fromDate || '');
       formData.append('inclusiveDateEnd', toDate || '');
-      formData.append('inclusive_date_start', fromDate || '');
-      formData.append('inclusive_date_end', toDate || '');
+      formData.append('justification', justification.trim());
+      formData.append('remarks', justification.trim());
 
       const reassignRes = await fetch(apiUrl('/api/third-level/reassign-official'), {
         method: 'POST',
@@ -518,7 +602,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
       await Swal.fire({
         icon: 'success',
         title: 'Official Reassigned',
-        text: `${fullName(selected)} has been successfully reassigned to ${newDivision}, ${newRegion}.`,
+        text: `${fullName(selected)} has been successfully reassigned to ${newDivision || selectedOffice || 'target office'}, ${newRegion}.`,
         confirmButtonColor: '#075985'
       });
       onRefresh();
@@ -716,32 +800,24 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
           {selected && (
             <section className="space-y-4 pt-1">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">
-                New Assignment
+                Target Assignment & Vacant Position
               </p>
               <div className="space-y-3.5">
-                {/* Region */}
+                {/* 1. Target Office */}
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                    New Region <span className="text-rose-500">*</span>
+                    Select Target Office <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <select
-                      value={newRegion}
-                      onChange={(e) => {
-                        const reg = e.target.value;
-                        setNewRegion(reg);
-                        if (reg.trim().toUpperCase() === 'CENTRAL OFFICE') {
-                          setNewDivision('Central Office');
-                        } else {
-                          setNewDivision('');
-                        }
-                      }}
+                      value={selectedOffice}
+                      onChange={(e) => handleSelectOffice(e.target.value)}
                       className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
                       style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
                     >
-                      <option value="">Select Region…</option>
-                      {options.regions.map(r => (
-                        <option key={r} value={r}>{r}</option>
+                      <option value="">Choose Office…</option>
+                      {uniqueTargetOffices.map((off) => (
+                        <option key={off} value={off}>{off}</option>
                       ))}
                     </select>
                     <FiChevronDown
@@ -751,69 +827,95 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                   </div>
                 </div>
 
-                {/* Division */}
+                {/* 2. Vacant Position Picker */}
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                    New Division <span className="text-rose-500">*</span>
+                    Select Vacant Position <span className="text-rose-500">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      value={newDivision}
-                      onChange={(e) => setNewDivision(e.target.value)}
-                      disabled={!newRegion}
-                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all disabled:opacity-40 disabled:cursor-not-allowed focus:border-[#075985]"
-                      style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
-                    >
-                      <option value="">{newRegion ? 'Select Division…' : 'Select a region first…'}</option>
-                      {availableDivisions.map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
-                    <FiChevronDown
-                      size={14}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    />
-                  </div>
+                  {!selectedOffice ? (
+                    <div className="p-3.5 rounded-[14px] bg-slate-50 border-2 border-dashed border-slate-200 text-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        Please select an office first to view vacant positions
+                      </p>
+                    </div>
+                  ) : filteredVacantPositions.length === 0 ? (
+                    <div className="p-3.5 rounded-[14px] bg-amber-50 border-2 border-dashed border-amber-200 text-center">
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-wider">
+                        No vacant positions found in {selectedOffice}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <select
+                        value={selectedVacantItem}
+                        onChange={(e) => handleSelectVacantPosition(e.target.value)}
+                        className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
+                        style={{ background: '#f8fafc', border: '2px solid #bae6fd' }}
+                      >
+                        <option value="">Choose Vacant Position…</option>
+                        {filteredVacantPositions.map((slot) => (
+                          <option key={slot.item_number} value={slot.item_number}>
+                            {slot.position_title} ({slot.item_number}){slot.strand ? ` — ${slot.strand}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <FiChevronDown
+                        size={14}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {/* Designation Combobox (Clean Autocomplete) */}
+                {/* Selected Vacant Position Info Card */}
+                {selectedVacantItem && (
+                  <div
+                    className="rounded-[14px] p-3.5 transition-all"
+                    style={{ background: '#f0fdf4', border: '1.5px solid #86efac' }}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[9px] font-black text-green-700 uppercase tracking-widest">
+                        Selected Vacancy
+                      </span>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-green-200 text-green-800">
+                        {selectedVacantItem}
+                      </span>
+                    </div>
+                    <p className="text-[12.5px] font-bold text-slate-800">
+                      {newDesignation || 'Plantilla Position'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                      {newOffice} {newStrand ? `· ${newStrand}` : ''} {newRegion ? `(${newRegion})` : ''}
+                    </p>
+                  </div>
+                )}
+
+                {/* Date of Effectivity */}
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                    New Designation <span className="text-rose-500">*</span>
+                    Date of Effectivity <span className="text-rose-500">*</span>
                   </label>
-                  <DesignationCombobox
-                    value={newDesignation}
-                    onChange={(val) => setNewDesignation(val)}
-                    options={options.designations}
-                    placeholder="e.g. Officer-in-Charge, Regional Director…"
+                  <ModernDatePicker
+                    value={toDate}
+                    onChange={(val) => setToDate(val)}
+                    placeholder="Select effective date"
+                    className="!rounded-[14px] !py-2.5 !px-3 !text-[13px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
                   />
                 </div>
 
-                {/* Inclusive Dates (Previous Position Period) */}
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                      From Date (Inclusive Start)
-                    </label>
-                    <ModernDatePicker
-                      value={fromDate}
-                      onChange={(val) => setFromDate(val)}
-                      placeholder="Start date"
-                      className="!rounded-[14px] !py-2.5 !px-3 !text-[13px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                      To Date (Inclusive End)
-                    </label>
-                    <ModernDatePicker
-                      value={toDate}
-                      onChange={(val) => setToDate(val)}
-                      placeholder="End date"
-                      minDate={fromDate ? new Date(fromDate) : undefined}
-                      className="!rounded-[14px] !py-2.5 !px-3 !text-[13px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
-                    />
-                  </div>
+                {/* Justification / Remarks */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                    Justification / Remarks
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={justification}
+                    onChange={(e) => setJustification(e.target.value)}
+                    placeholder="Optional reassignment note or administrative justification..."
+                    className="w-full px-3.5 py-2 rounded-[14px] text-[12.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985] resize-none"
+                    style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
+                  />
                 </div>
               </div>
 
@@ -822,22 +924,22 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                 <div className="flex items-start gap-2.5 mt-3 px-4 py-3 rounded-[14px] bg-amber-50/90 border-2 border-amber-200">
                   <FiAlertCircle size={15} className="text-amber-500 mt-0.5 shrink-0" />
                   <p className="text-[11.5px] font-bold text-amber-800 leading-snug">
-                    New assignment is identical to the current one. Please adjust at least one field (Region, Division, or Designation).
+                    New assignment is identical to the current one. Please select a different target office or vacant position.
                   </p>
                 </div>
               )}
             </section>
           )}
 
-          {/* — Reassignment Order Upload — */}
+          {/* — Reassignment Order Upload (PDF) — */}
           {selected && (
             <section className="pt-1">
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                Reassignment Order (PDF) <span className="text-rose-500">*</span>
+                Reassignment Order (PDF) <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <div
                 onClick={() => fileRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-2 rounded-[18px] px-5 py-6 cursor-pointer transition-all hover:scale-[1.005]"
+                className="flex flex-col items-center justify-center gap-2 rounded-[18px] px-5 py-4 cursor-pointer transition-all hover:scale-[1.005]"
                 style={{
                   border: file ? '2px solid #22c55e' : '2px dashed #bae6fd',
                   background: file ? '#f0fdf4' : '#f0f9ff'
@@ -845,8 +947,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
               >
                 {file ? (
                   <>
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
-                      <FiCheck size={20} strokeWidth={3} />
+                    <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                      <FiCheck size={18} strokeWidth={3} />
                     </div>
                     <p className="text-[12px] font-black text-green-700">{file.name}</p>
                     <p className="text-[10px] text-slate-400 font-semibold">
@@ -855,11 +957,11 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token }) => {
                   </>
                 ) : (
                   <>
-                    <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
-                      <FiUploadCloud size={20} />
+                    <div className="w-9 h-9 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
+                      <FiUploadCloud size={18} />
                     </div>
-                    <p className="text-[12px] font-black text-slate-700">Click to upload Reassignment Order</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">PDF document only, max 10 MB</p>
+                    <p className="text-[11.5px] font-black text-slate-700">Attach Reassignment Order (Optional)</p>
+                    <p className="text-[9.5px] text-slate-400 font-semibold">PDF document only, max 10 MB</p>
                   </>
                 )}
               </div>

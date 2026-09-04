@@ -48,6 +48,19 @@ const Home = () => {
   const [isRetireesModalOpen, setIsRetireesModalOpen] = useState(false);
   const [isRegisterPersonnelOpen, setIsRegisterPersonnelOpen] = useState(false);
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  const [reassignOfficialTarget, setReassignOfficialTarget] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'reassign') {
+      const tloId = params.get('tloid');
+      if (tloId && allOfficials.length > 0) {
+        const found = allOfficials.find(o => o.TLOid === tloId);
+        if (found) setReassignOfficialTarget(found);
+      }
+      setIsReassignModalOpen(true);
+    }
+  }, [location.search, allOfficials]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1056,7 +1069,11 @@ const Home = () => {
       />
       <ReassignOfficialModal
         isOpen={isReassignModalOpen}
-        onClose={() => setIsReassignModalOpen(false)}
+        initialOfficial={reassignOfficialTarget}
+        onClose={() => {
+          setIsReassignModalOpen(false);
+          setReassignOfficialTarget(null);
+        }}
         onRefresh={() => setRefreshTrigger(prev => prev + 1)}
         token={token}
       />
