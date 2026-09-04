@@ -229,7 +229,7 @@ SELECT
     h.inclusive_date_start AS start_date,
     COALESCE(h.inclusive_date_end, NOW()::date) AS end_date,
     h.reassignment_order_binary_id,
-    h.remarks,
+    NULL AS remarks,
     h.created_by,
     h.updated_by,
     h.created_at,
