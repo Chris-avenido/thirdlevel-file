@@ -241,9 +241,10 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ error: 'This email is already registered in InsightEd for this portal. Please Login instead.' });
     }
 
+    const isTestAccount = Boolean(req.body.is_testaccount);
     let userRegistrationStatus = 'Approved';
     if (assignedRole === 'TLO Applicant') {
-      const mlCheck = await client.query('SELECT "TLOid" FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
+      const mlCheck = await client.query('SELECT "TLOid" FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND is_testaccount = $2', [normalizedEmail, isTestAccount]);
       if (mlCheck.rows.length === 0) {
         userRegistrationStatus = 'For Approval';
         const mlUidRes = await client.query(`
@@ -255,9 +256,9 @@ export const registerUser = async (req, res) => {
 
         await client.query(`
           INSERT INTO third_level_official_masterlist (
-              "TLOid", first_name, last_name, email, position_title, status, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, '', 'For Approval', NOW(), NOW())
-        `, [newTloId, firstName, lastName, normalizedEmail]);
+              "TLOid", first_name, last_name, email, position_title, status, is_testaccount, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, '', 'For Approval', $5, NOW(), NOW())
+        `, [newTloId, firstName, lastName, normalizedEmail, isTestAccount]);
       }
     }
 
@@ -271,18 +272,18 @@ export const registerUser = async (req, res) => {
 
     await client.query(
       `INSERT INTO tlo_users (
-        uid, email, password_hash, hash_version, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, created_at, passcode
-      ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, $8, $9, $11, NOW(), $10)`,
-      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division, passcode || null, userRegistrationStatus]
+        uid, email, password_hash, hash_version, first_name, last_name, contact_number, role, assigned_region, assigned_division, registration_status, is_testaccount, created_at, passcode
+      ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, $8, $9, $11, $12, NOW(), $10)`,
+      [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division, passcode || null, userRegistrationStatus, isTestAccount]
     );
 
     const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
     if (!adminRoles.includes(assignedRole)) {
       await client.query(
         `INSERT INTO third_level_officials_profiling_application (
-          application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, created_at, updated_at
-        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, NOW(), NOW())`,
-        [uid, firstName, lastName, normalizedEmail, contactNumber]
+          application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, is_testaccount, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, $6, NOW(), NOW())`,
+        [uid, firstName, lastName, normalizedEmail, contactNumber, isTestAccount]
       );
     }
 
@@ -290,7 +291,7 @@ export const registerUser = async (req, res) => {
 
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
     const token = jwt.sign(
-      { uid, email: normalizedEmail, role: assignedRole, assigned_region, assigned_division },
+      { uid, email: normalizedEmail, role: assignedRole, assigned_region, assigned_division, is_testaccount: isTestAccount },
       secret,
       { expiresIn: '30d' }
     );
@@ -298,7 +299,7 @@ export const registerUser = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: { uid, email: normalizedEmail, role: assignedRole, first_name: firstName, last_name: lastName, assigned_region, assigned_division }
+      user: { uid, email: normalizedEmail, role: assignedRole, first_name: firstName, last_name: lastName, assigned_region, assigned_division, is_testaccount: isTestAccount }
     });
 
     // Send email notification to officials if registration is pending

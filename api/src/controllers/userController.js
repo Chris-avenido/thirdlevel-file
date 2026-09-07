@@ -53,12 +53,13 @@ export const updateSettings = async (req, res) => {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    values.push(email.toLowerCase().trim());
+    const isTest = Boolean(req.user?.is_testaccount);
+    values.push(email.toLowerCase().trim(), isTest);
     
     const updateQuery = `
       UPDATE tlo_users 
       SET ${updates.join(', ')} 
-      WHERE LOWER(email) = $${queryIndex}
+      WHERE LOWER(email) = $${queryIndex} AND is_testaccount = $${queryIndex + 1}
       RETURNING uid, first_name, last_name, email, role;
     `;
 
