@@ -10,7 +10,7 @@ import RetireesModal from '../components/RetireesModal';
 import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import { FiUserPlus, FiUploadCloud, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
-import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
+import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -27,6 +27,14 @@ const THIRD_LEVEL_POSITIONS = [
   'SDS',
   'ASDS'
 ];
+
+const isThirdLevelPosition = (pos) => {
+  if (!pos) return false;
+  const formatted = formatPositionTitle(pos);
+  if (THIRD_LEVEL_POSITIONS.includes(formatted)) return true;
+  const upper = pos.trim().toUpperCase();
+  return THIRD_LEVEL_POSITIONS.some(p => p.toUpperCase() === upper);
+};
 
 
 const Home = () => {
@@ -182,11 +190,11 @@ const Home = () => {
 
   // KPIs Logic
   const thirdLevelCount = useMemo(() => {
-    return officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
+    return officials.filter(o => isThirdLevelPosition(o.position_title)).length;
   }, [officials]);
 
   const divisionChiefsCount = useMemo(() => {
-    return officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
+    return officials.filter(o => !isThirdLevelPosition(o.position_title)).length;
   }, [officials]);
 
   const sortBreakdown = (counts) => {
@@ -216,9 +224,9 @@ const Home = () => {
 
   const thirdLevelBreakdown = useMemo(() => {
     const counts = {};
-    officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+    officials.filter(o => isThirdLevelPosition(o.position_title)).forEach(o => {
       if (o.first_name && o.first_name !== 'VACANT') {
-        const pos = o.position_title || 'Unassigned';
+        const pos = formatPositionTitle(o.position_title) || o.position_title || 'Unassigned';
         counts[pos] = (counts[pos] || 0) + 1;
       }
     });
@@ -227,9 +235,9 @@ const Home = () => {
 
   const divisionChiefsBreakdown = useMemo(() => {
     const counts = {};
-    officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+    officials.filter(o => !isThirdLevelPosition(o.position_title)).forEach(o => {
       if (o.first_name && o.first_name !== 'VACANT') {
-        const pos = o.position_title || 'Unassigned';
+        const pos = formatPositionTitle(o.position_title) || o.position_title || 'Unassigned';
         counts[pos] = (counts[pos] || 0) + 1;
       }
     });
@@ -503,12 +511,12 @@ const Home = () => {
 
     // Third Level Officials (Only show when explicitly filtered so it doesn't flood the 'All' queue)
     if (activeQueueFilter === 'thirdLevel') {
-      officials.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+      officials.filter(o => isThirdLevelPosition(o.position_title)).forEach(o => {
         queue.push({
           id: o.TLOid,
           email: o.email,
           name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
-          desc: `${o.position_title || 'Unassigned'} · ${o.office || 'Unassigned'}`,
+          desc: `${formatPositionTitle(o.position_title) || o.position_title || 'Unassigned'} · ${o.office || 'Unassigned'}`,
           status: 'Active',
           badgeClass: 'neutral',
           type: 'thirdLevel',
@@ -569,7 +577,7 @@ const Home = () => {
       } else if (activeQueueFilter === 'inactive') {
         filtered = filtered.filter(o => o.status === 'Inactive');
       } else if (activeQueueFilter === 'thirdLevel') {
-        filtered = filtered.filter(o => o.status === 'Active' && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        filtered = filtered.filter(o => o.status === 'Active' && isThirdLevelPosition(o.position_title));
       } else if (activeQueueFilter === 'pending') {
         filtered = []; // only apps
       }
