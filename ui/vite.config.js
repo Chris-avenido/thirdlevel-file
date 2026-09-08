@@ -6,7 +6,7 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   const rootDir = path.resolve(__dirname, '..')
   const env = loadEnv(mode, rootDir, '')
-  const apiTarget = normalizeApiBaseUrl(env.VITE_API_URL) || 'https://thirdlevel-file-api.onrender.com'
+  const apiTarget = normalizeApiBaseUrl(env.VITE_API_URL)
   const base = env.VITE_BASE_PATH || '/'
 
   return {
@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       strictPort: true,
-      proxy: {
+      proxy: apiTarget ? {
         '/insighted-third-level-officials/api': {
           target: apiTarget,
           changeOrigin: true,
@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
         }
-      }
+      } : undefined
     }
   }
 })
