@@ -94,6 +94,7 @@ const THIRD_LEVEL_POSITIONS = [
   'SDS',
   'ASDS'
 ];
+const THIRD_LEVEL_POSITIONS_UPPER = THIRD_LEVEL_POSITIONS.map(p => p.toUpperCase());
 
 const displayPositionTitle = (positionTitle) => (
   POSITION_TITLE_DISPLAY[positionTitle] || positionTitle
@@ -842,7 +843,7 @@ export const getPositions = async (req, res) => {
         if (!existing) {
           map.set(up, trimmed);
         } else if (existing === up && trimmed !== up) {
-          map.set(up, trimmed); 
+          map.set(up, trimmed);
         }
       });
       return Array.from(map.values()).sort();
@@ -891,7 +892,7 @@ export const getPositions = async (req, res) => {
 
       const upReg = regionStr.toUpperCase();
       const upDiv = divStr.toUpperCase();
-      
+
       const bestReg = finalRegions.find(reg => reg.toUpperCase() === upReg) || regionStr;
       const bestDiv = finalDivisions.find(div => div.toUpperCase() === upDiv) || divStr;
 
@@ -1409,9 +1410,9 @@ const executeReassignment = async (client, official, effTs, justification, assig
         ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), ${effTs}, $9)
     `, [TLOid, official.first_name, official.last_name,
-        targetSlot?.position_title || official.position_title,
-        targetSlot?.office || official.office,
-        targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`, null]);
+      targetSlot?.position_title || official.position_title,
+      targetSlot?.office || official.office,
+      targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`, null]);
   } else {
     await client.query(`
     UPDATE third_level_official_masterlist
@@ -1624,8 +1625,8 @@ export const buildOfficialsFilterConditions = (query, user) => {
   }
 
   if (category === 'Third Level' || category === 'Third Level Officials') {
-    params.push(THIRD_LEVEL_POSITIONS);
-    conditions.push(`position_title = ANY($${params.length}) AND NOT (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
+    params.push(THIRD_LEVEL_POSITIONS_UPPER);
+    conditions.push(`UPPER(TRIM(COALESCE(position_title, ''))) = ANY($${params.length})`);
   } else if (category === 'Third Level (OIC)' || category === 'Officer in Charge') {
     params.push(THIRD_LEVEL_POSITIONS);
     conditions.push(`(position_title = ANY($${params.length}) OR designation = ANY($${params.length}) OR designation ILIKE '%OIC%') AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
@@ -1670,6 +1671,7 @@ export const getOfficials = async (req, res) => {
   processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
 
   const { page, limit, sortColumn, sortDirection, include_test_accounts } = req.query;
+  const isThirdLevelCategory = req.query.category === 'Third Level' || req.query.category === 'Third Level Officials';
   let query = `
     WITH RankedOfficials AS (
       SELECT 
@@ -1711,7 +1713,7 @@ export const getOfficials = async (req, res) => {
            AND t2."TLOid" != f."TLOid" 
       ) as concurrent_positions
     FROM RankedOfficials f 
-    WHERE f.rn = 1 
+    ${isThirdLevelCategory ? '' : 'WHERE f.rn = 1'}
   `;
 
   // Server-side sorting
@@ -1786,9 +1788,7 @@ export const getKpiSummary = async (req, res) => {
       SELECT 
         COUNT(*) FILTER (
           WHERE status = 'Active' 
-            AND COALESCE(is_oic, FALSE) = FALSE 
-            AND (designation NOT ILIKE '%OIC%' OR designation IS NULL) 
-            AND position_title = ANY($${params.length + 1})
+            AND UPPER(TRIM(COALESCE(position_title, ''))) = ANY($${params.length + 1})
         ) AS total_third_level,
         COUNT(*) FILTER (
           WHERE status = 'Vacant' 
@@ -1807,7 +1807,7 @@ export const getKpiSummary = async (req, res) => {
         END) AS total_concurrent
       FROM FilteredMasterlist;
     `;
-    params.push(THIRD_LEVEL_POSITIONS);
+    params.push(THIRD_LEVEL_POSITIONS_UPPER);
 
     const result = await pool.query(query, params);
 
@@ -1815,7 +1815,69 @@ export const getKpiSummary = async (req, res) => {
     const allRowsQuery = `
       SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
         m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
-        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case, m.is_testaccount
+        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case, m.is_testaccount,
+        (
+          -- Tab 1: Personal
+          (
+            m.first_name IS NOT NULL AND m.first_name != '' AND m.first_name != 'VACANT'
+            AND m.last_name IS NOT NULL AND m.last_name != ''
+            AND m.gender IS NOT NULL AND m.gender != ''
+            AND m.date_of_birth IS NOT NULL
+            AND m.civil_status IS NOT NULL AND m.civil_status != ''
+            AND m.photo_binary_id IS NOT NULL
+            AND m.employment_status IS NOT NULL AND m.employment_status != ''
+            AND m.region IS NOT NULL AND m.region != ''
+            AND m.position_title IS NOT NULL AND m.position_title != ''
+            AND m.appointment_date IS NOT NULL
+            AND (COALESCE(m.is_oic, FALSE) = FALSE OR (m.designation IS NOT NULL AND m.designation != ''))
+            AND m.permanent_address IS NOT NULL AND m.permanent_address != ''
+            AND (COALESCE(m.contact_details, '') != '' OR COALESCE(m.alt_contact_details_1, '') != '')
+          )
+          AND (
+            -- Tab 2: Eligibility
+            (m.ces_stage IS NOT NULL AND m.ces_stage != '')
+            OR m.emt_passer IS NOT NULL
+            OR EXISTS (SELECT 1 FROM tlo_eligibility_records er WHERE er.tlo_id = m."TLOid" AND (er.delete_flg != 'Yes' OR er.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 3: Experience
+            EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 4: Education
+            EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.tlo_id = m."TLOid")
+          )
+          AND (
+            -- Tab 5: Performance
+            m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != ''
+            AND m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
+          )
+          AND (
+            -- Tab 6: Trainings
+            EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 7: Achievements
+            EXISTS (SELECT 1 FROM tlo_accomplishment_records ar WHERE ar.tlo_id = m."TLOid" AND (ar.delete_flg != 'Yes' OR ar.delete_flg IS NULL))
+            OR (m.notable_achievements IS NOT NULL AND m.notable_achievements::text != '[]' AND m.notable_achievements::text != '')
+          )
+          AND (
+            -- Tab 8: Documents
+            m.pds_binary_id IS NOT NULL 
+            AND m.service_records_binary_id IS NOT NULL
+          )
+          AND (
+            -- Tab 9: Legal
+            m.pending_admin_case IS NOT NULL AND m.pending_admin_case != ''
+            AND m.guilty_admin_details IS NOT NULL AND m.guilty_admin_details != ''
+            AND m.criminally_charged_details IS NOT NULL AND m.criminally_charged_details != ''
+            AND m.convicted_crime_details IS NOT NULL AND m.convicted_crime_details != ''
+          )
+          AND (
+            -- Tab 10: Summary
+            m.dpa_consented_at IS NOT NULL
+          )
+        ) AS is_profile_complete
       FROM third_level_official_masterlist m
       WHERE m.status != 'For Approval' AND m.status != 'Rejected' AND m.is_testaccount = $1
       ORDER BY m."TLOid" ASC
@@ -2559,10 +2621,10 @@ export const reassignOfficial = async (req, res) => {
       [
         safeTloId,
         (current.position_title || '').toUpperCase() || '',
-        current.office   || null,
-        current.strand   || null,
+        current.office || null,
+        current.strand || null,
         current.division || null,
-        current.region   || null,
+        current.region || null,
         finalStart,
         finalEnd,
         userRemarks || `Reassigned to ${targetRegion} / ${targetDivision}`,
@@ -2584,7 +2646,7 @@ export const reassignOfficial = async (req, res) => {
       const now = new Date();
       const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
       const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
-      
+
       const filename = `reassignment_order_${safeTloId}_history_${historyId}_${timestamp}${ext}`;
       const folderRelative = path.join('uploads', safeTloId, 'reassignment_order');
       const folderAbsolute = path.join(process.cwd(), folderRelative);

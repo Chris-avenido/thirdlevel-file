@@ -246,8 +246,15 @@ const Home = () => {
 
   const pendingVerifications = applications.length;
 
+  const isProfileComplete = (o) => {
+    if (o.is_profile_complete !== undefined && o.is_profile_complete !== null) {
+      return Boolean(o.is_profile_complete);
+    }
+    return Boolean(o.photo_binary_id && o.pds_binary_id && o.contact_details);
+  };
+
   const incompleteProfiles = useMemo(() => {
-    return officials.filter(o => !o.photo_binary_id || !o.pds_binary_id || !o.contact_details).length;
+    return officials.filter(o => !isProfileComplete(o)).length;
   }, [officials]);
 
   const flaggedProfiles = useMemo(() => {
@@ -308,7 +315,7 @@ const Home = () => {
 
   const incompleteRegionBreakdown = useMemo(() => {
     const counts = {};
-    const incompleteOfficials = officials.filter(o => !o.photo_binary_id || !o.pds_binary_id || !o.contact_details);
+    const incompleteOfficials = officials.filter(o => !isProfileComplete(o));
     incompleteOfficials.forEach(o => {
       const region = getOfficialRegion(o);
       counts[region] = (counts[region] || 0) + 1;
@@ -418,12 +425,12 @@ const Home = () => {
     });
 
     // Incomplete active profiles
-    officials.filter(o => !o.photo_binary_id || !o.pds_binary_id || !o.contact_details).forEach(o => {
+    officials.filter(o => !isProfileComplete(o)).forEach(o => {
       queue.push({
         id: o.TLOid,
         email: o.email,
         name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
-        desc: `Missing valid PDS/Photo/Contact · ${o.office || 'Unassigned'}`,
+        desc: `Incomplete Profiling · ${o.office || 'Unassigned'}`,
         status: 'Action Required',
         badgeClass: 'risk',
         type: 'incomplete',
@@ -565,7 +572,7 @@ const Home = () => {
     // Category Filter
     if (activeQueueFilter !== 'all') {
       if (activeQueueFilter === 'incomplete') {
-        filtered = filtered.filter(o => o.status === 'Active' && (!o.photo_binary_id || !o.pds_binary_id || !o.contact_details));
+        filtered = filtered.filter(o => o.status === 'Active' && !isProfileComplete(o));
       } else if (activeQueueFilter === 'expiring') {
         filtered = filtered.filter(o => o.status === 'Active' && (o.pending_admin_case === 'Yes' || o.guilty_admin_details === 'Yes' || o.criminally_charged_details === 'Yes' || o.convicted_crime_details === 'Yes'));
       } else if (activeQueueFilter === 'retirees') {
@@ -612,7 +619,7 @@ const Home = () => {
     let appsToInclude = [];
     if (activeQueueFilter === 'all' || activeQueueFilter === 'pending') {
       appsToInclude = [...applications];
-      
+
       if (filterRegion !== 'All regions') {
         appsToInclude = appsToInclude.filter(a => getOfficialRegion(a) === filterRegion);
       }
@@ -620,7 +627,7 @@ const Home = () => {
         appsToInclude = appsToInclude.filter(a => getOfficialLevel(a) === filterLevel);
       }
       if (filterOffice !== 'All') {
-        appsToInclude = appsToInclude.filter(a => a.target_office === filterOffice || a.office === filterOffice); 
+        appsToInclude = appsToInclude.filter(a => a.target_office === filterOffice || a.office === filterOffice);
       }
       if (filterSearch.trim() !== '') {
         const lowerSearch = filterSearch.toLowerCase();
@@ -765,67 +772,67 @@ const Home = () => {
           <div className="dashboard-wrap mt-6">
             {/* FILTERS & SEARCH BAR */}
             <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm relative z-20 mt-[-24px] max-w-[1200px] mx-auto">
-                {/* SEARCH BAR */}
-                <div className="relative w-full xl:flex-[1.5] h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
-                    <input
-                        type="text"
-                        value={filterSearch}
-                        onChange={(e) => setFilterSearch(e.target.value)}
-                        placeholder="Search name or email..."
-                        className="w-full h-full bg-transparent py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none placeholder:text-[#08315F]/50 transition-colors"
-                    />
+              {/* SEARCH BAR */}
+              <div className="relative w-full xl:flex-[1.5] h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
+                <input
+                  type="text"
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                  placeholder="Search name or email..."
+                  className="w-full h-full bg-transparent py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none placeholder:text-[#08315F]/50 transition-colors"
+                />
+              </div>
+
+              {/* DROPDOWNS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
+                {/* Region Dropdown */}
+                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                  <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                    <option value="All regions">All Regions</option>
+                    {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                 </div>
 
-                {/* DROPDOWNS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
-                    {/* Region Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                            <option value="All regions">All Regions</option>
-                            {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
-                                <option key={r} value={r}>{r}</option>
-                            ))}
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
-
-                    {/* Level Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                            <option value="All levels">All Levels</option>
-                            <option value="Third Level">Third Level</option>
-                            <option value="Division Chief">Division Chief</option>
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
-
-                    {/* Office Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                            <option value="All">All Offices</option>
-                            {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
-                                <option key={o} value={o}>{o}</option>
-                            ))}
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
+                {/* Level Dropdown */}
+                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                  <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                    <option value="All levels">All Levels</option>
+                    <option value="Third Level">Third Level</option>
+                    <option value="Division Chief">Division Chief</option>
+                  </select>
+                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                 </div>
 
-                {/* Clear Button */}
-                <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-                    <button
-                        onClick={() => {
-                            setFilterSearch('');
-                            setFilterRegion('All regions');
-                            setFilterLevel('All levels');
-                            setFilterOffice('All');
-                        }}
-                        className="h-[38px] px-8 w-full xl:w-auto bg-[#075985] text-white rounded-full font-black text-[11px] tracking-widest uppercase hover:bg-[#0369a1] transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
-                    >
-                        Clear
-                    </button>
+                {/* Office Dropdown */}
+                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                  <select value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                    <option value="All">All Offices</option>
+                    {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                 </div>
+              </div>
+
+              {/* Clear Button */}
+              <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                <button
+                  onClick={() => {
+                    setFilterSearch('');
+                    setFilterRegion('All regions');
+                    setFilterLevel('All levels');
+                    setFilterOffice('All');
+                  }}
+                  className="h-[38px] px-8 w-full xl:w-auto bg-[#075985] text-white rounded-full font-black text-[11px] tracking-widest uppercase hover:bg-[#0369a1] transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
 
             <section className="kpis">
@@ -984,8 +991,8 @@ const Home = () => {
                   <div>
                     <h3>Activity Logs</h3>
                     <p>
-                      {activeQueueFilter === 'all' && filterRegion === 'All regions' && filterLevel === 'All levels' && filterOffice === 'All' && filterSearch === '' 
-                        ? "Recent profile updates and creations." 
+                      {activeQueueFilter === 'all' && filterRegion === 'All regions' && filterLevel === 'All levels' && filterOffice === 'All' && filterSearch === ''
+                        ? "Recent profile updates and creations."
                         : "Showing filtered recent activity."}
                     </p>
                   </div>
