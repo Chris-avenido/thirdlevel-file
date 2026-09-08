@@ -31,7 +31,8 @@ export const bulkProcessDirectory = async (req, res) => {
     await client.query('BEGIN');
     await ensureColumns(client);
 
-    const allMasterRes = await client.query('SELECT * FROM third_level_official_masterlist');
+    const isTest = Boolean(req.user?.is_testaccount);
+    const allMasterRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE is_testaccount = $1', [isTest]);
     const allMaster = allMasterRes.rows;
 
     const maxTloRes = await client.query(`
@@ -153,22 +154,22 @@ export const bulkProcessDirectory = async (req, res) => {
           "TLOid" text, first_name text, last_name text, position_title text,
           office text, division text, strand text, region text, designation text, contact_details text
         )
-        WHERE m."TLOid" = c."TLOid"
-      `, [JSON.stringify(toUpdate)]);
+        WHERE m."TLOid" = c."TLOid" AND m.is_testaccount = $2
+      `, [JSON.stringify(toUpdate), isTest]);
     }
 
     if (toInsert.length > 0) {
       await client.query(`
         INSERT INTO third_level_official_masterlist (
-          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, status, created_at, updated_at
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, status, is_testaccount, created_at, updated_at
         )
         SELECT 
-          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, 'Active', NOW(), NOW()
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, 'Active', $2, NOW(), NOW()
         FROM json_to_recordset($1::json) AS c(
           "TLOid" text, first_name text, last_name text, position_title text,
           office text, division text, strand text, region text, designation text, email text, contact_details text
         )
-      `, [JSON.stringify(toInsert)]);
+      `, [JSON.stringify(toInsert), isTest]);
     }
 
     if (toHistory.length > 0) {

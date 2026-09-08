@@ -94,6 +94,7 @@ const THIRD_LEVEL_POSITIONS = [
   'SDS',
   'ASDS'
 ];
+const THIRD_LEVEL_POSITIONS_UPPER = THIRD_LEVEL_POSITIONS.map(p => p.toUpperCase());
 
 const displayPositionTitle = (positionTitle) => (
   POSITION_TITLE_DISPLAY[positionTitle] || positionTitle
@@ -195,10 +196,21 @@ export const initializeProfile = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const normalizedEmailInit = email.toLowerCase().trim();
+
+    let isTest = false;
+    if (req.user?.is_testaccount !== undefined) {
+      isTest = Boolean(req.user.is_testaccount);
+    } else {
+      const userCheck = await client.query('SELECT is_testaccount FROM tlo_users WHERE LOWER(email) = $1', [normalizedEmailInit]);
+      if (userCheck.rows.length > 0) {
+        isTest = Boolean(userCheck.rows[0].is_testaccount);
+      }
+    }
 
     const checkRes = await client.query(
-      'SELECT application_id, app_TLOid FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1) LIMIT 1',
-      [email]
+      'SELECT application_id, app_TLOid FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2 LIMIT 1',
+      [normalizedEmailInit, isTest]
     );
 
     if (checkRes.rows.length > 0) {
@@ -209,13 +221,12 @@ export const initializeProfile = async (req, res) => {
     const countRes = await client.query('SELECT COUNT(*) FROM third_level_officials_profiling_application');
     const count = parseInt(countRes.rows[0].count) + 1;
     const appTloId = `APP-2026-${String(count).padStart(4, '0')}`;
-    const normalizedEmailInit = email.toLowerCase().trim();
 
     let finalFirstName = first_name;
     let finalLastName = last_name;
 
     if (!finalFirstName || !finalLastName) {
-      const masterCheck = await client.query('SELECT first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmailInit]);
+      const masterCheck = await client.query('SELECT first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND is_testaccount = $2', [normalizedEmailInit, isTest]);
       if (masterCheck.rows.length > 0) {
         finalFirstName = finalFirstName || masterCheck.rows[0].first_name;
         finalLastName = finalLastName || masterCheck.rows[0].last_name;
@@ -224,9 +235,9 @@ export const initializeProfile = async (req, res) => {
 
     await client.query(`
       INSERT INTO third_level_officials_profiling_application (
-          application_id, app_TLOid, first_name, last_name, email, application_status, created_at, updated_at
-      ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, NOW(), NOW())
-    `, [appTloId, finalFirstName || '', finalLastName || '', normalizedEmailInit]);
+          application_id, app_TLOid, first_name, last_name, email, application_status, is_testaccount, created_at, updated_at
+      ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, $5, NOW(), NOW())
+    `, [appTloId, finalFirstName || '', finalLastName || '', normalizedEmailInit, isTest]);
 
     await client.query('COMMIT');
     res.json({ success: true, TLOid: appTloId });
@@ -241,12 +252,13 @@ export const initializeProfile = async (req, res) => {
 export const getByEmail = async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ error: 'email query param required' });
+  const isTest = Boolean(req.user?.is_testaccount);
   try {
     const masterRes = await pool.query(`
       SELECT * FROM third_level_official_masterlist
-      WHERE LOWER(email) = LOWER($1) AND status != 'Inactive'
+      WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2
       LIMIT 1
-    `, [email]);
+    `, [email, isTest]);
 
     if (masterRes.rows.length > 0) {
       const row = masterRes.rows[0];
@@ -275,9 +287,9 @@ export const getByEmail = async (req, res) => {
 
     const stagingRes = await pool.query(`
       SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application
-      WHERE LOWER(email) = LOWER($1) AND application_status IS DISTINCT FROM 'approved'
+      WHERE LOWER(email) = LOWER($1) AND application_status IS DISTINCT FROM 'approved' AND is_testaccount = $2
       ORDER BY created_at DESC LIMIT 1
-    `, [email]);
+    `, [email, isTest]);
 
     if (stagingRes.rows.length > 0) {
       const row = stagingRes.rows[0];
@@ -345,16 +357,23 @@ export const uploadDocument = async (req, res) => {
     const columnName = docMap[docType];
     if (!columnName) throw new Error('Invalid document type');
 
+    const isTest = Boolean(req.user?.is_testaccount);
+    let upRes;
     if (isMasterlist) {
-      await client.query(
-        `UPDATE third_level_official_masterlist SET ${columnName} = $1, updated_at = NOW() WHERE "TLOid" = $2`,
-        [binary_id, TLOid]
+      upRes = await client.query(
+        `UPDATE third_level_official_masterlist SET ${columnName} = $1, updated_at = NOW() WHERE "TLOid" = $2 AND is_testaccount = $3`,
+        [binary_id, TLOid, isTest]
       );
     } else {
-      await client.query(
-        `UPDATE third_level_officials_profiling_application SET ${columnName} = $1, updated_at = NOW() WHERE app_TLOid = $2`,
-        [binary_id, TLOid]
+      upRes = await client.query(
+        `UPDATE third_level_officials_profiling_application SET ${columnName} = $1, updated_at = NOW() WHERE app_TLOid = $2 AND is_testaccount = $3`,
+        [binary_id, TLOid, isTest]
       );
+    }
+
+    if (upRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Profile not found or access denied' });
     }
 
     await client.query('COMMIT');
@@ -424,14 +443,15 @@ export const uploadDocument = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   const { TLOid } = req.params;
+  const isTest = Boolean(req.user?.is_testaccount);
   const isMasterlist = !TLOid.startsWith('APP-') && !(TLOid.startsWith('TLO-') && TLOid.split('-').length > 2);
   try {
     await ensureOicColumn();
     let result;
     if (isMasterlist) {
-      result = await pool.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+      result = await pool.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
     } else {
-      result = await pool.query('SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application WHERE app_TLOid = $1', [TLOid]);
+      result = await pool.query('SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application WHERE app_TLOid = $1 AND is_testaccount = $2', [TLOid, isTest]);
     }
     if (result.rows.length === 0) return res.status(404).json({ error: 'Profile not found' });
     const row = result.rows[0];
@@ -700,7 +720,8 @@ export const updateProfile = async (req, res) => {
     }
 
     if (updates.length > 0) {
-      values.push(new Date(), TLOid);
+      const isTest = Boolean(req.user?.is_testaccount);
+      values.push(new Date(), TLOid, isTest);
 
       if (isMasterlist && req.user?.email) {
         await client.query(`SET LOCAL "app.current_user" = '${req.user.email.replace(/'/g, "''")}'`);
@@ -713,10 +734,15 @@ export const updateProfile = async (req, res) => {
         valuesCount: values.length
       });
 
-      await client.query(
-        `UPDATE ${table} SET ${updates.join(', ')}, updated_at = $${values.length - 1} WHERE ${idCol} = $${values.length}`,
+      const updateRes = await client.query(
+        `UPDATE ${table} SET ${updates.join(', ')}, updated_at = $${values.length - 2} WHERE ${idCol} = $${values.length - 1} AND is_testaccount = $${values.length}`,
         values
       );
+
+      if (updateRes.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Profile not found or access denied' });
+      }
     }
 
     // Phase 3: Dual-write to normalized child tables (inside existing transaction)
@@ -744,11 +770,12 @@ export const submitApplication = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const isTest = Boolean(req.user?.is_testaccount);
     const result = await client.query(`
       UPDATE third_level_officials_profiling_application
       SET application_status = 'applied', "target_TLOid" = $1, submitted_at = NOW(), updated_at = NOW()
-      WHERE LOWER(email) = LOWER($2) AND application_status IS DISTINCT FROM 'approved'
-    `, [target_TLOid || null, userEmail]);
+      WHERE LOWER(email) = LOWER($2) AND application_status IS DISTINCT FROM 'approved' AND is_testaccount = $3
+    `, [target_TLOid || null, userEmail, isTest]);
 
     if (result.rowCount === 0) {
       await client.query('ROLLBACK');
@@ -766,6 +793,7 @@ export const submitApplication = async (req, res) => {
 };
 
 export const getPositions = async (req, res) => {
+  const isTest = Boolean(req.user?.is_testaccount);
   try {
     const posResult = await pool.query(`
       SELECT DISTINCT position_title 
@@ -773,34 +801,37 @@ export const getPositions = async (req, res) => {
       WHERE position_title IS NOT NULL 
         AND position_title != '' 
         AND position_title NOT ILIKE 'N/A'
+        AND is_testaccount = $1
       ORDER BY position_title
-    `);
+    `, [isTest]);
     const desigResult = await pool.query(`
       SELECT DISTINCT designation 
       FROM third_level_official_masterlist 
       WHERE designation IS NOT NULL 
         AND designation != '' 
         AND designation NOT ILIKE 'N/A'
+        AND is_testaccount = $1
       ORDER BY designation
-    `);
+    `, [isTest]);
     const strandResult = await pool.query(`
-      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' ORDER BY strand
-    `);
+      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' AND is_testaccount = $1 ORDER BY strand
+    `, [isTest]);
     const regionResult = await pool.query(`
-      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' ORDER BY region
-    `);
+      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' AND is_testaccount = $1 ORDER BY region
+    `, [isTest]);
     const officeResult = await pool.query(`
-      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' ORDER BY office
-    `);
+      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' AND is_testaccount = $1 ORDER BY office
+    `, [isTest]);
     const divisionResult = await pool.query(`
-      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' ORDER BY division
-    `);
+      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' AND is_testaccount = $1 ORDER BY division
+    `, [isTest]);
     const regionDivisionResult = await pool.query(`
       SELECT DISTINCT region, division 
       FROM third_level_official_masterlist 
       WHERE division IS NOT NULL AND division != '' 
         AND region IS NOT NULL AND region != ''
-    `);
+        AND is_testaccount = $1
+    `, [isTest]);
 
     const deduplicate = (list) => {
       const map = new Map();
@@ -812,7 +843,7 @@ export const getPositions = async (req, res) => {
         if (!existing) {
           map.set(up, trimmed);
         } else if (existing === up && trimmed !== up) {
-          map.set(up, trimmed); 
+          map.set(up, trimmed);
         }
       });
       return Array.from(map.values()).sort();
@@ -861,7 +892,7 @@ export const getPositions = async (req, res) => {
 
       const upReg = regionStr.toUpperCase();
       const upDiv = divStr.toUpperCase();
-      
+
       const bestReg = finalRegions.find(reg => reg.toUpperCase() === upReg) || regionStr;
       const bestDiv = finalDivisions.find(div => div.toUpperCase() === upDiv) || divStr;
 
@@ -902,6 +933,8 @@ export const getPositions = async (req, res) => {
 export const getVacancies = async (req, res) => {
   try {
     const { region, division, office, strand, search } = req.query;
+    const isTest = Boolean(req.user?.is_testaccount);
+    const params = [isTest];
 
     // A position is considered vacant when either:
     // (1) item_number exists in tlo_items with no matching assignment record at all, OR
@@ -923,12 +956,11 @@ export const getVacancies = async (req, res) => {
         FROM tlo_assignments
         ORDER BY item_number, id DESC
       ) a ON a.item_number = i.item_number
-      LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number
+      LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $1
       WHERE a.item_number IS NULL
          OR a.status = 'Vacant'
     `;
 
-    const params = [];
     if (office && office !== 'All') {
       params.push(office);
       query += ` AND (COALESCE(a.office, m.office, '') = $${params.length})`;
@@ -965,12 +997,13 @@ export const getApplications = async (req, res) => {
 
   try {
     await ensureOicColumn();
+    const isTest = Boolean(req.user?.is_testaccount);
     const { search, strand, position } = req.query;
     let query = `
       WITH ActivePositions AS (
         SELECT LOWER(email) as low_email, position_title, office
         FROM third_level_official_masterlist
-        WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+        WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
       )
       SELECT 
         a.*, 
@@ -986,11 +1019,11 @@ export const getApplications = async (req, res) => {
           WHERE ap.low_email = LOWER(a.email)
         ) as concurrent_positions
       FROM third_level_officials_profiling_application a
-      LEFT JOIN third_level_official_masterlist m ON LOWER(a.email) = LOWER(m.email)
-      LEFT JOIN third_level_official_masterlist v ON a."target_TLOid" = v."TLOid"
-      WHERE a.application_status = 'applied'
+      LEFT JOIN third_level_official_masterlist m ON LOWER(a.email) = LOWER(m.email) AND m.is_testaccount = a.is_testaccount
+      LEFT JOIN third_level_official_masterlist v ON a."target_TLOid" = v."TLOid" AND v.is_testaccount = a.is_testaccount
+      WHERE a.application_status = 'applied' AND a.is_testaccount = $1
     `;
-    const params = [];
+    const params = [isTest];
 
     const userRole = req.user.role;
     const isRO = userRole === 'Regional Office' || userRole === 'RO_HRMO' || userRole === 'RO HRMO';
@@ -1047,19 +1080,27 @@ export const processApplication = async (req, res) => {
     await client.query('BEGIN');
     await ensureOicColumn(client);
 
-    const appRes = await client.query('SELECT * FROM third_level_officials_profiling_application WHERE app_TLOid = $1', [app_TLOid]);
+    const isTest = Boolean(req.user?.is_testaccount);
+    const appRes = await client.query('SELECT * FROM third_level_officials_profiling_application WHERE app_TLOid = $1 AND is_testaccount = $2', [app_TLOid, isTest]);
     applicantData = appRes.rows[0];
+    if (!applicantData) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Application not found' });
+    }
 
     if (action === 'reject') {
       await client.query(`
         UPDATE third_level_officials_profiling_application 
         SET application_status = 'disapproved', denial_reason = $1, updated_at = NOW() 
-        WHERE app_TLOid = $2
-      `, [denial_reason || 'No reason provided', app_TLOid]);
+        WHERE app_TLOid = $2 AND is_testaccount = $3
+      `, [denial_reason || 'No reason provided', app_TLOid, isTest]);
     } else if (action === 'approve') {
       const applicant = applicantData;
       if (!applicant) throw new Error('Applicant not found');
       if (!applicant.target_TLOid) throw new Error('No target vacancy associated with this application');
+
+      const targetCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [applicant.target_TLOid, isTest]);
+      if (targetCheck.rows.length === 0) throw new Error('Target vacancy not found in environment');
 
       const masterlistColsRes = await client.query(`
         SELECT column_name 
@@ -1084,23 +1125,23 @@ export const processApplication = async (req, res) => {
         return val;
       });
 
-      values.push('Active', applicant.target_TLOid);
+      values.push('Active', applicant.target_TLOid, isTest);
 
       await client.query(`
         UPDATE third_level_official_masterlist 
-        SET ${sets.join(', ')}, status = $${values.length - 1}, updated_at = NOW()
-        WHERE "TLOid" = $${values.length}
+        SET ${sets.join(', ')}, status = $${values.length - 2}, updated_at = NOW()
+        WHERE "TLOid" = $${values.length - 1} AND is_testaccount = $${values.length}
       `, values);
 
       await client.query(`
         UPDATE third_level_officials_profiling_application 
         SET application_status = 'approved', updated_at = NOW() 
-        WHERE app_TLOid = $1
-      `, [app_TLOid]);
+        WHERE app_TLOid = $1 AND is_testaccount = $2
+      `, [app_TLOid, isTest]);
 
       await client.query(`
-        UPDATE tlo_users SET role = 'Third Level Official' WHERE LOWER(email) = $1 AND role = 'Third Level Applicant'
-      `, [applicant.email.toLowerCase().trim()]);
+        UPDATE tlo_users SET role = 'Third Level Official' WHERE LOWER(email) = $1 AND role = 'Third Level Applicant' AND is_testaccount = $2
+      `, [applicant.email.toLowerCase().trim(), isTest]);
 
       // Phase 3: Clone normalized child table rows from staging → masterlist
       const approvalUpdatedBy = req.user?.email || null;
@@ -1155,46 +1196,49 @@ export const processRegistration = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const mlRes = await client.query('SELECT email, first_name, last_name, position_title, office FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
-    if (mlRes.rows.length > 0) {
-      targetOfficial = mlRes.rows[0];
+    const isTest = Boolean(req.user?.is_testaccount);
+    const mlRes = await client.query('SELECT email, first_name, last_name, position_title, office FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
+    if (mlRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Official not found' });
     }
+    targetOfficial = mlRes.rows[0];
 
     if (action === 'reject') {
       await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'Rejected', updated_at = NOW() 
-        WHERE "TLOid" = $1 AND status = 'For Approval'
-      `, [TLOid]);
+        WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2
+      `, [TLOid, isTest]);
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
-          UPDATE tlo_users SET registration_status = 'Rejected' WHERE LOWER(email) = $1
-        `, [targetOfficial.email.toLowerCase()]);
+          UPDATE tlo_users SET registration_status = 'Rejected' WHERE LOWER(email) = $1 AND is_testaccount = $2
+        `, [targetOfficial.email.toLowerCase(), isTest]);
       }
     } else if (action === 'approve') {
       await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'Active', updated_at = NOW() 
-        WHERE "TLOid" = $1 AND status = 'For Approval'
-      `, [TLOid]);
+        WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2
+      `, [TLOid, isTest]);
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
-          UPDATE tlo_users SET registration_status = 'Approved' WHERE LOWER(email) = $1
-        `, [targetOfficial.email.toLowerCase()]);
+          UPDATE tlo_users SET registration_status = 'Approved' WHERE LOWER(email) = $1 AND is_testaccount = $2
+        `, [targetOfficial.email.toLowerCase(), isTest]);
       }
     } else if (action === 'retrieve') {
       await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'For Approval', updated_at = NOW() 
-        WHERE "TLOid" = $1 AND status = 'Rejected'
-      `, [TLOid]);
+        WHERE "TLOid" = $1 AND status = 'Rejected' AND is_testaccount = $2
+      `, [TLOid, isTest]);
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
-          UPDATE tlo_users SET registration_status = 'For Approval' WHERE LOWER(email) = $1
-        `, [targetOfficial.email.toLowerCase()]);
+          UPDATE tlo_users SET registration_status = 'For Approval' WHERE LOWER(email) = $1 AND is_testaccount = $2
+        `, [targetOfficial.email.toLowerCase(), isTest]);
       }
     }
 
@@ -1270,8 +1314,8 @@ const executeReassignment = async (client, official, effTs, justification, assig
       UPDATE third_level_official_masterlist
       SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
           status = 'Active', updated_at = NOW(), effectivity_date = ${effTs}
-      WHERE "TLOid" = $5
-    `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid]);
+      WHERE "TLOid" = $5 AND is_testaccount = $6
+    `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid, Boolean(official.is_testaccount)]);
 
     await client.query(`
       INSERT INTO third_level_officials_updates
@@ -1293,9 +1337,9 @@ const executeReassignment = async (client, official, effTs, justification, assig
          FROM tlo_assignments
          ORDER BY item_number, id DESC
        ) a ON a.item_number = i.item_number
-       LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number
+       LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $2
        WHERE i.item_number = $1`,
-      [target_TLOid]
+      [target_TLOid, Boolean(official.is_testaccount)]
     );
     const targetSlot = targetItemRes.rows[0];
 
@@ -1350,14 +1394,15 @@ const executeReassignment = async (client, official, effTs, justification, assig
       UPDATE third_level_official_masterlist
       SET region = $1, division = $2, office = $3, strand = $4,
           designation = $5, appointment_date = ${effTs}, updated_at = NOW()
-      WHERE "TLOid" = $6
+      WHERE "TLOid" = $6 AND is_testaccount = $7
     `, [
       targetSlot?.region || official.region,
       targetSlot?.division || official.division,
       targetSlot?.office || official.office,
       targetSlot?.strand || official.strand,
       targetSlot?.position_title || official.position_title,
-      TLOid
+      TLOid,
+      Boolean(official.is_testaccount)
     ]);
 
     await client.query(`
@@ -1365,15 +1410,15 @@ const executeReassignment = async (client, official, effTs, justification, assig
         ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), ${effTs}, $9)
     `, [TLOid, official.first_name, official.last_name,
-        targetSlot?.position_title || official.position_title,
-        targetSlot?.office || official.office,
-        targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`, null]);
+      targetSlot?.position_title || official.position_title,
+      targetSlot?.office || official.office,
+      targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`, null]);
   } else {
     await client.query(`
     UPDATE third_level_official_masterlist
     SET updated_at = NOW(), effectivity_date = ${effTs}
-    WHERE "TLOid" = $1
-  `, [TLOid]);
+    WHERE "TLOid" = $1 AND is_testaccount = $2
+  `, [TLOid, Boolean(official.is_testaccount)]);
   }
 };
 
@@ -1464,6 +1509,10 @@ export const triggerCron = async (req, res) => {
 export const buildOfficialsFilterConditions = (query, user) => {
   const params = [];
   const conditions = [];
+
+  const isTestUser = Boolean(user?.is_testaccount);
+  params.push(isTestUser);
+  conditions.push(`m.is_testaccount = $${params.length}`);
 
   const { search, status, strand, category, position, designation, office, is_oic, region, division, name, position_title, level } = query;
 
@@ -1576,8 +1625,8 @@ export const buildOfficialsFilterConditions = (query, user) => {
   }
 
   if (category === 'Third Level' || category === 'Third Level Officials') {
-    params.push(THIRD_LEVEL_POSITIONS);
-    conditions.push(`position_title = ANY($${params.length}) AND NOT (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
+    params.push(THIRD_LEVEL_POSITIONS_UPPER);
+    conditions.push(`UPPER(TRIM(COALESCE(position_title, ''))) = ANY($${params.length})`);
   } else if (category === 'Third Level (OIC)' || category === 'Officer in Charge') {
     params.push(THIRD_LEVEL_POSITIONS);
     conditions.push(`(position_title = ANY($${params.length}) OR designation = ANY($${params.length}) OR designation ILIKE '%OIC%') AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
@@ -1590,10 +1639,10 @@ export const buildOfficialsFilterConditions = (query, user) => {
   } else if (category === 'OIC / Chiefs') {
     conditions.push(`(COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'Concurrent Positions' || category === 'Concurrent Roles' || query.concurrent === 'true' || query.is_concurrent === 'true') {
-    conditions.push(`status = 'Active' AND email IS NOT NULL AND email != '' AND LOWER(email) IN (
+    conditions.push(`m.status = 'Active' AND m.email IS NOT NULL AND m.email != '' AND LOWER(m.email) IN (
       SELECT LOWER(email) 
       FROM third_level_official_masterlist 
-      WHERE status = 'Active' AND email IS NOT NULL AND email != '' 
+      WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
       GROUP BY LOWER(email) 
       HAVING COUNT(*) > 1
     )`);
@@ -1622,6 +1671,7 @@ export const getOfficials = async (req, res) => {
   processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
 
   const { page, limit, sortColumn, sortDirection, include_test_accounts } = req.query;
+  const isThirdLevelCategory = req.query.category === 'Third Level' || req.query.category === 'Third Level Officials';
   let query = `
     WITH RankedOfficials AS (
       SELECT 
@@ -1651,7 +1701,7 @@ export const getOfficials = async (req, res) => {
     ), ActivePositions AS (
       SELECT LOWER(email) as low_email, "TLOid", position_title, office
       FROM third_level_official_masterlist
-      WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+      WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
     )
     SELECT 
       f.*,
@@ -1663,7 +1713,7 @@ export const getOfficials = async (req, res) => {
            AND t2."TLOid" != f."TLOid" 
       ) as concurrent_positions
     FROM RankedOfficials f 
-    WHERE f.rn = 1 
+    ${isThirdLevelCategory ? '' : 'WHERE f.rn = 1'}
   `;
 
   // Server-side sorting
@@ -1713,6 +1763,7 @@ export const getOfficials = async (req, res) => {
 export const getKpiSummary = async (req, res) => {
   try {
     await ensureOicColumn();
+    const isTest = Boolean(req.user?.is_testaccount);
     const { params, conditions } = buildOfficialsFilterConditions(req.query, req.user);
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -1720,7 +1771,7 @@ export const getKpiSummary = async (req, res) => {
       WITH ActivePositions AS (
         SELECT LOWER(email) as low_email, "TLOid", position_title, office
         FROM third_level_official_masterlist
-        WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+        WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
       ),
       FilteredMasterlist AS (
         SELECT 
@@ -1737,9 +1788,7 @@ export const getKpiSummary = async (req, res) => {
       SELECT 
         COUNT(*) FILTER (
           WHERE status = 'Active' 
-            AND COALESCE(is_oic, FALSE) = FALSE 
-            AND (designation NOT ILIKE '%OIC%' OR designation IS NULL) 
-            AND position_title = ANY($${params.length + 1})
+            AND UPPER(TRIM(COALESCE(position_title, ''))) = ANY($${params.length + 1})
         ) AS total_third_level,
         COUNT(*) FILTER (
           WHERE status = 'Vacant' 
@@ -1758,7 +1807,7 @@ export const getKpiSummary = async (req, res) => {
         END) AS total_concurrent
       FROM FilteredMasterlist;
     `;
-    params.push(THIRD_LEVEL_POSITIONS);
+    params.push(THIRD_LEVEL_POSITIONS_UPPER);
 
     const result = await pool.query(query, params);
 
@@ -1766,12 +1815,74 @@ export const getKpiSummary = async (req, res) => {
     const allRowsQuery = `
       SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
         m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
-        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case
+        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case, m.is_testaccount,
+        (
+          -- Tab 1: Personal
+          (
+            m.first_name IS NOT NULL AND m.first_name != '' AND m.first_name != 'VACANT'
+            AND m.last_name IS NOT NULL AND m.last_name != ''
+            AND m.gender IS NOT NULL AND m.gender != ''
+            AND m.date_of_birth IS NOT NULL
+            AND m.civil_status IS NOT NULL AND m.civil_status != ''
+            AND m.photo_binary_id IS NOT NULL
+            AND m.employment_status IS NOT NULL AND m.employment_status != ''
+            AND m.region IS NOT NULL AND m.region != ''
+            AND m.position_title IS NOT NULL AND m.position_title != ''
+            AND m.appointment_date IS NOT NULL
+            AND (COALESCE(m.is_oic, FALSE) = FALSE OR (m.designation IS NOT NULL AND m.designation != ''))
+            AND m.permanent_address IS NOT NULL AND m.permanent_address != ''
+            AND (COALESCE(m.contact_details, '') != '' OR COALESCE(m.alt_contact_details_1, '') != '')
+          )
+          AND (
+            -- Tab 2: Eligibility
+            (m.ces_stage IS NOT NULL AND m.ces_stage != '')
+            OR m.emt_passer IS NOT NULL
+            OR EXISTS (SELECT 1 FROM tlo_eligibility_records er WHERE er.tlo_id = m."TLOid" AND (er.delete_flg != 'Yes' OR er.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 3: Experience
+            EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 4: Education
+            EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.tlo_id = m."TLOid")
+          )
+          AND (
+            -- Tab 5: Performance
+            m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != ''
+            AND m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
+          )
+          AND (
+            -- Tab 6: Trainings
+            EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 7: Achievements
+            EXISTS (SELECT 1 FROM tlo_accomplishment_records ar WHERE ar.tlo_id = m."TLOid" AND (ar.delete_flg != 'Yes' OR ar.delete_flg IS NULL))
+            OR (m.notable_achievements IS NOT NULL AND m.notable_achievements::text != '[]' AND m.notable_achievements::text != '')
+          )
+          AND (
+            -- Tab 8: Documents
+            m.pds_binary_id IS NOT NULL 
+            AND m.service_records_binary_id IS NOT NULL
+          )
+          AND (
+            -- Tab 9: Legal
+            m.pending_admin_case IS NOT NULL AND m.pending_admin_case != ''
+            AND m.guilty_admin_details IS NOT NULL AND m.guilty_admin_details != ''
+            AND m.criminally_charged_details IS NOT NULL AND m.criminally_charged_details != ''
+            AND m.convicted_crime_details IS NOT NULL AND m.convicted_crime_details != ''
+          )
+          AND (
+            -- Tab 10: Summary
+            m.dpa_consented_at IS NOT NULL
+          )
+        ) AS is_profile_complete
       FROM third_level_official_masterlist m
-      WHERE m.status != 'For Approval' AND m.status != 'Rejected'
+      WHERE m.status != 'For Approval' AND m.status != 'Rejected' AND m.is_testaccount = $1
       ORDER BY m."TLOid" ASC
     `;
-    const allRows = await pool.query(allRowsQuery);
+    const allRows = await pool.query(allRowsQuery, [isTest]);
 
     res.json({
       success: true,
@@ -1786,6 +1897,15 @@ export const getKpiSummary = async (req, res) => {
 export const getLastVacateUpdate = async (req, res) => {
   try {
     const { TLOid } = req.params;
+    const isTest = Boolean(req.user?.is_testaccount);
+    const officialCheck = await pool.query(
+      'SELECT 1 FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2',
+      [TLOid, isTest]
+    );
+    if (officialCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Official not found' });
+    }
+
     const result = await pool.query(`
       SELECT vacate_reason, remarks 
       FROM third_level_officials_updates 
@@ -1800,7 +1920,15 @@ export const getLastVacateUpdate = async (req, res) => {
 
 export const getCareerPath = async (req, res) => {
   const { TLOid } = req.params;
+  const isTest = Boolean(req.user?.is_testaccount);
   try {
+    const officialCheck = await pool.query(
+      'SELECT 1 FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2',
+      [TLOid, isTest]
+    );
+    if (officialCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Official not found' });
+    }
     const result = await pool.query(`
       SELECT
         u.position_title,
@@ -1836,19 +1964,23 @@ export const getPositionIncumbents = async (req, res) => {
   }
 
   try {
+    const isTest = Boolean(req.user?.is_testaccount);
     const isOfficeProvided = office && office !== 'null' && office !== 'undefined' && office !== '';
     const positionTitleVariants = getPositionTitleVariants(position_title);
-    const params = isOfficeProvided ? [positionTitleVariants, office] : [positionTitleVariants];
-    const officeCondition = isOfficeProvided ? 'AND (office = $2 OR office IS NULL)' : '';
+    const params = isOfficeProvided ? [positionTitleVariants, office, isTest] : [positionTitleVariants, isTest];
+    const officeCondition = isOfficeProvided ? 'AND (m_inner.office = $2 OR m_inner.office IS NULL)' : '';
+    const officeCondUpdates = isOfficeProvided ? 'AND (u.office = $2 OR u.office IS NULL)' : '';
+    const testParamIdx = isOfficeProvided ? '$3' : '$2';
 
     const query = `
       WITH AllIncumbents AS (
         SELECT 
-          0 as id, "TLOid", first_name, last_name, strand, office, 'Current' as remarks, updated_at as tenure_date,
+          0 as id, m_inner."TLOid", m_inner.first_name, m_inner.last_name, m_inner.strand, m_inner.office, 'Current' as remarks, m_inner.updated_at as tenure_date,
           1 as is_current
-        FROM third_level_official_masterlist
-        WHERE position_title = ANY($1) ${officeCondition}
-          AND first_name IS NOT NULL AND first_name != 'VACANT'
+        FROM third_level_official_masterlist m_inner
+        WHERE m_inner.position_title = ANY($1) ${officeCondition}
+          AND m_inner.first_name IS NOT NULL AND m_inner.first_name != 'VACANT'
+          AND m_inner.is_testaccount = ${testParamIdx}
         
         UNION ALL
         
@@ -1856,14 +1988,15 @@ export const getPositionIncumbents = async (req, res) => {
           0 as id, u."TLOid", u.first_name, u.last_name, u.strand, u.office, u.remarks, u.updated_at as tenure_date,
           0 as is_current
         FROM third_level_officials_updates u
-        WHERE u.position_title = ANY($1) ${officeCondition}
+        JOIN third_level_official_masterlist mu ON mu."TLOid" = u."TLOid" AND mu.is_testaccount = ${testParamIdx}
+        WHERE u.position_title = ANY($1) ${officeCondUpdates}
           AND u.first_name IS NOT NULL AND u.first_name != 'VACANT'
       ),
       RankedIncumbents AS (
         SELECT ai.*, m.appointment_date,
           ROW_NUMBER() OVER (PARTITION BY LOWER(ai.first_name), LOWER(ai.last_name) ORDER BY ai.is_current DESC, ai.tenure_date DESC) as rn
         FROM AllIncumbents ai
-        LEFT JOIN third_level_official_masterlist m ON ai."TLOid" = m."TLOid"
+        LEFT JOIN third_level_official_masterlist m ON ai."TLOid" = m."TLOid" AND m.is_testaccount = ${testParamIdx}
       )
       SELECT * FROM RankedIncumbents
       WHERE rn = 1
@@ -1879,13 +2012,14 @@ export const getPositionIncumbents = async (req, res) => {
 
 export const getActiveOfficials = async (req, res) => {
   const { exclude_TLOid } = req.query;
+  const isTest = Boolean(req.user?.is_testaccount);
   try {
     await ensureOicColumn();
-    const params = [];
+    const params = [isTest];
     let query = `
       SELECT "TLOid", first_name, last_name, position_title, office, strand, email
       FROM third_level_official_masterlist
-      WHERE status = 'Active' AND first_name IS NOT NULL AND first_name NOT IN ('VACANT', 'Test1', 'Test2', 'Test3')
+      WHERE status = 'Active' AND is_testaccount = $1 AND first_name IS NOT NULL AND first_name NOT IN ('VACANT', 'Test1', 'Test2', 'Test3')
     `;
     if (exclude_TLOid) {
       params.push(exclude_TLOid);
@@ -1910,9 +2044,10 @@ export const createUnassignedPersonnel = async (req, res) => {
 
   const client = await pool.connect();
   try {
-    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1)', [email]);
-    const appCheck = await client.query('SELECT 1 FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1)', [email]);
-    const userCheck = await client.query('SELECT 1 FROM tlo_users WHERE LOWER(email) = LOWER($1)', [email]);
+    const isTest = Boolean(req.user?.is_testaccount);
+    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2', [email, isTest]);
+    const appCheck = await client.query('SELECT 1 FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2', [email, isTest]);
+    const userCheck = await client.query('SELECT 1 FROM tlo_users WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2', [email, isTest]);
 
     if (masterCheck.rows.length > 0 || appCheck.rows.length > 0 || userCheck.rows.length > 0) {
       return res.json({ success: false, error: 'Email already exists. Please use a different email address.' });
@@ -1933,15 +2068,15 @@ export const createUnassignedPersonnel = async (req, res) => {
     if (empCol && employee_number) {
       await client.query(`
         INSERT INTO third_level_officials_profiling_application (
-            application_id, app_TLOid, first_name, last_name, email, "${empCol}", application_status, created_at, updated_at
-        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, NOW(), NOW())
-      `, [appTloId, first_name, last_name, normalizedEmailInit, employee_number]);
+            application_id, app_TLOid, first_name, last_name, email, "${empCol}", application_status, is_testaccount, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, $6, NOW(), NOW())
+      `, [appTloId, first_name, last_name, normalizedEmailInit, employee_number, isTest]);
     } else {
       await client.query(`
         INSERT INTO third_level_officials_profiling_application (
-            application_id, app_TLOid, first_name, last_name, email, application_status, created_at, updated_at
-        ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, NOW(), NOW())
-      `, [appTloId, first_name, last_name, normalizedEmailInit]);
+            application_id, app_TLOid, first_name, last_name, email, application_status, is_testaccount, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, $5, NOW(), NOW())
+      `, [appTloId, first_name, last_name, normalizedEmailInit, isTest]);
     }
 
     await client.query('COMMIT');
@@ -1981,6 +2116,7 @@ export const registerPersonnel = async (req, res) => {
 
   const client = await pool.connect();
   try {
+    const isTest = Boolean(req.user?.is_testaccount);
     const normalizedEmail = email.toLowerCase().trim();
     if (!normalizedEmail.endsWith('@deped.gov.ph')) {
       return res.json({ success: false, error: 'Only @deped.gov.ph emails are allowed for DepEd Email.' });
@@ -1991,7 +2127,7 @@ export const registerPersonnel = async (req, res) => {
     const upperFirstName = mName ? `${fName} ${mName}` : fName;
     const upperLastName = (last_name || '').trim().toUpperCase();
 
-    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
+    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND is_testaccount = $2', [normalizedEmail, isTest]);
 
     if (masterCheck.rows.length > 0) {
       return res.json({ success: false, error: 'Email already exists in the masterlist. Please use a different email address.' });
@@ -2011,12 +2147,13 @@ export const registerPersonnel = async (req, res) => {
           "TLOid", first_name, last_name, email, position_title, 
           strand, region, office, division, designation, 
           alt_email_1, alt_email_2, contact_details, alt_contact_details_1, alt_contact_details_2,
-          status, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'Active', NOW(), NOW())
+          status, is_testaccount, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'Active', $16, NOW(), NOW())
     `, [
       tloId, upperFirstName, upperLastName, normalizedEmail, position_title,
       (strand || '').trim(), (region || '').trim(), (office || '').trim(), (division || '').trim(), (designation || '').trim(),
-      (alt_email_1 || '').trim(), (alt_email_2 || '').trim(), (contact_details || '').trim(), (alt_contact_1 || '').trim(), (alt_contact_2 || '').trim()
+      (alt_email_1 || '').trim(), (alt_email_2 || '').trim(), (contact_details || '').trim(), (alt_contact_1 || '').trim(), (alt_contact_2 || '').trim(),
+      isTest
     ]);
 
     await client.query('COMMIT');
@@ -2036,6 +2173,7 @@ export const getUnassignedPersonnel = async (req, res) => {
   }
 
   const { search } = req.query;
+  const isTest = Boolean(req.user?.is_testaccount);
   const requestedLimit = Number.parseInt(req.query.limit, 10);
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50;
   try {
@@ -2050,7 +2188,7 @@ export const getUnassignedPersonnel = async (req, res) => {
       'u',
       ['employee_number', 'employee_no', 'emp_no']
     );
-    const params = [];
+    const params = [isTest];
     let query = `
       SELECT DISTINCT ON (LOWER(COALESCE(a.email, u.email)))
         COALESCE(a.app_TLOid, u.uid) AS "TLOid",
@@ -2061,13 +2199,16 @@ export const getUnassignedPersonnel = async (req, res) => {
         COALESCE(a.contact_details, u.contact_number) AS contact_details
       FROM tlo_users u
       FULL JOIN third_level_officials_profiling_application a
-        ON LOWER(a.email) = LOWER(u.email)
+        ON LOWER(a.email) = LOWER(u.email) AND a.is_testaccount = $1
       WHERE COALESCE(a.email, u.email) IS NOT NULL
+        AND (u.is_testaccount = $1 OR u.is_testaccount IS NULL)
+        AND (a.is_testaccount = $1 OR a.is_testaccount IS NULL)
         AND NOT EXISTS (
           SELECT 1
           FROM third_level_official_masterlist m
           WHERE LOWER(m.email) = LOWER(COALESCE(a.email, u.email))
             AND m.status = 'Active'
+            AND m.is_testaccount = $1
         )
         AND COALESCE(NULLIF(a.first_name, ''), u.first_name) IS NOT NULL
     `;
@@ -2124,7 +2265,8 @@ export const adminAction = async (req, res) => {
     await client.query('BEGIN');
     await ensureOicColumn(client);
 
-    const currentRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+    const isTest = Boolean(req.user?.is_testaccount);
+    const currentRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
     const official = currentRes.rows[0];
     if (!official) throw new Error('Official not found');
 
@@ -2143,8 +2285,8 @@ export const adminAction = async (req, res) => {
       await client.query(`
         UPDATE third_level_official_masterlist
         SET status = 'Active', updated_at = NOW(), effectivity_date = NULL, reassign_target_tloid = NULL, reassign_assignee_tloid = NULL
-        WHERE "TLOid" = $1
-      `, [TLOid]);
+        WHERE "TLOid" = $1 AND is_testaccount = $2
+      `, [TLOid, isTest]);
 
     } else if (action === 'vacate') {
       if (isFuture) {
@@ -2152,34 +2294,34 @@ export const adminAction = async (req, res) => {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Resigning', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $2
+          `, [TLOid, isTest]);
         } else {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Vacating', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $2
+          `, [TLOid, isTest]);
         }
       } else {
         if (vacateReason === 'Resignation') {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Inactive', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $2
+          `, [TLOid, isTest]);
         } else {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $2
+          `, [TLOid, isTest]);
         }
       }
 
     } else if (action === 'succeed') {
       if (successor_TLOid) {
-        const successorRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [successor_TLOid]);
+        const successorRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [successor_TLOid, isTest]);
         const successor = successorRes.rows[0];
         if (!successor) throw new Error('Successor not found in masterlist');
 
@@ -2194,14 +2336,14 @@ export const adminAction = async (req, res) => {
           UPDATE third_level_official_masterlist
           SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL,
               updated_at = NOW(), effectivity_date = ${effTs}
-          WHERE "TLOid" = $1
-        `, [successor_TLOid]);
+          WHERE "TLOid" = $1 AND is_testaccount = $2
+        `, [successor_TLOid, isTest]);
 
         await client.query(`
           UPDATE third_level_official_masterlist
           SET first_name = $1, last_name = $2, email = $3, status = 'Active', updated_at = NOW(), effectivity_date = ${effTs}
-          WHERE "TLOid" = $4
-        `, [successor.first_name, successor.last_name, successor.email, TLOid]);
+          WHERE "TLOid" = $4 AND is_testaccount = $5
+        `, [successor.first_name, successor.last_name, successor.email, TLOid, isTest]);
 
         await client.query(`
           INSERT INTO third_level_officials_updates
@@ -2213,8 +2355,8 @@ export const adminAction = async (req, res) => {
         await client.query(`
           UPDATE third_level_official_masterlist
           SET status = 'Succeeded', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
-          WHERE "TLOid" = $1
-        `, [TLOid]);
+          WHERE "TLOid" = $1 AND is_testaccount = $2
+        `, [TLOid, isTest]);
       }
 
     } else if (action === 'reassign') {
@@ -2223,8 +2365,8 @@ export const adminAction = async (req, res) => {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Pending Assignment', updated_at = NOW(), effectivity_date = ${effTs}, reassign_assignee_tloid = $2
-            WHERE "TLOid" = $1
-          `, [TLOid, assignee_TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $3
+          `, [TLOid, assignee_TLOid, isTest]);
 
           await client.query(`
             INSERT INTO third_level_officials_updates
@@ -2236,8 +2378,8 @@ export const adminAction = async (req, res) => {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Reassigning', updated_at = NOW(), effectivity_date = ${effTs}, reassign_target_tloid = $2
-            WHERE "TLOid" = $1
-          `, [TLOid, target_TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $3
+          `, [TLOid, target_TLOid, isTest]);
 
           await client.query(`
             INSERT INTO third_level_officials_updates
@@ -2280,27 +2422,47 @@ export const toggleTestAccount = async (req, res) => {
     return res.status(400).json({ error: 'TLOid is required' });
   }
 
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    await client.query('BEGIN');
+    const boolVal = Boolean(is_testaccount);
+    const result = await client.query(
       `UPDATE third_level_official_masterlist 
        SET is_testaccount = $1, updated_at = NOW() 
        WHERE "TLOid" = $2 
        RETURNING "TLOid", email, is_testaccount`,
-      [Boolean(is_testaccount), TLOid]
+      [boolVal, TLOid]
     );
 
     if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Official record not found' });
     }
 
+    const official = result.rows[0];
+    if (official.email) {
+      await client.query(
+        'UPDATE tlo_users SET is_testaccount = $1 WHERE LOWER(email) = LOWER($2)',
+        [boolVal, official.email]
+      );
+      await client.query(
+        'UPDATE tlo_personnel SET is_testaccount = $1 WHERE LOWER(email) = LOWER($2)',
+        [boolVal, official.email]
+      );
+    }
+
+    await client.query('COMMIT');
     res.json({
       success: true,
-      message: `Official ${TLOid} test status updated to ${is_testaccount}`,
-      data: result.rows[0]
+      message: `Official ${TLOid} and linked user accounts updated to is_testaccount = ${boolVal}`,
+      data: official
     });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Error toggling test account:', err);
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 };
 
@@ -2362,11 +2524,12 @@ export const reassignOfficial = async (req, res) => {
     await client.query('BEGIN');
 
     // ── Step A: Fetch current official record ─────────────────────────────
+    const isTest = Boolean(req.user?.is_testaccount);
     const fetchRes = await client.query(
       `SELECT "TLOid", position_title, office, strand, division, region, designation, appointment_date
        FROM third_level_official_masterlist
-       WHERE "TLOid" = $1`,
-      [safeTloId]
+       WHERE "TLOid" = $1 AND is_testaccount = $2`,
+      [safeTloId, isTest]
     );
 
     if (fetchRes.rows.length === 0) {
@@ -2432,9 +2595,9 @@ export const reassignOfficial = async (req, res) => {
            FROM tlo_assignments
            ORDER BY item_number, id DESC
          ) a ON a.item_number = i.item_number
-         LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number
+         LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $2
          WHERE i.item_number = $1`,
-        [targetItemId]
+        [targetItemId, isTest]
       );
       if (targetItemRes.rows.length > 0) {
         const ti = targetItemRes.rows[0];
@@ -2458,10 +2621,10 @@ export const reassignOfficial = async (req, res) => {
       [
         safeTloId,
         (current.position_title || '').toUpperCase() || '',
-        current.office   || null,
-        current.strand   || null,
+        current.office || null,
+        current.strand || null,
         current.division || null,
-        current.region   || null,
+        current.region || null,
         finalStart,
         finalEnd,
         userRemarks || `Reassigned to ${targetRegion} / ${targetDivision}`,
@@ -2483,7 +2646,7 @@ export const reassignOfficial = async (req, res) => {
       const now = new Date();
       const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
       const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
-      
+
       const filename = `reassignment_order_${safeTloId}_history_${historyId}_${timestamp}${ext}`;
       const folderRelative = path.join('uploads', safeTloId, 'reassignment_order');
       const folderAbsolute = path.join(process.cwd(), folderRelative);
@@ -2563,8 +2726,8 @@ export const reassignOfficial = async (req, res) => {
            appointment_date = COALESCE($4, appointment_date),
            reassignment_order_binary_id = COALESCE($5, reassignment_order_binary_id),
            updated_at = NOW()
-       WHERE "TLOid" = $6`,
-      [targetRegion, targetDivision, targetDesignation, finalEnd, binaryId, safeTloId]
+       WHERE "TLOid" = $6 AND is_testaccount = $7`,
+      [targetRegion, targetDivision, targetDesignation, finalEnd, binaryId, safeTloId, isTest]
     );
 
     await client.query('COMMIT');

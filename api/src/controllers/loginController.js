@@ -36,12 +36,12 @@ export const login = async (req, res) => {
       const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
       const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
         [normalizedEmail, targetRoles]
       );
     } else {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division FROM tlo_users WHERE LOWER(email) = $1',
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1',
         [normalizedEmail]
       );
     }
@@ -107,6 +107,7 @@ export const login = async (req, res) => {
     const firstName = registryUser?.first_name || centralUser.first_name || '';
     const lastName = registryUser?.last_name || centralUser.last_name || '';
 
+    const isTestAccount = Boolean(centralUser.is_testaccount);
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
     const token = jwt.sign({
       uid,
@@ -115,7 +116,8 @@ export const login = async (req, res) => {
       assigned_region: centralUser.assigned_region,
       assigned_division: centralUser.assigned_division,
       region: centralUser.region,
-      division: centralUser.division
+      division: centralUser.division,
+      is_testaccount: isTestAccount
     }, secret, { expiresIn: '30d' });
 
     res.json({
@@ -130,7 +132,8 @@ export const login = async (req, res) => {
         assigned_region: centralUser.assigned_region,
         assigned_division: centralUser.assigned_division,
         region: centralUser.region,
-        division: centralUser.division
+        division: centralUser.division,
+        is_testaccount: isTestAccount
       }
     });
   } catch (err) {
@@ -156,7 +159,7 @@ export const masterLogin = async (req, res) => {
 
   try {
     let userQuery = await pool.query(
-      'SELECT "TLOid", email, first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1 OR LOWER("TLOid") = $1',
+      'SELECT "TLOid", email, first_name, last_name, status, is_testaccount FROM third_level_official_masterlist WHERE LOWER(email) = $1 OR LOWER("TLOid") = $1',
       [identifier]
     );
 
@@ -170,7 +173,7 @@ export const masterLogin = async (req, res) => {
       user.role = 'Third Level Official';
     } else {
       userQuery = await pool.query(
-        'SELECT app_TLOid AS "TLOid", email, first_name, last_name FROM third_level_officials_profiling_application WHERE LOWER(email) = $1 OR LOWER(app_TLOid) = $1',
+        'SELECT app_TLOid AS "TLOid", email, first_name, last_name, is_testaccount FROM third_level_officials_profiling_application WHERE LOWER(email) = $1 OR LOWER(app_TLOid) = $1',
         [identifier]
       );
       if (userQuery.rows.length > 0) {
@@ -181,9 +184,10 @@ export const masterLogin = async (req, res) => {
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    const isTestAccount = Boolean(user.is_testaccount);
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
     const token = jwt.sign(
-      { uid: user.TLOid, email: user.email, role: user.role },
+      { uid: user.TLOid, email: user.email, role: user.role, is_testaccount: isTestAccount },
       secret,
       { expiresIn: '30d' }
     );
@@ -197,7 +201,8 @@ export const masterLogin = async (req, res) => {
         role: user.role,
         first_name: user.first_name,
         last_name: user.last_name,
-        passcode: user.passcode
+        passcode: user.passcode,
+        is_testaccount: isTestAccount
       }
     });
   } catch (err) {
@@ -217,12 +222,12 @@ export const pinLogin = async (req, res) => {
       const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
       const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
       authRes = await pool.query(
-        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
         [normalizedEmail, targetRoles]
       );
     } else {
       authRes = await pool.query(
-        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1',
+        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1',
         [normalizedEmail]
       );
     }
@@ -272,13 +277,15 @@ export const pinLogin = async (req, res) => {
     const firstName = registryUser?.first_name || centralUser?.first_name || '';
     const lastName = registryUser?.last_name || centralUser?.last_name || '';
 
+    const isTestAccount = Boolean(centralUser?.is_testaccount);
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
     const token = jwt.sign({
       uid,
       email: normalizedEmail,
       role,
       assigned_region: centralUser?.assigned_region,
-      assigned_division: centralUser?.assigned_division
+      assigned_division: centralUser?.assigned_division,
+      is_testaccount: isTestAccount
     }, secret, { expiresIn: '30d' });
 
     res.json({
@@ -292,7 +299,8 @@ export const pinLogin = async (req, res) => {
         last_name: lastName,
         passcode: storedPasscode,
         assigned_region: centralUser?.assigned_region,
-        assigned_division: centralUser?.assigned_division
+        assigned_division: centralUser?.assigned_division,
+        is_testaccount: isTestAccount
       }
     });
   } catch (err) {
@@ -311,7 +319,7 @@ export const forgotPassword = async (req, res) => {
     const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
 
     const authRes = await pool.query(
-      'SELECT uid, email, role, first_name FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+      'SELECT uid, email, role, first_name, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
       [normalizedEmail, targetRoles]
     );
 
@@ -328,7 +336,8 @@ export const forgotPassword = async (req, res) => {
     authRes.rows.forEach(user => {
       const resetToken = jwt.sign({
         email: user.email,
-        role: user.role
+        role: user.role,
+        is_testaccount: Boolean(user.is_testaccount)
       }, secret, { expiresIn: '1h' });
       const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
       linksHtml += `<li><strong>${user.role}</strong>: <a href="${resetLink}">Reset Password</a></li>`;
@@ -384,8 +393,8 @@ export const resetPassword = async (req, res) => {
     const passwordHash = await bcrypt.hash(newPassword, saltRounds);
 
     const updateRes = await pool.query(
-      'UPDATE tlo_users SET password_hash = $1, passcode = NULL WHERE LOWER(email) = $2 AND role = $3 RETURNING uid',
-      [passwordHash, decoded.email.toLowerCase(), decoded.role]
+      'UPDATE tlo_users SET password_hash = $1, passcode = NULL WHERE LOWER(email) = $2 AND role = $3 AND is_testaccount = $4 RETURNING uid',
+      [passwordHash, decoded.email.toLowerCase(), decoded.role, Boolean(decoded.is_testaccount)]
     );
 
     if (updateRes.rowCount === 0) {
