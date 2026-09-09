@@ -1401,11 +1401,11 @@ const OfficialsRegistry = () => {
                     </div>
 
                     <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
-                        {/* FILTERS & SEARCH BAR */}
-                        <div className="mb-6 flex flex-col gap-3">
-                            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-2 border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm">
-
-                                {/* SEARCH BAR MOVED TO BOTTOM */}                            {/* DROPDOWNS */}
+                        {/* UNIFIED DATA CONTROLS TAB */}
+                        <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
+                            {/* TOP ROW: FILTERS */}
+                            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full">
+                                {/* DROPDOWNS */}
                                 <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                     {/* Level Dropdown */}
                                     <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
@@ -1489,7 +1489,6 @@ const OfficialsRegistry = () => {
                                         </select>
                                         <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                     </div>
-
                                 </div>
 
                                 {/* BUTTONS */}
@@ -1527,12 +1526,10 @@ const OfficialsRegistry = () => {
                                         Reset
                                     </button>
                                 </div>
-
-
                             </div>
 
-                            {/* BOTTOM ROW: SEARCH BAR */}
-                            <div className="flex items-center gap-2 bg-white border-2 border-[#08315F] rounded-[24px] xl:rounded-full p-1.5 shadow-sm w-full mb-6">
+                            {/* BOTTOM ROW: SEARCH BAR & VIEW TOGGLES */}
+                            <div className="flex items-center gap-2 w-full">
                                 <div className="relative flex-1 h-[44px]">
                                     <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
                                     <input
@@ -1544,7 +1541,7 @@ const OfficialsRegistry = () => {
                                     />
                                 </div>
                                 {/* VIEW TOGGLES */}
-                                <div className="flex items-center gap-2 shrink-0 px-2">
+                                <div className="flex items-center gap-2 shrink-0 px-1">
                                     <button
                                         onClick={() => setViewMode('table')}
                                         className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
