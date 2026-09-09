@@ -1516,9 +1516,16 @@ const OfficialProfiling = () => {
             const coDivs = (regionDivisions?.['Central Office'] || regionDivisions?.['CENTRAL OFFICE'] || ['Central Office']);
             return coDivs.length > 0 ? coDivs : ['Central Office'];
         }
-        const rawList = (profile.region && regionDivisions[profile.region] && Array.isArray(regionDivisions[profile.region]))
-            ? regionDivisions[profile.region]
-            : (divisionsList || []);
+        
+        let rawList = divisionsList || [];
+        if (profile.region && regionDivisions) {
+            const regionKey = Object.keys(regionDivisions).find(k => k.trim().toUpperCase() === profile.region.trim().toUpperCase());
+            if (regionKey && Array.isArray(regionDivisions[regionKey])) {
+                rawList = regionDivisions[regionKey];
+            } else {
+                rawList = [];
+            }
+        }
         
         return rawList.filter(d => {
             if (!d) return false;

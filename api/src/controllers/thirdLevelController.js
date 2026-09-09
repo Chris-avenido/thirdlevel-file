@@ -2505,10 +2505,10 @@ export const reassignOfficial = async (req, res) => {
     const historyRes = await client.query(
       `INSERT INTO tlo_position_history (
          source_table, tlo_id, position_name, office, strand, division, region,
-         inclusive_date_start, inclusive_date_end, remarks, delete_flg, created_at, updated_at, created_by, updated_by
+         inclusive_date_start, inclusive_date_end, delete_flg, created_at, updated_at, created_by, updated_by
        ) VALUES (
          'masterlist', $1, $2, $3, $4, $5, $6,
-         $7, $8, $9, 'No', NOW(), NOW(), $10, $10
+         $7, $8, 'No', NOW(), NOW(), $9, $9
        ) RETURNING id`,
       [
         safeTloId,
@@ -2519,7 +2519,6 @@ export const reassignOfficial = async (req, res) => {
         current.region   || null,
         finalStart,
         finalEnd,
-        userRemarks || `Reassigned to ${targetRegion} / ${targetDivision}`,
         actorEmail
       ]
     );
