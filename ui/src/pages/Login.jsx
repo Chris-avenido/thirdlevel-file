@@ -106,7 +106,7 @@ const Login = () => {
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
-                    navigate('/main-dashboard');
+                    navigate('/home');
                 } else {
                     navigate('/official-profiling');
                 }
@@ -145,7 +145,7 @@ const Login = () => {
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
-                    navigate('/main-dashboard');
+                    navigate('/home');
                 } else {
                     navigate('/official-profiling');
                 }

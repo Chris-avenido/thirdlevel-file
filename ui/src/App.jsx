@@ -27,7 +27,7 @@ const PublicRoute = ({ children }) => {
     if (user) {
         const roleLower = user.role?.toLowerCase() || '';
         if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
-            return <Navigate to="/main-dashboard" replace />;
+            return <Navigate to="/home" replace />;
         } else {
             return <Navigate to="/official-profiling" replace />;
         }
@@ -117,11 +117,7 @@ const App = () => {
             />
             <Route 
                 path="/main-dashboard" 
-                element={
-                    <ProtectedRoute>
-                        <MainDashboard />
-                    </ProtectedRoute>
-                } 
+                element={<Navigate to="/home" replace />} 
             />
 
             {/* Fallback */}

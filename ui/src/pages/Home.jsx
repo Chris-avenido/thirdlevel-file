@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
@@ -9,8 +9,59 @@ import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
 import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
+import AnalyticsSection from './MainDashboard/components/AnalyticsSection';
+import './MainDashboard/MainDashboard.css';
 import { FiUserPlus, FiUploadCloud, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
-import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
+import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
+
+// Text cleaning engine from MainDashboard
+const repairMojibake = (text) => {
+  return String(text || "")
+    .replace(/Ã‘/g, "Ñ").replace(/Ã±/g, "ñ")
+    .replace(/ã‘/g, "Ñ").replace(/ã±/g, "ñ")
+    .replace(/Ã/g, "Á").replace(/Ã¡/g, "á")
+    .replace(/Ã‰/g, "É").replace(/Ã©/g, "é")
+    .replace(/â€“/g, "–").replace(/â€”/g, "—")
+    .replace(/Â /g, " ").replace(/Â/g, "");
+};
+
+const canonicalCell = (text) => {
+  let v = repairMojibake(text).replace(/\s+/g, " ").trim();
+  return v.replace(/\bLas\s+Pi(?:ñ|Ã±|ã±|ï¿½||n)as\b/gi, "Las Piñas")
+          .replace(/\bPara(?:ñ|Ã±|ã±|ï¿½||n)aque\b/gi, "Parañaque");
+};
+
+// Map backend DB fields to UI data structure for Bar Graph
+const mapOfficialRecord = (row) => {
+  const name = row.first_name && row.last_name
+    ? canonicalCell(`${row.first_name} ${row.last_name}`)
+    : row.first_name
+    ? canonicalCell(row.first_name)
+    : 'VACANT POSITION';
+
+  let status = row.status || 'Regular';
+  if (row.is_oic || (row.designation && row.designation.toUpperCase().includes('OIC'))) {
+    status = 'OIC';
+  } else if (!row.first_name || row.first_name.toUpperCase() === 'VACANT' || row.status === 'Vacated' || row.status === 'Vacant') {
+    status = 'Vacant';
+  } else if (status !== 'OIC' && status !== 'Vacant') {
+    status = 'Regular';
+  }
+
+  return {
+    TLO_id: row.TLOid || `TLO-${String(row.id || '').padStart(4, '0')}`,
+    TLOid: row.TLOid,
+    Name: name,
+    Position: formatPositionTitle(row.position_title) || 'Unassigned Position',
+    Employment_Status: status,
+    Region: canonicalCell(row.region || row.strand || 'Central Office'),
+    Division: canonicalCell(row.division || 'N/A'),
+    Office: canonicalCell(row.office || ''),
+    Province: canonicalCell(row.province || row.region || 'NCR'),
+    Municipality: canonicalCell(row.municipality || row.division || 'Pasig City'),
+    Email: row.email || 'N/A'
+  };
+};
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -49,6 +100,11 @@ const Home = () => {
   const [isRegisterPersonnelOpen, setIsRegisterPersonnelOpen] = useState(false);
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
   const [reassignOfficialTarget, setReassignOfficialTarget] = useState(null);
+
+  // Drilldown Hierarchy State for Bar Graph
+  const [drillLevel, setDrillLevel] = useState(0); // 0: Region, 1: Division, 2: Municipality
+  const [drillPath, setDrillPath] = useState([]);
+  const [drilldownViewType, setDrilldownViewType] = useState('stacked'); // stacked | heatmap
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -660,6 +716,58 @@ const Home = () => {
     setActiveQueueFilter(prev => prev === filter ? 'all' : filter);
   };
 
+  // Drilldown Navigation Handlers for Bar Graph
+  const handleRowDrill = useCallback((name) => {
+    if (drillLevel < 2) {
+      const newLevel = drillLevel + 1;
+      const newPath = [...drillPath, name];
+      setDrillLevel(newLevel);
+      setDrillPath(newPath);
+    }
+  }, [drillLevel, drillPath]);
+
+  const handleSetDrillLevel = useCallback((level, name) => {
+    setDrillLevel(level);
+    if (level === 0) {
+      setDrillPath([]);
+    } else if (level === 1) {
+      setDrillPath([name]);
+    } else if (level === 2) {
+      setDrillPath([drillPath[0], name]);
+    }
+  }, [drillPath]);
+
+  // Drilldown Aggregations for Bar Graph
+  const { groupKey, groups, maxTotal } = useMemo(() => {
+    let key = 'Region';
+    if (drillLevel === 1) key = 'Division';
+    if (drillLevel === 2) key = 'Municipality';
+
+    let dataToAggregate = allOfficials.map(mapOfficialRecord);
+
+    if (drillLevel >= 1 && drillPath[0]) {
+      dataToAggregate = dataToAggregate.filter(d => d.Region === drillPath[0]);
+    }
+    if (drillLevel >= 2 && drillPath[1]) {
+      dataToAggregate = dataToAggregate.filter(d => d.Division === drillPath[1]);
+    }
+
+    const groupMap = {};
+    dataToAggregate.forEach(d => {
+      const gName = d[key] || 'Unassigned';
+      if (!groupMap[gName]) {
+        groupMap[gName] = { total: 0, regular: 0, oic: 0, vacant: 0 };
+      }
+      groupMap[gName].total++;
+      if (d.Employment_Status === 'Regular') groupMap[gName].regular++;
+      if (d.Employment_Status === 'OIC') groupMap[gName].oic++;
+      if (d.Employment_Status === 'Vacant') groupMap[gName].vacant++;
+    });
+
+    const max = Math.max(...Object.values(groupMap).map(g => g.total), 1);
+    return { groupKey: key, groups: groupMap, maxTotal: max };
+  }, [allOfficials, drillLevel, drillPath]);
+
   return (
     <PageTransition>
       <div className="flex min-h-screen bg-transparent text-[#0f172a] font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
@@ -1053,6 +1161,21 @@ const Home = () => {
                 </button>
               </aside>
             </section>
+
+            {/* Geographic & Organizational Drilldown Bar Graph */}
+            <div className="mt-6">
+              <AnalyticsSection
+                drillLevel={drillLevel}
+                drillPath={drillPath}
+                drilldownViewType={drilldownViewType}
+                groups={groups}
+                maxTotal={maxTotal}
+                groupKey={groupKey}
+                onToggleView={() => setDrilldownViewType(prev => prev === 'stacked' ? 'heatmap' : 'stacked')}
+                onSetDrillLevel={handleSetDrillLevel}
+                onRowDrill={handleRowDrill}
+              />
+            </div>
           </div>
         </div>
       </div>
