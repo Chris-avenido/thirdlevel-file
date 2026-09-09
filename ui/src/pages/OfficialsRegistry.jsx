@@ -37,7 +37,7 @@ const JustificationInput = ({ value, onChange, placeholder }) => {
             onBlur={() => onChange(local)}
             placeholder={placeholder}
             rows={4}
-            className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all resize-none"
+            className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all resize-none"
         />
     );
 };
@@ -73,33 +73,33 @@ const AddNewPersonnelForm = ({ onCancel, onSuccess, token }) => {
     return (
         <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem] border-2 border-[#08315F]/10">
             <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-black text-[#08315F] uppercase tracking-widest">Add New Personnel</h3>
-                <button onClick={onCancel} className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors">Cancel</button>
+                <h3 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Add New Personnel</h3>
+                <button onClick={onCancel} className="text-[15px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors">Cancel</button>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">First Name <span className="text-red-500">*</span></label>
-                    <input type="text" autoComplete="off" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                    <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">First Name <span className="text-red-500">*</span></label>
+                    <input type="text" autoComplete="off" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
                 </div>
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Last Name <span className="text-red-500">*</span></label>
-                    <input type="text" autoComplete="off" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                    <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Last Name <span className="text-red-500">*</span></label>
+                    <input type="text" autoComplete="off" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
                 </div>
             </div>
             <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Email Address <span className="text-red-500">*</span></label>
-                <input type="email" autoComplete="off" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Email Address <span className="text-red-500">*</span></label>
+                <input type="email" autoComplete="off" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
             </div>
             <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Employee Number</label>
-                <input type="text" autoComplete="off" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all" />
+                <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Employee Number</label>
+                <input type="text" autoComplete="off" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
             </div>
             <button
                 onClick={handleAddPersonnel}
                 disabled={addPersonnelLoading || !newPersonnelData.first_name || !newPersonnelData.last_name || !newPersonnelData.email}
-                className="w-full mt-2 bg-[#08315F] hover:bg-[#004A99] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                className="w-full mt-2 bg-[#08315F] hover:bg-[#004A99] text-white py-3 rounded-xl text-[18px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 border-2 border-transparent"
             >
-                {addPersonnelLoading && <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                {addPersonnelLoading && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
                 Save Personnel
             </button>
         </div>
@@ -126,7 +126,7 @@ const DebouncedSearchInput = ({ value, onChange, placeholder }) => {
             onChange={(e) => setLocal(e.target.value)}
             placeholder={placeholder}
             autoComplete="off"
-            className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-sm font-bold text-slate-700 outline-none transition-all"
+            className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
         />
     );
 };
@@ -166,19 +166,19 @@ const OfficialsRegistry = () => {
 
         return (
             <div className="relative">
-                {label && <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">{label}</label>}
-                {info && <p className="text-[9px] text-slate-400 font-bold mb-3">{info}</p>}
+                {label && <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-3 block">{label}</label>}
+                {info && <p className="text-[13.5px] text-slate-400 font-bold mb-3">{info}</p>}
 
                 <div
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-full bg-slate-50 border-2 border-transparent hover:border-[#08315F]/10 cursor-pointer rounded-2xl py-4 px-5 flex justify-between items-center transition-all group"
+                    className="w-full bg-slate-50 border-2 border-slate-200 hover:border-[#08315F]/20 cursor-pointer rounded-2xl py-4 px-5 flex justify-between items-center transition-all group"
                 >
                     <div className="flex flex-col">
-                        <span className={`text-sm font-bold ${selectedOption ? 'text-slate-900' : 'text-slate-400'}`}>
+                        <span className={`text-[21px] font-bold ${selectedOption ? 'text-slate-900' : 'text-slate-400'}`}>
                             {selectedOption ? selectedOption.label : placeholder}
                         </span>
                         {selectedOption?.sublabel && (
-                            <span className="text-[10px] text-slate-400 font-bold">{selectedOption.sublabel}</span>
+                            <span className="text-[15px] text-slate-400 font-bold">{selectedOption.sublabel}</span>
                         )}
                     </div>
                     <FiChevronRight className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-[#075985]' : 'text-slate-300'}`} size={18} />
@@ -192,11 +192,11 @@ const OfficialsRegistry = () => {
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute left-0 right-0 top-full mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 z-[130] overflow-hidden flex flex-col max-h-[450px]"
+                                className="absolute left-0 right-0 top-full mt-2 bg-white rounded-3xl shadow-2xl border-2 border-slate-200 z-[130] overflow-hidden flex flex-col max-h-[450px]"
                             >
-                                <div className="p-4 border-b border-slate-50 bg-slate-50/50">
+                                <div className="p-4 border-b-2 border-slate-100 bg-slate-50/50">
                                     <div className="relative">
-                                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                         <input
                                             autoFocus
                                             type="text"
@@ -204,7 +204,7 @@ const OfficialsRegistry = () => {
                                             onChange={(e) => setSearch(e.target.value)}
                                             placeholder="Search options..."
                                             autoComplete="off"
-                                            className="w-full bg-white border-2 border-slate-100 focus:border-[#08315F]/20 rounded-xl py-3 pl-10 pr-4 text-xs font-bold text-slate-700 outline-none transition-all"
+                                            className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 pl-10 pr-4 text-[18px] font-bold text-slate-700 outline-none transition-all"
                                         />
                                     </div>
                                 </div>
@@ -220,18 +220,18 @@ const OfficialsRegistry = () => {
                                                 }}
                                                 className={`px-5 py-4 cursor-pointer flex flex-col hover:bg-blue-50 transition-colors ${value === opt.value ? 'bg-blue-50/50 border-l-4 border-[#08315F]' : 'border-l-4 border-transparent'}`}
                                             >
-                                                <span className={`text-xs font-black uppercase tracking-tight ${value === opt.value ? 'text-blue-700' : 'text-slate-700'}`}>
+                                                <span className={`text-[18px] font-black uppercase tracking-tight ${value === opt.value ? 'text-blue-700' : 'text-slate-700'}`}>
                                                     {opt.label}
                                                 </span>
                                                 {opt.sublabel && (
-                                                    <span className="text-[10px] text-slate-400 font-bold mt-0.5">{opt.sublabel}</span>
+                                                    <span className="text-[15px] text-slate-400 font-bold mt-0.5">{opt.sublabel}</span>
                                                 )}
                                             </div>
                                         ))
                                     ) : (
                                         <div className="p-10 text-center">
                                             <FiInfo className="mx-auto text-slate-200 mb-2" size={24} />
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No options found</p>
+                                            <p className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">No options found</p>
                                         </div>
                                     )}
                                 </div>
@@ -796,7 +796,7 @@ const OfficialsRegistry = () => {
     const StatusBadge = ({ status }) => {
         const displayStatus = status === 'Vacated' ? 'Vacant' : status;
         return (
-            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(displayStatus)}`}>
+            <span className={`px-3 py-1 rounded-full text-[15px] font-black uppercase tracking-widest border-2 ${getStatusColor(displayStatus)}`}>
                 {displayStatus || 'Unknown'}
             </span>
         );
@@ -1380,14 +1380,14 @@ const OfficialsRegistry = () => {
                     <div className="dashboard-theme !bg-transparent pt-8 px-8 lg:px-12 max-w-[1600px] mx-auto w-full">
                         <header className="topbar w-full">
                             <div className="page-title">
-                                <div className="text-[10px] font-black text-amber-500 uppercase tracking-[0.15em] mb-1">OFFICIAL LEADERSHIP MANAGEMENT</div>
+                                <div className="text-[15px] font-black text-amber-500 uppercase tracking-[0.15em] mb-1">OFFICIAL LEADERSHIP MANAGEMENT</div>
                                 <h1>Personnel Registry</h1>
                                 <p>Third Level Officials command dashboard</p>
                             </div>
                             <div className="topbar-actions">
                                 <div className="hidden md:flex flex-col justify-center items-end bg-white border-2 border-[#BAE6FD] rounded-full px-6 h-[52px] min-w-[170px] shadow-sm">
-                                    <span className="text-[14px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-none mb-1">{user?.first_name} {user?.last_name}</span>
-                                    <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest leading-none">{user?.role}</span>
+                                    <span className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-none mb-1">{user?.first_name} {user?.last_name}</span>
+                                    <span className="text-[13.5px] font-bold text-amber-600 uppercase tracking-widest leading-none">{user?.role}</span>
                                 </div>
                             </div>
                         </header>
@@ -1396,24 +1396,24 @@ const OfficialsRegistry = () => {
                     <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* FILTERS & SEARCH BAR */}
                         <div className="mb-6 flex flex-col gap-3">
-                            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm">
+                            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-2 border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm">
 
                                 {/* SEARCH BAR MOVED TO BOTTOM */}                            {/* DROPDOWNS */}
                                 <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                     {/* Level Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All CO / RO / SDO</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Regional Office">Regional Office</option>
                                             <option value="Schools Division Office">Schools Division Office</option>
                                         </select>
-                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                     </div>
 
                                     {/* Region Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Regions</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Region I">Region I</option>
@@ -1435,52 +1435,52 @@ const OfficialsRegistry = () => {
                                             <option value="NIR">NIR</option>
                                             <option value="BARMM">BARMM</option>
                                         </select>
-                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                     </div>
 
                                     {/* Strand / Division Dropdown */}
                                     {levelFilter === 'Central Office' || regionFilter === 'Central Office' ? (
-                                        <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                            <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                        <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                            <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                                 <option value="All">All Strands</option>
                                                 {strands.map(s => (
                                                     <option key={s} value={s}>{s}</option>
                                                 ))}
                                             </select>
-                                            <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                            <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                         </div>
                                     ) : (
-                                        <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                            <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                        <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                            <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                                 <option value="All">All Divisions</option>
                                                 {dependentOffices.map(o => (
                                                     <option key={o} value={o}>{o}</option>
                                                 ))}
                                             </select>
-                                            <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                            <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                         </div>
                                     )}
 
                                     {/* Designation Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Designations</option>
                                             {designations.map(d => (
                                                 <option key={d} value={d}>{expandAcronym(d)}</option>
                                             ))}
                                         </select>
-                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                     </div>
 
                                     {/* Position Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Positions</option>
                                             {tabPositions.map(p => (
                                                 <option key={p} value={p}>{p}</option>
                                             ))}
                                         </select>
-                                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                     </div>
 
                                 </div>
@@ -1490,10 +1490,10 @@ const OfficialsRegistry = () => {
                                     {/* OIC Toggle */}
                                     <button
                                         onClick={() => setOicOnly(!oicOnly)}
-                                        className={`h-[38px] px-4 flex-1 xl:flex-none rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 border ${oicOnly ? 'bg-[#08315F] border-[#08315F]' : 'bg-[#F0F9FF] border-[#BAE6FD] hover:bg-sky-100'}`}
+                                        className={`h-[44px] px-4 flex-1 xl:flex-none rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 border-2 ${oicOnly ? 'bg-[#08315F] border-[#08315F]' : 'bg-[#F0F9FF] border-[#BAE6FD] hover:bg-sky-100'}`}
                                         title="Toggle OIC only"
                                     >
-                                        <span className={`text-[10px] font-black uppercase tracking-widest ${oicOnly ? 'text-white' : 'text-[#08315F]'}`}>OIC ONLY</span>
+                                        <span className={`text-[15px] font-black uppercase tracking-widest ${oicOnly ? 'text-white' : 'text-[#08315F]'}`}>OIC ONLY</span>
                                         <div className={`w-8 h-4 rounded-full relative transition-colors shrink-0 ${oicOnly ? 'bg-amber-400' : 'bg-slate-300'}`}>
                                             <div className={`absolute top-[2px] left-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${oicOnly ? 'translate-x-[16px]' : 'translate-x-0'}`} />
                                         </div>
@@ -1514,7 +1514,7 @@ const OfficialsRegistry = () => {
                                             setDesignationFilter('All');
                                             setOicOnly(false);
                                         }}
-                                        className="h-[38px] px-5 flex-1 xl:flex-none bg-transparent text-rose-400 rounded-full border border-rose-200 font-black text-[10px] tracking-widest uppercase hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
+                                        className="h-[44px] px-5 flex-1 xl:flex-none bg-transparent text-rose-500 rounded-full border-2 border-rose-200 font-black text-[15px] tracking-widest uppercase hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
                                         title="Reset all filters"
                                     >
                                         Reset
@@ -1525,38 +1525,39 @@ const OfficialsRegistry = () => {
                             </div>
 
                             {/* BOTTOM ROW: SEARCH BAR */}
-                            <div className="flex items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-1.5 shadow-sm w-full mb-6">
-                                <div className="relative flex-1 h-[38px]">
-                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
+                            <div className="flex items-center gap-2 bg-white border-2 border-[#08315F] rounded-[24px] xl:rounded-full p-1.5 shadow-sm w-full mb-6">
+                                <div className="relative flex-1 h-[44px]">
+                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
                                     <input
                                         type="text"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         placeholder="Search by name, position, or office..."
-                                        className="w-full h-full bg-[#F0F9FF] border border-[#BAE6FD] rounded-full py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                                        className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-4 text-[16.5px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                                     />
                                 </div>
                                 {/* VIEW TOGGLES */}
                                 <div className="flex items-center gap-2 shrink-0 px-2">
                                     <button
                                         onClick={() => setViewMode('table')}
-                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                         title="Table view"
                                     >
-                                        <FiList size={14} />
+                                        <FiList size={16} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('grid')}
-                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        title="Grid view"
                                     >
-                                        <FiGrid size={14} />
+                                        <FiGrid size={16} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('directory')}
-                                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                         title="Organizational Directory"
                                     >
-                                        <FiLayers size={14} />
+                                        <FiLayers size={16} />
                                     </button>
                                 </div>
                             </div>
@@ -1567,13 +1568,13 @@ const OfficialsRegistry = () => {
                             <div className="flex items-center gap-4 mb-6">
                                 <button
                                     onClick={() => navigate('/officials-registry?status=For%20Approval')}
-                                    className={`px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${statusTab === 'For Approval' ? 'bg-[#08315F] text-white shadow-md' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}
+                                    className={`px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[18px] transition-all border-2 ${statusTab === 'For Approval' ? 'bg-[#08315F] text-white border-[#08315F] shadow-md' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}`}
                                 >
                                     Pending Approvals
                                 </button>
                                 <button
                                     onClick={() => navigate('/officials-registry?status=Rejected')}
-                                    className={`px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${statusTab === 'Rejected' ? 'bg-rose-600 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}
+                                    className={`px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[18px] transition-all border-2 ${statusTab === 'Rejected' ? 'bg-rose-600 text-white border-rose-600 shadow-md' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}`}
                                 >
                                     Rejected
                                 </button>
@@ -1594,11 +1595,11 @@ const OfficialsRegistry = () => {
                                         setLevelFilter('All');
                                         setRegionFilter('All');
                                     }}
-                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Third Level Officials' && statusTab !== 'Vacant' ? 'border-l-sky-400 shadow-md ring-1 ring-sky-200' : 'border-l-sky-300 hover:shadow-sm'}`}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Third Level Officials' && statusTab !== 'Vacant' ? 'border-l-sky-400 shadow-md ring-1 ring-sky-200' : 'border-l-sky-300 hover:shadow-sm'}`}
                                 >
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Third Level Officials</div>
-                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalThirdLevel}</div>
-                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
+                                    <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Third Level Officials</div>
+                                    <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalThirdLevel}</div>
+                                    <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                                 </div>
 
                                 {/* Card 2: Total Vacant Positions */}
@@ -1612,11 +1613,11 @@ const OfficialsRegistry = () => {
                                         setLevelFilter('All');
                                         setRegionFilter('All');
                                     }}
-                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusTab === 'Vacant' ? 'border-l-rose-500 shadow-md ring-1 ring-rose-200' : 'border-l-rose-400 hover:shadow-sm'}`}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusTab === 'Vacant' ? 'border-l-rose-500 shadow-md ring-1 ring-rose-200' : 'border-l-rose-400 hover:shadow-sm'}`}
                                 >
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Vacant Positions</div>
-                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalVacant}</div>
-                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of vacant in view</div>
+                                    <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Vacant Positions</div>
+                                    <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalVacant}</div>
+                                    <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of vacant in view</div>
                                 </div>
 
                                 {/* Card 3: Total Officers-in-Charge */}
@@ -1630,11 +1631,11 @@ const OfficialsRegistry = () => {
                                         setLevelFilter('All');
                                         setRegionFilter('All');
                                     }}
-                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Officer in Charge' && statusTab !== 'Vacant' ? 'border-l-amber-500 shadow-md ring-1 ring-amber-200' : 'border-l-amber-400 hover:shadow-sm'}`}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Officer in Charge' && statusTab !== 'Vacant' ? 'border-l-amber-500 shadow-md ring-1 ring-amber-200' : 'border-l-amber-400 hover:shadow-sm'}`}
                                 >
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Officers-in-Charge</div>
-                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalOic}</div>
-                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
+                                    <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Officers-in-Charge</div>
+                                    <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalOic}</div>
+                                    <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                                 </div>
 
                                 {/* Card 4: Total Concurrent Position Holders */}
@@ -1648,11 +1649,11 @@ const OfficialsRegistry = () => {
                                         setLevelFilter('All');
                                         setRegionFilter('All');
                                     }}
-                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Concurrent Positions' && statusTab !== 'Vacant' ? 'border-l-indigo-500 shadow-md ring-1 ring-indigo-200' : 'border-l-indigo-400 hover:shadow-sm'}`}
+                                    className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${activeTab === 'Concurrent Positions' && statusTab !== 'Vacant' ? 'border-l-indigo-500 shadow-md ring-1 ring-indigo-200' : 'border-l-indigo-400 hover:shadow-sm'}`}
                                 >
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Concurrent Position Holders</div>
-                                    <div className="text-[32px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalConcurrent}</div>
-                                    <div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
+                                    <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Concurrent Position Holders</div>
+                                    <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3">{kpiCounts.totalConcurrent}</div>
+                                    <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Sum of active in view</div>
                                 </div>
                             </div>
                         )}
@@ -1671,21 +1672,21 @@ const OfficialsRegistry = () => {
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                                 </motion.div>
                             ) : viewMode === 'table' ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-[2.5px] !border-[#08315F] overflow-hidden">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden">
                                     <div className="w-full">
                                         <table className="hidden md:table w-full text-left border-collapse table-fixed">
                                             <thead>
-                                                <tr className="bg-white border-b border-slate-200">
+                                                <tr className="bg-white border-b-2 border-slate-200">
                                                     {tableColumns.map((column, index) => (
                                                         <th key={column.key} className={`px-2 py-4 text-left align-top relative ${column.width || ''}`}>
 
                                                             <div className={`flex flex-col gap-3 mt-1 ${column.key === 'is_oic' ? 'pr-1' : 'pr-4'}`}>
                                                                 <button
                                                                     onClick={() => handleSort(column.key)}
-                                                                    className="flex items-center justify-between h-5 text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left group"
+                                                                    className="flex items-center justify-between h-5 text-[13.5px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left group"
                                                                 >
                                                                     <span>{column.label}</span>
-                                                                    <span className={`text-sm leading-none flex items-center w-3 justify-end transition-colors ${sortConfig.key === column.key ? 'text-[#08315F]' : 'text-slate-200 group-hover:text-slate-400'}`}>
+                                                                    <span className={`text-base leading-none flex items-center w-3 justify-end transition-colors ${sortConfig.key === column.key ? 'text-[#08315F]' : 'text-slate-200 group-hover:text-slate-400'}`}>
                                                                         {sortConfig.key === column.key
                                                                             ? (sortConfig.direction === 'asc' ? '↑' : '↓')
                                                                             : '↓'}
@@ -1694,7 +1695,7 @@ const OfficialsRegistry = () => {
                                                                 <select
                                                                     value={tableFilters[column.key] || ''}
                                                                     onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                                                                    className={`w-full bg-white border border-sky-200 rounded-lg py-1.5 font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors ${column.key === 'is_oic' ? 'px-1 text-[9px] text-center' : 'px-3 text-[11px]'}`}
+                                                                    className={`w-full bg-white border-2 border-sky-200 rounded-lg py-1.5 font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors ${column.key === 'is_oic' ? 'px-1 text-[13.5px] text-center' : 'px-3 text-[16.5px]'}`}
                                                                 >
                                                                     <option value="">All</option>
                                                                     {(tableFilterOptions[column.key] || []).map(option => (
@@ -1707,49 +1708,49 @@ const OfficialsRegistry = () => {
 
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-200/60 bg-white">
+                                            <tbody className="divide-y-2 divide-slate-200/60 bg-white">
                                                 {pagedRecords.map((item) => (
                                                     <tr key={item.TLOid} className="group transition-colors relative hover:bg-slate-50/80">
                                                         <td className="px-3 py-4 align-middle max-w-[120px]">
-                                                            <div className="font-black text-[#08315F] text-[10px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}>
+                                                            <div className="font-black text-[#08315F] text-[15px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}>
                                                                 <span>{item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}</span>
                                                             </div>
                                                         </td>
                                                         <td className="px-2 py-4 align-middle max-w-[200px]">
-                                                            <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}>
+                                                            <div className="text-[15px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}>
                                                                 {item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}
                                                             </div>
                                                         </td>
                                                         <td className="px-2 py-4 align-middle">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border border-white shadow-sm overflow-hidden shrink-0">
+                                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border-2 border-white shadow-sm overflow-hidden shrink-0">
                                                                     {item.photo_binary_id ? (
                                                                         <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
-                                                                    ) : <FiUser size={14} />}
+                                                                    ) : <FiUser size={18} />}
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <div className="flex items-center gap-2">
                                                                         <div
                                                                             onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                             title={item.email ? "View Official Profile" : ""}
                                                                         >
-                                                                            {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                                            {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
                                                                         </div>
                                                                         {item.is_testaccount && (
-                                                                            <span title="Test Account" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100/90 border border-purple-300 text-purple-700 text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm">
-                                                                                <FaVial size={10} className="text-purple-600 shrink-0" />
+                                                                            <span title="Test Account" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100/90 border-2 border-purple-300 text-purple-700 text-[13.5px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                                                                <FaVial size={12} className="text-purple-600 shrink-0" />
                                                                                 <span>TEST ACCOUNT</span>
                                                                             </span>
                                                                         )}
                                                                     </div>
-                                                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 truncate">
-                                                                        <FiArrowRight className="text-[#075985] shrink-0" size={8} />
+                                                                    <div className="text-[13.5px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 truncate">
+                                                                        <FiArrowRight className="text-[#075985] shrink-0" size={10} />
                                                                         <span className="truncate">{item.email}</span>
                                                                         {item.status !== 'Inactive' && item.effectivity_date && (
                                                                             <>
                                                                                 <span className="mx-1">•</span>
-                                                                                <FiCalendar className="text-slate-300 shrink-0" size={8} />
+                                                                                <FiCalendar className="text-slate-300 shrink-0" size={10} />
                                                                                 {(() => {
                                                                                     const effDate = new Date(item.effectivity_date);
                                                                                     if (isNaN(effDate.getTime())) return <span className="text-slate-400">Invalid</span>;
@@ -1778,7 +1779,7 @@ const OfficialsRegistry = () => {
                                                             <div
                                                                 onClick={() => handlePositionClick(item)}
                                                                 title={item.status === 'Inactive' ? 'N/A' : ((item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned')}
-                                                                className="flex w-fit max-w-full items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50/80 border border-amber-300 text-amber-600 text-[9px] font-black uppercase tracking-widest shadow-sm cursor-pointer hover:bg-amber-100 hover:border-amber-400 transition-colors"
+                                                                className="flex w-fit max-w-full items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50/80 border-2 border-amber-300 text-amber-600 text-[13.5px] font-black uppercase tracking-widest shadow-sm cursor-pointer hover:bg-amber-100 hover:border-amber-400 transition-colors"
                                                             >
                                                                 <span className="truncate">{item.status === 'Inactive' ? 'N/A' : ((item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned')}</span>
                                                             </div>
@@ -1787,7 +1788,7 @@ const OfficialsRegistry = () => {
                                                             <div
                                                                 onClick={() => handlePositionClick(item)}
                                                                 title={item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
-                                                                className="text-[10px] font-black text-[#08315F] uppercase tracking-widest truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
+                                                                className="text-[15px] font-black text-[#08315F] uppercase tracking-widest truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
                                                             >
                                                                 {item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
                                                             </div>
@@ -1795,52 +1796,52 @@ const OfficialsRegistry = () => {
                                                         <td className="px-1 py-4 align-middle text-center max-w-[60px]">
                                                             <div className="flex justify-start items-center ml-2">
                                                                 {(item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? (
-                                                                    <span className="px-2 py-1 rounded-full bg-[#FCD116]/20 border border-[#FCD116] text-[#0038A8] text-[9px] font-black uppercase tracking-widest shadow-sm">Yes</span>
+                                                                    <span className="px-2 py-1 rounded-full bg-[#FCD116]/20 border-2 border-[#FCD116] text-[#0038A8] text-[13.5px] font-black uppercase tracking-widest shadow-sm">Yes</span>
                                                                 ) : (
-                                                                    <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-400 text-[9px] font-black uppercase tracking-widest shadow-sm">No</span>
+                                                                    <span className="px-2 py-1 rounded-full bg-slate-100 border-2 border-slate-200 text-slate-400 text-[13.5px] font-black uppercase tracking-widest shadow-sm">No</span>
                                                                 )}
                                                             </div>
                                                         </td>
                                                         <td className="px-1 py-4 align-middle static md:relative">
                                                             <StatusBadge status={item.status} />
 
-                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-slate-200 pointer-events-none group-hover:pointer-events-auto">
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">
                                                                 {item.status === 'For Approval' && user?.role === 'Central Office' && (
                                                                     <>
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} title="Approve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm shrink-0">
-                                                                            <FiCheckCircle size={12} />
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} title="Approve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border-2 border-emerald-100 shadow-sm shrink-0">
+                                                                            <FiCheckCircle size={14} />
                                                                         </button>
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} title="Reject" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
-                                                                            <FiX size={12} />
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} title="Reject" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-100 shadow-sm shrink-0">
+                                                                            <FiX size={14} />
                                                                         </button>
                                                                     </>
                                                                 )}
                                                                 {item.status === 'Rejected' && user?.role === 'Central Office' && (
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} title="Retrieve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-sky-50 text-sky-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-sky-500 hover:text-white transition-all border border-sky-100 shadow-sm shrink-0">
-                                                                        <FiRefreshCw size={12} />
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} title="Retrieve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-sky-50 text-sky-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-sky-500 hover:text-white transition-all border-2 border-sky-100 shadow-sm shrink-0">
+                                                                        <FiRefreshCw size={14} />
                                                                     </button>
                                                                 )}
                                                                 {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
-                                                                    <button onClick={() => handleOpenReassignModal(item)} title="Reassign" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm shrink-0">
-                                                                        <FiLayers size={12} />
+                                                                    <button onClick={() => handleOpenReassignModal(item)} title="Reassign" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border-2 border-amber-100 shadow-sm shrink-0">
+                                                                        <FiLayers size={14} />
                                                                     </button>
                                                                 )}
                                                                 {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
-                                                                    <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm shrink-0">
-                                                                        <FiTrash2 size={12} />
+                                                                    <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-100 shadow-sm shrink-0">
+                                                                        <FiTrash2 size={14} />
                                                                     </button>
                                                                 )}
                                                                 {user?.role === 'Central Office' && (
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); handleToggleTestAccount(item); }}
                                                                         title={item.is_testaccount ? "Remove Test Account Flag" : "Mark as Test Account"}
-                                                                        className={`flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm shrink-0 ${
+                                                                        className={`flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-widest transition-all border-2 shadow-sm shrink-0 ${
                                                                             item.is_testaccount
                                                                                 ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
                                                                                 : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'
                                                                         }`}
                                                                     >
-                                                                        <FaVial size={12} />
+                                                                        <FaVial size={14} />
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -1851,48 +1852,48 @@ const OfficialsRegistry = () => {
                                         </table>
 
                                         {/* MOBILE CARD VIEW */}
-                                        <div className="md:hidden flex flex-col divide-y divide-slate-100">
+                                        <div className="md:hidden flex flex-col divide-y-2 divide-slate-100">
                                             {pagedRecords.map((item) => (
                                                 <div key={item.TLOid} className="p-4 bg-white hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="flex items-center gap-3 min-w-0">
-                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border border-white shadow-sm overflow-hidden shrink-0">
+                                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border-2 border-white shadow-sm overflow-hidden shrink-0">
                                                                 {item.photo_binary_id ? (
                                                                     <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
-                                                                ) : <FiUser size={16} />}
+                                                                ) : <FiUser size={18} />}
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none transition-colors truncate">
-                                                                        {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[10px]">VACANT POSITION</span>}
+                                                                    <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[21px] leading-none transition-colors truncate">
+                                                                        {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
                                                                     </div>
                                                                     {item.is_testaccount && (
-                                                                        <span title="Test Account" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-100/90 border border-purple-300 text-purple-700 text-[8px] font-black uppercase tracking-wider shrink-0 shadow-sm">
-                                                                            <FaVial size={9} className="text-purple-600 shrink-0" />
+                                                                        <span title="Test Account" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-100/90 border-2 border-purple-300 text-purple-700 text-[12px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                                                            <FaVial size={10} className="text-purple-600 shrink-0" />
                                                                             <span>TEST</span>
                                                                         </span>
                                                                     )}
                                                                 </div>
-                                                                <div className="text-[10px] font-bold text-slate-400 mt-1 truncate">{item.email || 'No Email'}</div>
+                                                                <div className="text-[15px] font-bold text-slate-400 mt-1 truncate">{item.email || 'No Email'}</div>
                                                             </div>
                                                         </div>
                                                         <div className="shrink-0"><StatusBadge status={item.status} /></div>
                                                     </div>
 
-                                                    <div className="flex flex-col gap-2 mt-1 bg-slate-50/50 rounded-xl p-3 border border-slate-100">
-                                                        <div className="flex justify-between items-center text-[10px] gap-2">
+                                                    <div className="flex flex-col gap-2 mt-1 bg-slate-50/50 rounded-xl p-3 border-2 border-slate-200">
+                                                        <div className="flex justify-between items-center text-[15px] gap-2">
                                                             <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">{((item.region || getOfficialRegion(item)) === 'Central Office') ? 'Strand' : 'Office'}</span>
                                                             <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">
                                                                 {(item.region) ? `${item.region} • ` : 'N/A • '}{((item.region || getOfficialRegion(item)) === 'Central Office' ? item.strand : item.division) || 'N/A'}
                                                             </span>
                                                         </div>
-                                                        <div className="flex justify-between items-center text-[10px] gap-2">
+                                                        <div className="flex justify-between items-center text-[15px] gap-2">
                                                             <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Position</span>
-                                                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50/80 border border-amber-300 text-amber-600 font-black uppercase tracking-widest shrink-0 max-w-[65%] truncate">
+                                                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50/80 border-2 border-amber-300 text-amber-600 font-black uppercase tracking-widest shrink-0 max-w-[65%] truncate">
                                                                 <span className="truncate">{item.status === 'Inactive' ? 'N/A' : (item.position_title || 'Unassigned')}</span>
                                                             </span>
                                                         </div>
-                                                        <div className="flex justify-between items-center text-[10px] gap-2">
+                                                        <div className="flex justify-between items-center text-[15px] gap-2">
                                                             <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Designation</span>
                                                             <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">{expandAcronym(item.designation) || 'No Designation'}</span>
                                                         </div>
@@ -1900,66 +1901,58 @@ const OfficialsRegistry = () => {
 
                                                     {item.status === 'For Approval' && user?.role === 'Central Office' && (
                                                         <div className="flex items-center gap-2 mt-1">
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all">
-                                                                <FiCheckCircle size={12} /> Approve
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all">
+                                                                <FiCheckCircle size={14} /> Approve
                                                             </button>
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
-                                                                <FiX size={12} /> Reject
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                                                                <FiX size={14} /> Reject
                                                             </button>
                                                         </div>
                                                     )}
                                                     {item.status === 'Rejected' && user?.role === 'Central Office' && (
                                                         <div className="flex items-center gap-2 mt-1">
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-sky-100 hover:bg-sky-500 hover:text-white transition-all">
-                                                                <FiRefreshCw size={12} /> Retrieve
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-50 text-sky-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-sky-100 hover:bg-sky-500 hover:text-white transition-all">
+                                                                <FiRefreshCw size={14} /> Retrieve
                                                             </button>
                                                         </div>
                                                     )}
                                                     {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
                                                         <div className="flex items-center gap-2 mt-1">
-                                                            <button onClick={(e) => { e.stopPropagation(); handleOpenReassignModal(item); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-500 hover:text-white transition-all">
-                                                                <FiLayers size={12} /> Reassign
+                                                            <button onClick={(e) => { e.stopPropagation(); handleOpenReassignModal(item); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-amber-100 hover:bg-amber-500 hover:text-white transition-all">
+                                                                <FiLayers size={14} /> Reassign
                                                             </button>
                                                             {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && (
-                                                                <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'vacate'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
-                                                                    <FiTrash2 size={12} /> Vacate
+                                                                <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'vacate'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                                                                    <FiTrash2 size={14} /> Vacate
                                                                 </button>
                                                             )}
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleToggleTestAccount(item); }}
-                                                                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                                                    item.is_testaccount
-                                                                        ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
-                                                                        : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'
-                                                                }`}
-                                                            >
-                                                                <FaVial size={12} /> {item.is_testaccount ? 'Untest' : 'Test'}
-                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                    <div className="px-8 py-5 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            Showing {totalRecords === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
-                                            {pageButtons.map(page => typeof page === 'number' ? (
-                                                <button
-                                                    key={page}
-                                                    onClick={() => setCurrentPage(page)}
-                                                    className={`w-9 h-9 rounded-xl text-[10px] font-black border transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
-                                                >
-                                                    {page}
-                                                </button>
-                                            ) : (
-                                                <span key={page} className="px-1 text-[10px] font-black text-slate-300">...</span>
-                                            ))}
-                                            <span className="px-2 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {pageCount}</span>
-                                            <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
+
+                                        {/* TABLE FOOTER / PAGINATION */}
+                                        <div className="px-8 py-5 bg-white border-t-2 border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <span className="text-[15px] font-black text-slate-400 uppercase tracking-widest">
+                                                Showing {totalRecords === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-white border-2 border-slate-200 text-slate-500 rounded-xl text-[15px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
+                                                {pageButtons.map(page => typeof page === 'number' ? (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => setCurrentPage(page)}
+                                                        className={`w-10 h-10 rounded-xl text-[15px] font-black border-2 transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                ) : (
+                                                    <span key={page} className="px-1 text-[15px] font-black text-slate-300">...</span>
+                                                ))}
+                                                <span className="px-2 py-2 text-[15px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {pageCount}</span>
+                                                <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-white border-2 border-slate-200 text-slate-500 rounded-xl text-[15px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -1971,7 +1964,7 @@ const OfficialsRegistry = () => {
                                                 key={item.TLOid}
                                                 whileHover={{ y: -4 }}
                                                 onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                className={`bg-white rounded-[1.5rem] p-5 border border-[#08315F] shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
+                                                className={`bg-white rounded-[1.5rem] p-5 border-2 border-[#08315F] shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                             >
                                                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                                                 <div>
@@ -1982,7 +1975,7 @@ const OfficialsRegistry = () => {
                                                             ) : <FiUser size={20} />}
                                                         </div>
                                                         <div className="flex items-center gap-1">
-                                                            {item.is_oic && <span className="px-2 py-0.5 bg-[#FCD116] text-[#0038A8] border border-yellow-200 rounded-full text-[7px] font-black uppercase tracking-widest">OIC</span>}
+                                                            {item.is_oic && <span className="px-2 py-0.5 bg-[#FCD116] text-[#0038A8] border-2 border-yellow-200 rounded-full text-[10.5px] font-black uppercase tracking-widest">OIC</span>}
                                                             <div className="scale-75 origin-top-right">
                                                                 <StatusBadge status={item.status} />
                                                             </div>
@@ -1990,27 +1983,27 @@ const OfficialsRegistry = () => {
                                                     </div>
 
                                                     <div className="space-y-1 relative z-10">
-                                                        <h3 className="text-sm font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic line-clamp-2">
+                                                        <h3 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic line-clamp-2">
                                                             {item.first_name ? <>{item.first_name} {item.last_name}</> : <span className="text-rose-500">VACANT POSITION</span>}
                                                         </h3>
                                                         {item.status !== 'Inactive' && (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
-                                                                className="text-[8px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1 w-full"
+                                                                className="text-[12px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1 w-full"
                                                                 title="Positional History"
                                                             >
                                                                 <span className="truncate">{item.position_title || 'Candidate'}</span>
-                                                                <FiClock className="text-slate-400 shrink-0" size={8} />
+                                                                <FiClock className="text-slate-400 shrink-0" size={10} />
                                                             </button>
                                                         )}
 
                                                         {item.concurrent_positions && (
-                                                            <div className="mt-2 bg-emerald-50 rounded-xl p-2.5 border border-emerald-100 shadow-sm">
-                                                                <div className="text-[6px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1 flex items-center gap-1">
-                                                                    <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></div>
+                                                            <div className="mt-2 bg-emerald-50 rounded-xl p-2.5 border-2 border-emerald-100 shadow-sm">
+                                                                <div className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1 flex items-center gap-1">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
                                                                     Concurrent Role
                                                                 </div>
-                                                                <div className="text-[8px] font-bold text-emerald-800 leading-snug line-clamp-2">
+                                                                <div className="text-[12px] font-bold text-emerald-800 leading-snug line-clamp-2">
                                                                     {item.concurrent_positions.split(' | ').map((pos, idx) => (
                                                                         <div key={idx} className="mb-0.5 last:mb-0 truncate">
                                                                             {pos}
@@ -2021,19 +2014,19 @@ const OfficialsRegistry = () => {
                                                         )}
                                                     </div>
 
-                                                    <div className="mt-4 pt-3 border-t border-slate-50 space-y-2">
+                                                    <div className="mt-4 pt-3 border-t-2 border-slate-100 space-y-2">
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
-                                                            <span className="text-[8px] font-bold text-slate-700 truncate max-w-[60%] text-right">{item.status === 'Inactive' ? 'N/A' : (item.strand || 'N/A')}</span>
+                                                            <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-widest">Strand</span>
+                                                            <span className="text-[12px] font-bold text-slate-700 truncate max-w-[60%] text-right">{item.status === 'Inactive' ? 'N/A' : (item.strand || 'N/A')}</span>
                                                         </div>
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Office</span>
-                                                            <span className="text-[8px] font-bold text-slate-700 truncate ml-2 text-right">{item.status === 'Inactive' ? 'N/A' : (item.office || 'Main Office')}</span>
+                                                            <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-widest">Office</span>
+                                                            <span className="text-[12px] font-bold text-slate-700 truncate ml-2 text-right">{item.status === 'Inactive' ? 'N/A' : (item.office || 'Main Office')}</span>
                                                         </div>
                                                         {item.updated_at && (
                                                             <div className="flex items-center justify-between">
-                                                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Updated</span>
-                                                                <span className="text-[8px] font-bold text-slate-700 truncate ml-2 text-right">
+                                                                <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-widest">Updated</span>
+                                                                <span className="text-[12px] font-bold text-slate-700 truncate ml-2 text-right">
                                                                     {new Date(item.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                                 </span>
                                                             </div>
@@ -2041,41 +2034,41 @@ const OfficialsRegistry = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="mt-4 pt-3 border-t border-slate-50 flex flex-col gap-3 relative z-20" onClick={e => e.stopPropagation()}>
+                                                <div className="mt-4 pt-3 border-t-2 border-slate-100 flex flex-col gap-3 relative z-20" onClick={e => e.stopPropagation()}>
                                                     <div className="flex flex-wrap justify-center gap-1.5">
                                                         {item.status === 'For Approval' && user?.role === 'Central Office' && (
                                                             <>
-                                                                <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border border-emerald-100 shadow-sm">
-                                                                    <FiCheckCircle size={10} /> Approve
+                                                                <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-md text-[10.5px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border-2 border-emerald-100 shadow-sm">
+                                                                    <FiCheckCircle size={12} /> Approve
                                                                 </button>
-                                                                <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                                    <FiX size={10} /> Reject
+                                                                <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[10.5px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-100 shadow-sm">
+                                                                    <FiX size={12} /> Reject
                                                                 </button>
                                                             </>
                                                         )}
                                                         {item.status === 'Rejected' && user?.role === 'Central Office' && (
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} className="flex items-center gap-1 px-2 py-1.5 bg-sky-50 text-sky-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-sky-500 hover:text-white transition-all border border-sky-100 shadow-sm">
-                                                                <FiRefreshCw size={10} /> Retrieve
+                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'retrieve'); }} className="flex items-center gap-1 px-2 py-1.5 bg-sky-50 text-sky-600 rounded-md text-[10.5px] font-black uppercase tracking-widest hover:bg-sky-500 hover:text-white transition-all border-2 border-sky-100 shadow-sm">
+                                                                <FiRefreshCw size={12} /> Retrieve
                                                             </button>
                                                         )}
                                                         {item.status !== 'Inactive' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
-                                                            <button onClick={(e) => { e.stopPropagation(); handleOpenReassignModal(item); }} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border border-amber-100 shadow-sm">
-                                                                <FiLayers size={10} /> Reassign
+                                                            <button onClick={(e) => { e.stopPropagation(); handleOpenReassignModal(item); }} className="flex items-center gap-1 px-2 py-1.5 bg-amber-50 text-amber-600 rounded-md text-[10.5px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border-2 border-amber-100 shadow-sm">
+                                                                <FiLayers size={12} /> Reassign
                                                             </button>
                                                         )}
                                                         {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
-                                                            <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'vacate'); }} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border border-rose-100 shadow-sm">
-                                                                <FiTrash2 size={10} /> Vacate
+                                                            <button onClick={(e) => { e.stopPropagation(); openActionModal(item, 'vacate'); }} className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-md text-[10.5px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-100 shadow-sm">
+                                                                <FiTrash2 size={12} /> Vacate
                                                             </button>
                                                         )}
                                                     </div>
                                                     {item.status !== 'Inactive' && (
                                                         <div className="flex items-center justify-between">
-                                                            <div className="text-[7px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-1 group-hover:text-[#075985] transition-colors">
-                                                                Full Profile <FiArrowRight size={10} />
+                                                            <div className="text-[10.5px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-1 group-hover:text-[#075985] transition-colors">
+                                                                Full Profile <FiArrowRight size={12} />
                                                             </div>
-                                                            <button onClick={() => handlePositionClick(item)} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-[#08315F] hover:text-white transition-all" title="Positional History">
-                                                                <FiClock size={12} />
+                                                            <button onClick={() => handlePositionClick(item)} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-[#08315F] hover:text-white transition-all border-2 border-slate-200" title="Positional History">
+                                                                <FiClock size={14} />
                                                             </button>
                                                         </div>
                                                     )}
@@ -2083,46 +2076,46 @@ const OfficialsRegistry = () => {
                                             </motion.div>
                                         ))}
                                     </div>
-                                    <div className="px-8 py-5 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <div className="px-8 py-5 bg-white rounded-[2.5rem] border-2 border-slate-200 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                        <span className="text-[15px] font-black text-slate-400 uppercase tracking-widest">
                                             Showing {totalRecords === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
                                         </span>
                                         <div className="flex items-center gap-2">
-                                            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
+                                            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 bg-slate-50 border-2 border-slate-200 text-slate-500 rounded-xl text-[15px] font-black uppercase tracking-widest disabled:opacity-40">Previous</button>
                                             {pageButtons.map(page => typeof page === 'number' ? (
                                                 <button
                                                     key={page}
                                                     onClick={() => setCurrentPage(page)}
-                                                    className={`w-9 h-9 rounded-xl text-[10px] font-black border transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                                    className={`w-10 h-10 rounded-xl text-[15px] font-black border-2 transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
                                                 >
                                                     {page}
                                                 </button>
                                             ) : (
-                                                <span key={page} className="px-1 text-[10px] font-black text-slate-300">...</span>
+                                                <span key={page} className="px-1 text-[15px] font-black text-slate-300">...</span>
                                             ))}
-                                            <span className="px-2 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {pageCount}</span>
-                                            <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
+                                            <span className="px-2 py-2 text-[15px] font-black text-slate-400 uppercase tracking-widest">Page {currentPage} of {pageCount}</span>
+                                            <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-slate-50 border-2 border-slate-200 text-slate-500 rounded-xl text-[15px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
                                         </div>
                                     </div>
                                 </motion.div>
                             ) : (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
                                     {Object.entries(directoryGroups).map(([groupName, members]) => (
-                                        <div key={groupName} className="bg-slate-50/50 p-8 rounded-[3rem] border border-slate-200">
-                                            <h3 className="text-center font-black text-2xl text-[#08315F] tracking-tighter mb-8 uppercase">{groupName}</h3>
+                                        <div key={groupName} className="bg-slate-50/50 p-8 rounded-[3rem] border-2 border-slate-200">
+                                            <h3 className="text-center font-black text-[36px] text-[#08315F] tracking-tighter mb-8 uppercase">{groupName}</h3>
 
                                             <div className="flex flex-wrap justify-center gap-6">
                                                 {members.map(item => (
                                                     <div key={item.TLOid} className="bg-white border-2 border-slate-200 rounded-3xl p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-[#075985] transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}>
-                                                        <div className="absolute -top-4 bg-[#075985] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md w-[90%] truncate">
+                                                        <div className="absolute -top-4 bg-[#075985] text-white text-[15px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md w-[90%] truncate border-2 border-sky-600">
                                                             {item.position_title || 'Position Unknown'}
                                                         </div>
-                                                        <div className="mt-4 font-black text-lg text-slate-800 leading-tight uppercase italic min-h-[50px] flex items-center justify-center">
+                                                        <div className="mt-4 font-black text-[27px] text-slate-800 leading-tight uppercase italic min-h-[50px] flex items-center justify-center">
                                                             {item.first_name ? `${item.first_name} ${item.last_name}` : <span className="text-rose-500 not-italic">VACANT</span>}
                                                         </div>
-                                                        <div className="text-[10px] font-bold text-slate-500 mt-2 min-h-[30px] flex items-center justify-center">{item.designation || 'No Designation'}</div>
-                                                        <div className="w-full h-px bg-slate-100 my-4"></div>
-                                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                        <div className="text-[15px] font-bold text-slate-500 mt-2 min-h-[30px] flex items-center justify-center">{item.designation || 'No Designation'}</div>
+                                                        <div className="w-full h-0.5 bg-slate-200 my-4"></div>
+                                                        <div className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest">
                                                             Appointed: <span className="text-[#075985] ml-1">{item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : item.effectivity_date ? new Date(item.effectivity_date).toLocaleDateString() : 'N/A'}</span>
                                                         </div>
                                                     </div>
@@ -2151,37 +2144,37 @@ const OfficialsRegistry = () => {
                                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                        className="bg-white rounded-[3rem] w-full max-w-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border border-white/50 overflow-hidden relative"
+                                        className="bg-white rounded-[3rem] w-full max-w-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border-2 border-white/50 overflow-hidden relative"
                                     >
                                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent"></div>
 
                                         <div className="p-10 relative z-10">
                                             <div className="flex justify-between items-start mb-8">
                                                 <div className="space-y-1">
-                                                    <div className="flex items-center gap-2 text-[#075985] font-black text-[10px] uppercase tracking-[0.2em] mb-2">
+                                                    <div className="flex items-center gap-2 text-[#075985] font-black text-[15px] uppercase tracking-[0.2em] mb-2">
                                                         <FiClock /> Positional History
                                                     </div>
-                                                    <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
-                                                    <p className="text-slate-400 font-medium">{selectedPosition?.office || 'Department of Education'}</p>
+                                                    <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
+                                                    <p className="text-slate-400 font-medium text-[21px]">{selectedPosition?.office || 'Department of Education'}</p>
                                                 </div>
-                                                <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border border-slate-100 transition-all">
+                                                <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border-2 border-slate-200 transition-all">
                                                     <FiX size={24} />
                                                 </button>
                                             </div>
 
                                             <div className="space-y-4">
-                                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3">Last Known Incumbents</h4>
+                                                <h4 className="text-[15px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-200 pb-3">Last Known Incumbents</h4>
                                                 {incumbentsLoading ? (
                                                     <div className="h-48 flex items-center justify-center">
                                                         <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
                                                     </div>
                                                 ) : incumbents.length === 0 ? (
-                                                    <div className="py-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                                    <div className="py-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
                                                         <FiClock className="mx-auto text-slate-200 mb-4" size={32} />
-                                                        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">No historical data recorded</p>
+                                                        <p className="text-slate-400 font-bold uppercase text-[15px] tracking-widest">No historical data recorded</p>
                                                     </div>
                                                 ) : (
-                                                    <div className="relative border-l-2 border-slate-100 ml-4 pl-6 space-y-5 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar">
+                                                    <div className="relative border-l-2 border-slate-200 ml-4 pl-6 space-y-5 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar">
                                                         {incumbents.map((inc, i) => {
                                                             const startYear = inc.appointment_date ? new Date(inc.appointment_date).getFullYear() : 'Unknown';
                                                             const endYear = inc.is_current == 1 ? 'Present' : new Date(inc.tenure_date).getFullYear();
@@ -2191,30 +2184,30 @@ const OfficialsRegistry = () => {
                                                                 <div key={i} className="relative group">
                                                                     <div className={`absolute -left-[31px] top-5 w-4 h-4 rounded-full border-4 border-white shadow-sm ${inc.is_current == 1 ? 'bg-emerald-400' : 'bg-slate-300 group-hover:bg-blue-400'} transition-colors z-10`}></div>
 
-                                                                    <div className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border transition-all ${inc.is_current == 1 ? 'bg-emerald-50/50 border-emerald-100 shadow-sm' : 'bg-white border-slate-100 hover:shadow-lg hover:shadow-blue-900/5 hover:border-blue-100'}`}>
+                                                                    <div className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border-2 transition-all ${inc.is_current == 1 ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-white border-slate-200 hover:shadow-lg hover:shadow-blue-900/5 hover:border-blue-200'}`}>
                                                                         <div className="flex items-center gap-4">
                                                                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg shadow-sm ${inc.is_current == 1 ? 'bg-emerald-500 text-white' : 'bg-[#08315F] text-white group-hover:bg-[#075985]'} transition-colors`}>
                                                                                 {inc.first_name ? inc.first_name[0] : 'V'}{inc.last_name ? inc.last_name[0] : ''}
                                                                             </div>
                                                                             <div>
                                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                                    <h4 className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-base italic uppercase leading-none">
+                                                                                    <h4 className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[24px] italic uppercase leading-none">
                                                                                         {inc.first_name || 'VACANT'} {inc.last_name || ''}
                                                                                     </h4>
-                                                                                    {inc.is_current == 1 && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[8px] font-black uppercase tracking-widest">Active</span>}
+                                                                                    {inc.is_current == 1 && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[12px] font-black uppercase tracking-widest border-2 border-emerald-200">Active</span>}
                                                                                 </div>
-                                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {inc.TLOid}</div>
+                                                                                <div className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">ID: {inc.TLOid}</div>
                                                                             </div>
                                                                         </div>
 
                                                                         <div className="mt-4 md:mt-0 text-left md:text-right bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-xl">
-                                                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1 md:justify-end">
-                                                                                <FiCalendar size={10} /> Tenure Period
+                                                                            <div className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1 md:justify-end">
+                                                                                <FiCalendar size={12} /> Tenure Period
                                                                             </div>
-                                                                            <div className={`font-black uppercase tracking-tight ${inc.is_current == 1 ? 'text-emerald-600 text-sm' : 'text-slate-600 text-sm'}`}>
+                                                                            <div className={`font-black uppercase tracking-tight ${inc.is_current == 1 ? 'text-emerald-600 text-[21px]' : 'text-slate-600 text-[21px]'}`}>
                                                                                 {yearDisplay}
                                                                             </div>
-                                                                            <div className="text-[8px] font-bold text-slate-400 uppercase mt-1">
+                                                                            <div className="text-[12px] font-bold text-slate-400 uppercase mt-1">
                                                                                 Updated: {new Date(inc.tenure_date).toLocaleDateString()}
                                                                             </div>
                                                                         </div>
@@ -2226,14 +2219,14 @@ const OfficialsRegistry = () => {
                                                 )}
                                             </div>
 
-                                            <div className="mt-10 bg-[#08315F] rounded-2xl p-6 text-white flex items-center justify-between">
+                                            <div className="mt-10 bg-[#08315F] rounded-2xl p-6 text-white flex items-center justify-between border-2 border-white/10">
                                                 <div className="flex items-center gap-4">
                                                     <FiInfo size={24} className="opacity-50" />
-                                                    <p className="text-[10px] font-bold uppercase tracking-wide leading-relaxed">This ledger tracks movements based on administrative updates. Promoting or reassigning an official will append a new entry to this history.</p>
+                                                    <p className="text-[15px] font-bold uppercase tracking-wide leading-relaxed">This ledger tracks movements based on administrative updates. Promoting or reassigning an official will append a new entry to this history.</p>
                                                 </div>
                                                 <button
                                                     onClick={() => setShowIncumbencyModal(false)}
-                                                    className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                                    className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-xl text-[15px] font-black uppercase tracking-widest transition-all border-2 border-white/20"
                                                 >
                                                     Dismiss
                                                 </button>
@@ -2255,25 +2248,25 @@ const OfficialsRegistry = () => {
                                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                                        className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border border-white/50 overflow-hidden flex flex-col max-h-[90vh]"
+                                        className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border-2 border-white/50 overflow-hidden flex flex-col max-h-[90vh]"
                                     >
                                         <div className="overflow-y-auto custom-scrollbar w-full h-full">
                                             <div className="p-10">
                                                 <div className="flex justify-between items-start mb-8">
                                                     <div>
-                                                        <span className="text-[10px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                                        <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
+                                                        <span className="text-[15px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
+                                                        <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
                                                             {adminAction === 'reassign'
                                                                 ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
                                                                 : `${adminAction === 'vacate' ? 'VACATING' : `${adminAction.toUpperCase()}ING`} OFFICIAL`}
                                                         </h2>
-                                                        <p className="text-slate-400 font-bold mt-2">
+                                                        <p className="text-slate-400 font-bold text-[21px] mt-2">
                                                             {adminAction === 'reassign'
                                                                 ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? actionOfficial?.position_title : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`)
                                                                 : `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`}
                                                         </p>
                                                     </div>
-                                                    <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all">
+                                                    <button onClick={() => setShowActionModal(false)} className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-600 transition-all border-2 border-slate-200">
                                                         <FiX size={20} />
                                                     </button>
                                                 </div>
@@ -2297,13 +2290,13 @@ const OfficialsRegistry = () => {
                                                                     <>
                                                                         <div>
                                                                             <div className="flex justify-between items-end mb-3">
-                                                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0">Search Personnel Without Position</label>
+                                                                                <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest block mb-0">Search Personnel Without Position</label>
                                                                                 {user?.role === 'Central Office' && (
-                                                                                    <button onClick={() => setIsAddingPersonnel(true)} className="text-[10px] font-black text-[#08315F] hover:text-[#004A99] uppercase tracking-widest transition-colors">+ Add New</button>
+                                                                                    <button onClick={() => setIsAddingPersonnel(true)} className="text-[15px] font-black text-[#08315F] hover:text-[#004A99] uppercase tracking-widest transition-colors">+ Add New</button>
                                                                                 )}
                                                                             </div>
                                                                             <div className="relative">
-                                                                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                                                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                                                                 <DebouncedSearchInput
                                                                                     value={unassignedSearch}
                                                                                     onChange={setUnassignedSearch}
@@ -2324,8 +2317,8 @@ const OfficialsRegistry = () => {
                                                                             }))}
                                                                         />
                                                                         {!unassignedLoading && unassignedPersonnel.length === 0 && (
-                                                                            <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
+                                                                            <div className="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-center">
+                                                                                <p className="text-[15px] font-black text-slate-400 uppercase tracking-widest">No unassigned personnel found</p>
                                                                             </div>
                                                                         )}
                                                                     </>
@@ -2356,8 +2349,8 @@ const OfficialsRegistry = () => {
                                                                             }))}
                                                                         />
                                                                     ) : (
-                                                                        <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Please select an office first to view vacant positions</p>
+                                                                        <div className="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-center">
+                                                                            <p className="text-[15px] font-black text-slate-400 uppercase tracking-widest">Please select an office first to view vacant positions</p>
                                                                         </div>
                                                                     )}
                                                                 </>
@@ -2385,22 +2378,22 @@ const OfficialsRegistry = () => {
 
                                                     {(adminAction === 'reassign' || adminAction === 'vacate') && (
                                                         <div className="mb-4">
-                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Date of Effectivity</label>
+                                                            <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Date of Effectivity</label>
                                                             <ModernDatePicker
                                                                 value={effectivityDate}
                                                                 onChange={(val) => setEffectivityDate(val)}
-                                                                className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                                className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
                                                             />
                                                         </div>
                                                     )}
 
                                                     {adminAction === 'vacate' && (
                                                         <div className="mb-4">
-                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Reason for Vacating</label>
+                                                            <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Reason for Vacating</label>
                                                             <select
                                                                 value={vacateReason}
                                                                 onChange={(e) => setVacateReason(e.target.value)}
-                                                                className="w-full bg-slate-50 border-2 border-transparent focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 outline-none transition-all"
+                                                                className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
                                                             >
                                                                 <option value="">Select a reason...</option>
                                                                 <option value="Resignation">Resignation</option>
@@ -2414,7 +2407,7 @@ const OfficialsRegistry = () => {
                                                     )}
 
                                                     <div>
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Remarks</label>
+                                                        <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Justification / Remarks</label>
                                                         <JustificationInput
                                                             value={justification}
                                                             onChange={setJustification}
@@ -2426,7 +2419,7 @@ const OfficialsRegistry = () => {
                                                         <button
                                                             disabled={actionLoading}
                                                             onClick={handleAdminAction}
-                                                            className="flex-1 py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
+                                                            className="flex-1 py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[16.5px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 border-2 border-transparent"
                                                         >
                                                             {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
                                                         </button>
@@ -2434,7 +2427,7 @@ const OfficialsRegistry = () => {
                                                             <button
                                                                 disabled={actionLoading}
                                                                 onClick={handleCancelVacate}
-                                                                className="flex-1 py-5 bg-rose-50 text-rose-600 border-2 border-rose-100 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-sm hover:bg-rose-100 hover:border-rose-200 transition-all active:scale-95 disabled:opacity-50"
+                                                                className="flex-1 py-5 bg-rose-50 text-rose-600 border-2 border-rose-200 rounded-[1.5rem] font-black text-[16.5px] uppercase tracking-[0.2em] shadow-sm hover:bg-rose-100 hover:border-rose-300 transition-all active:scale-95 disabled:opacity-50"
                                                             >
                                                                 {actionLoading ? 'Processing...' : 'Cancel Action'}
                                                             </button>
@@ -2461,10 +2454,10 @@ const OfficialsRegistry = () => {
                         token={token}
                     />
 
-                    <footer className="mt-auto p-12 text-center bg-white border-t border-slate-100 flex flex-col items-center gap-6">
+                    <footer className="mt-auto p-12 text-center bg-white border-t-2 border-slate-100 flex flex-col items-center gap-6">
                         <div className="space-y-1">
-                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em]">© 2026 Department of Education • InsightEd Nexus Portal</p>
-                            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest italic">Strictly for Personnel Division Administrative Use Only</p>
+                            <p className="text-slate-400 text-[13.5px] font-black uppercase tracking-[0.3em]">© 2026 Department of Education • InsightEd Nexus Portal</p>
+                            <p className="text-[12px] font-bold text-slate-300 uppercase tracking-widest italic">Strictly for Personnel Division Administrative Use Only</p>
                         </div>
                     </footer>
                 </div>

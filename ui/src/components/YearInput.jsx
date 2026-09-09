@@ -71,8 +71,8 @@ const YearInput = ({
             {/* Trigger */}
             <div
                 onClick={() => !disabled && setIsOpen(!isOpen)}
-                className={`w-full bg-white border ${errorText ? 'border-red-400' : isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10' : 'border-slate-200 hover:border-slate-300'} 
-                    rounded-xl py-2.5 pl-10 pr-8 text-sm transition-all shadow-sm cursor-pointer select-none
+                className={`w-full bg-white border-2 ${errorText ? 'border-red-400' : isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10' : 'border-slate-200 hover:border-slate-300'} 
+                    rounded-xl py-2.5 pl-10 pr-8 text-[21px] transition-all shadow-sm cursor-pointer select-none
                     ${disabled ? 'bg-slate-50 text-slate-500 cursor-not-allowed opacity-70' : 'text-slate-800'}`}
             >
                 <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
@@ -98,7 +98,7 @@ const YearInput = ({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.96 }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className="absolute z-[100] mt-2 left-0 right-0 bg-white rounded-2xl shadow-xl shadow-slate-200/80 border border-slate-100 overflow-hidden"
+                        className="absolute z-[100] mt-2 left-0 right-0 bg-white rounded-2xl shadow-xl shadow-slate-200/80 border-2 border-slate-100 overflow-hidden"
                     >
                         {/* Header with navigation */}
                         <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#08315F] to-[#0A4A8A]">
@@ -109,7 +109,7 @@ const YearInput = ({
                             >
                                 <FiChevronLeft size={16} />
                             </button>
-                            <span className="text-xs font-black text-white uppercase tracking-widest">
+                            <span className="text-[18px] font-black text-white uppercase tracking-widest">
                                 {yearsGrid[0]} — {yearsGrid[yearsGrid.length - 1]}
                             </span>
                             <button
@@ -133,7 +133,7 @@ const YearInput = ({
                                         key={yr}
                                         onClick={(e) => { e.stopPropagation(); if (!isDisabled) handleSelect(yr); }}
                                         disabled={isDisabled}
-                                        className={`relative py-2.5 rounded-xl text-xs font-bold transition-all duration-200
+                                        className={`relative py-2.5 rounded-xl text-[18px] font-bold transition-all duration-200
                                             ${isSelected
                                                 ? 'bg-[#08315F] text-white shadow-md shadow-blue-900/20 scale-[1.02]'
                                                 : isDisabled
@@ -151,16 +151,16 @@ const YearInput = ({
                         </div>
 
                         {/* Quick select footer */}
-                        <div className="flex items-center justify-between px-3 pb-3 pt-1 border-t border-slate-100 mt-1">
+                        <div className="flex items-center justify-between px-3 pb-3 pt-1 border-t-2 border-slate-100 mt-1">
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleSelect(currentYear); }}
-                                className="text-[10px] font-bold text-[#08315F] uppercase tracking-wider hover:underline transition-all px-2 py-1 rounded-lg hover:bg-[#08315F]/5"
+                                className="text-[15px] font-bold text-[#08315F] uppercase tracking-wider hover:underline transition-all px-2 py-1 rounded-lg hover:bg-[#08315F]/5"
                             >
                                 This Year
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleClear(e); }}
-                                className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-red-500 hover:underline transition-all px-2 py-1 rounded-lg hover:bg-red-50"
+                                className="text-[15px] font-bold text-slate-400 uppercase tracking-wider hover:text-red-500 hover:underline transition-all px-2 py-1 rounded-lg hover:bg-red-50"
                             >
                                 Clear
                             </button>
@@ -170,7 +170,7 @@ const YearInput = ({
             </AnimatePresence>
 
             {errorText && (
-                <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium">{errorText}</p>
+                <p className="text-red-500 text-[15px] mt-1 ml-1 font-medium">{errorText}</p>
             )}
         </div>
     );
