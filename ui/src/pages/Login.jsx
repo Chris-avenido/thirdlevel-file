@@ -27,11 +27,11 @@ const Login = () => {
 
     const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
+    const [passcode, setPasscode] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [focusedInput, setFocusedInput] = useState(null);
     const [showForgotModal, setShowForgotModal] = useState(false);
-    const [showForgotPasscodeModal, setShowForgotPasscodeModal] = useState(false);
     const [loginMode, setLoginMode] = useState('password'); // 'password' | 'passcode'
     const [isSchoolHead, setIsSchoolHead] = useState(false); // Standalone is usually for Officials/Applicants
     const [isPortalEnforced, setIsPortalEnforced] = useState(true);
@@ -40,12 +40,17 @@ const Login = () => {
     const [forgotEmail, setForgotEmail] = useState('');
     const [forgotLoading, setForgotLoading] = useState(false);
 
-    // UI flows
+    // UI flows & Remembered user handling
     const [rememberedUser, setRememberedUser] = useState(() => {
         const stored = localStorage.getItem('remembered_user');
         if (stored) {
             try {
                 const user = JSON.parse(stored);
+                // Sanitize in memory: strip sensitive credential fields if present
+                ['passcode', 'password', 'pin', 'password_hash', 'passcode_hash'].forEach(field => {
+                    delete user[field];
+                });
+
                 const isCOPortal = location.state?.isCO || false;
 
                 // Check if user role matches the portal constraint
@@ -64,7 +69,30 @@ const Login = () => {
         }
         return null;
     });
-    const [usePassword, setUsePassword] = useState(!localStorage.getItem('remembered_user'));
+
+    // Default to password authentication when password is configured or present
+    const [usePassword, setUsePassword] = useState(() => {
+        const stored = localStorage.getItem('remembered_user');
+        if (stored) {
+            try {
+                const u = JSON.parse(stored);
+                // If user has a password (or by default for regular accounts), default to password mode
+                if (u.has_password !== false) return true;
+                // Only if account is explicitly passcode-only without a password, show PinLogin
+                if (u.has_passcode && !u.has_password) return false;
+            } catch (e) {
+                return true;
+            }
+        }
+        return true;
+    });
+
+    // Populate login identifier from remembered user if available
+    useEffect(() => {
+        if (rememberedUser?.email && !loginId) {
+            setLoginId(rememberedUser.email);
+        }
+    }, [rememberedUser]);
 
     // ... hooks already declared above ...
 
@@ -76,12 +104,25 @@ const Login = () => {
         setIsPortalEnforced(true);
     }, []);
 
+    const handleModeChange = (newMode) => {
+        if (newMode === loginMode) return;
+        setLoginMode(newMode);
+        setShowPassword(false);
+        // Strictly never copy password into passcode state or vice versa
+    };
+
     const handleLogin = async (e) => {
         if (e) e.preventDefault();
         setLoading(true);
 
         try {
-            const data = await loginWithCredentials(loginId, password, isCO);
+            const secret = loginMode === 'password' ? password : passcode;
+            if (!secret) {
+                setLoading(false);
+                return Swal.fire('Error', `Please enter your ${loginMode === 'password' ? 'password' : 'passcode'}.`, 'error');
+            }
+
+            const data = await loginWithCredentials(loginId, secret, isCO);
             if (data.success) {
                 const roleLower = data.user.role?.toLowerCase() || '';
                 // Role enforcement
@@ -99,8 +140,12 @@ const Login = () => {
                     }
                 }
 
-                // Store for "PinLogin" feature
-                localStorage.setItem('remembered_user', JSON.stringify(data.user));
+                // Sanitize user before storing in remembered_user (no credential material)
+                const sanitizedUser = { ...data.user };
+                ['passcode', 'password', 'pin', 'password_hash', 'passcode_hash'].forEach(field => {
+                    delete sanitizedUser[field];
+                });
+                localStorage.setItem('remembered_user', JSON.stringify(sanitizedUser));
 
                 // Role-based redirection
                 if (location.state?.redirectTo) {
@@ -141,6 +186,13 @@ const Login = () => {
                     }
                 }
 
+                // Sanitize user before storing in remembered_user (no credential material)
+                const sanitizedUser = { ...data.user };
+                ['passcode', 'password', 'pin', 'password_hash', 'passcode_hash'].forEach(field => {
+                    delete sanitizedUser[field];
+                });
+                localStorage.setItem('remembered_user', JSON.stringify(sanitizedUser));
+
                 // Role-based redirection
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
@@ -150,7 +202,7 @@ const Login = () => {
                     navigate('/official-profiling');
                 }
             } else {
-                Swal.fire('Login Failed', data.error || 'Invalid passcode', 'error');
+                Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
             }
         } catch (err) {
             Swal.fire('Error', 'Login failed. Please check your connection.', 'error');
@@ -226,6 +278,9 @@ const Login = () => {
                                     localStorage.removeItem('remembered_user');
                                     setRememberedUser(null);
                                     setUsePassword(true);
+                                    setLoginId('');
+                                    setPassword('');
+                                    setPasscode('');
                                 }}
                                 onUsePassword={() => setUsePassword(true)}
                             />
@@ -257,14 +312,14 @@ const Login = () => {
                                     <div className="flex bg-slate-100 p-1 rounded-2xl">
                                         <button
                                             type="button"
-                                            onClick={() => setLoginMode('password')}
+                                            onClick={() => handleModeChange('password')}
                                             className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'password' ? 'bg-white text-[#08315F] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
                                             Password
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => setLoginMode('passcode')}
+                                            onClick={() => handleModeChange('passcode')}
                                             className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'passcode' ? 'bg-white text-[#08315F] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
                                             Passcode
@@ -280,30 +335,49 @@ const Login = () => {
                                             <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'secret' ? 'text-[#08315F]' : 'text-slate-400'}`}>
                                                 <FiLock className="w-5 h-5" />
                                             </div>
-                                            <input
-                                                type={showPassword || loginMode === 'passcode' ? 'text' : 'password'}
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                onFocus={() => {
-                                                    setFocusedInput('secret');
-                                                    if (loginMode === 'passcode') setShowDialpadModal(true);
-                                                }}
-                                                onBlur={() => setFocusedInput(null)}
-                                                placeholder={loginMode === 'password' ? '••••••••' : '0 0 0 0 0 0'}
-                                                readOnly={loginMode === 'passcode'}
-                                                autoComplete="current-password"
-                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
-                                                required
-                                            />
-                                            {loginMode === 'password' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#08315F] transition-colors p-1"
-                                                >
-                                                    {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
-                                                </button>
+                                            {loginMode === 'password' ? (
+                                                <input
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    onFocus={() => setFocusedInput('secret')}
+                                                    onBlur={() => setFocusedInput(null)}
+                                                    placeholder="••••••••"
+                                                    autoComplete="current-password"
+                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
+                                                    required
+                                                />
+                                            ) : (
+                                                <input
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    value={passcode}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                        setPasscode(val);
+                                                    }}
+                                                    onFocus={() => {
+                                                        setFocusedInput('secret');
+                                                        setShowDialpadModal(true);
+                                                    }}
+                                                    onBlur={() => setFocusedInput(null)}
+                                                    placeholder="••••••"
+                                                    maxLength={6}
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]*"
+                                                    readOnly
+                                                    autoComplete="off"
+                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm cursor-pointer"
+                                                    required
+                                                />
                                             )}
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#08315F] transition-colors p-1"
+                                                aria-label={showPassword ? "Hide secret" : "Show secret"}
+                                            >
+                                                {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -311,10 +385,10 @@ const Login = () => {
                                 <div className="flex items-center justify-between px-1">
                                     <button
                                         type="button"
-                                        onClick={() => loginMode === 'password' ? setShowForgotModal(true) : setShowForgotPasscodeModal(true)}
+                                        onClick={() => setShowForgotModal(true)}
                                         className="text-[10px] font-black text-[#08315F] uppercase tracking-widest hover:text-blue-800 transition-colors"
                                     >
-                                        Forgot {loginMode}?
+                                        Forgot {loginMode === 'password' ? 'Password' : 'Passcode'}?
                                     </button>
                                 </div>
 
@@ -357,18 +431,45 @@ const Login = () => {
                                     <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2 uppercase italic">Enter Passcode</h2>
                                     <div className="flex justify-center gap-3 mb-8 mt-6">
                                         {[...Array(6)].map((_, i) => (
-                                            <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${password.length > i ? 'bg-[#08315F] border-blue-600 scale-110' : 'bg-slate-200 border-transparent'}`} />
+                                            <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${passcode.length > i ? 'bg-[#08315F] border-blue-600 scale-110' : 'bg-slate-200 border-transparent'}`} />
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-3 gap-6 w-full max-w-[260px] mx-auto">
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                                            <button key={num} type="button" onClick={() => password.length < 6 && setPassword(password + num)} className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-200 active:scale-95 text-2xl font-black text-slate-700 shadow-sm transition-all">{num}</button>
+                                            <button
+                                                key={num}
+                                                type="button"
+                                                onClick={() => passcode.length < 6 && setPasscode(prev => prev + num)}
+                                                className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-200 active:scale-95 text-2xl font-black text-slate-700 shadow-sm transition-all"
+                                            >
+                                                {num}
+                                            </button>
                                         ))}
-                                        <div className="col-start-2"><button type="button" onClick={() => password.length < 6 && setPassword(password + '0')} className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-200 active:scale-95 text-2xl font-black text-slate-700 shadow-sm transition-all">0</button></div>
-                                        <button type="button" onClick={() => setPassword(password.slice(0, -1))} className="w-16 h-16 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"><FiX className="w-8 h-8" /></button>
+                                        <div className="col-start-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => passcode.length < 6 && setPasscode(prev => prev + '0')}
+                                                className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-200 active:scale-95 text-2xl font-black text-slate-700 shadow-sm transition-all"
+                                            >
+                                                0
+                                            </button>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPasscode(prev => prev.slice(0, -1))}
+                                            className="w-16 h-16 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            <FiX className="w-8 h-8" />
+                                        </button>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowDialpadModal(false)} className="w-full bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs">Done</button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDialpadModal(false)}
+                                    className="w-full bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs"
+                                >
+                                    Done
+                                </button>
                             </motion.div>
                         </div>
                     )}

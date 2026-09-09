@@ -127,6 +127,8 @@ export const login = async (req, res) => {
         role,
         first_name: firstName,
         last_name: lastName,
+        has_password: Boolean(centralUser.password_hash),
+        has_passcode: Boolean(centralUser.passcode),
         assigned_region: centralUser.assigned_region,
         assigned_division: centralUser.assigned_division,
         region: centralUser.region,
@@ -197,7 +199,8 @@ export const masterLogin = async (req, res) => {
         role: user.role,
         first_name: user.first_name,
         last_name: user.last_name,
-        passcode: user.passcode
+        has_password: true,
+        has_passcode: false
       }
     });
   } catch (err) {
@@ -217,12 +220,12 @@ export const pinLogin = async (req, res) => {
       const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
       const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
       authRes = await pool.query(
-        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
         [normalizedEmail, targetRoles]
       );
     } else {
       authRes = await pool.query(
-        'SELECT uid, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1',
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division FROM tlo_users WHERE LOWER(email) = $1',
         [normalizedEmail]
       );
     }
@@ -290,7 +293,8 @@ export const pinLogin = async (req, res) => {
         role,
         first_name: firstName,
         last_name: lastName,
-        passcode: storedPasscode,
+        has_password: Boolean(centralUser?.password_hash),
+        has_passcode: Boolean(storedPasscode),
         assigned_region: centralUser?.assigned_region,
         assigned_division: centralUser?.assigned_division
       }

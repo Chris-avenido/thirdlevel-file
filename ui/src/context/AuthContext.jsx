@@ -13,30 +13,69 @@ export const AuthProvider = ({ children }) => {
         const storedUser = localStorage.getItem('user');
         const storedToken = localStorage.getItem('token');
         if (storedUser && storedToken) {
-            setUser(JSON.parse(storedUser));
-            setToken(storedToken);
+            try {
+                const parsed = JSON.parse(storedUser);
+                let modified = false;
+                ['passcode', 'password', 'pin', 'password_hash', 'passcode_hash'].forEach(field => {
+                    if (field in parsed) {
+                        delete parsed[field];
+                        modified = true;
+                    }
+                });
+                if (modified) {
+                    localStorage.setItem('user', JSON.stringify(parsed));
+                }
+                setUser(parsed);
+                setToken(storedToken);
+            } catch (e) {
+                setUser(null);
+            }
+        }
+
+        // Clean up previously persisted sensitive credentials in remembered_user
+        const storedRemembered = localStorage.getItem('remembered_user');
+        if (storedRemembered) {
+            try {
+                const rem = JSON.parse(storedRemembered);
+                let remModified = false;
+                ['passcode', 'password', 'pin', 'password_hash', 'passcode_hash'].forEach(field => {
+                    if (field in rem) {
+                        delete rem[field];
+                        remModified = true;
+                    }
+                });
+                if (remModified) {
+                    localStorage.setItem('remembered_user', JSON.stringify(rem));
+                }
+            } catch (e) {}
         }
         setLoading(false);
     }, []);
 
     const login = (userData, token) => {
+        // Strictly sanitize incoming user data to prevent persisting any credential material
+        const sanitized = { ...userData };
+        ['passcode', 'password', 'pin', 'password_hash', 'passcode_hash'].forEach(field => {
+            delete sanitized[field];
+        });
+
         // Normalize role before storage
-        if (userData.role) userData.role = normalizeRole(userData.role);
-        if (userData.account_category) userData.account_category = normalizeRole(userData.account_category);
+        if (sanitized.role) sanitized.role = normalizeRole(sanitized.role);
+        if (sanitized.account_category) sanitized.account_category = normalizeRole(sanitized.account_category);
 
         sessionStorage.removeItem('hasSeenRetireesPrompt');
 
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('user', JSON.stringify(sanitized));
 
         // Sync secondary storage for main repo logic compatibility
-        if (userData.uid) localStorage.setItem('uid', userData.uid);
-        if (userData.email) localStorage.setItem('userEmail', userData.email);
-        if (userData.role) localStorage.setItem('userRole', userData.role);
+        if (sanitized.uid) localStorage.setItem('uid', sanitized.uid);
+        if (sanitized.email) localStorage.setItem('userEmail', sanitized.email);
+        if (sanitized.role) localStorage.setItem('userRole', sanitized.role);
 
-        localStorage.setItem('remembered_user', JSON.stringify(userData));
+        localStorage.setItem('remembered_user', JSON.stringify(sanitized));
 
-        setUser(userData);
+        setUser(sanitized);
         setToken(token);
     };
 
