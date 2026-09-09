@@ -1384,21 +1384,32 @@ const OfficialsRegistry = () => {
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <div className="dashboard-theme !bg-transparent pt-8 px-8 lg:px-12 max-w-[1600px] mx-auto w-full">
-                        <header className="topbar w-full">
-                            <div className="page-title">
-                                <div className="text-[15px] font-black text-amber-500 uppercase tracking-[0.15em] mb-1">OFFICIAL LEADERSHIP MANAGEMENT</div>
-                                <h1>Personnel Registry</h1>
-                                <p>Third Level Officials command dashboard</p>
+                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
+                        <div className="flex items-center gap-4 text-white">
+                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
+                                <FiUsers size={20} />
                             </div>
-                            <div className="topbar-actions">
-                                <div className="hidden md:flex flex-col justify-center items-end bg-white border-2 border-[#BAE6FD] rounded-full px-6 h-[52px] min-w-[170px] shadow-sm">
-                                    <span className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-none mb-1">{user?.first_name} {user?.last_name}</span>
-                                    <span className="text-[13.5px] font-bold text-amber-600 uppercase tracking-widest leading-none">{user?.role}</span>
-                                </div>
+                            <div>
+                                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">
+                                    Personnel <span className="text-blue-300 not-italic">Registry</span>
+                                </h1>
+                                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
+                                    Official Leadership Management • Third Level Officials Command Dashboard
+                                </p>
                             </div>
-                        </header>
-                    </div>
+                        </div>
+
+                        <div className="flex items-center gap-6">
+                            <div className="hidden md:flex flex-col items-end">
+                                <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
+                                    {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
+                                </span>
+                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">
+                                    {user?.role || 'Central Office'}
+                                </span>
+                            </div>
+                        </div>
+                    </header>
 
                     <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* UNIFIED DATA CONTROLS TAB */}
