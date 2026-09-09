@@ -1127,49 +1127,56 @@ const OfficialsRegistry = () => {
         {
             key: 'region',
             label: 'Region',
-            width: 'w-[10%]',
+            width: 'w-[9%]',
             value: (item) => getOfficialRegion(item),
             filterValue: (item) => getOfficialRegion(item)
         },
         {
             key: 'division',
             label: isCentralOfficeView ? 'Strand' : 'Division',
-            width: 'w-[15%]',
+            width: 'w-[13%]',
             value: (item) => (item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || item.office || '') : (item.division || item.office || ''),
             filterValue: (item) => (item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || item.office || 'No Division') : (item.division || item.office || 'No Division')
         },
         {
             key: 'name',
             label: 'Official Profile',
-            width: 'w-[25%]',
+            width: 'w-[22%]',
             value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''}`,
             filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
         },
         {
+            key: 'profile_completion',
+            label: 'Profile Completion',
+            width: 'w-[14%]',
+            value: (item) => item.profile_completion != null ? `${item.profile_completion}%` : '—',
+            filterValue: (item) => item.profile_completion != null ? `${item.profile_completion}%` : '—'
+        },
+        {
             key: 'position_title',
             label: 'Position',
-            width: 'w-[20%]',
+            width: 'w-[16%]',
             value: (item) => (item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || '',
             filterValue: (item) => (item.position_title || 'Unassigned').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned'
         },
         {
             key: 'designation',
             label: 'Designation',
-            width: 'w-[12%]',
+            width: 'w-[11%]',
             value: (item) => (item.designation || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || '',
             filterValue: (item) => (item.designation || 'No Designation').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation'
         },
         {
             key: 'is_oic',
             label: 'OIC',
-            width: 'w-[6%]',
+            width: 'w-[5%]',
             value: (item) => (item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? 'Yes' : 'No',
             filterValue: (item) => (item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? 'Yes' : 'No'
         },
         {
             key: 'status',
             label: 'Status',
-            width: 'w-[12%]',
+            width: 'w-[10%]',
             value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
             filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
         }
@@ -1774,6 +1781,23 @@ const OfficialsRegistry = () => {
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                        </td>
+                                                        <td className="px-2 py-4 align-middle max-w-[150px]">
+                                                            {(!item.first_name || item.first_name === 'VACANT' || item.status === 'Vacated' || item.profile_completion == null) ? (
+                                                                <span className="text-slate-300 font-bold text-[18px]">—</span>
+                                                            ) : (
+                                                                <div className="flex flex-col gap-1.5 w-full pr-2">
+                                                                    <span className="text-[18px] font-bold text-[#08315F] leading-none">
+                                                                        {Math.min(100, Math.max(0, Math.round(item.profile_completion)))}%
+                                                                    </span>
+                                                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                                                        <div
+                                                                            className="h-full bg-[#08315F] rounded-full transition-all duration-300"
+                                                                            style={{ width: `${Math.min(100, Math.max(0, Math.round(item.profile_completion)))}%` }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </td>
                                                         <td className="px-1 py-4 align-middle max-w-[200px]">
                                                             <div
