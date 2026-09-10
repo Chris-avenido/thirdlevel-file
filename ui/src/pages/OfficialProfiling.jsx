@@ -73,6 +73,13 @@ const calculateDuration = (start, end) => {
     return { years, months };
 };
 
+const formatDateStr = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val.split('T')[0];
+    if (val instanceof Date) return val.toISOString().split('T')[0];
+    return String(val).split('T')[0];
+};
+
 const inp = 'w-full bg-white hover:bg-transparent border-2 border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-[18px] font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400/80 shadow-none';
 const sel = 'w-full bg-white hover:bg-transparent border-2 border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-none';
 
@@ -995,14 +1002,24 @@ const OfficialProfiling = () => {
                         office: rec.office || rec.division || '',
                         division: rec.division || '',
                         strand: rec.strand || '',
+                        region: rec.region || '',
+                        designation: rec.designation || '',
                         start_date: formatDateStr(rec.inclusive_date_start),
                         end_date: formatDateStr(rec.inclusive_date_end),
-                        oic_positions: rec.oic_positions || []
+                        oic_positions: rec.oic_positions || [],
+                        status: rec.status || 'Inactive',
+                        oic: Boolean(rec.oic ?? false),
+                        is_oic: Boolean(rec.oic ?? false)
                     }));
                 } else {
                     resolvedPrevPositions = (d.previous_positions || []).map(p => ({
                         ...p,
-                        office: p.office || p.division || ''
+                        office: p.office || p.division || '',
+                        region: p.region || '',
+                        designation: p.designation || '',
+                        status: p.status || 'Inactive',
+                        oic: Boolean(p.oic ?? p.is_oic ?? false),
+                        is_oic: Boolean(p.oic ?? p.is_oic ?? false)
                     }));
                 }
 
@@ -1364,6 +1381,27 @@ const OfficialProfiling = () => {
             const data = await res.json();
             if (data.success) {
                 setProfile(prev => ({ ...prev, education_degrees: degreesList }));
+                if (data.data && Array.isArray(data.data.position_history)) {
+                    const mapped = data.data.position_history.map(rec => ({
+                        id: rec.id,
+                        position_name: rec.position_name || '',
+                        office: rec.office || rec.division || '',
+                        division: rec.division || '',
+                        strand: rec.strand || '',
+                        region: rec.region || '',
+                        designation: rec.designation || '',
+                        start_date: formatDateStr(rec.inclusive_date_start),
+                        end_date: formatDateStr(rec.inclusive_date_end),
+                        oic_positions: rec.oic_positions || [],
+                        status: rec.status || 'Inactive',
+                        oic: Boolean(rec.oic ?? false),
+                        is_oic: Boolean(rec.oic ?? false)
+                    }));
+                    setPrevPositions(mapped);
+                }
+                if (TLOid) {
+                    fetchHistory(TLOid);
+                }
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 5000);
             } else {
@@ -1704,7 +1742,7 @@ const OfficialProfiling = () => {
         }
     };
 
-    const handleAddPosition = () => setPrevPositions(p => [...p, { position_id: `tmp-${Date.now()}`, position_name: '', office: '', start_date: '', end_date: '', is_oic: false, isNew: true }]);
+    const handleAddPosition = () => setPrevPositions(p => [...p, { position_id: `tmp-${Date.now()}`, position_name: '', designation: '', office: '', division: '', region: '', start_date: '', end_date: '', status: 'Inactive', oic: false, is_oic: false, isNew: true }]);
     const handleRemovePosition = (idxToRemove) => {
         setPrevPositions(p => p.filter((_, idx) => idx !== idxToRemove));
     };

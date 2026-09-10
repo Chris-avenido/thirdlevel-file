@@ -33,7 +33,12 @@ import * as otherCoursesRepo   from '../repositories/tloOtherCoursesRepository.j
  * @returns {'masterlist'|'staging'}
  */
 export function resolveSourceTable(tloId) {
-  return tloId.startsWith('APP-') ? 'staging' : 'masterlist';
+  if (!tloId) return 'masterlist';
+  const s = String(tloId).trim();
+  if (s.startsWith('APP-') || (s.startsWith('TLO-') && s.split('-').length > 2) || /^\d+$/.test(s)) {
+    return 'staging';
+  }
+  return 'masterlist';
 }
 
 /**
@@ -60,6 +65,25 @@ export async function fetchAllChildRecords(client, sourceTable, tloId) {
     return [];
   });
 
+  let altTloId = null;
+  if (sourceTable === 'staging' && tloId) {
+    try {
+      const altRes = await client.query(
+        `SELECT application_id, app_tloid FROM third_level_officials_profiling_application
+         WHERE LOWER(app_tloid) = LOWER($1) OR application_id::text = $1 LIMIT 1`,
+        [String(tloId)]
+      );
+      if (altRes.rows.length > 0) {
+        const row = altRes.rows[0];
+        altTloId = String(tloId).toLowerCase() === String(row.app_tloid).toLowerCase()
+          ? String(row.application_id)
+          : row.app_tloid;
+      }
+    } catch (e) {
+      // graceful fallback
+    }
+  }
+
   const [
     education_records,
     eligibility_records,
@@ -70,7 +94,7 @@ export async function fetchAllChildRecords(client, sourceTable, tloId) {
   ] = await Promise.all([
     safe(educationRepo.findByTloId(client, sourceTable, tloId)),
     safe(eligibilityRepo.findByTloId(client, sourceTable, tloId)),
-    safe(positionRepo.findByTloId(client, sourceTable, tloId)),
+    safe(positionRepo.findByTloId(client, sourceTable, tloId, altTloId)),
     safe(trainingRepo.findByTloId(client, sourceTable, tloId)),
     safe(accomplishmentRepo.findByTloId(client, sourceTable, tloId)),
     safe(otherCoursesRepo.findByTloId(client, sourceTable, tloId))
