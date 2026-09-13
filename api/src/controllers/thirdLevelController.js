@@ -1690,7 +1690,7 @@ export const buildOfficialsFilterConditions = (query, user) => {
 
   if (search) {
     params.push(`%${search}%`);
-    conditions.push(`(first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR email ILIKE $${params.length} OR position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR strand ILIKE $${params.length})`);
+    conditions.push(`(first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR email ILIKE $${params.length} OR position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR strand ILIKE $${params.length} OR plantilla_item_no ILIKE $${params.length})`);
   }
 
   const filterStatus = Array.isArray(status) ? status[status.length - 1] : status;
@@ -1818,6 +1818,7 @@ export const getOfficials = async (req, res) => {
     WITH RankedOfficials AS (
       SELECT 
         m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
+        m.plantilla_item_no, m.appointment_status,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         (
@@ -1898,6 +1899,35 @@ export const getOfficials = async (req, res) => {
       SELECT LOWER(email) as low_email, "TLOid", position_title, office
       FROM third_level_official_masterlist
       WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+    ), DuplicateEmails AS (
+      SELECT LOWER(email) as dup_email,
+             COUNT(*)::integer as duplicate_count,
+             json_agg(
+               json_build_object(
+                 'TLOid', "TLOid",
+                 'first_name', first_name,
+                 'last_name', last_name,
+                 'email', email,
+                 'position_title', position_title,
+                 'designation', designation,
+                 'office', office,
+                 'division', division,
+                 'region', region,
+                 'strand', strand,
+                 'status', status,
+                 'is_oic', is_oic,
+                 'plantilla_item_no', plantilla_item_no,
+                 'appointment_status', appointment_status,
+                 'photo_binary_id', photo_binary_id,
+                 'effectivity_date', effectivity_date,
+                 'created_at', created_at,
+                 'updated_at', updated_at
+               ) ORDER BY "TLOid" ASC
+             ) as duplicate_records
+      FROM third_level_official_masterlist
+      WHERE email IS NOT NULL AND TRIM(email) != ''
+      GROUP BY LOWER(email)
+      HAVING COUNT(*) > 1
     )
     SELECT 
       f.*,
@@ -1907,8 +1937,11 @@ export const getOfficials = async (req, res) => {
          FROM ActivePositions t2 
          WHERE t2.low_email = LOWER(f.email)
            AND t2."TLOid" != f."TLOid" 
-      ) as concurrent_positions
+      ) as concurrent_positions,
+      COALESCE(d.duplicate_count, 1)::integer as email_duplicate_count,
+      d.duplicate_records
     FROM RankedOfficials f 
+    LEFT JOIN DuplicateEmails d ON d.dup_email = LOWER(f.email)
     WHERE f.rn = 1 
   `;
 
@@ -2013,7 +2046,8 @@ export const getKpiSummary = async (req, res) => {
     const allRowsQuery = `
       SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
         m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
-        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case
+        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case,
+        m.plantilla_item_no, m.appointment_status
       FROM third_level_official_masterlist m
       WHERE m.status != 'For Approval' AND m.status != 'Rejected'
       ORDER BY m."TLOid" ASC
