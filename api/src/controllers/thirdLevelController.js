@@ -238,23 +238,199 @@ export const initializeProfile = async (req, res) => {
   }
 };
 
-export const getByEmail = async (req, res) => {
-  const { email } = req.query;
-  if (!email) return res.status(400).json({ error: 'email query param required' });
-  try {
-    const masterRes = await pool.query(`
-      SELECT * FROM third_level_official_masterlist
-      WHERE LOWER(email) = LOWER($1) AND status != 'Inactive'
-      LIMIT 1
-    `, [email]);
+export function normalizeIdentityStr(val) {
+  if (!val) return '';
+  return String(val)
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[.,]/g, '');
+}
 
-    if (masterRes.rows.length > 0) {
-      const row = masterRes.rows[0];
-      const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
-      row.position_title = normalized.position_title;
-      row.is_oic = normalized.is_oic;
-      if (Array.isArray(row.eligibilities)) {
-        row.eligibilities = row.eligibilities.map(e => {
+export function areFirstNamesMatching(nameA, nameB) {
+  if (!nameA || !nameB) return false;
+  if (nameA === nameB) return true;
+
+  // Handle harmless formatting difference: single-letter middle initial appended to first name
+  // e.g. "MIGUEL MAC D" vs "MIGUEL MAC", "RONNIE S" vs "RONNIE", "RONELO AL K" vs "RONELO AL"
+  // Note: Distinct names like "JUAN" / "JUANITO" or "JOSE" / "JOSEPH" do NOT match
+  const regexTrailingInitial = /\s+[A-Z]$/;
+  const baseA = nameA.replace(regexTrailingInitial, '').trim();
+  const baseB = nameB.replace(regexTrailingInitial, '').trim();
+
+  if (baseA === baseB && baseA.length > 0) {
+    return true;
+  }
+  return false;
+}
+
+export function normalizePhone(val) {
+  if (!val) return '';
+  let digits = String(val).replace(/\D/g, '');
+  if (digits.length >= 10) {
+    return digits.slice(-10);
+  }
+  return digits.length >= 7 ? digits : '';
+}
+
+export function formatDateOnly(d) {
+  if (!d) return null;
+  if (typeof d === 'string') return d.split('T')[0];
+  if (d instanceof Date) return d.toISOString().split('T')[0];
+  return String(d).split('T')[0];
+}
+
+/**
+ * Deterministic Identity Resolution
+ * Evaluates multiple masterlist records sharing an email to classify:
+ * - STATE_1_SINGLE (exactly 1 record)
+ * - STATE_2_VERIFIED_MULTI_ROLE (positive proof: matching normalized full name + same DOB, or matching secondary ID)
+ * - STATE_3_CONFIRMED_COLLISION (affirmative contradictory evidence: conflicting DOB)
+ * - STATE_4_UNCERTAIN (incomplete, missing, inconsistent, or insufficient evidence)
+ */
+export function evaluateIdentityResolution(records, baseTloid) {
+  if (!Array.isArray(records) || records.length === 0) {
+    return { state: 'STATE_1_SINGLE', isMultiRole: false, isCollision: false, isUncertain: false };
+  }
+  if (records.length === 1) {
+    return { state: 'STATE_1_SINGLE', isMultiRole: false, isCollision: false, isUncertain: false };
+  }
+
+  const baseIndex = baseTloid ? records.findIndex(r => r.TLOid === baseTloid) : 0;
+  const base = baseIndex >= 0 ? records[baseIndex] : records[0];
+
+  const baseLastName = normalizeIdentityStr(base.last_name);
+  const baseFirstName = normalizeIdentityStr(base.first_name);
+  const baseDob = formatDateOnly(base.date_of_birth);
+  const basePhone = normalizePhone(base.contact_details);
+
+  if (!baseLastName || !baseFirstName) {
+    return { state: 'STATE_4_UNCERTAIN', isMultiRole: false, isCollision: false, isUncertain: true };
+  }
+
+  let hasConfirmedCollision = false;
+  let allVerifiedMultiRole = true;
+
+  for (let i = 0; i < records.length; i++) {
+    const sib = records[i];
+    if (sib.TLOid === base.TLOid) continue;
+
+    const sibLastName = normalizeIdentityStr(sib.last_name);
+    const sibFirstName = normalizeIdentityStr(sib.first_name);
+    const sibDob = formatDateOnly(sib.date_of_birth);
+    const sibPhone = normalizePhone(sib.contact_details);
+
+    if (!sibLastName || !sibFirstName) {
+      allVerifiedMultiRole = false;
+      continue;
+    }
+
+    const sameLastName = baseLastName === sibLastName;
+    const sameFirstName = areFirstNamesMatching(baseFirstName, sibFirstName);
+    const sameName = sameLastName && sameFirstName;
+
+    const hasBothDobs = Boolean(baseDob && sibDob);
+    const sameDob = hasBothDobs && baseDob === sibDob;
+    const conflictingDob = hasBothDobs && baseDob !== sibDob;
+
+    const samePhone = Boolean(basePhone && sibPhone && basePhone === sibPhone);
+
+    if (conflictingDob) {
+      // Conflicting DOB -> affirmative contradictory evidence -> CONFIRMED_COLLISION
+      hasConfirmedCollision = true;
+      allVerifiedMultiRole = false;
+      break;
+    } else if (sameName && sameDob) {
+      // Positive proof: Same normalized full name + same DOB -> Verified
+      continue;
+    } else if (sameName && !hasBothDobs) {
+      // Positive proof: Same normalized full name + DOB unavailable on one/both records, and no conflicting DOB -> Verified
+      continue;
+    } else if (!sameName && conflictingDob) {
+      // Different names + conflicting DOB -> affirmative contradictory evidence -> CONFIRMED_COLLISION
+      hasConfirmedCollision = true;
+      allVerifiedMultiRole = false;
+      break;
+    } else {
+      // Different names + DOB unavailable (e.g. Juan vs Juanito, or distinct people sharing email without DOB) -> UNCERTAIN
+      allVerifiedMultiRole = false;
+    }
+  }
+
+  if (hasConfirmedCollision) {
+    return { state: 'STATE_3_CONFIRMED_COLLISION', isMultiRole: false, isCollision: true, isUncertain: false };
+  }
+
+  if (allVerifiedMultiRole) {
+    return { state: 'STATE_2_VERIFIED_MULTI_ROLE', isMultiRole: true, isCollision: false, isUncertain: false };
+  }
+
+  return { state: 'STATE_4_UNCERTAIN', isMultiRole: false, isCollision: false, isUncertain: true };
+}
+
+export const getByEmail = async (req, res) => {
+  const { email, tloid } = req.query;
+  if (!email && !tloid) return res.status(400).json({ error: 'email or tloid query param required' });
+  try {
+    let masterRes;
+    if (tloid) {
+      masterRes = await pool.query(
+        `SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND status != 'Inactive'`,
+        [tloid]
+      );
+    } else if (email) {
+      masterRes = await pool.query(
+        `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' ORDER BY "TLOid" ASC`,
+        [email]
+      );
+    }
+
+    if (masterRes && masterRes.rows.length > 0) {
+      const targetEmail = masterRes.rows[0].email;
+      let allSharingRes = masterRes;
+      if (tloid && targetEmail) {
+        allSharingRes = await pool.query(
+          `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' ORDER BY "TLOid" ASC`,
+          [targetEmail]
+        );
+      }
+
+      const resolution = evaluateIdentityResolution(allSharingRes.rows, tloid || masterRes.rows[0].TLOid);
+
+      // In STATE_3 or STATE_4: if explicit tloid was NOT passed, enforce strict isolation and require explicit selection
+      if ((resolution.state === 'STATE_3_CONFIRMED_COLLISION' || resolution.state === 'STATE_4_UNCERTAIN') && !tloid) {
+        const disambiguationRecords = allSharingRes.rows.map(r => ({
+          TLOid: r.TLOid,
+          first_name: r.first_name,
+          last_name: r.last_name,
+          middle_name: r.middle_name,
+          position_title: r.position_title,
+          office: r.office,
+          division: r.division,
+          region: r.region,
+          plantilla_item_no: r.plantilla_item_no,
+          email: r.email
+        }));
+        return res.json({
+          success: true,
+          state: resolution.state,
+          isMultiRole: false,
+          isCollision: resolution.isCollision,
+          isUncertain: resolution.isUncertain,
+          disambiguationRecords,
+          data: null
+        });
+      }
+
+      const activeRecord = tloid 
+        ? allSharingRes.rows.find(r => r.TLOid === tloid) || masterRes.rows[0]
+        : masterRes.rows[0];
+
+      const normalized = sanitizeOicPosition(activeRecord.position_title, activeRecord.is_oic);
+      activeRecord.position_title = normalized.position_title;
+      activeRecord.is_oic = normalized.is_oic;
+      if (Array.isArray(activeRecord.eligibilities)) {
+        activeRecord.eligibilities = activeRecord.eligibilities.map(e => {
           if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
           return e;
         });
@@ -262,46 +438,83 @@ export const getByEmail = async (req, res) => {
 
       let childRecords = {};
       try {
-        const tloId = row.TLOid;
-        if (tloId) {
-          childRecords = await fetchAllChildRecords(pool, 'masterlist', tloId);
+        if (activeRecord.TLOid) {
+          childRecords = await fetchAllChildRecords(pool, 'masterlist', activeRecord.TLOid);
         }
       } catch (childErr) {
         console.warn('[getByEmail] Child records fetch skipped for masterlist:', childErr.message);
       }
 
-      return res.json({ success: true, data: { ...row, ...childRecords }, source: 'masterlist' });
+      let availableRoles = [];
+      if (resolution.state === 'STATE_2_VERIFIED_MULTI_ROLE') {
+        availableRoles = allSharingRes.rows.map(r => ({
+          TLOid: r.TLOid,
+          position_title: r.position_title,
+          office: r.office,
+          division: r.division,
+          region: r.region,
+          designation: r.designation,
+          plantilla_item_no: r.plantilla_item_no,
+          appointment_status: r.appointment_status,
+          is_oic: r.is_oic
+        }));
+      }
+
+      return res.json({
+        success: true,
+        state: resolution.state,
+        isMultiRole: resolution.isMultiRole,
+        isCollision: resolution.isCollision,
+        isUncertain: resolution.isUncertain,
+        activeTloId: activeRecord.TLOid,
+        availableRoles,
+        data: { ...activeRecord, ...childRecords },
+        source: 'masterlist'
+      });
     }
 
-    const stagingRes = await pool.query(`
-      SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application
-      WHERE LOWER(email) = LOWER($1) AND application_status IS DISTINCT FROM 'approved'
-      ORDER BY created_at DESC LIMIT 1
-    `, [email]);
+    // Staging table check for new applicants
+    if (email) {
+      const stagingRes = await pool.query(`
+        SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application
+        WHERE LOWER(email) = LOWER($1) AND application_status IS DISTINCT FROM 'approved'
+        ORDER BY created_at DESC LIMIT 1
+      `, [email]);
 
-    if (stagingRes.rows.length > 0) {
-      const row = stagingRes.rows[0];
-      const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
-      row.position_title = normalized.position_title;
-      row.is_oic = normalized.is_oic;
-      if (Array.isArray(row.eligibilities)) {
-        row.eligibilities = row.eligibilities.map(e => {
-          if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
-          return e;
+      if (stagingRes.rows.length > 0) {
+        const row = stagingRes.rows[0];
+        const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
+        row.position_title = normalized.position_title;
+        row.is_oic = normalized.is_oic;
+        if (Array.isArray(row.eligibilities)) {
+          row.eligibilities = row.eligibilities.map(e => {
+            if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
+            return e;
+          });
+        }
+
+        let childRecords = {};
+        try {
+          const tloId = row.TLOid || row.app_TLOid;
+          if (tloId) {
+            childRecords = await fetchAllChildRecords(pool, 'staging', tloId);
+          }
+        } catch (childErr) {
+          console.warn('[getByEmail] Child records fetch skipped for staging:', childErr.message);
+        }
+
+        return res.json({
+          success: true,
+          state: 'STATE_1_SINGLE',
+          isMultiRole: false,
+          isCollision: false,
+          isUncertain: false,
+          activeTloId: row.TLOid,
+          availableRoles: [],
+          data: { ...row, ...childRecords },
+          source: 'staging'
         });
       }
-
-      let childRecords = {};
-      try {
-        const tloId = row.TLOid || row.app_TLOid;
-        if (tloId) {
-          childRecords = await fetchAllChildRecords(pool, 'staging', tloId);
-        }
-      } catch (childErr) {
-        console.warn('[getByEmail] Child records fetch skipped for staging:', childErr.message);
-      }
-
-      return res.json({ success: true, data: { ...row, ...childRecords }, source: 'staging' });
     }
 
     return res.json({ success: false, data: null });
@@ -905,6 +1118,79 @@ export const updateProfile = async (req, res) => {
       } catch (assignErr) {
         await client.query(`ROLLBACK TO SAVEPOINT ${sp_assign}`).catch(() => {});
         console.warn(`[updateProfile] Assignment tracking skipped: ${assignErr.message}`);
+      }
+    }
+
+    // ── Phase 5: Personal Data Sync to Verified Sibling Roles ──
+    // Rule: Cross-role personal data sync applies to verified sibling roles (STATE_2_VERIFIED_MULTI_ROLE).
+    // Sibling TLO records update personal data by default when identity is verified,
+    // while respecting explicit user opt-out (applyToVerifiedRoles === false).
+    // Role-specific fields NEVER propagate under any condition. Child records are never cloned.
+    const isExplicitlyOptedOut = req.body.applyToVerifiedRoles === false || req.body.applyToVerifiedRoles === 'false';
+    const shouldSyncVerifiedSiblings = isMasterlist && !isExplicitlyOptedOut;
+    if (shouldSyncVerifiedSiblings) {
+      try {
+        const curOfficialRes = await client.query(
+          `SELECT email, first_name, last_name, date_of_birth, contact_details 
+           FROM third_level_official_masterlist 
+           WHERE "TLOid" = $1`,
+          [TLOid]
+        );
+        const curOfficial = curOfficialRes.rows[0];
+        if (curOfficial && curOfficial.email) {
+          const sibRes = await client.query(
+            `SELECT * FROM third_level_official_masterlist 
+             WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' 
+             ORDER BY "TLOid" ASC`,
+            [curOfficial.email]
+          );
+
+          if (sibRes.rows.length > 1) {
+            const resolution = evaluateIdentityResolution(sibRes.rows, TLOid);
+            if (resolution.state === 'STATE_2_VERIFIED_MULTI_ROLE') {
+              // Role-specific fields that MUST NEVER propagate:
+              const ROLE_SPECIFIC_FIELDS = new Set([
+                'region', 'division', 'office', 'strand', 'position_title', 'designation',
+                'is_oic', 'plantilla_item_no', 'appointment_status', 'appointment_date',
+                'effectivity_date', 'employment_status', 'assignment', 'status', 'tloid', 'sort_index'
+              ]);
+
+              const personalUpdates = [];
+              const personalValues = [];
+
+              allFields.forEach(f => {
+                if (!ROLE_SPECIFIC_FIELDS.has(f.toLowerCase()) && req.body[f] !== undefined && validCols.has(f.toLowerCase())) {
+                  let val = req.body[f] === '' ? null : req.body[f];
+                  if (JSONB_FIELDS.has(f) && val !== null && typeof val !== 'string') {
+                    val = JSON.stringify(val);
+                  } else if (val !== null && typeof val === 'string' && !DO_NOT_UPPERCASE.has(f.toLowerCase())) {
+                    val = toUpper(val);
+                  }
+                  personalValues.push(val);
+                  personalUpdates.push(`"${f}" = $${personalValues.length}`);
+                }
+              });
+
+              if (personalUpdates.length > 0) {
+                const verifiedSiblings = sibRes.rows.filter(r => r.TLOid !== TLOid);
+                for (const sib of verifiedSiblings) {
+                  const sibValues = [...personalValues, new Date(), sib.TLOid];
+                  await client.query(
+                    `UPDATE third_level_official_masterlist 
+                     SET ${personalUpdates.join(', ')}, updated_at = $${sibValues.length - 1} 
+                     WHERE "TLOid" = $${sibValues.length}`,
+                    sibValues
+                  );
+                }
+                console.log(`[updateProfile] Propagated personal fields to ${verifiedSiblings.length} verified sibling roles for ${TLOid}`);
+              }
+            } else {
+              console.warn(`[updateProfile] Opt-in sync skipped: records for ${curOfficial.email} are ${resolution.state}`);
+            }
+          }
+        }
+      } catch (syncErr) {
+        console.warn(`[updateProfile] Sibling personal data sync skipped: ${syncErr.message}`);
       }
     }
 
@@ -1942,7 +2228,6 @@ export const getOfficials = async (req, res) => {
       d.duplicate_records
     FROM RankedOfficials f 
     LEFT JOIN DuplicateEmails d ON d.dup_email = LOWER(f.email)
-    WHERE f.rn = 1 
   `;
 
   // Server-side sorting

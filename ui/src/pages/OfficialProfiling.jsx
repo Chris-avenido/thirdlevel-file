@@ -209,10 +209,19 @@ const OfficialProfiling = () => {
     const [searchParams] = useSearchParams();
     const urlEmail = searchParams.get('email');
     const urlVacancy = searchParams.get('vacancy');
+    const urlTloid = searchParams.get('tloid');
     const { user, token, logout } = useAuth();
 
     const [status, setStatus] = useState('loading'); // loading | found | not-found | error
     const [TLOid, setTlid] = useState(null);
+    const [availableRoles, setAvailableRoles] = useState([]);
+    const [isMultiRole, setIsMultiRole] = useState(false);
+    const [isCollision, setIsCollision] = useState(false);
+    const [isUncertain, setIsUncertain] = useState(false);
+    const [disambiguationRecords, setDisambiguationRecords] = useState([]);
+    const [applyToVerifiedRoles, setApplyToVerifiedRoles] = useState(false);
+    const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+
     const [applicationId, setApplicationId] = useState(null);
     const [applicationStatus, setApplicationStatus] = useState(null); // draft|pending_review|denied|approved|null(masterlist)
     const [denialReason, setDenialReason] = useState('');
@@ -652,7 +661,9 @@ const OfficialProfiling = () => {
             parsedUrlEmail = parsedUrlEmail.replace(/ /g, '+');
         }
         const emailToLookup = parsedUrlEmail || user?.email || user?.userEmail || localStorage.getItem('userEmail');
-        if (emailToLookup) {
+        if (urlTloid) {
+            lookupByEmail(emailToLookup || '', urlTloid);
+        } else if (emailToLookup) {
             lookupByEmail(emailToLookup);
         } else {
             const timer = setTimeout(() => {
@@ -662,7 +673,7 @@ const OfficialProfiling = () => {
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [user, urlEmail]);
+    }, [user, urlEmail, urlTloid]);
 
     useEffect(() => {
         if (TLOid) {
@@ -757,24 +768,42 @@ const OfficialProfiling = () => {
     // Removed reactive degree year clearing because it prevents typing (e.g. typing "20" evaluates to 20 < 2010 and gets cleared).
     // Validation is already properly handled by `validateProfile` on save.
 
-    const lookupByEmail = async (email) => {
-        if (!email) { setStatus('not-found'); return; }
+    const lookupByEmail = async (email, explicitTloid = null) => {
+        if (!email && !explicitTloid) { setStatus('not-found'); return; }
         try {
-            const res = await fetch(apiUrl(`/api/third-level/by-email?email=${encodeURIComponent(email)}`), {
+            const queryParams = explicitTloid 
+                ? `email=${encodeURIComponent(email || '')}&tloid=${encodeURIComponent(explicitTloid)}`
+                : `email=${encodeURIComponent(email || '')}`;
+            const res = await fetch(apiUrl(`/api/third-level/by-email?${queryParams}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
-            if (data.success && data.data) {
-                const d = data.data;
-                setTlid(d.TLOid || d.app_TLOid);
-                setApplicationId(d.application_id || null);
-                setApplicationStatus(data.source === 'masterlist' ? null : d.application_status);
-                setDenialReason(d.denial_reason || '');
-                setDataSource(data.source);
-                setTargetVacancyId(urlVacancy || d.target_TLOid || null);
-                if (urlVacancy) {
-                    setTab('summary');
+            if (data.success) {
+                const multi = Boolean(data.isMultiRole);
+                setIsMultiRole(multi);
+                setApplyToVerifiedRoles(multi);
+                setAvailableRoles(Array.isArray(data.availableRoles) ? data.availableRoles : []);
+                setIsCollision(Boolean(data.isCollision));
+                setIsUncertain(Boolean(data.isUncertain));
+                setDisambiguationRecords(Array.isArray(data.disambiguationRecords) ? data.disambiguationRecords : []);
+
+                if ((data.isCollision || data.isUncertain) && !data.data) {
+                    // Ambiguous/Collision state without explicit TLOid: halt auto-population and show disambiguation
+                    setStatus('found');
+                    return;
                 }
+
+                if (data.data) {
+                    const d = data.data;
+                    setTlid(d.TLOid || d.app_TLOid);
+                    setApplicationId(d.application_id || null);
+                    setApplicationStatus(data.source === 'masterlist' ? null : d.application_status);
+                    setDenialReason(d.denial_reason || '');
+                    setDataSource(data.source);
+                    setTargetVacancyId(urlVacancy || d.target_TLOid || null);
+                    if (urlVacancy) {
+                        setTab('summary');
+                    }
 
                 // ─────────────────────────────────────────────────────────────
                 // EDUCATION: Fallback chain
@@ -1080,6 +1109,7 @@ const OfficialProfiling = () => {
                 }
 
                 setStatus('found');
+                }
             } else {
                 if (user?.email) {
                     handleInitializeRecord();
@@ -1367,7 +1397,8 @@ const OfficialProfiling = () => {
                 education_degrees: degreesList,
                 target_TLOid: targetVacancyId,
                 position_applied_for: targetVacancy ? targetVacancy.position_title : profile.position_applied_for,
-                profiling_status: completeness === 100 ? 'profiling completed' : 'profiling'
+                profiling_status: completeness === 100 ? 'profiling completed' : 'profiling',
+                applyToVerifiedRoles: Boolean(applyToVerifiedRoles)
             };
 
             const res = await fetch(apiUrl(`/api/third-level/${TLOid}/profile`), {
@@ -1425,7 +1456,10 @@ const OfficialProfiling = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ dpa_consented_at: consentTimestamp })
+                body: JSON.stringify({ 
+                    dpa_consented_at: consentTimestamp,
+                    applyToVerifiedRoles: Boolean(applyToVerifiedRoles)
+                })
             });
             const data = await res.json();
             if (data.success) {
@@ -1872,6 +1906,98 @@ const OfficialProfiling = () => {
                     )}
                 </AnimatePresence>
 
+                {/* ── Disambiguation Modal for Confirmed Collision & Uncertain States ── */}
+                <AnimatePresence>
+                    {(isCollision || isUncertain) && !TLOid && disambiguationRecords.length > 0 && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                                className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border-2 border-slate-200 shadow-2xl space-y-6 relative max-h-[90vh] flex flex-col"
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border-2 ${
+                                        isCollision 
+                                            ? 'bg-rose-100 text-rose-700 border-rose-200' 
+                                            : 'bg-amber-100 text-amber-700 border-amber-200'
+                                    }`}>
+                                        {isCollision ? <FiAlertTriangle size={24} /> : <FiInfo size={24} />}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+                                            {isCollision 
+                                                ? 'Shared Email Detected: Identity Collision' 
+                                                : 'Shared Email Detected: Verification Required'}
+                                        </h3>
+                                        <p className={`text-[13.5px] font-bold uppercase tracking-wider mt-0.5 ${
+                                            isCollision ? 'text-rose-600' : 'text-amber-600'
+                                        }`}>
+                                            {isCollision 
+                                                ? 'Distinct Officials Sharing Contact Email' 
+                                                : 'Inconclusive Identity Evidence — Strict Isolation'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className={`p-4 rounded-2xl border-2 text-[14.5px] font-medium leading-relaxed ${
+                                    isCollision 
+                                        ? 'bg-rose-50/80 border-rose-200 text-rose-900' 
+                                        : 'bg-amber-50/80 border-amber-200 text-amber-900'
+                                }`}>
+                                    {isCollision 
+                                        ? 'Affirmative contradictory evidence indicates that the records below represent different individuals. To prevent data corruption, cross-record synchronization is prohibited. Please select the specific official record to access.'
+                                        : 'Identity evidence is incomplete or insufficient to safely determine whether the records below represent the same official. Records are strictly isolated. Please select the specific official role to access.'}
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                                    {disambiguationRecords.map(rec => (
+                                        <div 
+                                            key={rec.TLOid}
+                                            className="p-4 rounded-2xl border-2 border-slate-200 hover:border-[#0038A8] bg-slate-50/60 hover:bg-blue-50/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                        >
+                                            <div className="space-y-1">
+                                                <p className="text-[16.5px] font-black text-[#08315F]">
+                                                    {[rec.first_name, rec.middle_name, rec.last_name].filter(Boolean).join(' ')}
+                                                </p>
+                                                <p className="text-[13.5px] font-bold text-slate-700">
+                                                    {rec.position_title || 'No Position Title'}
+                                                </p>
+                                                <p className="text-[12px] text-slate-500 font-medium">
+                                                    {[rec.office, rec.division, rec.region].filter(Boolean).join(' • ') || '—'}
+                                                </p>
+                                                <div className="flex items-center gap-2 pt-1">
+                                                    <span className="text-[11px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600">
+                                                        TLOid: {rec.TLOid}
+                                                    </span>
+                                                    {rec.plantilla_item_no && (
+                                                        <span className="text-[11px] font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500">
+                                                            Item: {rec.plantilla_item_no}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    lookupByEmail(rec.email, rec.TLOid);
+                                                    const params = new URLSearchParams(window.location.search);
+                                                    params.set('tloid', rec.TLOid);
+                                                    navigate(`?${params.toString()}`, { replace: true });
+                                                }}
+                                                className="px-5 py-2.5 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[13px] uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-95 shrink-0 flex items-center justify-center gap-2"
+                                            >
+                                                <span>Select Record</span>
+                                                <FiArrowRight size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
                 {/* ── Unified Premium Header Banner ── */}
                 <div className="bg-[#08315F] text-white relative overflow-hidden shadow-lg border-b-2 border-[#0038A8]/20 py-6 px-6 lg:px-8 shrink-0">
                     <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-[#075985] rounded-[100%] opacity-90 pointer-events-none transform rotate-12 z-0"></div>
@@ -1934,10 +2060,84 @@ const OfficialProfiling = () => {
                                         {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[12px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[13.5px] md:text-[16.5px] font-medium">
-                                        {TLOid && (
-                                            <span className="flex items-center gap-1">
-                                                • {TLOid}
-                                            </span>
+                                        {isMultiRole && availableRoles.length > 1 ? (
+                                            <div className="relative inline-block">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowRoleDropdown(prev => !prev)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FCD116] text-[#08315F] hover:bg-yellow-400 font-black text-[12px] md:text-[13px] uppercase tracking-wider rounded-full shadow-md transition-all active:scale-95 border border-yellow-300"
+                                                    title="Switch between verified roles for this official"
+                                                >
+                                                    <span>Active Role: {TLOid}</span>
+                                                    <span className="bg-[#08315F]/20 px-1.5 py-0.2 rounded text-[11px] font-bold">
+                                                        {availableRoles.findIndex(r => r.TLOid === TLOid) + 1} of {availableRoles.length}
+                                                    </span>
+                                                    <FiChevronDown size={14} className={`transition-transform duration-200 ${showRoleDropdown ? 'rotate-180' : ''}`} />
+                                                </button>
+
+                                                {showRoleDropdown && (
+                                                    <div className="absolute left-0 mt-2 w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border-2 border-slate-200 z-50 p-2 overflow-hidden">
+                                                        <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                                                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Verified Multi-Role Official</p>
+                                                            <p className="text-[12.5px] font-bold text-[#08315F]">Select active role to view/edit:</p>
+                                                        </div>
+                                                        <div className="max-h-60 overflow-y-auto space-y-1">
+                                                            {availableRoles.map(role => {
+                                                                const isActive = role.TLOid === TLOid;
+                                                                return (
+                                                                    <button
+                                                                        key={role.TLOid}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setShowRoleDropdown(false);
+                                                                            if (!isActive) {
+                                                                                lookupByEmail(urlEmail || profile.email, role.TLOid);
+                                                                                const params = new URLSearchParams(window.location.search);
+                                                                                params.set('tloid', role.TLOid);
+                                                                                navigate(`?${params.toString()}`, { replace: true });
+                                                                            }
+                                                                        }}
+                                                                        className={`w-full text-left p-2.5 rounded-xl transition-all flex flex-col gap-0.5 border ${
+                                                                            isActive 
+                                                                                ? 'bg-blue-50/90 border-[#0038A8]/30 shadow-sm' 
+                                                                                : 'hover:bg-slate-50 border-transparent'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="flex items-center justify-between">
+                                                                            <span className="font-black text-[13px] text-[#08315F] flex items-center gap-1.5">
+                                                                                {role.TLOid}
+                                                                                {role.is_oic && <span className="text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">OIC</span>}
+                                                                            </span>
+                                                                            {isActive && (
+                                                                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">
+                                                                                    Current
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-[12.5px] font-bold text-slate-700 truncate">
+                                                                            {role.position_title || 'No position title'}
+                                                                        </p>
+                                                                        <p className="text-[11px] text-slate-400 font-medium truncate">
+                                                                            {[role.office, role.division, role.region].filter(Boolean).join(' • ') || 'Central/Regional Office'}
+                                                                        </p>
+                                                                        {role.plantilla_item_no && (
+                                                                            <p className="text-[10.5px] font-mono text-slate-500 truncate">
+                                                                                Item: {role.plantilla_item_no}
+                                                                            </p>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            TLOid && (
+                                                <span className="flex items-center gap-1">
+                                                    • {TLOid}
+                                                </span>
+                                            )
                                         )}
                                         {applicationId && (
                                             <>
@@ -4225,6 +4425,26 @@ const OfficialProfiling = () => {
                                                                             </button>
                                                                         </div>
 
+                                                                        {/* Multi-Role Personal Sync Option */}
+                                                                        {isMultiRole && availableRoles.length > 1 && (
+                                                                            <label className="flex items-start gap-3.5 cursor-pointer select-none p-5 rounded-2xl border-2 border-blue-200 bg-blue-50/70 hover:bg-blue-50 transition-all">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={applyToVerifiedRoles}
+                                                                                    onChange={(e) => setApplyToVerifiedRoles(e.target.checked)}
+                                                                                    className="w-5 h-5 text-[#08315F] rounded border-slate-300 focus:ring-[#08315F] cursor-pointer shrink-0 mt-0.5"
+                                                                                />
+                                                                                <div>
+                                                                                    <p className="text-[14.5px] font-black text-[#08315F] uppercase tracking-wider">
+                                                                                        Apply personal information updates to verified sibling role(s)
+                                                                                    </p>
+                                                                                    <p className="text-[12.5px] font-medium text-slate-600 mt-1 leading-relaxed">
+                                                                                        When checked, updates to common personal information (demographics, contact numbers, executive credentials, and document attachments) will also update your {availableRoles.length - 1} other verified role(s). Role-specific fields (position title, office, division, designation, plantilla item) remain strictly isolated per role.
+                                                                                    </p>
+                                                                                </div>
+                                                                            </label>
+                                                                        )}
+
                                                                         {/* Action Buttons */}
                                                                         {!certified ? (
                                                                             <div className="space-y-3 pt-2 w-full">
@@ -4344,6 +4564,19 @@ const OfficialProfiling = () => {
                                 <FiShield className="text-emerald-500" size={16} /> Securely stored in DepEd database
                             </span>
                             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                                {isMultiRole && availableRoles.length > 1 && (
+                                    <label className="flex items-center gap-2 cursor-pointer select-none bg-blue-50/90 hover:bg-blue-100/90 border border-blue-200 px-3 py-2 rounded-xl transition-all">
+                                        <input
+                                            type="checkbox"
+                                            checked={applyToVerifiedRoles}
+                                            onChange={(e) => setApplyToVerifiedRoles(e.target.checked)}
+                                            className="w-4 h-4 text-[#08315F] rounded border-slate-300 focus:ring-[#08315F] cursor-pointer"
+                                        />
+                                        <span className="text-[12.5px] font-bold text-blue-950 truncate max-w-[200px] sm:max-w-none">
+                                            Apply personal info to verified sibling role(s)
+                                        </span>
+                                    </label>
+                                )}
                                 <span className="text-[15px] font-bold text-slate-400 uppercase tracking-widest sm:hidden flex items-center gap-1.5">
                                     <FiShield className="text-emerald-500" size={16} /> Protected
                                 </span>
