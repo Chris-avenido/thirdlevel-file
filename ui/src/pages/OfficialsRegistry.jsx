@@ -18,7 +18,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
-import { expandAcronym, formatPositionTitle } from '../utils/officialsUtils';
+import { expandAcronym, formatPositionTitle, isThirdLevelPosition } from '../utils/officialsUtils';
 import ModernDatePicker from '../components/ModernDatePicker';
 import sgMap from '../utils/sgMap.json';
 import newLogo from '../assets/modern_logo.png';
@@ -248,7 +248,6 @@ const OfficialsRegistry = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddingPersonnel, setIsAddingPersonnel] = useState(false);
 
-    
     const [statusTab, setStatusTab] = useState(() => {
         const params = new URLSearchParams(location.search);
         return params.get('status') || 'All';
@@ -268,7 +267,7 @@ const OfficialsRegistry = () => {
     const [levelFilter, setLevelFilter] = useState('All');
     const [regionFilter, setRegionFilter] = useState('All');
     const [strandFilter, setStrandFilter] = useState('All');
-    
+
     const handleRegistrationAction = async (TLOid, action) => {
         let denial_reason = '';
         if (action === 'reject') {
@@ -403,11 +402,11 @@ const OfficialsRegistry = () => {
     });
     const [totalRecords, setTotalRecords] = useState(0);
 
-    const isThirdLevel = (o) => THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC'));
-    const isOIC = (o) => o.is_oic || (o.designation && o.designation.toUpperCase().includes('OIC'));
+    const isThirdLevel = (o) => isThirdLevelPosition(o?.position_title) || isThirdLevelPosition(o?.designation) || (o?.designation && String(o.designation).toUpperCase().includes('OIC'));
+    const isOIC = (o) => Boolean(o?.is_oic) || Boolean(o?.designation && String(o.designation).toUpperCase().includes('OIC'));
 
     const thirdLevelOfficials = useMemo(() => {
-        return kpiSummary.filter(o => !isOIC(o) && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        return kpiSummary.filter(o => isThirdLevelPosition(o?.position_title));
     }, [kpiSummary]);
 
     const thirdLevelOic = useMemo(() => {
@@ -419,7 +418,7 @@ const OfficialsRegistry = () => {
     }, [kpiSummary]);
 
     const divisionChiefs = useMemo(() => {
-        return kpiSummary.filter(o => !isOIC(o) && !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        return kpiSummary.filter(o => !isOIC(o) && !isThirdLevelPosition(o?.position_title));
     }, [kpiSummary]);
 
     // Active counts for KPI cards (to match Home page logic which only counts Active)
@@ -535,11 +534,11 @@ const OfficialsRegistry = () => {
             if (data.success) {
                 let filteredData = data.data;
                 if (activeTab === 'Officer in Charge') {
-                    filteredData = data.data.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC')));
+                    filteredData = data.data.filter(o => isThirdLevel(o));
                 } else if (activeTab === 'Division Chiefs (OIC)') {
-                    filteredData = data.data.filter(o => !(THIRD_LEVEL_POSITIONS.includes(o.position_title) || THIRD_LEVEL_POSITIONS.includes(o.designation) || (o.designation && o.designation.toUpperCase().includes('OIC'))));
+                    filteredData = data.data.filter(o => !isThirdLevel(o));
                 } else if (activeTab === 'Division Chiefs') {
-                    filteredData = data.data.filter(o => !THIRD_LEVEL_POSITIONS.includes(o.position_title));
+                    filteredData = data.data.filter(o => !isThirdLevelPosition(o?.position_title));
                 }
                 let formattedPositions = filteredData
                     .map(o => formatPositionTitle(o.position_title))
@@ -1214,13 +1213,13 @@ const OfficialsRegistry = () => {
             }
             if (activeTab !== 'All') {
                 if (activeTab === 'Third Level Officials') {
-                    dataForColumn = dataForColumn.filter(item => !item.is_oic && THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                    dataForColumn = dataForColumn.filter(item => isThirdLevelPosition(item?.position_title));
                 } else if (activeTab === 'Officer in Charge') {
-                    dataForColumn = dataForColumn.filter(item => item.is_oic && THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                    dataForColumn = dataForColumn.filter(item => isOIC(item) && isThirdLevel(item));
                 } else if (activeTab === 'Division Chiefs (OIC)') {
-                    dataForColumn = dataForColumn.filter(item => item.is_oic && !THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                    dataForColumn = dataForColumn.filter(item => isOIC(item) && !isThirdLevel(item));
                 } else if (activeTab === 'Division Chiefs') {
-                    dataForColumn = dataForColumn.filter(item => !item.is_oic && !THIRD_LEVEL_POSITIONS.includes(item.position_title));
+                    dataForColumn = dataForColumn.filter(item => !isOIC(item) && !isThirdLevelPosition(item?.position_title));
                 }
             }
 
@@ -1879,7 +1878,7 @@ const OfficialsRegistry = () => {
                                                                             item.is_testaccount
                                                                                 ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
                                                                                 : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'
-                                                                        }`}
+                                                                            }`}
                                                                     >
                                                                         <FaVial size={14} />
                                                                     </button>
@@ -1975,6 +1974,15 @@ const OfficialsRegistry = () => {
                                                                     <FiTrash2 size={14} /> Vacate
                                                                 </button>
                                                             )}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleToggleTestAccount(item); }}
+                                                                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 transition-all ${item.is_testaccount
+                                                                        ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+                                                                        : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'
+                                                                    }`}
+                                                            >
+                                                                <FaVial size={14} /> {item.is_testaccount ? 'Untest' : 'Test'}
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
