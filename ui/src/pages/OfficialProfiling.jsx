@@ -221,6 +221,20 @@ const OfficialProfiling = () => {
     const [disambiguationRecords, setDisambiguationRecords] = useState([]);
     const [applyToVerifiedRoles, setApplyToVerifiedRoles] = useState(false);
     const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+    const [isHeaderExpanded, setIsHeaderExpanded] = useState(() => {
+        const saved = localStorage.getItem('deped_profiling_header_expanded');
+        return saved !== null ? saved === 'true' : false;
+    });
+
+    const toggleHeaderAccordion = () => {
+        setIsHeaderExpanded(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem('deped_profiling_header_expanded', String(next));
+            } catch (e) { }
+            return next;
+        });
+    };
 
     const [applicationId, setApplicationId] = useState(null);
     const [applicationStatus, setApplicationStatus] = useState(null); // draft|pending_review|denied|approved|null(masterlist)
@@ -771,7 +785,7 @@ const OfficialProfiling = () => {
     const lookupByEmail = async (email, explicitTloid = null) => {
         if (!email && !explicitTloid) { setStatus('not-found'); return; }
         try {
-            const queryParams = explicitTloid 
+            const queryParams = explicitTloid
                 ? `email=${encodeURIComponent(email || '')}&tloid=${encodeURIComponent(explicitTloid)}`
                 : `email=${encodeURIComponent(email || '')}`;
             const res = await fetch(apiUrl(`/api/third-level/by-email?${queryParams}`), {
@@ -805,310 +819,310 @@ const OfficialProfiling = () => {
                         setTab('summary');
                     }
 
-                // ─────────────────────────────────────────────────────────────
-                // EDUCATION: Fallback chain
-                // Priority 1: d.education_records  (relational — new)
-                // Priority 2: d.education_degrees  (JSONB — existing)
-                // Priority 3: d.bachelor_degree     (legacy newline text)
-                // ─────────────────────────────────────────────────────────────
-                let bacDegs = [];
-                let bacYrs = [];
-                let masDegs = [];
-                let masYrs = [];
-                let docDegs = [];
-                let docYrs = [];
+                    // ─────────────────────────────────────────────────────────────
+                    // EDUCATION: Fallback chain
+                    // Priority 1: d.education_records  (relational — new)
+                    // Priority 2: d.education_degrees  (JSONB — existing)
+                    // Priority 3: d.bachelor_degree     (legacy newline text)
+                    // ─────────────────────────────────────────────────────────────
+                    let bacDegs = [];
+                    let bacYrs = [];
+                    let masDegs = [];
+                    let masYrs = [];
+                    let docDegs = [];
+                    let docYrs = [];
 
-                const relationalEdu = Array.isArray(d.education_records) && d.education_records.length > 0;
-                if (relationalEdu) {
-                    // Priority 1: relational rows { id, level, degree, year_graduated }
-                    d.education_records.forEach(rec => {
-                        const lv = (rec.level || '').toUpperCase();
-                        const deg = rec.degree || '';
-                        const yr = rec.year_graduated ? String(rec.year_graduated) : '';
-                        if (lv === 'BACHELOR') {
-                            if (deg) bacDegs.push(deg);
-                            if (yr) bacYrs.push(yr);
-                        } else if (lv === 'MASTER') {
-                            if (deg) masDegs.push(deg);
-                            if (yr) masYrs.push(yr);
-                        } else if (lv === 'DOCTORATE') {
-                            if (deg) docDegs.push(deg);
-                            if (yr) docYrs.push(yr);
-                        }
-                    });
-                } else {
-                    // Priority 2: education_degrees JSONB (existing logic — preserved)
-                    const educationDegrees = d.education_degrees || [];
-                    educationDegrees.forEach(deg => {
-                        const highest = (deg.highest_education || '').toUpperCase();
-                        const degreeName = deg.specific_degree || deg.education_program || '';
-                        const year = deg.education_year_graduated || '';
-                        if (highest.includes('BACHELOR') || highest.includes('BACCALAUREATE')) {
-                            if (degreeName) bacDegs.push(degreeName);
-                            if (year) bacYrs.push(year);
-                        } else if (highest.includes('MASTER')) {
-                            if (degreeName) masDegs.push(degreeName);
-                            if (year) masYrs.push(year);
-                        } else if (highest.includes('DOCTOR')) {
-                            if (degreeName) docDegs.push(degreeName);
-                            if (year) docYrs.push(year);
-                        }
-                    });
-                }
-
-                const hasEducationDegrees = relationalEdu || Array.isArray(d.education_degrees);
-                // Priority 3 (legacy text) is the fallback inside the ternary below
-                const bachelor_degree = hasEducationDegrees ? bacDegs.join('\n') : (d.bachelor_degree || '');
-                const bachelor_year = hasEducationDegrees ? bacYrs.join('\n') : (d.bachelor_year || '');
-                const master_degree = hasEducationDegrees ? masDegs.join('\n') : (d.master_degree || '');
-                const master_year = hasEducationDegrees ? masYrs.join('\n') : (d.master_year || '');
-                const doctorate_degree = hasEducationDegrees ? docDegs.join('\n') : (d.doctorate_degree || '');
-                const doctorate_year = hasEducationDegrees ? docYrs.join('\n') : (d.doctorate_year || '');
-
-                // ─────────────────────────────────────────────────────────────
-                // ELIGIBILITIES: Fallback chain
-                // Priority 1: d.eligibility_records (relational)
-                // Priority 2: d.eligibilities        (JSONB — existing)
-                // ─────────────────────────────────────────────────────────────
-                const formatDateStr = (val) => {
-                    if (!val) return '';
-                    if (typeof val === 'string') return val.split('T')[0];
-                    if (val instanceof Date) return val.toISOString().split('T')[0];
-                    return String(val).split('T')[0];
-                };
-
-                let resolvedEligibilities;
-                if (Array.isArray(d.eligibility_records) && d.eligibility_records.length > 0) {
-                    // Map relational columns back to the frontend object shape
-                    resolvedEligibilities = d.eligibility_records.map(rec => ({
-                        id: rec.id,
-                        eligibility: rec.eligibility_type,
-                        date: formatDateStr(rec.conferment_date),
-                        rating: rec.rating || '',
-                        place_of_assignment: rec.place_of_assignment || '',
-                        details: rec.details || ''
-                    }));
-                } else {
-                    // Priority 2: existing JSONB (preserved as-is)
-                    resolvedEligibilities = d.eligibilities || [];
-                }
-
-                // ─────────────────────────────────────────────────────────────
-                // ACCOMPLISHMENTS: Fallback chain
-                // Priority 1: d.accomplishment_records (relational)
-                // Priority 2: d.individual_accomplishments (JSONB — existing)
-                // ─────────────────────────────────────────────────────────────
-                let resolvedAccomplishments;
-                if (Array.isArray(d.accomplishment_records) && d.accomplishment_records.length > 0) {
-                    // Preserve the DB row id so save round-trips use UPDATE, not INSERT+DELETE
-                    resolvedAccomplishments = d.accomplishment_records.map(rec => ({
-                        id: rec.id,
-                        description: rec.description || '',
-                        award_year: rec.award_year || null,
-                    }));
-                } else {
-                    resolvedAccomplishments = d.individual_accomplishments || [];
-                }
-
-                // ─────────────────────────────────────────────────────────────
-                // OTHER COURSES: Fallback chain
-                // Priority 1: d.other_course_records (relational)
-                // Priority 2: d.other_courses         (JSONB — existing)
-                // ─────────────────────────────────────────────────────────────
-                let resolvedOtherCourses;
-                if (Array.isArray(d.other_course_records) && d.other_course_records.length > 0) {
-                    // Map relational columns back to frontend shape: { course, date_from, date_to, details }
-                    resolvedOtherCourses = d.other_course_records.map(rec => ({
-                        id: rec.id,
-                        course: rec.course_title || '',
-                        date_from: formatDateStr(rec.date_from),
-                        date_to: formatDateStr(rec.date_to),
-                        details: rec.details || ''
-                    }));
-                } else {
-                    resolvedOtherCourses = d.other_courses || [];
-                }
-
-                const rawSuffix = d.suffix || '';
-                const isNA = isSuffixPlaceholder(rawSuffix);
-                setIsSuffixNA(isNA);
-
-                setProfile({
-                    last_name: d.last_name || '',
-                    first_name: d.first_name || '',
-                    middle_name: d.middle_name || '',
-                    suffix: isNA ? '' : rawSuffix,
-                    gender: d.gender || '',
-                    date_of_birth: formatDateStr(d.date_of_birth),
-                    age: d.age ?? '',
-                    civil_status: d.civil_status || '',
-                    employment_status: d.employment_status || '',
-                    position_title: d.position_title || '',
-                    designation: d.designation || '',
-                    region: d.region || '',
-                    division: d.division || '',
-                    office: d.office || '',
-                    strand: d.strand || '',
-                    is_oic: (d.designation && typeof d.designation === 'string' && d.designation.toUpperCase().includes('OIC')) ? true : (d.is_oic ?? false),
-                    appointment_date: formatDateStr(d.appointment_date),
-                    emt_passer: d.emt_passer ?? null,
-                    emt_date: formatDateStr(d.emt_date),
-                    ces_stage: d.ces_stage || '',
-                    ces_conferment_date: formatDateStr(d.ces_conferment_date),
-                    total_years_third_level: d.total_years_third_level ?? '',
-                    permanent_address: d.permanent_address || '',
-                    temporary_address: d.temporary_address || '',
-                    highest_education: d.highest_education || '',
-                    specific_degree: d.specific_degree || '',
-                    education_program: d.education_program || '',
-                    education_year_graduated: d.education_year_graduated ?? '',
-                    bachelor_degree,
-                    bachelor_year,
-                    master_degree,
-                    master_year,
-                    doctorate_degree,
-                    doctorate_year,
-                    education_degrees: d.education_degrees || [],
-                    notable_achievements: (() => {
-                        if (Array.isArray(d.notable_achievements)) return d.notable_achievements;
-                        if (typeof d.notable_achievements === 'string' && d.notable_achievements.trim().startsWith('[')) {
-                            try { return JSON.parse(d.notable_achievements); } catch (e) { return []; }
-                        }
-                        if (typeof d.notable_achievements === 'string' && d.notable_achievements) {
-                            const titles = d.notable_achievements.split('\n');
-                            const years = (d.notable_achievements_year || '').split('\n');
-                            return titles.map((t, idx) => ({ title: t, year: years[idx] || '' }));
-                        }
-                        return [];
-                    })(),
-                    // Fallback chain applied above: relational → JSONB
-                    eligibilities: resolvedEligibilities,
-                    other_courses: resolvedOtherCourses,
-                    individual_accomplishments: resolvedAccomplishments,
-                    performance_rating_1: d.performance_rating_1 || '',
-                    performance_rating_1_period: d.performance_rating_1_period || '',
-                    performance_rating_2: d.performance_rating_2 || '',
-                    performance_rating_2_period: d.performance_rating_2_period || '',
-                    performance_rating_3: d.performance_rating_3 || '',
-                    performance_rating_3_period: d.performance_rating_3_period || '',
-                    cespes_1_rating: d.cespes_1_rating || '',
-                    cespes_2_rating: d.cespes_2_rating || '',
-                    cespes_rating_1_period: d.cespes_rating_1_period || '',
-                    cespes_rating_2_period: d.cespes_rating_2_period || '',
-                    managerial_experience_total: d.managerial_experience_total || '',
-                    pending_admin_case: d.pending_admin_case || '',
-                    guilty_admin_details: d.guilty_admin_details || '',
-                    criminally_charged_details: d.criminally_charged_details || '',
-                    convicted_crime_details: d.convicted_crime_details || '',
-                    alt_email_1: d.alt_email_1 || '',
-                    alt_email_2: d.alt_email_2 || '',
-                    alt_contact_details_1: d.alt_contact_details_1 || d.contact_details || '',
-                    alt_contact_details_2: d.alt_contact_details_2 || '',
-                    contact_details: d.contact_details || d.alt_contact_details_1 || '',
-                    photo_binary_id: d.photo_binary_id || null,
-                    pds_binary_id: d.pds_binary_id || null,
-                    profile_word_binary_id: d.profile_word_binary_id || null,
-                    profile_ppt_binary_id: d.profile_ppt_binary_id || null,
-                    service_records_binary_id: d.service_records_binary_id || null,
-                    sandiganbayan_clearance_binary_id: d.sandiganbayan_clearance_binary_id || null,
-                    nbi_clearance_binary_id: d.nbi_clearance_binary_id || null,
-                    csc_clearance_binary_id: d.csc_clearance_binary_id || null,
-                    ombudsman_clearance_binary_id: d.ombudsman_clearance_binary_id || null,
-                    executive_summary_binary_id: d.executive_summary_binary_id || null,
-                    dpa_consented_at: d.dpa_consented_at || null,
-                    updated_at: d.updated_at || null,
-                });
-
-                // POSITIONS: Fallback chain
-                // Priority 1: d.position_history (relational)
-                // Priority 2: d.previous_positions (JSONB — existing)
-                let resolvedPrevPositions;
-                if (Array.isArray(d.position_history) && d.position_history.length > 0) {
-                    // Map relational columns back to frontend shape
-                    resolvedPrevPositions = d.position_history.map(rec => ({
-                        id: rec.id,
-                        position_name: rec.position_name || '',
-                        office: rec.office || rec.division || '',
-                        division: rec.division || '',
-                        strand: rec.strand || '',
-                        region: rec.region || '',
-                        designation: rec.designation || '',
-                        start_date: formatDateStr(rec.inclusive_date_start),
-                        end_date: formatDateStr(rec.inclusive_date_end),
-                        oic_positions: rec.oic_positions || [],
-                        status: rec.status || 'Inactive',
-                        oic: Boolean(rec.oic ?? false),
-                        is_oic: Boolean(rec.oic ?? false)
-                    }));
-                } else {
-                    resolvedPrevPositions = (d.previous_positions || []).map(p => ({
-                        ...p,
-                        office: p.office || p.division || '',
-                        region: p.region || '',
-                        designation: p.designation || '',
-                        status: p.status || 'Inactive',
-                        oic: Boolean(p.oic ?? p.is_oic ?? false),
-                        is_oic: Boolean(p.oic ?? p.is_oic ?? false)
-                    }));
-                }
-
-                // TRAININGS: Fallback chain
-                // Priority 1: d.training_records (relational)
-                // Priority 2: d.relevant_trainings (JSONB — existing)
-                let resolvedTrainings;
-                if (Array.isArray(d.training_records) && d.training_records.length > 0) {
-                    resolvedTrainings = d.training_records.map(rec => {
-                        const dateFrom = formatDateStr(rec.inclusive_date_start);
-                        const dateTo = formatDateStr(rec.inclusive_date_end);
-                        let hours = rec.hours != null ? String(rec.hours) : '';
-                        let hours_per_day = '8';
-
-                        // Auto-compute hours from date range if hours is missing or zero
-                        if ((!hours || hours === '0') && dateFrom && dateTo) {
-                            const d1 = new Date(dateFrom);
-                            const d2 = new Date(dateTo);
-                            if (!isNaN(d1) && !isNaN(d2) && d1 <= d2) {
-                                const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-                                hours = String(diffDays * 8);
-                                hours_per_day = '8';
+                    const relationalEdu = Array.isArray(d.education_records) && d.education_records.length > 0;
+                    if (relationalEdu) {
+                        // Priority 1: relational rows { id, level, degree, year_graduated }
+                        d.education_records.forEach(rec => {
+                            const lv = (rec.level || '').toUpperCase();
+                            const deg = rec.degree || '';
+                            const yr = rec.year_graduated ? String(rec.year_graduated) : '';
+                            if (lv === 'BACHELOR') {
+                                if (deg) bacDegs.push(deg);
+                                if (yr) bacYrs.push(yr);
+                            } else if (lv === 'MASTER') {
+                                if (deg) masDegs.push(deg);
+                                if (yr) masYrs.push(yr);
+                            } else if (lv === 'DOCTORATE') {
+                                if (deg) docDegs.push(deg);
+                                if (yr) docYrs.push(yr);
                             }
-                        } else if (hours && hours !== '0' && dateFrom && dateTo) {
-                            // Back-compute hours_per_day from stored hours + date range
-                            const d1 = new Date(dateFrom);
-                            const d2 = new Date(dateTo);
-                            if (!isNaN(d1) && !isNaN(d2) && d1 <= d2) {
-                                const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-                                const derivedHpd = parseFloat(hours) / diffDays;
-                                if ([2, 4, 8].includes(Math.round(derivedHpd))) {
-                                    hours_per_day = String(Math.round(derivedHpd));
+                        });
+                    } else {
+                        // Priority 2: education_degrees JSONB (existing logic — preserved)
+                        const educationDegrees = d.education_degrees || [];
+                        educationDegrees.forEach(deg => {
+                            const highest = (deg.highest_education || '').toUpperCase();
+                            const degreeName = deg.specific_degree || deg.education_program || '';
+                            const year = deg.education_year_graduated || '';
+                            if (highest.includes('BACHELOR') || highest.includes('BACCALAUREATE')) {
+                                if (degreeName) bacDegs.push(degreeName);
+                                if (year) bacYrs.push(year);
+                            } else if (highest.includes('MASTER')) {
+                                if (degreeName) masDegs.push(degreeName);
+                                if (year) masYrs.push(year);
+                            } else if (highest.includes('DOCTOR')) {
+                                if (degreeName) docDegs.push(degreeName);
+                                if (year) docYrs.push(year);
+                            }
+                        });
+                    }
+
+                    const hasEducationDegrees = relationalEdu || Array.isArray(d.education_degrees);
+                    // Priority 3 (legacy text) is the fallback inside the ternary below
+                    const bachelor_degree = hasEducationDegrees ? bacDegs.join('\n') : (d.bachelor_degree || '');
+                    const bachelor_year = hasEducationDegrees ? bacYrs.join('\n') : (d.bachelor_year || '');
+                    const master_degree = hasEducationDegrees ? masDegs.join('\n') : (d.master_degree || '');
+                    const master_year = hasEducationDegrees ? masYrs.join('\n') : (d.master_year || '');
+                    const doctorate_degree = hasEducationDegrees ? docDegs.join('\n') : (d.doctorate_degree || '');
+                    const doctorate_year = hasEducationDegrees ? docYrs.join('\n') : (d.doctorate_year || '');
+
+                    // ─────────────────────────────────────────────────────────────
+                    // ELIGIBILITIES: Fallback chain
+                    // Priority 1: d.eligibility_records (relational)
+                    // Priority 2: d.eligibilities        (JSONB — existing)
+                    // ─────────────────────────────────────────────────────────────
+                    const formatDateStr = (val) => {
+                        if (!val) return '';
+                        if (typeof val === 'string') return val.split('T')[0];
+                        if (val instanceof Date) return val.toISOString().split('T')[0];
+                        return String(val).split('T')[0];
+                    };
+
+                    let resolvedEligibilities;
+                    if (Array.isArray(d.eligibility_records) && d.eligibility_records.length > 0) {
+                        // Map relational columns back to the frontend object shape
+                        resolvedEligibilities = d.eligibility_records.map(rec => ({
+                            id: rec.id,
+                            eligibility: rec.eligibility_type,
+                            date: formatDateStr(rec.conferment_date),
+                            rating: rec.rating || '',
+                            place_of_assignment: rec.place_of_assignment || '',
+                            details: rec.details || ''
+                        }));
+                    } else {
+                        // Priority 2: existing JSONB (preserved as-is)
+                        resolvedEligibilities = d.eligibilities || [];
+                    }
+
+                    // ─────────────────────────────────────────────────────────────
+                    // ACCOMPLISHMENTS: Fallback chain
+                    // Priority 1: d.accomplishment_records (relational)
+                    // Priority 2: d.individual_accomplishments (JSONB — existing)
+                    // ─────────────────────────────────────────────────────────────
+                    let resolvedAccomplishments;
+                    if (Array.isArray(d.accomplishment_records) && d.accomplishment_records.length > 0) {
+                        // Preserve the DB row id so save round-trips use UPDATE, not INSERT+DELETE
+                        resolvedAccomplishments = d.accomplishment_records.map(rec => ({
+                            id: rec.id,
+                            description: rec.description || '',
+                            award_year: rec.award_year || null,
+                        }));
+                    } else {
+                        resolvedAccomplishments = d.individual_accomplishments || [];
+                    }
+
+                    // ─────────────────────────────────────────────────────────────
+                    // OTHER COURSES: Fallback chain
+                    // Priority 1: d.other_course_records (relational)
+                    // Priority 2: d.other_courses         (JSONB — existing)
+                    // ─────────────────────────────────────────────────────────────
+                    let resolvedOtherCourses;
+                    if (Array.isArray(d.other_course_records) && d.other_course_records.length > 0) {
+                        // Map relational columns back to frontend shape: { course, date_from, date_to, details }
+                        resolvedOtherCourses = d.other_course_records.map(rec => ({
+                            id: rec.id,
+                            course: rec.course_title || '',
+                            date_from: formatDateStr(rec.date_from),
+                            date_to: formatDateStr(rec.date_to),
+                            details: rec.details || ''
+                        }));
+                    } else {
+                        resolvedOtherCourses = d.other_courses || [];
+                    }
+
+                    const rawSuffix = d.suffix || '';
+                    const isNA = isSuffixPlaceholder(rawSuffix);
+                    setIsSuffixNA(isNA);
+
+                    setProfile({
+                        last_name: d.last_name || '',
+                        first_name: d.first_name || '',
+                        middle_name: d.middle_name || '',
+                        suffix: isNA ? '' : rawSuffix,
+                        gender: d.gender || '',
+                        date_of_birth: formatDateStr(d.date_of_birth),
+                        age: d.age ?? '',
+                        civil_status: d.civil_status || '',
+                        employment_status: d.employment_status || '',
+                        position_title: d.position_title || '',
+                        designation: d.designation || '',
+                        region: d.region || '',
+                        division: d.division || '',
+                        office: d.office || '',
+                        strand: d.strand || '',
+                        is_oic: (d.designation && typeof d.designation === 'string' && d.designation.toUpperCase().includes('OIC')) ? true : (d.is_oic ?? false),
+                        appointment_date: formatDateStr(d.appointment_date),
+                        emt_passer: d.emt_passer ?? null,
+                        emt_date: formatDateStr(d.emt_date),
+                        ces_stage: d.ces_stage || '',
+                        ces_conferment_date: formatDateStr(d.ces_conferment_date),
+                        total_years_third_level: d.total_years_third_level ?? '',
+                        permanent_address: d.permanent_address || '',
+                        temporary_address: d.temporary_address || '',
+                        highest_education: d.highest_education || '',
+                        specific_degree: d.specific_degree || '',
+                        education_program: d.education_program || '',
+                        education_year_graduated: d.education_year_graduated ?? '',
+                        bachelor_degree,
+                        bachelor_year,
+                        master_degree,
+                        master_year,
+                        doctorate_degree,
+                        doctorate_year,
+                        education_degrees: d.education_degrees || [],
+                        notable_achievements: (() => {
+                            if (Array.isArray(d.notable_achievements)) return d.notable_achievements;
+                            if (typeof d.notable_achievements === 'string' && d.notable_achievements.trim().startsWith('[')) {
+                                try { return JSON.parse(d.notable_achievements); } catch (e) { return []; }
+                            }
+                            if (typeof d.notable_achievements === 'string' && d.notable_achievements) {
+                                const titles = d.notable_achievements.split('\n');
+                                const years = (d.notable_achievements_year || '').split('\n');
+                                return titles.map((t, idx) => ({ title: t, year: years[idx] || '' }));
+                            }
+                            return [];
+                        })(),
+                        // Fallback chain applied above: relational → JSONB
+                        eligibilities: resolvedEligibilities,
+                        other_courses: resolvedOtherCourses,
+                        individual_accomplishments: resolvedAccomplishments,
+                        performance_rating_1: d.performance_rating_1 || '',
+                        performance_rating_1_period: d.performance_rating_1_period || '',
+                        performance_rating_2: d.performance_rating_2 || '',
+                        performance_rating_2_period: d.performance_rating_2_period || '',
+                        performance_rating_3: d.performance_rating_3 || '',
+                        performance_rating_3_period: d.performance_rating_3_period || '',
+                        cespes_1_rating: d.cespes_1_rating || '',
+                        cespes_2_rating: d.cespes_2_rating || '',
+                        cespes_rating_1_period: d.cespes_rating_1_period || '',
+                        cespes_rating_2_period: d.cespes_rating_2_period || '',
+                        managerial_experience_total: d.managerial_experience_total || '',
+                        pending_admin_case: d.pending_admin_case || '',
+                        guilty_admin_details: d.guilty_admin_details || '',
+                        criminally_charged_details: d.criminally_charged_details || '',
+                        convicted_crime_details: d.convicted_crime_details || '',
+                        alt_email_1: d.alt_email_1 || '',
+                        alt_email_2: d.alt_email_2 || '',
+                        alt_contact_details_1: d.alt_contact_details_1 || d.contact_details || '',
+                        alt_contact_details_2: d.alt_contact_details_2 || '',
+                        contact_details: d.contact_details || d.alt_contact_details_1 || '',
+                        photo_binary_id: d.photo_binary_id || null,
+                        pds_binary_id: d.pds_binary_id || null,
+                        profile_word_binary_id: d.profile_word_binary_id || null,
+                        profile_ppt_binary_id: d.profile_ppt_binary_id || null,
+                        service_records_binary_id: d.service_records_binary_id || null,
+                        sandiganbayan_clearance_binary_id: d.sandiganbayan_clearance_binary_id || null,
+                        nbi_clearance_binary_id: d.nbi_clearance_binary_id || null,
+                        csc_clearance_binary_id: d.csc_clearance_binary_id || null,
+                        ombudsman_clearance_binary_id: d.ombudsman_clearance_binary_id || null,
+                        executive_summary_binary_id: d.executive_summary_binary_id || null,
+                        dpa_consented_at: d.dpa_consented_at || null,
+                        updated_at: d.updated_at || null,
+                    });
+
+                    // POSITIONS: Fallback chain
+                    // Priority 1: d.position_history (relational)
+                    // Priority 2: d.previous_positions (JSONB — existing)
+                    let resolvedPrevPositions;
+                    if (Array.isArray(d.position_history) && d.position_history.length > 0) {
+                        // Map relational columns back to frontend shape
+                        resolvedPrevPositions = d.position_history.map(rec => ({
+                            id: rec.id,
+                            position_name: rec.position_name || '',
+                            office: rec.office || rec.division || '',
+                            division: rec.division || '',
+                            strand: rec.strand || '',
+                            region: rec.region || '',
+                            designation: rec.designation || '',
+                            start_date: formatDateStr(rec.inclusive_date_start),
+                            end_date: formatDateStr(rec.inclusive_date_end),
+                            oic_positions: rec.oic_positions || [],
+                            status: rec.status || 'Inactive',
+                            oic: Boolean(rec.oic ?? false),
+                            is_oic: Boolean(rec.oic ?? false)
+                        }));
+                    } else {
+                        resolvedPrevPositions = (d.previous_positions || []).map(p => ({
+                            ...p,
+                            office: p.office || p.division || '',
+                            region: p.region || '',
+                            designation: p.designation || '',
+                            status: p.status || 'Inactive',
+                            oic: Boolean(p.oic ?? p.is_oic ?? false),
+                            is_oic: Boolean(p.oic ?? p.is_oic ?? false)
+                        }));
+                    }
+
+                    // TRAININGS: Fallback chain
+                    // Priority 1: d.training_records (relational)
+                    // Priority 2: d.relevant_trainings (JSONB — existing)
+                    let resolvedTrainings;
+                    if (Array.isArray(d.training_records) && d.training_records.length > 0) {
+                        resolvedTrainings = d.training_records.map(rec => {
+                            const dateFrom = formatDateStr(rec.inclusive_date_start);
+                            const dateTo = formatDateStr(rec.inclusive_date_end);
+                            let hours = rec.hours != null ? String(rec.hours) : '';
+                            let hours_per_day = '8';
+
+                            // Auto-compute hours from date range if hours is missing or zero
+                            if ((!hours || hours === '0') && dateFrom && dateTo) {
+                                const d1 = new Date(dateFrom);
+                                const d2 = new Date(dateTo);
+                                if (!isNaN(d1) && !isNaN(d2) && d1 <= d2) {
+                                    const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+                                    hours = String(diffDays * 8);
+                                    hours_per_day = '8';
+                                }
+                            } else if (hours && hours !== '0' && dateFrom && dateTo) {
+                                // Back-compute hours_per_day from stored hours + date range
+                                const d1 = new Date(dateFrom);
+                                const d2 = new Date(dateTo);
+                                if (!isNaN(d1) && !isNaN(d2) && d1 <= d2) {
+                                    const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+                                    const derivedHpd = parseFloat(hours) / diffDays;
+                                    if ([2, 4, 8].includes(Math.round(derivedHpd))) {
+                                        hours_per_day = String(Math.round(derivedHpd));
+                                    }
                                 }
                             }
-                        }
 
-                        return {
-                            id: rec.id,
-                            training_name: rec.training_name || '',
-                            date_from: dateFrom,
-                            date_to: dateTo,
-                            conducted_by: rec.conducted_by || '',
-                            hours,
-                            hours_per_day,
-                        };
-                    });
-                } else {
-                    resolvedTrainings = d.relevant_trainings || [];
-                }
+                            return {
+                                id: rec.id,
+                                training_name: rec.training_name || '',
+                                date_from: dateFrom,
+                                date_to: dateTo,
+                                conducted_by: rec.conducted_by || '',
+                                hours,
+                                hours_per_day,
+                            };
+                        });
+                    } else {
+                        resolvedTrainings = d.relevant_trainings || [];
+                    }
 
-                setPrevPositions(resolvedPrevPositions);
-                setTrainings(resolvedTrainings);
+                    setPrevPositions(resolvedPrevPositions);
+                    setTrainings(resolvedTrainings);
 
-                if (d.dpa_consented_at) {
-                    setCertified(true);
-                    setDpaConsent(true);
-                    setTruthConsent(true);
-                }
+                    if (d.dpa_consented_at) {
+                        setCertified(true);
+                        setDpaConsent(true);
+                        setTruthConsent(true);
+                    }
 
-                setStatus('found');
+                    setStatus('found');
                 }
             } else {
                 if (user?.email) {
@@ -1456,7 +1470,7 @@ const OfficialProfiling = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     dpa_consented_at: consentTimestamp,
                     applyToVerifiedRoles: Boolean(applyToVerifiedRoles)
                 })
@@ -1588,7 +1602,7 @@ const OfficialProfiling = () => {
             const coDivs = (regionDivisions?.['Central Office'] || regionDivisions?.['CENTRAL OFFICE'] || ['Central Office']);
             return coDivs.length > 0 ? coDivs : ['Central Office'];
         }
-        
+
         let rawList = divisionsList || [];
         if (profile.region && regionDivisions) {
             const regionKey = Object.keys(regionDivisions).find(k => k.trim().toUpperCase() === profile.region.trim().toUpperCase());
@@ -1598,7 +1612,7 @@ const OfficialProfiling = () => {
                 rawList = [];
             }
         }
-        
+
         return rawList.filter(d => {
             if (!d) return false;
             const up = String(d).trim().toUpperCase();
@@ -1917,42 +1931,39 @@ const OfficialProfiling = () => {
                                 className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border-2 border-slate-200 shadow-2xl space-y-6 relative max-h-[90vh] flex flex-col"
                             >
                                 <div className="flex items-start gap-4">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border-2 ${
-                                        isCollision 
-                                            ? 'bg-rose-100 text-rose-700 border-rose-200' 
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border-2 ${isCollision
+                                            ? 'bg-rose-100 text-rose-700 border-rose-200'
                                             : 'bg-amber-100 text-amber-700 border-amber-200'
-                                    }`}>
+                                        }`}>
                                         {isCollision ? <FiAlertTriangle size={24} /> : <FiInfo size={24} />}
                                     </div>
                                     <div>
                                         <h3 className="text-2xl font-black text-slate-800 tracking-tight">
-                                            {isCollision 
-                                                ? 'Shared Email Detected: Identity Collision' 
+                                            {isCollision
+                                                ? 'Shared Email Detected: Identity Collision'
                                                 : 'Shared Email Detected: Verification Required'}
                                         </h3>
-                                        <p className={`text-[13.5px] font-bold uppercase tracking-wider mt-0.5 ${
-                                            isCollision ? 'text-rose-600' : 'text-amber-600'
-                                        }`}>
-                                            {isCollision 
-                                                ? 'Distinct Officials Sharing Contact Email' 
+                                        <p className={`text-[13.5px] font-bold uppercase tracking-wider mt-0.5 ${isCollision ? 'text-rose-600' : 'text-amber-600'
+                                            }`}>
+                                            {isCollision
+                                                ? 'Distinct Officials Sharing Contact Email'
                                                 : 'Inconclusive Identity Evidence — Strict Isolation'}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className={`p-4 rounded-2xl border-2 text-[14.5px] font-medium leading-relaxed ${
-                                    isCollision 
-                                        ? 'bg-rose-50/80 border-rose-200 text-rose-900' 
+                                <div className={`p-4 rounded-2xl border-2 text-[14.5px] font-medium leading-relaxed ${isCollision
+                                        ? 'bg-rose-50/80 border-rose-200 text-rose-900'
                                         : 'bg-amber-50/80 border-amber-200 text-amber-900'
-                                }`}>
-                                    {isCollision 
+                                    }`}>
+                                    {isCollision
                                         ? 'Affirmative contradictory evidence indicates that the records below represent different individuals. To prevent data corruption, cross-record synchronization is prohibited. Please select the specific official record to access.'
                                         : 'Identity evidence is incomplete or insufficient to safely determine whether the records below represent the same official. Records are strictly isolated. Please select the specific official role to access.'}
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                                     {disambiguationRecords.map(rec => (
-                                        <div 
+                                        <div
                                             key={rec.TLOid}
                                             className="p-4 rounded-2xl border-2 border-slate-200 hover:border-[#0038A8] bg-slate-50/60 hover:bg-blue-50/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                                         >
@@ -1998,186 +2009,285 @@ const OfficialProfiling = () => {
                     )}
                 </AnimatePresence>
 
-                {/* ── Unified Premium Header Banner ── */}
-                <div className="bg-[#08315F] text-white relative overflow-hidden shadow-lg border-b-2 border-[#0038A8]/20 py-6 px-6 lg:px-8 shrink-0">
+                {/* ── Unified Premium Header Banner with Custom Accordion ── */}
+                <div className={`bg-[#08315F] text-white relative overflow-hidden shadow-lg border-b-2 border-[#0038A8]/20 transition-all duration-300 ${isHeaderExpanded ? 'py-5 lg:py-6' : 'py-3.5'} px-6 lg:px-8 shrink-0`}>
                     <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-[#075985] rounded-[100%] opacity-90 pointer-events-none transform rotate-12 z-0"></div>
-                    <div className="max-w-[1400px] mx-auto flex flex-col gap-6 relative z-10">
-                        {/* Top Navigation Row */}
-                        <div className="flex justify-between items-center w-full">
-                            <div className="flex items-center gap-6">
-                                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-300 hover:text-white font-bold text-[15px] uppercase tracking-wider transition-all">
+                    <div className="max-w-[1400px] mx-auto flex flex-col relative z-10">
+                        {/* Top Navigation Row (Always Visible) */}
+                        <div className="flex justify-between items-center w-full min-h-[38px] gap-3">
+                            {/* Left: Back Button & Compact Identity Summary (when collapsed) */}
+                            <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className="flex items-center gap-2 text-slate-300 hover:text-white font-bold text-[14px] md:text-[15px] uppercase tracking-wider transition-all shrink-0 active:scale-95"
+                                >
                                     <FiChevronLeft size={16} /> Back
                                 </button>
+
+                                {/* Compact Overview Pill (Displayed only when accordion is collapsed) */}
+                                {!isHeaderExpanded && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -8 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="hidden sm:flex items-center gap-2.5 min-w-0 border-l border-white/20 pl-3 md:pl-4"
+                                    >
+                                        <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                                            {profile.photo_binary_id ? (
+                                                <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Profile" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <FiUser size={14} className="text-white/70" />
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="font-black text-white text-[14px] md:text-[15px] truncate max-w-[160px] md:max-w-[220px] lg:max-w-[280px]">
+                                                {fullName}
+                                            </span>
+                                            {TLOid && (
+                                                <span className="px-2 py-0.5 rounded-full bg-[#075985] text-blue-200 text-[11px] font-mono font-bold tracking-wider shrink-0 border border-white/10">
+                                                    {TLOid}
+                                                </span>
+                                            )}
+                                            {profile.position_title && (
+                                                <span className="hidden lg:inline text-blue-200/70 text-[12.5px] font-medium truncate max-w-[220px]">
+                                                    • {profile.position_title}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/20 border border-white/10 text-[11px] font-black text-[#FCD116]">
+                                            <span>{completeness}%</span>
+                                            <span className="text-white/50 text-[9.5px] uppercase font-bold">Done</span>
+                                        </div>
+                                    </motion.div>
+                                )}
                             </div>
-                            <div className="flex items-center gap-4">
+
+                            {/* Right: Custom Accordion Toggle, Edit Profile, and Sign Out */}
+                            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                {/* System Custom Accordion Toggle Button */}
+                                <button
+                                    type="button"
+                                    onClick={toggleHeaderAccordion}
+                                    className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-black uppercase tracking-wider transition-all duration-200 border shadow-sm active:scale-95 group ${isHeaderExpanded
+                                            ? 'bg-[#075985] hover:bg-[#0369a1] text-white border-white/25 shadow-md'
+                                            : 'bg-[#FCD116] hover:bg-yellow-400 text-[#08315F] border-yellow-300 shadow-yellow-500/10'
+                                        }`}
+                                    title={isHeaderExpanded ? "Collapse header to maximize form view" : "Expand header to view full profile details"}
+                                    aria-expanded={isHeaderExpanded}
+                                >
+                                    <span className={`w-2 h-2 rounded-full transition-transform group-hover:scale-125 ${isHeaderExpanded ? 'bg-blue-300' : 'bg-[#08315F]'}`} />
+                                    <span className="hidden xs:inline">{isHeaderExpanded ? "Collapse Details" : "Profile Details"}</span>
+                                    <span className="xs:hidden">{isHeaderExpanded ? "Less" : "Details"}</span>
+                                    <FiChevronDown
+                                        size={14}
+                                        className={`transition-transform duration-300 ${isHeaderExpanded
+                                                ? 'rotate-180 text-white group-hover:-translate-y-0.5'
+                                                : 'rotate-0 text-[#08315F] group-hover:translate-y-0.5'
+                                            }`}
+                                    />
+                                </button>
+
                                 {!isTlo && (
-                                    <button onClick={handleEditToggle} className={`px-5 py-2 font-bold rounded-full text-[15px] uppercase tracking-widest transition-all hidden sm:block border ${!isEditing ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md' : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'}`}>
+                                    <button
+                                        onClick={handleEditToggle}
+                                        className={`px-4 sm:px-5 py-1.5 sm:py-2 font-bold rounded-full text-[13px] sm:text-[15px] uppercase tracking-widest transition-all hidden sm:block border ${!isEditing
+                                                ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
+                                                : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
+                                            }`}
+                                    >
                                         {isEditing ? "Cancel Edit" : "Edit Profile"}
                                     </button>
                                 )}
-                                <button onClick={logout} className="flex items-center gap-2 text-slate-300 hover:text-red-400 font-bold text-[15px] uppercase tracking-wider transition-all">
-                                    <FiLock size={14} /> Sign Out
+
+                                <button
+                                    onClick={logout}
+                                    className="flex items-center gap-1.5 sm:gap-2 text-slate-300 hover:text-red-400 font-bold text-[13px] sm:text-[15px] uppercase tracking-wider transition-all shrink-0 active:scale-95"
+                                >
+                                    <FiLock size={14} /> <span className="hidden sm:inline">Sign Out</span>
                                 </button>
                             </div>
                         </div>
+
                         {!isTlo && (
                             <div className="sm:hidden flex items-center justify-end w-full mt-2">
-                                <button onClick={handleEditToggle} className={`px-5 py-2 font-bold rounded-full text-[15px] uppercase tracking-widest transition-all border ${!isEditing ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md' : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'}`}>
+                                <button
+                                    onClick={handleEditToggle}
+                                    className={`w-full py-1.5 font-bold rounded-full text-[13px] uppercase tracking-widest transition-all border ${!isEditing
+                                            ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
+                                            : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
+                                        }`}
+                                >
                                     {isEditing ? "Cancel Edit" : "Edit Profile"}
                                 </button>
                             </div>
                         )}
 
-                        {/* Profile Info Row */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-                            {/* Left: Avatar + Profile Info */}
-                            <div className="flex items-center gap-4 min-w-0">
-                                <div className="relative shrink-0">
-                                    <div className="w-[56px] h-[56px] md:w-[72px] md:h-[72px] bg-white/10 rounded-full flex items-center justify-center text-white/60 border border-white/20 shadow-lg shadow-black/10 overflow-hidden">
-                                        {profile.photo_binary_id ? (
-                                            <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Profile" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <>
-                                                <FiUser size={30} className="md:hidden" />
-                                                <FiUser size={36} className="hidden md:block" />
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-400 rounded-full border-[2px] md:border-[2.5px] border-[#0a1e3f] shadow-sm" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2.5 flex-wrap">
-                                        <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tight leading-none truncate">{fullName}</h1>
-                                        {applicationStatus && (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-[#FCD116] text-[#1a3a6e] text-[12px] md:text-[13.5px] font-black uppercase tracking-wider rounded-full shadow-sm">
-                                                <span className="w-1 h-1 bg-[#1a3a6e] rounded-full" />
-                                                {applicationStatus === 'under_review' ? 'In Review' : applicationStatus === 'approved' ? 'Approved' : applicationStatus === 'disapproved' ? 'Denied' : 'Draft'}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="text-blue-200/80 text-[18px] md:text-[21px] font-medium mt-1 truncate flex items-center gap-2">
-                                        <span>{profile.position_title || 'No position selected'}{(profile.designation && profile.designation !== profile.position_title) ? ` - ${profile.designation}` : ''}</span>
-                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[12px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[13.5px] md:text-[16.5px] font-medium">
-                                        {isMultiRole && availableRoles.length > 1 ? (
-                                            <div className="relative inline-block">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowRoleDropdown(prev => !prev)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FCD116] text-[#08315F] hover:bg-yellow-400 font-black text-[12px] md:text-[13px] uppercase tracking-wider rounded-full shadow-md transition-all active:scale-95 border border-yellow-300"
-                                                    title="Switch between verified roles for this official"
-                                                >
-                                                    <span>Active Role: {TLOid}</span>
-                                                    <span className="bg-[#08315F]/20 px-1.5 py-0.2 rounded text-[11px] font-bold">
-                                                        {availableRoles.findIndex(r => r.TLOid === TLOid) + 1} of {availableRoles.length}
-                                                    </span>
-                                                    <FiChevronDown size={14} className={`transition-transform duration-200 ${showRoleDropdown ? 'rotate-180' : ''}`} />
-                                                </button>
+                        {/* ── Collapsible Accordion Content (Profile Info Row) ── */}
+                        <AnimatePresence initial={false}>
+                            {isHeaderExpanded && (
+                                <motion.div
+                                    key="header-profile-details"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.28, ease: [0.04, 0.62, 0.23, 0.98] }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="pt-6 border-t border-white/10 mt-5">
+                                        {/* Profile Info Row */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+                                            {/* Left: Avatar + Profile Info */}
+                                            <div className="flex items-center gap-4 min-w-0">
+                                                <div className="relative shrink-0">
+                                                    <div className="w-[56px] h-[56px] md:w-[72px] md:h-[72px] bg-white/10 rounded-full flex items-center justify-center text-white/60 border border-white/20 shadow-lg shadow-black/10 overflow-hidden">
+                                                        {profile.photo_binary_id ? (
+                                                            <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Profile" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <>
+                                                                <FiUser size={30} className="md:hidden" />
+                                                                <FiUser size={36} className="hidden md:block" />
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-400 rounded-full border-[2px] md:border-[2.5px] border-[#0a1e3f] shadow-sm" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                                        <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tight leading-none truncate">{fullName}</h1>
+                                                        {applicationStatus && (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-[#FCD116] text-[#1a3a6e] text-[12px] md:text-[13.5px] font-black uppercase tracking-wider rounded-full shadow-sm">
+                                                                <span className="w-1 h-1 bg-[#1a3a6e] rounded-full" />
+                                                                {applicationStatus === 'under_review' ? 'In Review' : applicationStatus === 'approved' ? 'Approved' : applicationStatus === 'disapproved' ? 'Denied' : 'Draft'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-blue-200/80 text-[18px] md:text-[21px] font-medium mt-1 truncate flex items-center gap-2">
+                                                        <span>{profile.position_title || 'No position selected'}{(profile.designation && profile.designation !== profile.position_title) ? ` - ${profile.designation}` : ''}</span>
+                                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[12px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[13.5px] md:text-[16.5px] font-medium">
+                                                        {isMultiRole && availableRoles.length > 1 ? (
+                                                            <div className="relative inline-block">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setShowRoleDropdown(prev => !prev)}
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FCD116] text-[#08315F] hover:bg-yellow-400 font-black text-[12px] md:text-[13px] uppercase tracking-wider rounded-full shadow-md transition-all active:scale-95 border border-yellow-300"
+                                                                    title="Switch between verified roles for this official"
+                                                                >
+                                                                    <span>Active Role: {TLOid}</span>
+                                                                    <span className="bg-[#08315F]/20 px-1.5 py-0.2 rounded text-[11px] font-bold">
+                                                                        {availableRoles.findIndex(r => r.TLOid === TLOid) + 1} of {availableRoles.length}
+                                                                    </span>
+                                                                    <FiChevronDown size={14} className={`transition-transform duration-200 ${showRoleDropdown ? 'rotate-180' : ''}`} />
+                                                                </button>
 
-                                                {showRoleDropdown && (
-                                                    <div className="absolute left-0 mt-2 w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border-2 border-slate-200 z-50 p-2 overflow-hidden">
-                                                        <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                                                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Verified Multi-Role Official</p>
-                                                            <p className="text-[12.5px] font-bold text-[#08315F]">Select active role to view/edit:</p>
-                                                        </div>
-                                                        <div className="max-h-60 overflow-y-auto space-y-1">
-                                                            {availableRoles.map(role => {
-                                                                const isActive = role.TLOid === TLOid;
-                                                                return (
-                                                                    <button
-                                                                        key={role.TLOid}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setShowRoleDropdown(false);
-                                                                            if (!isActive) {
-                                                                                lookupByEmail(urlEmail || profile.email, role.TLOid);
-                                                                                const params = new URLSearchParams(window.location.search);
-                                                                                params.set('tloid', role.TLOid);
-                                                                                navigate(`?${params.toString()}`, { replace: true });
-                                                                            }
-                                                                        }}
-                                                                        className={`w-full text-left p-2.5 rounded-xl transition-all flex flex-col gap-0.5 border ${
-                                                                            isActive 
-                                                                                ? 'bg-blue-50/90 border-[#0038A8]/30 shadow-sm' 
-                                                                                : 'hover:bg-slate-50 border-transparent'
-                                                                        }`}
-                                                                    >
-                                                                        <div className="flex items-center justify-between">
-                                                                            <span className="font-black text-[13px] text-[#08315F] flex items-center gap-1.5">
-                                                                                {role.TLOid}
-                                                                                {role.is_oic && <span className="text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">OIC</span>}
-                                                                            </span>
-                                                                            {isActive && (
-                                                                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">
-                                                                                    Current
-                                                                                </span>
-                                                                            )}
+                                                                {showRoleDropdown && (
+                                                                    <div className="absolute left-0 mt-2 w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border-2 border-slate-200 z-50 p-2 overflow-hidden">
+                                                                        <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                                                                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Verified Multi-Role Official</p>
+                                                                            <p className="text-[12.5px] font-bold text-[#08315F]">Select active role to view/edit:</p>
                                                                         </div>
-                                                                        <p className="text-[12.5px] font-bold text-slate-700 truncate">
-                                                                            {role.position_title || 'No position title'}
-                                                                        </p>
-                                                                        <p className="text-[11px] text-slate-400 font-medium truncate">
-                                                                            {[role.office, role.division, role.region].filter(Boolean).join(' • ') || 'Central/Regional Office'}
-                                                                        </p>
-                                                                        {role.plantilla_item_no && (
-                                                                            <p className="text-[10.5px] font-mono text-slate-500 truncate">
-                                                                                Item: {role.plantilla_item_no}
-                                                                            </p>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                                        <div className="max-h-60 overflow-y-auto space-y-1">
+                                                                            {availableRoles.map(role => {
+                                                                                const isActive = role.TLOid === TLOid;
+                                                                                return (
+                                                                                    <button
+                                                                                        key={role.TLOid}
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            setShowRoleDropdown(false);
+                                                                                            if (!isActive) {
+                                                                                                lookupByEmail(urlEmail || profile.email, role.TLOid);
+                                                                                                const params = new URLSearchParams(window.location.search);
+                                                                                                params.set('tloid', role.TLOid);
+                                                                                                navigate(`?${params.toString()}`, { replace: true });
+                                                                                            }
+                                                                                        }}
+                                                                                        className={`w-full text-left p-2.5 rounded-xl transition-all flex flex-col gap-0.5 border ${isActive
+                                                                                                ? 'bg-blue-50/90 border-[#0038A8]/30 shadow-sm'
+                                                                                                : 'hover:bg-slate-50 border-transparent'
+                                                                                            }`}
+                                                                                    >
+                                                                                        <div className="flex items-center justify-between">
+                                                                                            <span className="font-black text-[13px] text-[#08315F] flex items-center gap-1.5">
+                                                                                                {role.TLOid}
+                                                                                                {role.is_oic && <span className="text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">OIC</span>}
+                                                                                            </span>
+                                                                                            {isActive && (
+                                                                                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">
+                                                                                                    Current
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <p className="text-[12.5px] font-bold text-slate-700 truncate">
+                                                                                            {role.position_title || 'No position title'}
+                                                                                        </p>
+                                                                                        <p className="text-[11px] text-slate-400 font-medium truncate">
+                                                                                            {[role.office, role.division, role.region].filter(Boolean).join(' • ') || 'Central/Regional Office'}
+                                                                                        </p>
+                                                                                        {role.plantilla_item_no && (
+                                                                                            <p className="text-[10.5px] font-mono text-slate-500 truncate">
+                                                                                                Item: {role.plantilla_item_no}
+                                                                                            </p>
+                                                                                        )}
+                                                                                    </button>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            TLOid && (
+                                                                <span className="flex items-center gap-1">
+                                                                    • {TLOid}
+                                                                </span>
+                                                            )
+                                                        )}
+                                                        {applicationId && (
+                                                            <>
+                                                                <span className="opacity-30">·</span>
+                                                                <span className="flex items-center gap-1">
+                                                                    APP-{String(applicationId).padStart(4, '0')}
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                        {TLOid && <span className="opacity-30">·</span>}
+                                                        <span className="flex items-center gap-1">
+                                                            Applied {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </span>
+                                                        {profile.updated_at && <span className="opacity-30">·</span>}
+                                                        {profile.updated_at && (
+                                                            <span className="flex items-center gap-1">
+                                                                Last Updated: {new Date(profile.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Right: Progress Card */}
+                                            <div className="shrink-0">
+                                                <div className="w-40 bg-[#075985] border border-white/5 rounded-2xl p-3 shadow-lg flex flex-col justify-center">
+                                                    <p className="text-slate-400 text-[12px] font-black uppercase tracking-widest leading-none">Progress</p>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <p className="text-[#FCD116] font-black text-[27px] leading-none">{completeness}%</p>
+                                                        <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${completeness}%` }}
+                                                                className="h-full bg-[#FCD116]"
+                                                            />
                                                         </div>
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                        ) : (
-                                            TLOid && (
-                                                <span className="flex items-center gap-1">
-                                                    • {TLOid}
-                                                </span>
-                                            )
-                                        )}
-                                        {applicationId && (
-                                            <>
-                                                <span className="opacity-30">·</span>
-                                                <span className="flex items-center gap-1">
-                                                    APP-{String(applicationId).padStart(4, '0')}
-                                                </span>
-                                            </>
-                                        )}
-                                        {TLOid && <span className="opacity-30">·</span>}
-                                        <span className="flex items-center gap-1">
-                                            Applied {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </span>
-                                        {profile.updated_at && <span className="opacity-30">·</span>}
-                                        {profile.updated_at && (
-                                            <span className="flex items-center gap-1">
-                                                Last Updated: {new Date(profile.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right: Progress Card */}
-                            <div className="shrink-0">
-                                <div className="w-40 bg-[#075985] border border-white/5 rounded-2xl p-3 shadow-lg flex flex-col justify-center">
-                                    <p className="text-slate-400 text-[12px] font-black uppercase tracking-widest leading-none">Progress</p>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <p className="text-[#FCD116] font-black text-[27px] leading-none">{completeness}%</p>
-                                        <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${completeness}%` }}
-                                                className="h-full bg-[#FCD116]"
-                                            />
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
@@ -2355,11 +2465,10 @@ const OfficialProfiling = () => {
                                                                                             }
                                                                                         }}
                                                                                         title={isSuffixNA ? "Click to enable Suffix entry" : "Click to mark Suffix as Not Applicable"}
-                                                                                        className={`h-[38px] px-2.5 rounded-lg text-[15px] font-black uppercase tracking-wider transition-all border-2 shrink-0 flex items-center justify-center select-none ${
-                                                                                            isSuffixNA
+                                                                                        className={`h-[38px] px-2.5 rounded-lg text-[15px] font-black uppercase tracking-wider transition-all border-2 shrink-0 flex items-center justify-center select-none ${isSuffixNA
                                                                                                 ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
                                                                                                 : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-800'
-                                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                                                                                     >
                                                                                         N/A
                                                                                     </button>
@@ -3793,10 +3902,10 @@ const OfficialProfiling = () => {
                                                                                                                                 profile.designation.trim().toLowerCase() !== 'no designation' &&
                                                                                                                                 profile.designation.trim().toLowerCase() !== 'none' &&
                                                                                                                                 profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
-                                                                                                                                <p className="text-sm font-semibold italic text-[#08315F] mt-0.5">
-                                                                                                                                    {profile.designation}
-                                                                                                                                </p>
-                                                                                                                            )}
+                                                                                                                                    <p className="text-sm font-semibold italic text-[#08315F] mt-0.5">
+                                                                                                                                        {profile.designation}
+                                                                                                                                    </p>
+                                                                                                                                )}
                                                                                                                         </div>
                                                                                                                     </div>
                                                                                                                     <div className="flex gap-6 items-start">
@@ -4558,35 +4667,35 @@ const OfficialProfiling = () => {
                             </div>
                         </div>
 
-                        {/* Persistent Bottom Action Bar */}
-                        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t-2 border-slate-200 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-20 lg:bg-white lg:py-4 lg:px-8 lg:shadow-none flex items-center justify-between shrink-0">
-                            <span className="text-[15px] font-bold text-slate-400 uppercase tracking-widest hidden sm:flex items-center gap-2">
-                                <FiShield className="text-emerald-500" size={16} /> Securely stored in DepEd database
+                        {/* Persistent Bottom Action Bar (Reduced Height) */}
+                        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t-2 border-slate-200 py-2 sm:py-2.5 px-4 sm:px-6 lg:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-20 lg:bg-white lg:shadow-none flex items-center justify-between shrink-0 transition-all duration-300 min-h-[46px] sm:min-h-[50px]">
+                            <span className="text-[13px] sm:text-[14px] font-bold text-slate-400 uppercase tracking-widest hidden sm:flex items-center gap-2">
+                                <FiShield className="text-emerald-500 shrink-0" size={16} /> Securely stored in DepEd database
                             </span>
                             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                                 {isMultiRole && availableRoles.length > 1 && (
-                                    <label className="flex items-center gap-2 cursor-pointer select-none bg-blue-50/90 hover:bg-blue-100/90 border border-blue-200 px-3 py-2 rounded-xl transition-all">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none bg-blue-50/90 hover:bg-blue-100/90 border border-blue-200 px-2.5 py-1 rounded-lg transition-all">
                                         <input
                                             type="checkbox"
                                             checked={applyToVerifiedRoles}
                                             onChange={(e) => setApplyToVerifiedRoles(e.target.checked)}
-                                            className="w-4 h-4 text-[#08315F] rounded border-slate-300 focus:ring-[#08315F] cursor-pointer"
+                                            className="w-3.5 h-3.5 text-[#08315F] rounded border-slate-300 focus:ring-[#08315F] cursor-pointer"
                                         />
-                                        <span className="text-[12.5px] font-bold text-blue-950 truncate max-w-[200px] sm:max-w-none">
+                                        <span className="text-[11.5px] sm:text-[12px] font-bold text-blue-950 truncate max-w-[200px] sm:max-w-none">
                                             Apply personal info to verified sibling role(s)
                                         </span>
                                     </label>
                                 )}
-                                <span className="text-[15px] font-bold text-slate-400 uppercase tracking-widest sm:hidden flex items-center gap-1.5">
-                                    <FiShield className="text-emerald-500" size={16} /> Protected
+                                <span className="text-[13px] font-bold text-slate-400 uppercase tracking-widest sm:hidden flex items-center gap-1.5">
+                                    <FiShield className="text-emerald-500 shrink-0" size={15} /> Protected
                                 </span>
                                 <button
                                     onClick={handleSave}
                                     disabled={saving || !isEditing}
-                                    className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[15px] uppercase tracking-widest rounded-lg shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className="w-full sm:w-auto px-5 sm:px-7 py-1.5 sm:py-2 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[13px] sm:text-[14px] uppercase tracking-wider rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
                                 >
-                                    {saving ? <FiLoader className="animate-spin" size={16} /> : <FiSave size={16} />}
-                                    {saving ? 'Saving...' : 'Save Progress'}
+                                    {saving ? <FiLoader className="animate-spin" size={15} /> : <FiSave size={15} />}
+                                    <span>{saving ? 'Saving...' : 'Save Progress'}</span>
                                 </button>
                             </div>
                         </div>
