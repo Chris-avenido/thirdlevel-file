@@ -1932,8 +1932,8 @@ const OfficialProfiling = () => {
                             >
                                 <div className="flex items-start gap-4">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border-2 ${isCollision
-                                            ? 'bg-rose-100 text-rose-700 border-rose-200'
-                                            : 'bg-amber-100 text-amber-700 border-amber-200'
+                                        ? 'bg-rose-100 text-rose-700 border-rose-200'
+                                        : 'bg-amber-100 text-amber-700 border-amber-200'
                                         }`}>
                                         {isCollision ? <FiAlertTriangle size={24} /> : <FiInfo size={24} />}
                                     </div>
@@ -1953,8 +1953,8 @@ const OfficialProfiling = () => {
                                 </div>
 
                                 <div className={`p-4 rounded-2xl border-2 text-[14.5px] font-medium leading-relaxed ${isCollision
-                                        ? 'bg-rose-50/80 border-rose-200 text-rose-900'
-                                        : 'bg-amber-50/80 border-amber-200 text-amber-900'
+                                    ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+                                    : 'bg-amber-50/80 border-amber-200 text-amber-900'
                                     }`}>
                                     {isCollision
                                         ? 'Affirmative contradictory evidence indicates that the records below represent different individuals. To prevent data corruption, cross-record synchronization is prohibited. Please select the specific official record to access.'
@@ -2070,8 +2070,8 @@ const OfficialProfiling = () => {
                                     type="button"
                                     onClick={toggleHeaderAccordion}
                                     className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-black uppercase tracking-wider transition-all duration-200 border shadow-sm active:scale-95 group ${isHeaderExpanded
-                                            ? 'bg-[#075985] hover:bg-[#0369a1] text-white border-white/25 shadow-md'
-                                            : 'bg-[#FCD116] hover:bg-yellow-400 text-[#08315F] border-yellow-300 shadow-yellow-500/10'
+                                        ? 'bg-[#075985] hover:bg-[#0369a1] text-white border-white/25 shadow-md'
+                                        : 'bg-[#FCD116] hover:bg-yellow-400 text-[#08315F] border-yellow-300 shadow-yellow-500/10'
                                         }`}
                                     title={isHeaderExpanded ? "Collapse header to maximize form view" : "Expand header to view full profile details"}
                                     aria-expanded={isHeaderExpanded}
@@ -2082,8 +2082,8 @@ const OfficialProfiling = () => {
                                     <FiChevronDown
                                         size={14}
                                         className={`transition-transform duration-300 ${isHeaderExpanded
-                                                ? 'rotate-180 text-white group-hover:-translate-y-0.5'
-                                                : 'rotate-0 text-[#08315F] group-hover:translate-y-0.5'
+                                            ? 'rotate-180 text-white group-hover:-translate-y-0.5'
+                                            : 'rotate-0 text-[#08315F] group-hover:translate-y-0.5'
                                             }`}
                                     />
                                 </button>
@@ -2092,8 +2092,8 @@ const OfficialProfiling = () => {
                                     <button
                                         onClick={handleEditToggle}
                                         className={`px-4 sm:px-5 py-1.5 sm:py-2 font-bold rounded-full text-[13px] sm:text-[15px] uppercase tracking-widest transition-all hidden sm:block border ${!isEditing
-                                                ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
-                                                : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
+                                            ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
+                                            : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
                                             }`}
                                     >
                                         {isEditing ? "Cancel Edit" : "Edit Profile"}
@@ -2114,8 +2114,8 @@ const OfficialProfiling = () => {
                                 <button
                                     onClick={handleEditToggle}
                                     className={`w-full py-1.5 font-bold rounded-full text-[13px] uppercase tracking-widest transition-all border ${!isEditing
-                                            ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
-                                            : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
+                                        ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
+                                        : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
                                         }`}
                                 >
                                     {isEditing ? "Cancel Edit" : "Edit Profile"}
@@ -2205,8 +2205,8 @@ const OfficialProfiling = () => {
                                                                                             }
                                                                                         }}
                                                                                         className={`w-full text-left p-2.5 rounded-xl transition-all flex flex-col gap-0.5 border ${isActive
-                                                                                                ? 'bg-blue-50/90 border-[#0038A8]/30 shadow-sm'
-                                                                                                : 'hover:bg-slate-50 border-transparent'
+                                                                                            ? 'bg-blue-50/90 border-[#0038A8]/30 shadow-sm'
+                                                                                            : 'hover:bg-slate-50 border-transparent'
                                                                                             }`}
                                                                                     >
                                                                                         <div className="flex items-center justify-between">
@@ -2466,8 +2466,8 @@ const OfficialProfiling = () => {
                                                                                         }}
                                                                                         title={isSuffixNA ? "Click to enable Suffix entry" : "Click to mark Suffix as Not Applicable"}
                                                                                         className={`h-[38px] px-2.5 rounded-lg text-[15px] font-black uppercase tracking-wider transition-all border-2 shrink-0 flex items-center justify-center select-none ${isSuffixNA
-                                                                                                ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
-                                                                                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-800'
+                                                                                            ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                                                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-800'
                                                                                             } disabled:opacity-50 disabled:cursor-not-allowed`}
                                                                                     >
                                                                                         N/A
@@ -2504,133 +2504,135 @@ const OfficialProfiling = () => {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="border-t-2 border-slate-100 pt-8">
-                                                                <div className="flex items-center justify-between mb-4">
-                                                                    <SectionLabel>Designation & Appointment</SectionLabel>
-                                                                    <div className="flex items-center gap-2">
-                                                                        {isLocationLocked ? (
-                                                                            <button
-                                                                                type="button"
-                                                                                disabled={!isEditing}
-                                                                                onClick={() => setShowLocationUnlockModal(true)}
-                                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-[15px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
-                                                                            >
-                                                                                <FiLock size={12} className="text-amber-600" /> Unlock Location
-                                                                            </button>
-                                                                        ) : (
-                                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border-2 border-emerald-200 rounded-xl text-[15px] font-black uppercase tracking-wider">
-                                                                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                                                <FiUnlock size={12} className="text-emerald-600" /> Location Unlocked
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-                                                                    <Field label="Unique Number">
-                                                                        <input disabled={!isEditing} type="text" value={TLOid || ''} readOnly className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
-                                                                    </Field>
-                                                                    <Field label="Employment Status">
-                                                                        <select disabled={!isEditing} value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
-                                                                            <option value="">Select Status</option>
-                                                                            <option value="REGULAR">Regular</option>
-                                                                            <option value="COTERMINOUS">Coterminous</option>
-                                                                        </select>
-                                                                    </Field>
-                                                                    <Field label="Region">
-                                                                        <div className="relative">
-                                                                            <select
-                                                                                disabled={!isEditing || isLocationLocked}
-                                                                                value={profile.region || ''}
-                                                                                onChange={e => {
-                                                                                    setP('region', e.target.value);
-                                                                                    setP('division', '');
-                                                                                }}
-                                                                                className={`${sel} ${isLocationLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
-                                                                            >
-                                                                                <option value="">Select Region</option>
-                                                                                {(regionsList || []).map(r => (
-                                                                                    <option key={r} value={r}>{r}</option>
-                                                                                ))}
-                                                                                {profile.region && !(regionsList || []).includes(profile.region) && (
-                                                                                    <option value={profile.region}>{profile.region}</option>
-                                                                                )}
-                                                                            </select>
-                                                                            {isLocationLocked && (
-                                                                                <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
-                                                                            )}
-                                                                        </div>
-                                                                    </Field>
-                                                                    <Field label="Division">
-                                                                        <div className="relative">
-                                                                            <select
-                                                                                disabled={!isEditing || isLocationLocked || !profile.region}
-                                                                                value={profile.division || ''}
-                                                                                onChange={e => setP('division', e.target.value)}
-                                                                                className={`${sel} ${(isLocationLocked || !profile.region) ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
-                                                                            >
-                                                                                <option value="">{profile.region ? 'Select Division' : 'Select Region First'}</option>
-                                                                                {(availableDivisions || []).map(d => (
-                                                                                    <option key={d} value={d}>{d}</option>
-                                                                                ))}
-                                                                                {profile.division && !(availableDivisions || []).includes(profile.division) && (
-                                                                                    <option value={profile.division}>{profile.division}</option>
-                                                                                )}
-                                                                            </select>
-                                                                            {isLocationLocked && (
-                                                                                <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
-                                                                            )}
-                                                                        </div>
-                                                                    </Field>
-                                                                    <Field label="Position Title (As per Appointment)">
-                                                                        {isPositionOthers ? (
-                                                                            <div className="relative flex items-center">
-                                                                                <input
-                                                                                    disabled={!isEditing}
-                                                                                    type="text"
-                                                                                    value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title}
-                                                                                    onChange={e => setP('position_title', e.target.value || 'Others')}
-                                                                                    placeholder="Please specify position title"
-                                                                                    className={`${inp} pr-9`}
-                                                                                    autoFocus
-                                                                                />
+                                                            {/* ── DESIGNATION & APPOINTMENT (Hidden per user request) ── */}
+                                                            {false && (
+                                                                <div className="border-t-2 border-slate-100 pt-8">
+                                                                    <div className="flex items-center justify-between mb-4">
+                                                                        <SectionLabel>Designation & Appointment</SectionLabel>
+                                                                        <div className="flex items-center gap-2">
+                                                                            {isLocationLocked ? (
                                                                                 <button
                                                                                     type="button"
                                                                                     disabled={!isEditing}
-                                                                                    onClick={() => setP('position_title', '')}
-                                                                                    className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
-                                                                                    title="Switch back to list selection"
+                                                                                    onClick={() => setShowLocationUnlockModal(true)}
+                                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-[15px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
                                                                                 >
-                                                                                    <FiRotateCcw size={13} />
+                                                                                    <FiLock size={12} className="text-amber-600" /> Unlock Location
                                                                                 </button>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
-                                                                                <option value="">Select Position Title</option>
-                                                                                {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
-                                                                                <option value="Others">Others</option>
+                                                                            ) : (
+                                                                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border-2 border-emerald-200 rounded-xl text-[15px] font-black uppercase tracking-wider">
+                                                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                                                    <FiUnlock size={12} className="text-emerald-600" /> Location Unlocked
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                                                                        <Field label="Unique Number">
+                                                                            <input disabled={!isEditing} type="text" value={TLOid || ''} readOnly className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
+                                                                        </Field>
+                                                                        <Field label="Employment Status">
+                                                                            <select disabled={!isEditing} value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
+                                                                                <option value="">Select Status</option>
+                                                                                <option value="REGULAR">Regular</option>
+                                                                                <option value="COTERMINOUS">Coterminous</option>
                                                                             </select>
-                                                                        )}
-                                                                    </Field>
-                                                                    <Field label="Designation">
-                                                                        {profile.is_oic ? (
-                                                                            isDesignationOthers ? (
+                                                                        </Field>
+                                                                        <Field label="Region">
+                                                                            <div className="relative">
+                                                                                <select
+                                                                                    disabled={!isEditing || isLocationLocked}
+                                                                                    value={profile.region || ''}
+                                                                                    onChange={e => {
+                                                                                        setP('region', e.target.value);
+                                                                                        setP('division', '');
+                                                                                    }}
+                                                                                    className={`${sel} ${isLocationLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
+                                                                                >
+                                                                                    <option value="">Select Region</option>
+                                                                                    {(regionsList || []).map(r => (
+                                                                                        <option key={r} value={r}>{r}</option>
+                                                                                    ))}
+                                                                                    {profile.region && !(regionsList || []).includes(profile.region) && (
+                                                                                        <option value={profile.region}>{profile.region}</option>
+                                                                                    )}
+                                                                                </select>
+                                                                                {isLocationLocked && (
+                                                                                    <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
+                                                                                )}
+                                                                            </div>
+                                                                        </Field>
+                                                                        <Field label="Division">
+                                                                            <div className="relative">
+                                                                                <select
+                                                                                    disabled={!isEditing || isLocationLocked || !profile.region}
+                                                                                    value={profile.division || ''}
+                                                                                    onChange={e => setP('division', e.target.value)}
+                                                                                    className={`${sel} ${(isLocationLocked || !profile.region) ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
+                                                                                >
+                                                                                    <option value="">{profile.region ? 'Select Division' : 'Select Region First'}</option>
+                                                                                    {(availableDivisions || []).map(d => (
+                                                                                        <option key={d} value={d}>{d}</option>
+                                                                                    ))}
+                                                                                    {profile.division && !(availableDivisions || []).includes(profile.division) && (
+                                                                                        <option value={profile.division}>{profile.division}</option>
+                                                                                    )}
+                                                                                </select>
+                                                                                {isLocationLocked && (
+                                                                                    <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
+                                                                                )}
+                                                                            </div>
+                                                                        </Field>
+                                                                        <Field label="Position Title (As per Appointment)">
+                                                                            {isPositionOthers ? (
                                                                                 <div className="relative flex items-center">
                                                                                     <input
                                                                                         disabled={!isEditing}
                                                                                         type="text"
-                                                                                        value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation}
-                                                                                        onChange={e => setP('designation', e.target.value || 'Others')}
-                                                                                        placeholder="Please specify designation"
+                                                                                        value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title}
+                                                                                        onChange={e => setP('position_title', e.target.value || 'Others')}
+                                                                                        placeholder="Please specify position title"
                                                                                         className={`${inp} pr-9`}
                                                                                         autoFocus
                                                                                     />
                                                                                     <button
                                                                                         type="button"
                                                                                         disabled={!isEditing}
-                                                                                        onClick={() => setP('designation', '')}
+                                                                                        onClick={() => setP('position_title', '')}
                                                                                         className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
                                                                                         title="Switch back to list selection"
                                                                                     >
+                                                                                        <FiRotateCcw size={13} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                                    <option value="">Select Position Title</option>
+                                                                                    {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
+                                                                                    <option value="Others">Others</option>
+                                                                                </select>
+                                                                            )}
+                                                                        </Field>
+                                                                        <Field label="Designation">
+                                                                            {profile.is_oic ? (
+                                                                                isDesignationOthers ? (
+                                                                                    <div className="relative flex items-center">
+                                                                                        <input
+                                                                                            disabled={!isEditing}
+                                                                                            type="text"
+                                                                                            value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation}
+                                                                                            onChange={e => setP('designation', e.target.value || 'Others')}
+                                                                                            placeholder="Please specify designation"
+                                                                                            className={`${inp} pr-9`}
+                                                                                            autoFocus
+                                                                                        />
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            disabled={!isEditing}
+                                                                                            onClick={() => setP('designation', '')}
+                                                                                            className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
+                                                                                            title="Switch back to list selection"
+                                                                                        >
                                                                                         <FiRotateCcw size={13} />
                                                                                     </button>
                                                                                 </div>
@@ -2675,6 +2677,7 @@ const OfficialProfiling = () => {
                                                                     </Field>
                                                                 </div>
                                                             </div>
+                                                            )}
 
                                                             <div className="border-t-2 border-slate-100 pt-8">
                                                                 <SectionLabel>Contact Details</SectionLabel>
@@ -2833,70 +2836,16 @@ const OfficialProfiling = () => {
                                                 {/* ── EXPERIENCE ── */}
                                                 {tab === 'experience' && (
                                                     <div className="space-y-6">
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                                                            <div className="md:col-span-2">
-                                                                <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none h-full">
-                                                                    <SectionLabel>Managerial Experience</SectionLabel>
-                                                                    <div className="bg-[#F4F8FB]/50 p-6 rounded-3xl border-2 border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                                                                        <div>
-                                                                            <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest mb-1">Total Managerial Experience</p>
-                                                                            <p className="text-[13.5px] font-bold text-slate-400 italic leading-tight">Automatically computed based on your previous positions.</p>
-                                                                        </div>
-                                                                        <div className="bg-white px-6 py-3 rounded-2xl border-2 border-blue-200 shadow-sm">
-                                                                            <p className="text-[30px] font-black text-[#08315F] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
-                                                                        </div>
+                                                        <div className="w-full">
+                                                            <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none h-full">
+                                                                <SectionLabel>Managerial Experience</SectionLabel>
+                                                                <div className="bg-[#F4F8FB]/50 p-6 rounded-3xl border-2 border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                                                                    <div>
+                                                                        <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest mb-1">Total Managerial Experience</p>
+                                                                        <p className="text-[13.5px] font-bold text-slate-400 italic leading-tight">Automatically computed based on your previous positions.</p>
                                                                     </div>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* SIDEBAR: CAREER PROGRESSION */}
-                                                            <div className="md:col-span-1">
-                                                                <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
-                                                                    <div className="flex items-center gap-3 mb-8">
-                                                                        <div className="w-10 h-10 bg-[#F4F8FB] text-[#075985] rounded-2xl flex items-center justify-center">
-                                                                            <FiClock size={20} />
-                                                                        </div>
-                                                                        <div>
-                                                                            <h3 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic leading-none">Career Progression</h3>
-                                                                            <p className="text-[13.5px] font-bold text-slate-400 uppercase tracking-widest mt-1">Professional Journey</p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="space-y-6 relative">
-                                                                        {/* Vertical Line */}
-                                                                        <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
-
-                                                                        {historyLoading ? (
-                                                                            <div className="py-12 text-center">
-                                                                                <div className="w-6 h-6 border-2 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-                                                                            </div>
-                                                                        ) : history.length === 0 ? (
-                                                                            <div className="py-12 text-center bg-transparent rounded-3xl border-2 border-dashed border-slate-200">
-                                                                                <FiClock className="mx-auto text-slate-200 mb-2" size={24} />
-                                                                                <p className="text-[13.5px] font-black text-slate-300 uppercase tracking-[0.2em]">Initial Entry Record</p>
-                                                                            </div>
-                                                                        ) : (
-                                                                            history.map((item, idx) => (
-                                                                                <div key={item.id || item.history_id || `hist-${idx}`} className="flex gap-6 relative z-10">
-                                                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md shrink-0 ${idx === 0 ? 'bg-[#08315F] text-white shadow-blue-500/30' : 'bg-slate-200 text-slate-500'}`}>
-                                                                                        {idx === 0 ? <FiAward size={14} /> : <FiActivity size={14} />}
-                                                                                    </div>
-                                                                                    <div className="flex-1 pt-1">
-                                                                                        <div className="flex justify-between items-start">
-                                                                                            <h4 className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight leading-none italic">{item.position_title}</h4>
-                                                                                            <span className="text-[12px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
-                                                                                        </div>
-                                                                                        <p className="text-[15px] font-bold text-[#075985] uppercase tracking-widest mt-2">{item.office || item.division || 'Department of Education'}</p>
-                                                                                        {item.previous_incumbent && (
-                                                                                            <p className="text-[13.5px] font-bold text-slate-400 mt-1 flex items-center gap-1">
-                                                                                                <FiChevronLeft size={10} className="rotate-180" />
-                                                                                                Prev. Incumbent: <span className="text-slate-600">{item.previous_incumbent}</span>
-                                                                                            </p>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </div>
-                                                                            ))
-                                                                        )}
+                                                                    <div className="bg-white px-6 py-3 rounded-2xl border-2 border-blue-200 shadow-sm">
+                                                                        <p className="text-[30px] font-black text-[#08315F] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
