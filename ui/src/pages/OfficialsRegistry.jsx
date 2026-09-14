@@ -326,6 +326,7 @@ const OfficialsRegistry = () => {
                 const actionLabel = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : `${action}d`;
                 Swal.fire('Success', `Registration ${actionLabel} successfully and notification email dispatched to official.`, 'success');
                 fetchOfficials();
+                fetchKpiSummary();
             } else {
                 Swal.fire('Error', data.error || 'Failed to process registration', 'error');
             }
@@ -374,6 +375,7 @@ const OfficialsRegistry = () => {
                     timer: 2000
                 });
                 fetchOfficials();
+                fetchKpiSummary();
             } else {
                 Swal.fire('Error', data.error || 'Failed to update test account status', 'error');
             }
@@ -910,6 +912,9 @@ const OfficialsRegistry = () => {
                 Swal.fire('Notice', message, 'info');
                 setShowActionModal(false);
                 fetchOfficials();
+                fetchKpiSummary();
+                fetchStrands();
+                fetchTabPositions();
             } else {
                 Swal.fire('Notice', data.error || 'Action failed.', 'info');
             }
@@ -950,6 +955,9 @@ const OfficialsRegistry = () => {
                 Swal.fire('Notice', 'Action cancelled successfully. Official is now Active.', 'info');
                 setShowActionModal(false);
                 fetchOfficials();
+                fetchKpiSummary();
+                fetchStrands();
+                fetchTabPositions();
             } else {
                 Swal.fire('Notice', data.error || 'Action failed.', 'info');
             }
@@ -1204,9 +1212,18 @@ const OfficialsRegistry = () => {
             if (positionFilter !== 'All') {
                 dataForColumn = dataForColumn.filter(item => item.position_title === positionFilter);
             }
-            if (statusTab !== 'All') {
-                const targetStatus = statusTab === 'Vacant' ? 'Vacated' : statusTab;
-                dataForColumn = dataForColumn.filter(item => item.status === targetStatus);
+            if (statusTab !== 'All' && column.key !== 'status') {
+                if (statusTab === 'Vacant') {
+                    dataForColumn = dataForColumn.filter(item =>
+                        item.status === 'Vacated' ||
+                        item.status === 'Vacant' ||
+                        !item.first_name ||
+                        item.first_name === 'VACANT' ||
+                        item.first_name?.toUpperCase().includes('VACANT')
+                    );
+                } else {
+                    dataForColumn = dataForColumn.filter(item => item.status === statusTab);
+                }
             }
             if (oicOnly) {
                 dataForColumn = dataForColumn.filter(item => item.is_oic);
@@ -1751,7 +1768,7 @@ const OfficialsRegistry = () => {
                                                                             className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                             title={item.email ? "View Official Profile" : ""}
                                                                         >
-                                                                            {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
+                                                                            {(!item.first_name || item.first_name === 'VACANT') ? <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span> : `${item.first_name} ${item.last_name || ''}`}
                                                                         </div>
                                                                         {item.is_testaccount && (
                                                                             <span title="Test Account" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100/90 border-2 border-purple-300 text-purple-700 text-[13.5px] font-black uppercase tracking-wider shrink-0 shadow-sm">
@@ -1868,19 +1885,6 @@ const OfficialsRegistry = () => {
                                                                 {item.first_name && item.status !== 'Reassigning' && item.status !== 'Pending Assignment' && item.status !== 'For Approval' && item.status !== 'Rejected' && user?.role === 'Central Office' && (
                                                                     <button onClick={() => openActionModal(item, 'vacate')} title="Vacate" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-100 shadow-sm shrink-0">
                                                                         <FiTrash2 size={14} />
-                                                                    </button>
-                                                                )}
-                                                                {user?.role === 'Central Office' && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleToggleTestAccount(item); }}
-                                                                        title={item.is_testaccount ? "Remove Test Account Flag" : "Mark as Test Account"}
-                                                                        className={`flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-widest transition-all border-2 shadow-sm shrink-0 ${
-                                                                            item.is_testaccount
-                                                                                ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
-                                                                                : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white'
-                                                                            }`}
-                                                                    >
-                                                                        <FaVial size={14} />
                                                                     </button>
                                                                 )}
                                                             </div>

@@ -1903,24 +1903,118 @@ const executeReassignment = async (client, official, effTs, justification, assig
 let isProcessingVacancies = false;
 let lastProcessTime = 0;
 
-export const processScheduledVacancies = async (client) => {
+export const processScheduledVacancies = async (client, force = false) => {
   const now = Date.now();
-  if (isProcessingVacancies || now - lastProcessTime < 60000) return; // Only run once per minute
+  if (!force && (isProcessingVacancies || now - lastProcessTime < 60000)) return; // Only run once per minute unless forced
 
   isProcessingVacancies = true;
   lastProcessTime = now;
 
   try {
-    await client.query(`
-      UPDATE third_level_official_masterlist
-      SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW()
-      WHERE status = 'Vacating' AND effectivity_date <= NOW()
+    const matureVacancies = await client.query(`
+      SELECT * FROM third_level_official_masterlist
+      WHERE status IN ('Vacating', 'Resigning') AND effectivity_date <= NOW()
     `);
-    await client.query(`
-      UPDATE third_level_official_masterlist
-      SET status = 'Inactive', updated_at = NOW()
-      WHERE status = 'Resigning' AND effectivity_date <= NOW()
-    `);
+
+    for (const official of matureVacancies.rows) {
+      const conn = typeof client.connect === 'function' ? await client.connect() : client;
+      try {
+        await conn.query('BEGIN');
+        const mLock = await conn.query(
+          'SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 FOR UPDATE',
+          [official.TLOid]
+        );
+        if (mLock.rows.length === 0 || !['Vacating', 'Resigning'].includes(mLock.rows[0].status)) {
+          await conn.query('ROLLBACK');
+          continue;
+        }
+
+        const lockedOfficial = mLock.rows[0];
+
+        const pRes = await conn.query(
+          `SELECT id FROM tlo_personnel
+           WHERE legacy_tlo_id = $1
+              OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+           ORDER BY CASE WHEN legacy_tlo_id = $1 THEN 0 ELSE 1 END, id ASC
+           LIMIT 1`,
+          [lockedOfficial.TLOid, lockedOfficial.email]
+        );
+        const personId = pRes.rows[0]?.id;
+
+        let activeAssignmentId = null;
+
+        if (personId) {
+          const aRes = await conn.query(
+            `SELECT a.id, a.item_number, a.status
+             FROM tlo_assignments a
+             WHERE a.personnel_id = $1
+               AND a.status = 'Active'
+             ORDER BY a.id DESC
+             LIMIT 1
+             FOR UPDATE`,
+            [personId]
+          );
+
+          if (aRes.rows.length > 0) {
+            activeAssignmentId = aRes.rows[0].id;
+
+            await conn.query(
+              `UPDATE tlo_assignments
+               SET status = 'Inactive', end_date = $1, updated_at = NOW(), updated_by = 'SYSTEM_CRON'
+               WHERE id = $2`,
+              [lockedOfficial.effectivity_date, activeAssignmentId]
+            );
+          }
+        }
+
+        const isResignOrRetire = lockedOfficial.status === 'Resigning' || /^(resign|retire)/i.test(lockedOfficial.status || '');
+        const targetStatus = isResignOrRetire ? 'Inactive' : 'Vacated';
+
+        await conn.query(
+          `UPDATE third_level_official_masterlist
+           SET first_name = 'VACANT',
+               last_name = '',
+               email = NULL,
+               status = $1,
+               updated_at = NOW()
+           WHERE "TLOid" = $2`,
+          [targetStatus, lockedOfficial.TLOid]
+        );
+
+        await conn.query(
+          `INSERT INTO third_level_officials_updates
+             ("TLOid", first_name, last_name, middle_name, suffix, email, contact_details, position_title, office, division, region, strand, status, vacate_reason, remarks, assignment, updated_at, effectivity_date, updated_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'Scheduled vacancy executed', $15, NOW(), $16, 'SYSTEM_CRON')`,
+          [
+            lockedOfficial.TLOid,
+            lockedOfficial.first_name,
+            lockedOfficial.last_name,
+            lockedOfficial.middle_name,
+            lockedOfficial.suffix,
+            lockedOfficial.email,
+            lockedOfficial.contact_details,
+            lockedOfficial.position_title,
+            lockedOfficial.office,
+            lockedOfficial.division,
+            lockedOfficial.region,
+            lockedOfficial.strand,
+            targetStatus,
+            lockedOfficial.status === 'Resigning' ? 'Resignation' : 'Scheduled Vacate',
+            activeAssignmentId ? activeAssignmentId.toString() : null,
+            lockedOfficial.effectivity_date
+          ]
+        );
+
+        await conn.query('COMMIT');
+      } catch (err) {
+        await conn.query('ROLLBACK');
+        console.error('Failed processing scheduled vacancy for', official.TLOid, err);
+      } finally {
+        if (typeof client.connect === 'function') {
+          conn.release();
+        }
+      }
+    }
 
     const pendingReassignments = await client.query(`
       SELECT * FROM third_level_official_masterlist
@@ -2807,6 +2901,7 @@ export const adminAction = async (req, res) => {
 
   const { TLOid, action, justification, effectivityDate, target_TLOid, successor_TLOid, assignee_TLOid, vacateReason } = req.body;
   if (!TLOid || !action) return res.status(400).json({ error: 'TLOid and action are required' });
+  const updatedBy = req.user?.email || req.user?.username || req.user?.role || 'SYSTEM_ADMIN';
 
   let effTs = 'NOW()';
   let isFuture = false;
@@ -2832,57 +2927,250 @@ export const adminAction = async (req, res) => {
     await ensureOicColumn(client);
 
     const isTest = Boolean(req.user?.is_testaccount);
-    const currentRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
+    const currentRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2 FOR UPDATE', [TLOid, isTest]);
     const official = currentRes.rows[0];
     if (!official) throw new Error('Official not found');
 
-    if (official.first_name && official.first_name !== 'VACANT' && action !== 'reassign') {
-      await client.query(`
-        INSERT INTO third_level_officials_updates
-          ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), ${effTs}, $10)
-      `, [official.TLOid, official.first_name, official.last_name, official.position_title,
-      official.office, official.strand, official.email,
-      action === 'vacate' ? 'Vacated' : action === 'succeed' ? 'Succeeded' : action === 'cancel-vacate' ? 'Active' : 'Reassigned',
-      justification || 'Administrative action', vacateReason || null]);
+    if (action === 'vacate' && (official.first_name === 'VACANT' || official.status === 'Vacated' || official.status === 'Inactive')) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Cannot vacate: Position '${TLOid}' is already vacant.` });
     }
 
     if (action === 'cancel-vacate') {
-      await client.query(`
-        UPDATE third_level_official_masterlist
-        SET status = 'Active', updated_at = NOW(), effectivity_date = NULL, reassign_target_tloid = NULL, reassign_assignee_tloid = NULL
-        WHERE "TLOid" = $1 AND is_testaccount = $2
-      `, [TLOid, isTest]);
+      // Path A: Future-dated vacancy cancellation (from 'Resigning' or 'Vacating')
+      if (['Vacating', 'Resigning'].includes(official.status)) {
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET status = 'Active', updated_at = NOW(), effectivity_date = NULL, reassign_target_tloid = NULL, reassign_assignee_tloid = NULL
+          WHERE "TLOid" = $1 AND is_testaccount = $2
+        `, [TLOid, isTest]);
+
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, updated_at, effectivity_date, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Active', $13, NOW(), NULL, $14)
+        `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
+            official.position_title, official.office, official.division, official.region, official.strand,
+            official.email, official.contact_details, justification || 'Cancelled scheduled action', updatedBy]);
+
+      } else {
+        // Path B: Post-maturity / immediate vacancy cancellation (from 'VACANT' or 'Inactive')
+        const explicitActions = await client.query(`
+          SELECT "TLOUid", "TLOid", first_name, last_name, middle_name, suffix, email, contact_details, position_title, office, division, region, strand, designation, status, remarks, assignment, effectivity_date, updated_at
+          FROM third_level_officials_updates
+          WHERE "TLOid" = $1
+            AND change_type IS NULL
+            AND (status IN ('Vacated', 'Resigning', 'Vacating', 'Inactive') OR remarks ILIKE '%Cancel%')
+          ORDER BY "TLOUid" DESC
+          LIMIT 2
+        `, [TLOid]);
+
+        if (explicitActions.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: `No vacancy action found for position '${TLOid}'.` });
+        }
+
+        const latestAction = explicitActions.rows[0];
+
+        // Check 1: Must be an uncancelled vacancy
+        if (!['Vacated', 'Resigning', 'Vacating', 'Inactive'].includes(latestAction.status)) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: `Position '${TLOid}' does not have an active uncancelled vacancy to cancel.` });
+        }
+
+        // Check 2: Must contain recorded assignment ID
+        if (!latestAction.assignment || isNaN(parseInt(latestAction.assignment, 10))) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Pre-vacancy assignment reference missing or invalid in audit ledger for '${TLOid}'.` });
+        }
+
+        const targetAssignId = parseInt(latestAction.assignment, 10);
+
+        // Check 3: Assignment ID actually exists & lock it
+        const targetAssignRes = await client.query(
+          `SELECT a.* FROM tlo_assignments a WHERE a.id = $1 FOR UPDATE`,
+          [targetAssignId]
+        );
+        if (targetAssignRes.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Referenced assignment ID '${targetAssignId}' not found.` });
+        }
+        const targetAssign = targetAssignRes.rows[0];
+
+        // Check 4: Assignment belongs to canonical human identity set
+        const canonicalPersonnelRes = await client.query(`
+          SELECT id FROM tlo_personnel
+          WHERE legacy_tlo_id = $1
+             OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+        `, [TLOid, latestAction.email]);
+        const allowedPersonnelIds = canonicalPersonnelRes.rows.map(r => r.id);
+
+        if (!allowedPersonnelIds.includes(targetAssign.personnel_id)) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Referenced assignment does not belong to the original official.` });
+        }
+
+        // Check 5: Assignment item_number matches occupied item
+        const occupiedItemNumber = targetAssign.item_number;
+
+        // Check 6: Assignment is currently Inactive
+        if (targetAssign.status !== 'Inactive') {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Referenced assignment '${targetAssignId}' is not currently Inactive.` });
+        }
+
+        // Check 7: Masterlist is in an appropriate vacancy state
+        const isVacantState = !official.first_name || official.first_name.trim().toUpperCase() === 'VACANT' || ['VACATED', 'INACTIVE', 'VACANT'].includes((official.status || '').toUpperCase());
+        if (!isVacantState) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: `Cannot cancel vacancy: Masterlist for '${TLOid}' is not in a vacant state.` });
+        }
+
+        // Check 8: Concurrency Guard - verify no genuinely different official occupies occupiedItemNumber
+        const externalOccupantAssign = await client.query(`
+          SELECT a.id, a.personnel_id, a.item_number
+          FROM tlo_assignments a
+          WHERE a.item_number = $1
+            AND a.status = 'Active'
+            AND a.personnel_id NOT IN (
+              SELECT id FROM tlo_personnel
+              WHERE legacy_tlo_id = $2
+                 OR (LOWER(TRIM(email)) = LOWER(TRIM($3)) AND email IS NOT NULL AND email != '')
+            )
+        `, [occupiedItemNumber, TLOid, latestAction.email]);
+
+        const externalOccupantMasterlist = await client.query(`
+          SELECT "TLOid", first_name, last_name, email
+          FROM third_level_official_masterlist
+          WHERE "TLOid" = $1
+            AND is_testaccount = $2
+            AND first_name IS NOT NULL
+            AND first_name != ''
+            AND first_name NOT ILIKE '%VACANT%'
+            AND "TLOid" != $3
+            AND LOWER(TRIM(COALESCE(email, ''))) != LOWER(TRIM($4))
+        `, [occupiedItemNumber, isTest, TLOid, latestAction.email]);
+
+        if (externalOccupantAssign.rows.length > 0 || externalOccupantMasterlist.rows.length > 0) {
+          await client.query('ROLLBACK');
+          const occName = externalOccupantMasterlist.rows[0] ? `${externalOccupantMasterlist.rows[0].first_name} ${externalOccupantMasterlist.rows[0].last_name}` : 'another official';
+          return res.status(409).json({ error: `Cannot cancel vacancy: Position '${occupiedItemNumber}' is currently occupied by ${occName}. The current occupant must be vacated or reassigned before this vacancy can be cancelled.` });
+        }
+
+        // All 8 checks passed! Reactivate exact assignment by PK:
+        await client.query(`
+          UPDATE tlo_assignments
+          SET status = 'Active', end_date = NULL, updated_at = NOW(), updated_by = $1
+          WHERE id = $2
+        `, [updatedBy, targetAssignId]);
+
+        // Restore masterlist with pre-vacancy snapshot from audit row:
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET first_name = $1,
+              last_name = $2,
+              middle_name = $3,
+              suffix = $4,
+              email = $5,
+              contact_details = COALESCE($6, contact_details),
+              status = 'Active',
+              effectivity_date = NULL,
+              updated_at = NOW(),
+              reassign_target_tloid = NULL,
+              reassign_assignee_tloid = NULL
+          WHERE "TLOid" = $7 AND is_testaccount = $8
+        `, [latestAction.first_name, latestAction.last_name, latestAction.middle_name, latestAction.suffix,
+            latestAction.email, latestAction.contact_details, TLOid, isTest]);
+
+        // Insert cancellation audit record:
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, assignment, updated_at, effectivity_date, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Active', $13, $14, NOW(), NULL, $15)
+        `, [TLOid, latestAction.first_name, latestAction.last_name, latestAction.middle_name, latestAction.suffix,
+            latestAction.position_title, latestAction.office, latestAction.division, latestAction.region, latestAction.strand,
+            latestAction.email, latestAction.contact_details, justification || 'Cancelled vacancy / resignation', targetAssignId.toString(), updatedBy]);
+      }
 
     } else if (action === 'vacate') {
       if (isFuture) {
-        if (vacateReason === 'Resignation') {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Resigning', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1 AND is_testaccount = $2
-          `, [TLOid, isTest]);
-        } else {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Vacating', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1 AND is_testaccount = $2
-          `, [TLOid, isTest]);
-        }
+        const futureStatus = vacateReason === 'Resignation' ? 'Resigning' : 'Vacating';
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET status = $1, updated_at = NOW(), effectivity_date = ${effTs}
+          WHERE "TLOid" = $2 AND is_testaccount = $3
+        `, [futureStatus, TLOid, isTest]);
+
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, strand, email, contact_details, status, remarks, updated_at, effectivity_date, vacate_reason, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), ${effTs}, $13, $14)
+        `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
+            official.position_title, official.office, official.strand, official.email, official.contact_details,
+            futureStatus, justification || (vacateReason || 'Administrative action'), vacateReason || null, updatedBy]);
+
       } else {
-        if (vacateReason === 'Resignation') {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Inactive', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1 AND is_testaccount = $2
-          `, [TLOid, isTest]);
-        } else {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1 AND is_testaccount = $2
-          `, [TLOid, isTest]);
+        // Immediate Vacancy / Resignation
+        // 1. Resolve canonical personnel_id
+        const pRes = await client.query(`
+          SELECT id FROM tlo_personnel
+          WHERE legacy_tlo_id = $1
+             OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+          ORDER BY CASE WHEN legacy_tlo_id = $1 THEN 0 ELSE 1 END, id ASC
+          LIMIT 1
+        `, [official.TLOid, official.email]);
+        const personId = pRes.rows[0]?.id;
+
+        let activeAssignmentId = null;
+
+        // 2. Resolve authoritative active assignment and lock it
+        if (personId) {
+          const aRes = await client.query(`
+            SELECT a.id, a.item_number, a.status
+            FROM tlo_assignments a
+            WHERE a.personnel_id = $1
+              AND a.status = 'Active'
+            ORDER BY a.id DESC
+            LIMIT 1
+            FOR UPDATE
+          `, [personId]);
+
+          if (aRes.rows.length > 0) {
+            activeAssignmentId = aRes.rows[0].id;
+
+            // Deactivate authoritative assignment strictly by locked PK
+            await client.query(`
+              UPDATE tlo_assignments
+              SET status = 'Inactive', end_date = ${effTs}, updated_at = NOW(), updated_by = $1
+              WHERE id = $2
+            `, [updatedBy, activeAssignmentId]);
+          }
         }
+
+        const isResignOrRetire = /^(resign|retire)/i.test(vacateReason || '');
+        const targetStatus = isResignOrRetire ? 'Inactive' : 'Vacated';
+
+        // 3. Update masterlist to established vacancy convention
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET first_name = 'VACANT',
+              last_name = '',
+              email = NULL,
+              status = $1,
+              updated_at = NOW(),
+              effectivity_date = ${effTs}
+          WHERE "TLOid" = $2 AND is_testaccount = $3
+        `, [targetStatus, TLOid, isTest]);
+
+        // 4. Record audit ledger with exact assignment ID (keeping "TLOid" = official.TLOid!)
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, assignment, updated_at, effectivity_date, vacate_reason, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), ${effTs}, $16, $17)
+        `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
+            official.position_title, official.office, official.division, official.region, official.strand,
+            official.email, official.contact_details, targetStatus, justification || (vacateReason || 'Administrative action'),
+            activeAssignmentId ? activeAssignmentId.toString() : null, vacateReason || null, updatedBy]);
       }
 
     } else if (action === 'succeed') {
