@@ -20,7 +20,7 @@ import {
   toggleTestAccount,
   reassignOfficial
 } from '../controllers/thirdLevelController.js';
-import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
+import { bulkProcessDirectory, bulkProcessAchievements, bulkImportPlantillaAndPositions, importPositionsAndBuildAssignments } from '../controllers/uploadDirectoryModalController.js';
 import { getAllNotableAchievements, createNotableAchievement, updateNotableAchievement, deleteNotableAchievement } from '../controllers/notableAchievementsController.js';
 
 const router = express.Router();
@@ -46,6 +46,14 @@ router.post('/reassign-official', authMiddleware, memoryUpload.single('file'), r
 router.post('/admin-action', authMiddleware, adminAction);
 router.post('/bulk-process-directory', authMiddleware, bulkProcessDirectory);
 router.post('/bulk-process-achievements', authMiddleware, bulkProcessAchievements);
+router.post('/import-positions-and-assignments', authMiddleware, memoryUpload.fields([
+  { name: 'plantilla_file', maxCount: 1 },
+  { name: 'positions_file', maxCount: 1 }
+]), importPositionsAndBuildAssignments);
+router.post('/import-plantilla-positions', authMiddleware, memoryUpload.fields([
+  { name: 'plantilla_file', maxCount: 1 },
+  { name: 'positions_file', maxCount: 1 }
+]), importPositionsAndBuildAssignments);
 router.get('/cron-trigger', triggerCron);
 
 export default router;

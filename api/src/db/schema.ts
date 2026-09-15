@@ -1,4 +1,4 @@
-import { pgTable, uniqueIndex, integer, varchar, boolean, timestamp, text, date, smallint, numeric, jsonb, uuid, index, bigint, foreignKey, check, serial, unique, pgSequence } from "drizzle-orm/pg-core"
+import { pgTable, uniqueIndex, integer, varchar, boolean, timestamp, text, foreignKey, date, smallint, numeric, jsonb, uuid, index, bigint, check, unique, serial, pgSequence } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -30,29 +30,6 @@ export const notableAchievements = pgTable("notable_achievements", {
 	deleteFlg: integer("delete_flg").default(0),
 	createDate: timestamp("create_date", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	editDate: timestamp("edit_date", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const thirdLevelOfficialsMasterlist = pgTable("third_level_officials_masterlist", {
-	id: integer().default(sql`nextval('third_level_officials_masterlist_id_seq'::regclass)`).primaryKey().notNull(),
-	tlid: text(),
-	sortIndex: integer("sort_index"),
-	strand: text(),
-	office: text(),
-	name: text(),
-	position: text(),
-	email: text(),
-	altEmail1: text("alt_email_1"),
-	altEmail2: text("alt_email_2"),
-	contactDetails: text("contact_details"),
-	altContactDetails1: text("alt_contact_details_1"),
-	altContactDetails2: text("alt_contact_details_2"),
-	assignmentDate: date("assignment_date"),
-	remarks: text(),
-	status: text(),
-	changeType: text("change_type"),
-	updatedBy: text("updated_by"),
-	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const thirdLevelOfficialsProfiles = pgTable("third_level_officials_profiles", {
@@ -88,6 +65,36 @@ export const thirdLevelOfficialsProfiles = pgTable("third_level_officials_profil
 	serviceRecordsBinaryId: uuid("service_records_binary_id"),
 	pendingAdminCase: text("pending_admin_case"),
 	ombudsmanCase: text("ombudsman_case"),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	tloMasterlistId: integer("tlo_masterlist_id"),
+}, (table) => [
+	foreignKey({
+			columns: [table.tloMasterlistId],
+			foreignColumns: [tloMasterlist.id],
+			name: "third_level_officials_profiles_tlo_masterlist_id_fkey"
+		}),
+]);
+
+export const thirdLevelOfficialsMasterlist = pgTable("third_level_officials_masterlist", {
+	id: integer().default(sql`nextval('third_level_officials_masterlist_id_seq'::regclass)`).primaryKey().notNull(),
+	tlid: text(),
+	sortIndex: integer("sort_index"),
+	strand: text(),
+	office: text(),
+	name: text(),
+	position: text(),
+	email: text(),
+	altEmail1: text("alt_email_1"),
+	altEmail2: text("alt_email_2"),
+	contactDetails: text("contact_details"),
+	altContactDetails1: text("alt_contact_details_1"),
+	altContactDetails2: text("alt_contact_details_2"),
+	assignmentDate: date("assignment_date"),
+	remarks: text(),
+	status: text(),
+	changeType: text("change_type"),
+	updatedBy: text("updated_by"),
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 });
@@ -534,14 +541,6 @@ export const tloAccomplishmentRecords = pgTable("tlo_accomplishment_records", {
 		}),
 ]);
 
-export const tloItems = pgTable("tlo_items", {
-	itemNumber: varchar("item_number", { length: 100 }).primaryKey().notNull(),
-	positionTitle: varchar("position_title", { length: 255 }).notNull(),
-	salaryGrade: varchar("salary_grade", { length: 20 }),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-});
-
 export const tloEligibilityRecords = pgTable("tlo_eligibility_records", {
 	id: integer().default(sql`nextval('tlo_eligibility_records_id_seq'::regclass)`).primaryKey().notNull(),
 	sourceTable: varchar("source_table").notNull(),
@@ -596,46 +595,6 @@ export const tloTrainingRecords = pgTable("tlo_training_records", {
 		}),
 ]);
 
-export const tloAssignments = pgTable("tlo_assignments", {
-	id: serial().primaryKey().notNull(),
-	personnelId: uuid("personnel_id").notNull(),
-	itemNumber: varchar("item_number", { length: 100 }),
-	region: varchar({ length: 255 }),
-	division: varchar({ length: 255 }),
-	office: varchar({ length: 255 }),
-	strand: varchar({ length: 255 }),
-	designation: text(),
-	assignmentType: varchar("assignment_type", { length: 50 }).default('Permanent').notNull(),
-	status: varchar({ length: 50 }).default('Active').notNull(),
-	startDate: date("start_date"),
-	endDate: date("end_date"),
-	reassignmentOrderBinaryId: uuid("reassignment_order_binary_id"),
-	remarks: text(),
-	createdBy: text("created_by"),
-	updatedBy: text("updated_by"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-	oic: boolean().default(false).notNull(),
-	positionTitle: varchar("position_title", { length: 255 }),
-}, (table) => [
-	index("idx_tlo_assignments_item").using("btree", table.itemNumber.asc().nullsLast().op("text_ops")),
-	index("idx_tlo_assignments_personnel").using("btree", table.personnelId.asc().nullsLast().op("uuid_ops")),
-	index("idx_tlo_assignments_status").using("btree", table.status.asc().nullsLast().op("text_ops"), table.assignmentType.asc().nullsLast().op("text_ops")),
-	index("idx_tlo_assignments_status_oic").using("btree", table.status.asc().nullsLast().op("bool_ops"), table.oic.asc().nullsLast().op("text_ops")),
-	index("idx_tlo_assignments_title").using("btree", table.positionTitle.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.itemNumber],
-			foreignColumns: [tloItems.itemNumber],
-			name: "tlo_assignments_item_number_fkey"
-		}).onDelete("restrict"),
-	foreignKey({
-			columns: [table.personnelId],
-			foreignColumns: [tloPersonnel.id],
-			name: "tlo_assignments_personnel_id_fkey"
-		}).onDelete("restrict"),
-	check("chk_tlo_assignments_status", sql`(status)::text = ANY ((ARRAY['Active'::character varying, 'Inactive'::character varying, 'Ended'::character varying])::text[])`),
-]);
-
 export const tloPositionHistory = pgTable("tlo_position_history", {
 	id: integer().default(sql`nextval('tlo_position_history_id_seq'::regclass)`).primaryKey().notNull(),
 	sourceTable: varchar("source_table").notNull(),
@@ -687,3 +646,225 @@ export const cesPlantilla = pgTable("ces_plantilla", {
 	index("idx_ces_plantilla_source_row").using("btree", table.sourceRowNumber.asc().nullsLast().op("int4_ops")),
 	unique("ces_plantilla_report_source_row_number_key").on(table.sourceRowNumber),
 ]);
+
+export const tloPlantilla = pgTable("tlo_plantilla", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	permanentItemNo: varchar("permanent_item_no", { length: 100 }),
+	firstName: varchar("first_name", { length: 150 }),
+	middleName: varchar("middle_name", { length: 150 }),
+	lastName: varchar("last_name", { length: 150 }),
+	suffix: varchar({ length: 50 }),
+	prefix: varchar({ length: 50 }),
+	gender: varchar({ length: 50 }),
+	employmentType: varchar("employment_type", { length: 50 }).default('PLANTILLA').notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	salary: numeric({ precision: 12, scale:  2 }),
+	salaryGrade: varchar("salary_grade", { length: 50 }),
+}, (table) => [
+	index("idx_tlo_plantilla_employment").using("btree", table.employmentType.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_plantilla_names").using("btree", table.lastName.asc().nullsLast().op("text_ops"), table.firstName.asc().nullsLast().op("text_ops")),
+	uniqueIndex("idx_tlo_plantilla_permanent_item_no").using("btree", table.permanentItemNo.asc().nullsLast().op("text_ops")).where(sql`((permanent_item_no IS NOT NULL) AND ((permanent_item_no)::text <> ''::text) AND (upper((permanent_item_no)::text) <> ALL (ARRAY['NEW ITEM'::text, 'DETAILED'::text, 'N/A'::text, 'N/A (DETAILED)'::text])))`),
+	index("idx_tlo_plantilla_salary_grade").using("btree", table.salaryGrade.asc().nullsLast().op("text_ops")),
+]);
+
+export const tloProfile = pgTable("tlo_profile", {
+	id: serial().primaryKey().notNull(),
+	dateOfBirth: date("date_of_birth"),
+	civilStatus: varchar("civil_status", { length: 50 }),
+	tin: varchar({ length: 50 }),
+	gsis: varchar({ length: 50 }),
+	pagibig: varchar({ length: 50 }),
+	philhealth: varchar({ length: 50 }),
+	email: varchar({ length: 255 }),
+	altEmail1: varchar("alt_email_1", { length: 255 }),
+	altEmail2: varchar("alt_email_2", { length: 255 }),
+	contactDetails: varchar("contact_details", { length: 255 }),
+	altContactDetails1: varchar("alt_contact_details_1", { length: 255 }),
+	altContactDetails2: varchar("alt_contact_details_2", { length: 255 }),
+	permanentAddress: text("permanent_address"),
+	temporaryAddress: text("temporary_address"),
+	nationality: text(),
+	religion: text(),
+	bloodType: text("blood_type"),
+	dependents: text(),
+	height: text(),
+	weight: text(),
+	age: smallint(),
+	dpaConsentedAt: timestamp("dpa_consented_at", { withTimezone: true, mode: 'string' }),
+	emtPasser: boolean("emt_passer"),
+	emtDate: date("emt_date"),
+	cesStage: text("ces_stage"),
+	cesConfermentDate: date("ces_conferment_date"),
+	totalYearsThirdLevel: numeric("total_years_third_level"),
+	managerialExperienceTotal: text("managerial_experience_total"),
+	performanceRating1: text("performance_rating_1"),
+	performanceRating1Period: text("performance_rating_1_period"),
+	performanceRating2: text("performance_rating_2"),
+	performanceRating2Period: text("performance_rating_2_period"),
+	performanceRating3: text("performance_rating_3"),
+	performanceRating3Period: text("performance_rating_3_period"),
+	cespes1Rating: text("cespes_1_rating"),
+	cespes2Rating: text("cespes_2_rating"),
+	cespesRating1Period: text("cespes_rating_1_period"),
+	cespesRating2Period: text("cespes_rating_2_period"),
+	performanceRatingIpcrf: text("performance_rating_ipcrf"),
+	performanceRatingCespes: text("performance_rating_cespes"),
+	pendingAdminCase: text("pending_admin_case"),
+	ombudsmanCase: text("ombudsman_case"),
+	guiltyAdminDetails: text("guilty_admin_details"),
+	criminallyChargedDetails: text("criminally_charged_details"),
+	convictedCrimeDetails: text("convicted_crime_details"),
+	sandiganbayanClearanceBinaryId: varchar("sandiganbayan_clearance_binary_id", { length: 255 }),
+	nbiClearanceBinaryId: varchar("nbi_clearance_binary_id", { length: 255 }),
+	cscClearanceBinaryId: varchar("csc_clearance_binary_id", { length: 255 }),
+	ombudsmanClearanceBinaryId: varchar("ombudsman_clearance_binary_id", { length: 255 }),
+	photoBinaryId: uuid("photo_binary_id"),
+	pdsBinaryId: uuid("pds_binary_id"),
+	profileWordBinaryId: uuid("profile_word_binary_id"),
+	profilePptBinaryId: uuid("profile_ppt_binary_id"),
+	serviceRecordsBinaryId: uuid("service_records_binary_id"),
+	executiveSummaryBinaryId: text("executive_summary_binary_id"),
+	notableAchievements: jsonb("notable_achievements").default([]),
+	totalTrainingHours: numeric("total_training_hours"),
+	isTestaccount: boolean("is_testaccount").default(false),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	tloMasterlistId: integer("tlo_masterlist_id"),
+}, (table) => [
+	index("idx_tlo_profile_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.tloMasterlistId],
+			foreignColumns: [tloMasterlist.id],
+			name: "tlo_profile_tlo_masterlist_id_fkey"
+		}),
+]);
+
+
+
+export const tloPositions = pgTable("tlo_positions", {
+	id: serial().primaryKey().notNull(),
+	positionTitle: varchar("position_title", { length: 150 }).notNull(),
+	salaryGrade: varchar("salary_grade", { length: 20 }),
+	description: text(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	positionCode: varchar("position_code", { length: 100 }),
+	region: varchar({ length: 255 }),
+	division: varchar({ length: 255 }),
+	bureau: varchar({ length: 255 }),
+}, (table) => [
+	index("idx_tlo_positions_bureau").using("btree", table.bureau.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_positions_code").using("btree", table.positionCode.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_positions_division").using("btree", table.division.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_positions_region").using("btree", table.region.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_positions_title").using("btree", table.positionTitle.asc().nullsLast().op("text_ops")),
+]);
+
+export const tloMasterlist = pgTable("tlo_masterlist", {
+	id: serial().primaryKey().notNull(),
+	tloid: varchar({ length: 50 }).notNull(),
+	firstName: varchar("first_name", { length: 255 }),
+	lastName: varchar("last_name", { length: 255 }),
+	middleName: varchar("middle_name", { length: 255 }),
+	suffix: varchar({ length: 50 }),
+	gender: varchar({ length: 50 }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	index("idx_tlo_masterlist_gender").using("btree", table.gender.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_masterlist_last_name").using("btree", table.lastName.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_masterlist_lower_tloid").using("btree", table.tloid.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_masterlist_tloid").using("btree", table.tloid.asc().nullsLast().op("text_ops")),
+	unique("uq_tlo_masterlist_tloid").on(table.tloid),
+]);
+
+export const tloAssignmentsBackup20260915 = pgTable("tlo_assignments_backup_20260915", {
+	id: integer(),
+	personnelId: uuid("personnel_id"),
+	itemNumber: varchar("item_number", { length: 100 }),
+	positionId: integer("position_id"),
+	positionCode: varchar("position_code", { length: 100 }),
+	salaryGrade: varchar("salary_grade"),
+	positionTitle: varchar("position_title", { length: 255 }),
+	region: varchar({ length: 150 }),
+	division: varchar({ length: 150 }),
+	office: varchar({ length: 150 }),
+	strand: varchar({ length: 150 }),
+	designation: text(),
+	assignmentType: text("assignment_type"),
+	status: text(),
+	isActive: boolean("is_active"),
+	assignedAt: timestamp("assigned_at", { withTimezone: true, mode: 'string' }),
+	unassignedAt: timestamp("unassigned_at", { withTimezone: true, mode: 'string' }),
+	startDate: date("start_date"),
+	endDate: date("end_date"),
+	reassignmentOrderBinaryId: uuid("reassignment_order_binary_id"),
+	remarks: text(),
+	createdBy: text("created_by"),
+	updatedBy: text("updated_by"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+	oic: boolean(),
+});
+
+export const tloAssignmentsBackupSchemaRefactor = pgTable("tlo_assignments_backup_schema_refactor", {
+	id: integer(),
+	tloMasterlistId: varchar("tlo_masterlist_id", { length: 255 }),
+	tloPositionId: varchar("tlo_position_id", { length: 255 }),
+	status: varchar({ length: 20 }),
+	capacity: varchar({ length: 20 }),
+	startDate: date("start_date"),
+	endDate: date("end_date"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+});
+
+export const tloAssignments = pgTable("tlo_assignments", {
+	id: serial().primaryKey().notNull(),
+	status: varchar({ length: 20 }).default('Active').notNull(),
+	capacity: varchar({ length: 20 }).default('Full').notNull(),
+	startDate: date("start_date").default(sql`CURRENT_DATE`).notNull(),
+	endDate: date("end_date"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	tloMasterlistId: integer("tlo_masterlist_id"),
+	tloPositionId: varchar("tlo_position_id", { length: 100 }),
+	positionId: integer("position_id"),
+	designation: text(),
+	remarks: text(),
+	reassignmentOrderBinaryId: uuid("reassignment_order_binary_id"),
+	createdBy: text("created_by"),
+	updatedBy: text("updated_by"),
+}, (table) => [
+	index("idx_tlo_assignments_active").using("btree", table.tloMasterlistId.asc().nullsLast().op("int4_ops"), table.status.asc().nullsLast().op("text_ops")).where(sql`(end_date IS NULL)`),
+	index("idx_tlo_assignments_masterlist").using("btree", table.tloMasterlistId.asc().nullsLast().op("int4_ops")),
+	index("idx_tlo_assignments_position").using("btree", table.tloPositionId.asc().nullsLast().op("text_ops")),
+	index("idx_tlo_assignments_position_id").using("btree", table.positionId.asc().nullsLast().op("int4_ops")),
+	index("idx_tlo_assignments_status_capacity").using("btree", table.status.asc().nullsLast().op("text_ops"), table.capacity.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.tloMasterlistId],
+			foreignColumns: [tloMasterlist.id],
+			name: "tlo_assignments_tlo_masterlist_id_new_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.tloPositionId],
+			foreignColumns: [tloItems.itemNumber],
+			name: "tlo_assignments_tlo_position_id_new_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.positionId],
+			foreignColumns: [tloPositions.id],
+			name: "tlo_assignments_position_id_fkey"
+		}).onDelete("set null"),
+	check("chk_tlo_assignments_status", sql`(status)::text = ANY ((ARRAY['Active'::character varying, 'Inactive'::character varying])::text[])`),
+	check("chk_tlo_assignments_capacity", sql`(capacity)::text = ANY ((ARRAY['Full'::character varying, 'OIC'::character varying, 'Concurrent'::character varying])::text[])`),
+]);
+
+export const tloItems = pgTable("tlo_items", {
+	itemNumber: varchar("item_number", { length: 100 }).primaryKey().notNull(),
+	positionTitle: varchar("position_title", { length: 255 }).notNull(),
+	salaryGrade: varchar("salary_grade", { length: 20 }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});

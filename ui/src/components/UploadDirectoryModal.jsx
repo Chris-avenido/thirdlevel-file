@@ -5,7 +5,7 @@ import { FiX, FiUploadCloud, FiFile, FiCheckCircle, FiAlertCircle, FiChevronLeft
 import { apiUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';
-import { parseDirectoryFile } from '../utils/directoryParser';
+import { parseDirectoryFile, parsePlantillaFile, parsePositionsFile } from '../utils/directoryParser';
 import { uploadDirectoryBulk } from '../utils/directoryApi';
 
 const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
@@ -18,10 +18,24 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
   const [summary, setSummary] = useState(null);
 
 
+  // Tab Mode ('directory' or 'plantilla_positions')
+  const [activeTab, setActiveTab] = useState('directory');
+
+  // Plantilla & Positions Integration State
+  const [plantillaFile, setPlantillaFile] = useState(null);
+  const [positionsFile, setPositionsFile] = useState(null);
+  const [plantillaPositionsData, setPlantillaPositionsData] = useState([]);
+  const plantillaRowsRef = useRef([]);
+  const positionsRowsRef = useRef([]);
+  const plantillaInputRef = useRef(null);
+  const positionsInputRef = useRef(null);
+
   // Pagination for preview
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
-  const totalPages = Math.ceil(records.length / recordsPerPage);
+  const totalPages = Math.ceil(
+    (activeTab === 'plantilla_positions' ? plantillaPositionsData.length : records.length) / recordsPerPage
+  );
 
   const handleFileDrop = (e) => {
     e.preventDefault();
@@ -81,9 +95,142 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
+  const syncPairedData = (pRows, posRows) => {
+    const pData = pRows || plantillaRowsRef.current || [];
+    const posData = posRows || positionsRowsRef.current || [];
+    if (pRows) plantillaRowsRef.current = pRows;
+    if (posRows) positionsRowsRef.current = posRows;
+
+    const maxLen = Math.max(pData.length, posData.length);
+    const paired = [];
+    for (let i = 0; i < maxLen; i++) {
+      const p = pData[i] || {};
+      const pos = posData[i] || {};
+      paired.push({
+        rowNum: i + 1,
+        item_no: p.permanent_item_no || p.item_number || 'N/A',
+        position_title: pos.position_title || 'Unassigned Position',
+        salary_grade: p.salary_grade || pos.salary_grade || '—',
+        region: pos.region || p.region || '—',
+        office: pos.bureau || pos.office || pos.division || '—',
+        division: pos.division || '—',
+        incumbent: p.last_name ? `${p.last_name}, ${p.first_name || ''}`.trim() : 'VACANT',
+        isVacant: !p.last_name || String(p.last_name).toUpperCase() === 'VACANT'
+      });
+    }
+    setPlantillaPositionsData(paired);
+    setCurrentPage(1);
+  };
+
+  const handlePlantillaSelect = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setPlantillaFile(f);
+    setIsParsing(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const rows = await parsePlantillaFile(evt.target.result);
+        syncPairedData(rows, null);
+      } catch (err) {
+        Swal.fire('Parsing Error', err.message, 'error');
+        setPlantillaFile(null);
+      } finally {
+        setIsParsing(false);
+      }
+    };
+    reader.readAsArrayBuffer(f);
+  };
+
+  const handlePositionsSelect = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setPositionsFile(f);
+    setIsParsing(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const rows = await parsePositionsFile(evt.target.result);
+        syncPairedData(null, rows);
+      } catch (err) {
+        Swal.fire('Parsing Error', err.message, 'error');
+        setPositionsFile(null);
+      } finally {
+        setIsParsing(false);
+      }
+    };
+    reader.readAsArrayBuffer(f);
+  };
+
+  const handleProceedPlantillaPositions = async () => {
+    if (!plantillaFile && !positionsFile && plantillaPositionsData.length === 0) {
+      Swal.fire('No Files Selected', 'Please select both plantilla and positions files.', 'warning');
+      return;
+    }
+
+    const confirmRes = await Swal.fire({
+      title: 'Confirm Positions & Plantilla Import',
+      text: 'This will truncate and refresh the official position catalog in tlo_positions and update assignment records. Do you want to proceed?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'BULK UPLOAD & PROCESS',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#1e3a8a',
+      cancelButtonColor: '#6b7280'
+    });
+
+    if (!confirmRes.isConfirmed) return;
+
+    setIsProcessing(true);
+    try {
+      const formData = new FormData();
+      if (plantillaFile) formData.append('plantilla_file', plantillaFile);
+      if (positionsFile) formData.append('positions_file', positionsFile);
+
+      const res = await fetch(apiUrl('/api/third-level/import-positions-and-assignments'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSummary({
+          isPlantillaPositions: true,
+          summary: {
+            total: data.summary?.totalRows || 0,
+            new: data.summary?.assignmentsCreated || 0,
+            updated: data.summary?.updatedPlantilla || 0,
+            failed: 0,
+            plantillaCount: data.summary?.insertedPlantilla || 0,
+            positionsCount: data.summary?.positionsImported || 0,
+            deactivatedCount: data.summary?.deactivatedAssignments || 0
+          },
+          newInserts: [],
+          updates: [],
+          failed: []
+        });
+        if (onSuccess) onSuccess();
+      } else {
+        Swal.fire('Import Error', data.error || 'Failed to import positions and assignments.', 'error');
+      }
+    } catch (err) {
+      Swal.fire('Network Error', err.message, 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const resetModal = () => {
     setFile(null);
     setRecords([]);
+    setPlantillaFile(null);
+    setPositionsFile(null);
+    setPlantillaPositionsData([]);
+    plantillaRowsRef.current = [];
+    positionsRowsRef.current = [];
     setSummary(null);
     setCurrentPage(1);
   };
@@ -169,6 +316,22 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
               </button>
             </div>
 
+            {/* TAB SELECTOR */}
+            <div className="flex border-b-2 border-slate-100 px-6 bg-slate-50/50">
+              <button
+                onClick={() => { setActiveTab('directory'); resetModal(); }}
+                className={`py-3 px-5 text-[16.5px] font-black uppercase tracking-wider transition-colors border-b-2 -mb-[2px] ${activeTab === 'directory' ? 'border-[#08315f] text-[#08315f]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                Directory Masterlist
+              </button>
+              <button
+                onClick={() => { setActiveTab('plantilla_positions'); resetModal(); }}
+                className={`py-3 px-5 text-[16.5px] font-black uppercase tracking-wider transition-colors border-b-2 -mb-[2px] ${activeTab === 'plantilla_positions' ? 'border-[#08315f] text-[#08315f]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                Plantilla & Positions Integration
+              </button>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-6 bg-white relative">
               {isProcessing && (
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
@@ -178,7 +341,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
               )}
 
-              {!file && !summary && (
+              {activeTab === 'directory' && !file && !summary && (
                 <div className="flex flex-col gap-6">
                   <div className="bg-slate-50 border-2 border-slate-200 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
@@ -359,6 +522,138 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
               )}
 
+              {/* PLANTILLA & POSITIONS INTEGRATION TAB */}
+              {activeTab === 'plantilla_positions' && !summary && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Plantilla Positions File Dropzone */}
+                    <div className="bg-white rounded-2xl border-2 border-dashed border-blue-200 p-8 flex flex-col items-center justify-center hover:border-blue-400 transition-colors shadow-sm">
+                      <input
+                        type="file"
+                        ref={plantillaInputRef}
+                        onChange={handlePlantillaSelect}
+                        accept=".csv, .xlsx, .xls"
+                        className="hidden"
+                      />
+                      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-3">
+                        <FiFileText size={28} />
+                      </div>
+                      <h4 className="font-black text-[#08315f] text-[20px] text-center">Plantilla Positions CSV</h4>
+                      <p className="text-[13.5px] text-slate-400 font-bold uppercase tracking-wider mb-3">tlo_plantilla_positions.csv</p>
+                      <button
+                        type="button"
+                        onClick={() => plantillaInputRef.current?.click()}
+                        className="px-5 py-2.5 bg-blue-50 text-blue-700 font-bold rounded-xl border-2 border-blue-200 hover:bg-blue-100 transition-colors text-[16px]"
+                      >
+                        {plantillaFile ? 'Change File' : 'Click or drag file to upload'}
+                      </button>
+                      <p className="text-[13px] text-slate-400 mt-2">Upload an Excel (.xlsx, .xls) or CSV file.</p>
+                      {plantillaFile && (
+                        <div className="mt-3 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                          ✓ {plantillaFile.name}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Positions Inventory File Dropzone */}
+                    <div className="bg-white rounded-2xl border-2 border-dashed border-indigo-200 p-8 flex flex-col items-center justify-center hover:border-indigo-400 transition-colors shadow-sm">
+                      <input
+                        type="file"
+                        ref={positionsInputRef}
+                        onChange={handlePositionsSelect}
+                        accept=".csv, .xlsx, .xls"
+                        className="hidden"
+                      />
+                      <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-3">
+                        <FiUploadCloud size={28} />
+                      </div>
+                      <h4 className="font-black text-[#08315f] text-[20px] text-center">Positions Inventory CSV</h4>
+                      <p className="text-[13.5px] text-slate-400 font-bold uppercase tracking-wider mb-3">tlo_positions.csv</p>
+                      <button
+                        type="button"
+                        onClick={() => positionsInputRef.current?.click()}
+                        className="px-5 py-2.5 bg-indigo-50 text-indigo-700 font-bold rounded-xl border-2 border-indigo-200 hover:bg-indigo-100 transition-colors text-[16px]"
+                      >
+                        {positionsFile ? 'Change File' : 'Click or drag file to upload'}
+                      </button>
+                      <p className="text-[13px] text-slate-400 mt-2">Upload an Excel (.xlsx, .xls) or CSV file.</p>
+                      {positionsFile && (
+                        <div className="mt-3 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                          ✓ {positionsFile.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Paired Preview Table */}
+                  {plantillaPositionsData.length > 0 && (
+                    <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-sm overflow-hidden flex flex-col">
+                      <div className="px-6 py-4 border-b-2 border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 className="font-black text-[#08315f] text-[21px]">Data Preview</h3>
+                        <div className="text-[16px] font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full uppercase tracking-wider">
+                          {plantillaPositionsData.length} Total Records
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto max-h-[360px]">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="sticky top-0 z-10 bg-slate-50 shadow-sm">
+                            <tr className="text-[14px] uppercase tracking-widest text-slate-500 font-black border-b-2 border-slate-200 whitespace-nowrap">
+                              <th className="px-4 py-3">Status</th>
+                              <th className="px-4 py-3">Item No</th>
+                              <th className="px-4 py-3">Position Title</th>
+                              <th className="px-4 py-3">Salary Grade</th>
+                              <th className="px-4 py-3">Region</th>
+                              <th className="px-4 py-3">Division / Office</th>
+                              <th className="px-4 py-3">Incumbent</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-[16px] font-medium">
+                            {plantillaPositionsData.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage).map((rec, idx) => (
+                              <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td className="px-4 py-2.5">
+                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider border ${rec.isVacant ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                    {rec.isVacant ? 'Vacant' : 'Filled'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 font-bold font-mono text-[#075985]">{rec.item_no}</td>
+                                <td className="px-4 py-2.5 font-bold text-slate-800">{rec.position_title}</td>
+                                <td className="px-4 py-2.5 font-bold text-slate-600">{rec.salary_grade ? `SG ${rec.salary_grade}` : '—'}</td>
+                                <td className="px-4 py-2.5 text-slate-600">{rec.region}</td>
+                                <td className="px-4 py-2.5 text-slate-600">{rec.division} • {rec.office}</td>
+                                <td className="px-4 py-2.5 font-bold text-slate-700">{rec.incumbent}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {totalPages > 1 && (
+                        <div className="px-6 py-3 border-t-2 border-slate-100 flex items-center justify-between bg-slate-50">
+                          <span className="text-[16px] font-bold text-slate-500 uppercase tracking-widest">
+                            Page {currentPage} of {totalPages}
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              disabled={currentPage === 1}
+                              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                              className="p-2 rounded-lg bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                            >
+                              <FiChevronLeft />
+                            </button>
+                            <button
+                              disabled={currentPage === totalPages}
+                              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                              className="p-2 rounded-lg bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                            >
+                              <FiChevronRight />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {summary && (
                 <div className="space-y-6">
                   <div className={`grid gap-4 ${summary.summary.failed > 0 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'}`}>
@@ -458,14 +753,25 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                     >
                       Cancel
                     </button>
-                    <button
-                      onClick={handleProceed}
-                      disabled={!file || records.filter(r => r.isValid).length === 0 || isProcessing}
-                      className="px-8 py-2.5 rounded-xl font-bold text-white bg-[#1d4ed8] hover:bg-[#1e40af] transition-all disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-[18px]"
-                    >
-                      {isProcessing && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                      Proceed
-                    </button>
+                    {activeTab === 'plantilla_positions' ? (
+                      <button
+                        onClick={handleProceedPlantillaPositions}
+                        disabled={(!plantillaFile && !positionsFile && plantillaPositionsData.length === 0) || isProcessing}
+                        className="px-8 py-2.5 rounded-xl font-bold text-white bg-[#1d4ed8] hover:bg-[#1e40af] transition-all disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-[18px]"
+                      >
+                        {isProcessing && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                        BULK UPLOAD & PROCESS
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleProceed}
+                        disabled={!file || records.filter(r => r.isValid).length === 0 || isProcessing}
+                        className="px-8 py-2.5 rounded-xl font-bold text-white bg-[#1d4ed8] hover:bg-[#1e40af] transition-all disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-[18px]"
+                      >
+                        {isProcessing && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                        Proceed
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (

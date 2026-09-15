@@ -986,55 +986,45 @@ export const updateProfile = async (req, res) => {
         const incomingIsOic    = Boolean(req.body.is_oic || (req.body.designation && req.body.designation.toUpperCase().includes('OIC')));
 
         if (incomingPosTitle || incomingDesig || incomingRegion || incomingDivision) {
+          // Resolve numeric tlo_masterlist_id for this TLOid
+          const mLookupRes = await client.query(
+            'SELECT id FROM tlo_masterlist WHERE LOWER(tloid) = LOWER($1) LIMIT 1',
+            [TLOid]
+          );
+          const numericMasterlistId = mLookupRes.rows.length > 0 ? mLookupRes.rows[0].id : null;
+
           // Identify the single authoritative current active assignment for this item_number
           const curAssignRes = await client.query(
-            `SELECT a.id, a.personnel_id, a.item_number, a.position_title,
-                    a.designation, a.region, a.division, a.office, a.strand,
-                    a.status, a.start_date, a.end_date, a.assignment_type, a.oic
+            `SELECT a.id, a.tlo_masterlist_id, a.tlo_position_id,
+                    a.status, a.capacity, a.start_date, a.end_date,
+                    m.position_title, m.designation, m.region, m.division, m.office, m.strand
              FROM tlo_assignments a
-             WHERE a.item_number = $1
+             LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+             LEFT JOIN third_level_official_masterlist m ON (m."TLOid" = a.tlo_position_id OR m."TLOid" = tm.tloid)
+             WHERE (a.tlo_position_id = $1 OR tm.tloid = $1 OR (a.tlo_masterlist_id = $2 AND $2::int IS NOT NULL))
                AND a.status = 'Active'
-             ORDER BY CASE WHEN a.assignment_type = 'Concurrent' THEN 2 ELSE 1 END, a.id DESC
+               AND a.end_date IS NULL
+             ORDER BY CASE WHEN a.capacity = 'Concurrent' THEN 2 ELSE 1 END, a.id DESC
              LIMIT 1`,
-            [TLOid]
+            [TLOid, numericMasterlistId]
           );
 
           if (curAssignRes.rows.length === 0) {
-            // No active assignment exists in ledger — resolve personnel_id and insert initial active row
-            const pRes = await client.query(
-              `SELECT id FROM tlo_personnel WHERE legacy_tlo_id = $1 ORDER BY id ASC LIMIT 1`,
-              [TLOid]
+            // No active assignment exists in ledger — insert initial active row
+            await client.query(
+              `INSERT INTO tlo_assignments (
+                 tlo_masterlist_id, tlo_position_id, status, capacity,
+                 start_date, end_date, created_at, updated_at
+               ) VALUES (
+                 $1, $2, 'Active', $3,
+                 CURRENT_DATE, NULL, NOW(), NOW()
+               )`,
+              [
+                numericMasterlistId,
+                TLOid,
+                incomingIsOic ? 'OIC' : 'Full'
+              ]
             );
-            const initialPersonId = pRes.rows[0]?.id || null;
-
-            if (initialPersonId) {
-              await client.query(
-                `INSERT INTO tlo_assignments (
-                   personnel_id, item_number, region, division, office, strand,
-                   position_title, designation, assignment_type, status, oic,
-                   start_date, end_date, remarks, created_by, updated_by,
-                   created_at, updated_at
-                 ) VALUES (
-                   $1, $2, $3, $4, $5, $6,
-                   $7, $8, $9, 'Active', $10,
-                   NOW(), NULL, 'Initial assignment on profile save', $11, $11,
-                   NOW(), NOW()
-                 )`,
-                [
-                  initialPersonId,
-                  TLOid,
-                  req.body.region || null,
-                  req.body.division || null,
-                  incomingOffice,
-                  incomingStrand,
-                  req.body.position_title || null,
-                  req.body.designation || null,
-                  incomingIsOic ? 'OIC' : 'Permanent',
-                  incomingIsOic,
-                  updatedBy
-                ]
-              );
-            }
           } else {
             const cur = curAssignRes.rows[0];
 
@@ -1059,7 +1049,7 @@ export const updateProfile = async (req, res) => {
               const prevDivision = cur.division || null;
               const prevOffice = cur.office || null;
               const prevStrand = cur.strand || null;
-              const prevOic = Boolean(cur.oic || (cur.designation && cur.designation.toUpperCase().includes('OIC')));
+              const prevOic = Boolean(cur.capacity === 'OIC' || (cur.designation && cur.designation.toUpperCase().includes('OIC')));
 
               await client.query(
                 `INSERT INTO tlo_position_history (
@@ -1091,52 +1081,29 @@ export const updateProfile = async (req, res) => {
               // Step 2: Transition previous assignment in tlo_assignments to Inactive
               await client.query(
                 `UPDATE tlo_assignments
-                 SET status = 'Inactive', end_date = $1, updated_at = NOW(), updated_by = $2
-                 WHERE id = $3`,
-                [oldEndDate, updatedBy, cur.id]
+                 SET status = 'Inactive', end_date = $1, updated_at = NOW()
+                 WHERE id = $2`,
+                [oldEndDate, cur.id]
               );
 
               // Step 3: Insert new current assignment in tlo_assignments with updated values
-              const newAssignedType = incomingIsOic ? 'OIC' : (cur.assignment_type === 'Concurrent' ? 'Concurrent' : 'Permanent');
+              const newCapacity = incomingIsOic ? 'OIC' : (cur.capacity === 'Concurrent' ? 'Concurrent' : 'Full');
 
               await client.query(
                 `INSERT INTO tlo_assignments (
-                   personnel_id, item_number, region, division, office, strand,
-                   position_title, designation, assignment_type, status, oic,
-                   start_date, end_date, remarks, created_by, updated_by,
-                   created_at, updated_at
+                   tlo_masterlist_id, tlo_position_id, status, capacity,
+                   start_date, end_date, created_at, updated_at
                  ) VALUES (
-                   $1, $2, $3, $4, $5, $6,
-                   $7, $8, $9, 'Active', $10,
-                   $11, NULL, 'Updated via Official Profiling', $12, $12,
-                   NOW(), NOW()
+                   $1, $2, 'Active', $3,
+                   $4, NULL, NOW(), NOW()
                  )`,
                 [
-                  cur.personnel_id, // SAME personnel_id as mother assignment!
-                  cur.item_number || TLOid,
-                  req.body.region || cur.region,
-                  req.body.division || cur.division,
-                  incomingOffice || cur.office,
-                  incomingStrand || cur.strand,
-                  req.body.position_title || cur.position_title,
-                  req.body.designation || cur.designation,
-                  newAssignedType,
-                  incomingIsOic,
-                  newStartDate,
-                  updatedBy
+                  cur.tlo_masterlist_id || numericMasterlistId,
+                  cur.tlo_position_id || TLOid,
+                  newCapacity,
+                  newStartDate
                 ]
               );
-            } else {
-              // Secondary non-station fields update in-place if needed
-              if (incomingOffice !== cur.office || incomingStrand !== cur.strand) {
-                await client.query(
-                  `UPDATE tlo_assignments
-                   SET office = COALESCE($1, office), strand = COALESCE($2, strand),
-                       updated_at = NOW(), updated_by = $3
-                   WHERE id = $4`,
-                  [incomingOffice, incomingStrand, updatedBy, cur.id]
-                );
-              }
             }
           }
         }
@@ -1411,48 +1378,51 @@ export const getPositions = async (req, res) => {
 export const getVacancies = async (req, res) => {
   try {
     const { region, division, office, strand, search } = req.query;
-    const isTest = Boolean(req.user?.is_testaccount);
-    const params = [isTest];
+    const params = [];
 
-    // A position is considered vacant when either:
-    // (1) item_number exists in tlo_items with no matching assignment record at all, OR
-    // (2) item_number exists in both tables and corresponding assignment has status = 'Vacant'.
+    // Official architecture: query vacant positions from tlo_assignments
     let query = `
       SELECT 
-        i.item_number AS "TLOid",
-        i.item_number,
-        i.position_title,
-        i.salary_grade,
-        COALESCE(a.office, m.office, '') AS office,
-        COALESCE(a.strand, m.strand, '') AS strand,
-        COALESCE(a.region, m.region, '') AS region,
-        COALESCE(a.division, m.division, '') AS division,
-        'Vacant' AS status
-      FROM tlo_items i
-      LEFT JOIN (
-        SELECT DISTINCT ON (item_number) *
-        FROM tlo_assignments
-        ORDER BY item_number, id DESC
-      ) a ON a.item_number = i.item_number
-      LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $1
-      WHERE a.item_number IS NULL
-         OR a.status = 'Vacant'
+        a.id AS assignment_id,
+        a.id,
+        COALESCE(a.tlo_position_id, '') AS "TLOid",
+        COALESCE(a.tlo_position_id, '') AS item_number,
+        COALESCE(pos.position_title, i.position_title, '') AS position_title,
+        COALESCE(pos.salary_grade, i.salary_grade, '') AS salary_grade,
+        COALESCE(pos.bureau, '') AS office,
+        '' AS strand,
+        COALESCE(pos.region, '') AS region,
+        COALESCE(pos.division, '') AS division,
+        'VACANT' AS status
+      FROM tlo_assignments a
+      LEFT JOIN tlo_positions pos ON pos.id = a.position_id
+      LEFT JOIN tlo_items i ON i.item_number = a.tlo_position_id
+      WHERE a.tlo_masterlist_id IS NULL
+        AND UPPER(TRIM(COALESCE(a.tlo_position_id, ''))) NOT IN ('NEW ITEM', 'N/A (DETAILED)')
     `;
 
     if (office && office !== 'All') {
       params.push(office);
-      query += ` AND (COALESCE(a.office, m.office, '') = $${params.length})`;
+      query += ` AND (COALESCE(pos.bureau, '') = $${params.length})`;
     }
     if (region && region !== 'All') {
       params.push(region);
-      query += ` AND (COALESCE(a.region, m.region, '') = $${params.length})`;
+      query += ` AND (COALESCE(pos.region, '') = $${params.length})`;
     }
     if (division && division !== 'All') {
       params.push(division);
-      query += ` AND (COALESCE(a.division, m.division, '') = $${params.length})`;
+      query += ` AND (COALESCE(pos.division, '') = $${params.length})`;
+    }
+    if (strand && strand !== 'All') {
+      params.push(strand);
+      query += ` AND (1 = 1)`;
+    }
+    if (search && search.trim()) {
+      params.push(`%${search.trim()}%`);
+      query += ` AND (pos.position_title ILIKE $${params.length} OR i.position_title ILIKE $${params.length} OR pos.bureau ILIKE $${params.length} OR a.tlo_position_id ILIKE $${params.length})`;
     }
 
-    query += ` ORDER BY i.item_number ASC`;
+    query += ` ORDER BY a.tlo_position_id ASC NULLS LAST, a.id ASC`;
 
     const result = await pool.query(query, params);
     res.json({
@@ -1811,60 +1781,97 @@ const executeReassignment = async (client, official, effTs, justification, assig
               COALESCE(a.division, m.division) AS division
        FROM tlo_items i
        LEFT JOIN (
-         SELECT DISTINCT ON (item_number) *
+         SELECT DISTINCT ON (tlo_position_id) *
          FROM tlo_assignments
-         ORDER BY item_number, id DESC
-       ) a ON a.item_number = i.item_number
+         WHERE status = 'Active' AND end_date IS NULL
+         ORDER BY tlo_position_id, id DESC
+       ) a ON a.tlo_position_id = i.item_number
        LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $2
        WHERE i.item_number = $1`,
       [target_TLOid, Boolean(official.is_testaccount)]
     );
     const targetSlot = targetItemRes.rows[0];
 
-    // Resolve official's personnel_id and item_number
+    // Resolve official's numeric masterlist ID
+    const mRes = await client.query('SELECT id FROM tlo_masterlist WHERE LOWER(tloid) = LOWER($1) LIMIT 1', [TLOid]);
+    const numericMasterlistId = mRes.rows.length > 0 ? mRes.rows[0].id : null;
+
+    // Resolve official's active assignment
     const activeAssignRes = await client.query(
-      `SELECT a.*, p.id AS person_uuid
+      `SELECT a.*
        FROM tlo_assignments a
-       JOIN tlo_personnel p ON p.id = a.personnel_id
-       WHERE (a.item_number = $1 OR p.legacy_tlo_id = $1)
+       LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+       WHERE (a.tlo_position_id = $1 OR tm.tloid = $1 OR (a.tlo_masterlist_id = $2 AND $2::int IS NOT NULL))
+         AND a.status = 'Active'
+         AND a.end_date IS NULL
        ORDER BY a.id DESC
        LIMIT 1`,
-      [TLOid]
+      [TLOid, numericMasterlistId]
     );
 
-    let personId = activeAssignRes.rows[0]?.person_uuid;
-    let itemNumber = activeAssignRes.rows[0]?.item_number || TLOid;
-    if (!personId) {
-      const pRes = await client.query('SELECT id FROM tlo_personnel WHERE legacy_tlo_id = $1 LIMIT 1', [TLOid]);
-      personId = pRes.rows[0]?.id;
-    }
+    let itemNumber = activeAssignRes.rows[0]?.tlo_position_id || TLOid;
+    const pRes = await client.query('SELECT id FROM tlo_personnel WHERE legacy_tlo_id = $1 LIMIT 1', [TLOid]);
+    const personId = pRes.rows[0]?.id;
 
     const effDateVal = effTs && effTs !== 'NOW()' ? effTs.replace(/'/g, '').replace('::timestamp', '') : new Date().toISOString().split('T')[0];
 
-    // Append-only INSERT into tlo_assignments (previous row is untouched)
-    if (personId) {
-      await client.query(
-        `INSERT INTO tlo_assignments (
-           personnel_id, item_number, region, division, office, strand,
-           designation, assignment_type, status, start_date, end_date,
-           remarks, created_at, updated_at
-         ) VALUES (
-           $1, $2, $3, $4, $5, $6,
-           $7, 'Permanent', 'Active', $8, NULL,
-           $9, NOW(), NOW()
-         )`,
-        [
-          personId,
-          itemNumber,
-          targetSlot?.region || official.region,
-          targetSlot?.division || official.division,
-          targetSlot?.office || official.office,
-          targetSlot?.strand || official.strand,
-          targetSlot?.position_title || official.position_title,
-          effDateVal,
-          justification || `Reassigned from ${official.position_title}`
-        ]
+    // Close out previous active record in tlo_assignments and record new active assignment
+    if (personId || numericMasterlistId) {
+      if (activeAssignRes.rows.length > 0) {
+        await client.query(
+          `UPDATE tlo_assignments
+           SET status = 'Inactive', end_date = $1, updated_at = NOW()
+           WHERE id = $2`,
+          [effDateVal, activeAssignRes.rows[0].id]
+        );
+
+        // Ensure vacated slot exists as vacant in tlo_assignments
+        const oldPositionItemId = activeAssignRes.rows[0]?.tlo_position_id || itemNumber;
+        if (oldPositionItemId && oldPositionItemId !== (target_TLOid || itemNumber)) {
+          const vCheck = await client.query(
+            `SELECT id FROM tlo_assignments WHERE tlo_position_id = $1 AND tlo_masterlist_id IS NULL LIMIT 1`,
+            [oldPositionItemId]
+          );
+          if (vCheck.rowCount === 0) {
+            await client.query(
+              `INSERT INTO tlo_assignments (
+                 tlo_position_id, position_id, tlo_masterlist_id,
+                 status, capacity, start_date, created_at, updated_at
+               ) VALUES ($1, $2, NULL, 'Inactive', 'Full', $3, NOW(), NOW())`,
+              [oldPositionItemId, activeAssignRes.rows[0]?.position_id, effDateVal]
+            );
+          }
+        }
+      }
+
+      // Check if target position exists as vacant in tlo_assignments to occupy
+      const targetVacantRes = await client.query(
+        `UPDATE tlo_assignments
+         SET tlo_masterlist_id = $1, status = 'Active', start_date = $2, end_date = NULL,
+             remarks = $3, updated_at = NOW()
+         WHERE tlo_position_id = $4 AND tlo_masterlist_id IS NULL
+         RETURNING id`,
+        [numericMasterlistId, effDateVal, justification || `Reassigned from ${official.position_title}`, target_TLOid || itemNumber]
       );
+
+      if (targetVacantRes.rowCount === 0) {
+        // Append new active record into tlo_assignments
+        await client.query(
+          `INSERT INTO tlo_assignments (
+             tlo_masterlist_id, tlo_position_id, status, capacity,
+             start_date, end_date, remarks, created_at, updated_at
+           ) VALUES (
+             $1, $2, 'Active', 'Full',
+             $3, NULL, $4, NOW(), NOW()
+           )`,
+          [
+            numericMasterlistId,
+            target_TLOid || itemNumber,
+            effDateVal,
+            justification || `Reassigned from ${official.position_title}`
+          ]
+        );
+      }
     }
 
     // Update masterlist view for backward compatibility
@@ -1945,25 +1952,45 @@ export const processScheduledVacancies = async (client, force = false) => {
 
         if (personId) {
           const aRes = await conn.query(
-            `SELECT a.id, a.item_number, a.status
+            `SELECT a.id, a.tlo_position_id, a.status
              FROM tlo_assignments a
-             WHERE a.personnel_id = $1
+             LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+             WHERE (tm.tloid = $1 OR a.tlo_position_id = $1)
                AND a.status = 'Active'
+               AND a.end_date IS NULL
              ORDER BY a.id DESC
              LIMIT 1
              FOR UPDATE`,
-            [personId]
+            [lockedOfficial.TLOid]
           );
 
           if (aRes.rows.length > 0) {
             activeAssignmentId = aRes.rows[0].id;
+            const vacatedItemId = aRes.rows[0]?.tlo_position_id;
+            const vacatedPosId = aRes.rows[0]?.position_id;
 
             await conn.query(
               `UPDATE tlo_assignments
-               SET status = 'Inactive', end_date = $1, updated_at = NOW(), updated_by = 'SYSTEM_CRON'
+               SET status = 'Inactive', end_date = $1, updated_at = NOW()
                WHERE id = $2`,
               [lockedOfficial.effectivity_date, activeAssignmentId]
             );
+
+            if (vacatedItemId) {
+              const vCheck = await conn.query(
+                `SELECT id FROM tlo_assignments WHERE tlo_position_id = $1 AND tlo_masterlist_id IS NULL LIMIT 1`,
+                [vacatedItemId]
+              );
+              if (vCheck.rowCount === 0) {
+                await conn.query(
+                  `INSERT INTO tlo_assignments (
+                     tlo_position_id, position_id, tlo_masterlist_id,
+                     status, capacity, start_date, created_at, updated_at
+                   ) VALUES ($1, $2, NULL, 'Inactive', 'Full', $3, NOW(), NOW())`,
+                  [vacatedItemId, vacatedPosId, lockedOfficial.effectivity_date]
+                );
+              }
+            }
           }
         }
 
@@ -3071,19 +3098,23 @@ export const adminAction = async (req, res) => {
 
         // Check 4: Assignment belongs to canonical human identity set
         const canonicalPersonnelRes = await client.query(`
+          SELECT id FROM tlo_masterlist
+          WHERE LOWER(tloid) = LOWER($1)
+             OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+          UNION
           SELECT id FROM tlo_personnel
           WHERE legacy_tlo_id = $1
              OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
         `, [TLOid, latestAction.email]);
         const allowedPersonnelIds = canonicalPersonnelRes.rows.map(r => r.id);
 
-        if (!allowedPersonnelIds.includes(targetAssign.personnel_id)) {
+        if (!allowedPersonnelIds.map(String).includes(String(targetAssign.tlo_masterlist_id)) && String(targetAssign.tlo_masterlist_id) !== String(TLOid)) {
           await client.query('ROLLBACK');
           return res.status(422).json({ error: `Cannot cancel vacancy: Referenced assignment does not belong to the original official.` });
         }
 
         // Check 5: Assignment item_number matches occupied item
-        const occupiedItemNumber = targetAssign.item_number;
+        const occupiedItemNumber = targetAssign.tlo_position_id || targetAssign.item_number;
 
         // Check 6: Assignment is currently Inactive
         if (targetAssign.status !== 'Inactive') {
@@ -3100,16 +3131,15 @@ export const adminAction = async (req, res) => {
 
         // Check 8: Concurrency Guard - verify no genuinely different official occupies occupiedItemNumber
         const externalOccupantAssign = await client.query(`
-          SELECT a.id, a.personnel_id, a.item_number
+          SELECT a.id, a.tlo_masterlist_id, a.tlo_position_id
           FROM tlo_assignments a
-          WHERE a.item_number = $1
+          LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+          WHERE a.tlo_position_id = $1
             AND a.status = 'Active'
-            AND a.personnel_id NOT IN (
-              SELECT id FROM tlo_personnel
-              WHERE legacy_tlo_id = $2
-                 OR (LOWER(TRIM(email)) = LOWER(TRIM($3)) AND email IS NOT NULL AND email != '')
-            )
-        `, [occupiedItemNumber, TLOid, latestAction.email]);
+            AND a.end_date IS NULL
+            AND a.tlo_masterlist_id IS NOT NULL
+            AND (tm.tloid IS NULL OR tm.tloid != $2)
+        `, [occupiedItemNumber, TLOid]);
 
         const externalOccupantMasterlist = await client.query(`
           SELECT "TLOid", first_name, last_name, email
@@ -3132,9 +3162,9 @@ export const adminAction = async (req, res) => {
         // All 8 checks passed! Reactivate exact assignment by PK:
         await client.query(`
           UPDATE tlo_assignments
-          SET status = 'Active', end_date = NULL, updated_at = NOW(), updated_by = $1
-          WHERE id = $2
-        `, [updatedBy, targetAssignId]);
+          SET status = 'Active', end_date = NULL, updated_at = NOW()
+          WHERE id = $1
+        `, [targetAssignId]);
 
         // Restore masterlist with pre-vacancy snapshot from audit row:
         await client.query(`
@@ -3192,30 +3222,49 @@ export const adminAction = async (req, res) => {
           LIMIT 1
         `, [official.TLOid, official.email]);
         const personId = pRes.rows[0]?.id;
+        const mRes = await client.query('SELECT id FROM tlo_masterlist WHERE LOWER(tloid) = LOWER($1) LIMIT 1', [official.TLOid]);
+        const numericMasterlistId = mRes.rows.length > 0 ? mRes.rows[0].id : null;
 
         let activeAssignmentId = null;
 
         // 2. Resolve authoritative active assignment and lock it
-        if (personId) {
-          const aRes = await client.query(`
-            SELECT a.id, a.item_number, a.status
-            FROM tlo_assignments a
-            WHERE a.personnel_id = $1
-              AND a.status = 'Active'
-            ORDER BY a.id DESC
-            LIMIT 1
-            FOR UPDATE
-          `, [personId]);
+        const aRes = await client.query(`
+          SELECT a.id, a.tlo_position_id, a.status
+          FROM tlo_assignments a
+          LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+          WHERE (tm.tloid = $1 OR a.tlo_position_id = $1)
+            AND a.status = 'Active'
+            AND a.end_date IS NULL
+          ORDER BY a.id DESC
+          LIMIT 1
+          FOR UPDATE
+        `, [official.TLOid]);
 
-          if (aRes.rows.length > 0) {
-            activeAssignmentId = aRes.rows[0].id;
+        if (aRes.rows.length > 0) {
+          activeAssignmentId = aRes.rows[0].id;
 
-            // Deactivate authoritative assignment strictly by locked PK
-            await client.query(`
-              UPDATE tlo_assignments
-              SET status = 'Inactive', end_date = ${effTs}, updated_at = NOW(), updated_by = $1
-              WHERE id = $2
-            `, [updatedBy, activeAssignmentId]);
+          // Deactivate authoritative assignment strictly by locked PK
+          await client.query(`
+            UPDATE tlo_assignments
+            SET status = 'Inactive', end_date = ${effTs}, updated_at = NOW()
+            WHERE id = $1
+          `, [activeAssignmentId]);
+
+          const vacatedItemId = aRes.rows[0]?.tlo_position_id;
+          const vacatedPosId = aRes.rows[0]?.position_id;
+          if (vacatedItemId) {
+            const vCheck = await client.query(
+              `SELECT id FROM tlo_assignments WHERE tlo_position_id = $1 AND tlo_masterlist_id IS NULL LIMIT 1`,
+              [vacatedItemId]
+            );
+            if (vCheck.rowCount === 0) {
+              await client.query(`
+                INSERT INTO tlo_assignments (
+                  tlo_position_id, position_id, tlo_masterlist_id,
+                  status, capacity, start_date, created_at, updated_at
+                ) VALUES ($1, $2, NULL, 'Inactive', 'Full', ${effTs}, NOW(), NOW())
+              `, [vacatedItemId, vacatedPosId]);
+            }
           }
         }
 
@@ -3427,8 +3476,16 @@ export const reassignOfficial = async (req, res) => {
     return res.status(400).json({ error: 'tloId is required' });
   }
 
-  const safeTloId = tloId.trim();
-  const targetItemId = (vacantItemNumber || target_TLOid || req.body.targetTloId || '').trim();
+  const incomingMasterlistId = req.body.tlo_masterlist_id || req.body.tloId;
+  const incomingPositionId = req.body.tlo_position_id || req.body.vacantItemNumber || req.body.target_TLOid || req.body.targetTloId;
+  const incomingCapacity = req.body.capacity;
+
+  if (incomingCapacity && !['Full', 'OIC', 'Concurrent'].includes(incomingCapacity)) {
+    return res.status(400).json({ error: "Invalid capacity. Must be 'Full', 'OIC', or 'Concurrent'." });
+  }
+
+  const safeTloId = (incomingMasterlistId || tloId || '').trim();
+  const targetItemId = (incomingPositionId || '').trim();
   if (!targetItemId) {
     return res.status(400).json({ error: 'A vacant position must be selected for reassignment.' });
   }
@@ -3479,45 +3536,60 @@ export const reassignOfficial = async (req, res) => {
       [safeTloId, current.email]
     );
 
-    if (pRes.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: `Personnel record not found for official '${safeTloId}'.` });
-    }
+    const personId = pRes.rows[0]?.id || null;
 
-    const personId = pRes.rows[0].id;
+    // Resolve official's numeric masterlist ID
+    const mRes = await client.query('SELECT id FROM tlo_masterlist WHERE LOWER(tloid) = LOWER($1) LIMIT 1', [safeTloId]);
+    const numericMasterlistId = mRes.rows.length > 0 ? mRes.rows[0].id : null;
 
-    // Lock and read the official's CURRENT active assignment via personnel_id
+    // Lock and read the official's CURRENT active assignment via tlo_masterlist_id, personId, or tlo_position_id
     const activeAssignRes = await client.query(
       `SELECT a.*
        FROM tlo_assignments a
-       WHERE a.personnel_id = $1
+       LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+       WHERE (tm.tloid = $1 OR a.tlo_position_id = $1 OR (a.tlo_masterlist_id = $2 AND $2::int IS NOT NULL))
          AND a.status = 'Active'
+         AND a.end_date IS NULL
        ORDER BY a.id DESC
        LIMIT 1
        FOR UPDATE`,
-      [personId]
+      [safeTloId, numericMasterlistId]
     );
 
-    if (activeAssignRes.rows.length === 0) {
+    let activeAssign = activeAssignRes.rows[0];
+    if (!activeAssign) {
+      const fallbackAssignRes = await client.query(
+        `SELECT a.*
+         FROM tlo_assignments a
+         LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+         WHERE (tm.tloid = $1 OR a.tlo_position_id = $1 OR (a.tlo_masterlist_id = $2 AND $2::int IS NOT NULL))
+           AND a.status = 'Active'
+         ORDER BY a.id DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [safeTloId, numericMasterlistId]
+      );
+      activeAssign = fallbackAssignRes.rows[0];
+    }
+
+    if (!activeAssign) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: `Cannot reassign official '${safeTloId}': No active assignment record found in tlo_assignments.` });
     }
 
-    const activeAssign = activeAssignRes.rows[0];
-
     // ── Step 3: Capture ALL OLD values into immutable variables ───────────
-    const oldItemNumber = activeAssign.item_number;
-    const oldPositionTitle = (activeAssign.position_title || current.position_title || '').toUpperCase();
-    const oldDesignation = activeAssign.designation || current.designation || null;
-    const oldOffice = activeAssign.office || current.office || null;
-    const oldStrand = activeAssign.strand || current.strand || null;
-    const oldDivision = activeAssign.division || current.division || null;
-    const oldRegion = activeAssign.region || current.region || null;
+    const oldItemNumber = activeAssign.tlo_position_id || safeTloId;
+    const oldPositionTitle = (current.position_title || '').toUpperCase();
+    const oldDesignation = current.designation || null;
+    const oldOffice = current.office || null;
+    const oldStrand = current.strand || null;
+    const oldDivision = current.division || null;
+    const oldRegion = current.region || null;
     const oldStartDate = activeAssign.start_date
       ? new Date(activeAssign.start_date).toISOString().split('T')[0]
       : (dateStart || (current.appointment_date ? new Date(current.appointment_date).toISOString().split('T')[0] : null));
     const oldEndDate = finalEnd;
-    const oldOic = Boolean(activeAssign.oic || current.is_oic || (current.designation && current.designation.toUpperCase().includes('OIC')));
+    const oldOic = Boolean(activeAssign.capacity === 'OIC' || current.is_oic || (current.designation && current.designation.toUpperCase().includes('OIC')));
 
     // ── Step 4: Authoritatively resolve & validate selected vacant position ──
     const targetItemRes = await client.query(
@@ -3535,8 +3607,9 @@ export const reassignOfficial = async (req, res) => {
          (
            SELECT COUNT(*) 
            FROM tlo_assignments a 
-           WHERE a.item_number = i.item_number 
+           WHERE a.tlo_position_id = i.item_number 
              AND a.status = 'Active'
+             AND a.end_date IS NULL
          ) AS active_assignment_count
        FROM tlo_items i
        JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $2
@@ -3681,45 +3754,104 @@ export const reassignOfficial = async (req, res) => {
       );
     }
 
-    // ── Step 6: Update existing OLD tlo_assignments row to Inactive ───────
+    // ── Step 6: Close out current active assignment row in tlo_assignments (append-only) ──
     await client.query(
       `UPDATE tlo_assignments
-       SET status = 'Inactive', end_date = $1, updated_at = NOW(), updated_by = $2
-       WHERE id = $3`,
-      [finalEnd, actorEmail, activeAssign.id]
+       SET status = 'Inactive', end_date = $1, updated_at = NOW()
+       WHERE id = $2`,
+      [finalEnd, activeAssign.id]
     );
 
-    // ── Step 7: Insert NEW active assignment in tlo_assignments ───────────
-    const newAssignRes = await client.query(
-      `INSERT INTO tlo_assignments (
-         personnel_id, item_number, region, division, office, strand,
-         position_title, designation, assignment_type, status, oic,
-         start_date, end_date, reassignment_order_binary_id, remarks,
-         created_by, updated_by, created_at, updated_at
-       ) VALUES (
-         $1, $2, $3, $4, $5, $6,
-         $7, $8, $9, 'Active', $10,
-         $11, NULL, $12, $13,
-         $14, $14, NOW(), NOW()
-       ) RETURNING id`,
+    // Ensure vacated slot exists as vacant in tlo_assignments
+    const oldPositionItemId = activeAssign?.tlo_position_id || safeTloId;
+    if (oldPositionItemId && oldPositionItemId !== ti.item_number) {
+      const vCheck = await client.query(
+        `SELECT id FROM tlo_assignments WHERE tlo_position_id = $1 AND tlo_masterlist_id IS NULL LIMIT 1`,
+        [oldPositionItemId]
+      );
+      if (vCheck.rowCount === 0) {
+        await client.query(
+          `INSERT INTO tlo_assignments (
+             tlo_position_id, position_id, tlo_masterlist_id,
+             status, capacity, start_date, created_at, updated_at
+           ) VALUES ($1, $2, NULL, 'Inactive', 'Full', $3, NOW(), NOW())`,
+          [oldPositionItemId, activeAssign.position_id, finalEnd]
+        );
+      }
+    }
+
+    // ── Step 7: Occupy target vacant position or insert new active row in tlo_assignments ───
+    let targetPositionId = null;
+    const posMatch = await client.query(
+      `SELECT id FROM tlo_positions 
+       WHERE position_title = $1 
+         AND (region = $2 OR region IS NULL)
+         AND (division = $3 OR division IS NULL)
+       ORDER BY (region = $2) DESC, id ASC LIMIT 1`,
+      [targetPositionTitle, targetRegion, targetDivision]
+    );
+    if (posMatch.rows.length > 0) {
+      targetPositionId = posMatch.rows[0].id;
+    }
+
+    const resolvedCapacity = ['Full', 'OIC', 'Concurrent'].includes(incomingCapacity)
+      ? incomingCapacity
+      : (targetIsOic ? 'OIC' : 'Full');
+
+    const targetVacantAssign = await client.query(
+      `UPDATE tlo_assignments
+       SET tlo_masterlist_id = $1,
+           position_id = COALESCE($2, position_id),
+           status = 'Active',
+           capacity = $3,
+           designation = COALESCE($4, designation),
+           start_date = $5,
+           end_date = NULL,
+           reassignment_order_binary_id = $6,
+           remarks = $7,
+           updated_by = $8,
+           updated_at = NOW()
+       WHERE tlo_position_id = $9 AND tlo_masterlist_id IS NULL
+       RETURNING id`,
       [
-        personId,
-        ti.item_number, // The selected vacant plantilla position's item_number!
-        targetRegion,
-        targetDivision,
-        targetOffice,
-        targetStrand,
-        targetPositionTitle,
+        numericMasterlistId,
+        targetPositionId,
+        resolvedCapacity,
         targetDesignation,
-        targetAssignmentType,
-        targetIsOic,
         finalEnd,
         binaryId,
         userRemarks || `Reassigned to ${targetRegion} / ${targetDivision} (${targetOffice})`,
-        actorEmail
+        actorEmail,
+        ti.item_number
       ]
     );
-    const newAssignmentId = newAssignRes.rows[0].id;
+
+    let newAssignmentId = targetVacantAssign.rows[0]?.id;
+    if (!newAssignmentId) {
+      const newAssignRes = await client.query(
+        `INSERT INTO tlo_assignments (
+           tlo_masterlist_id, tlo_position_id, position_id, status, capacity,
+           designation, start_date, end_date, reassignment_order_binary_id, remarks,
+           created_by, updated_by, created_at, updated_at
+         ) VALUES (
+           $1, $2, $3, 'Active', $4,
+           $5, $6, NULL, $7, $8,
+           $9, $9, NOW(), NOW()
+         ) RETURNING id`,
+        [
+          numericMasterlistId,
+          ti.item_number,
+          targetPositionId,
+          resolvedCapacity,
+          targetDesignation,
+          finalEnd,
+          binaryId,
+          userRemarks || `Reassigned to ${targetRegion} / ${targetDivision} (${targetOffice})`,
+          actorEmail
+        ]
+      );
+      newAssignmentId = newAssignRes.rows[0].id;
+    }
 
     // ── Step 8: Update third_level_official_masterlist view ───────────────
     await client.query(

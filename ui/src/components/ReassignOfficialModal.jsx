@@ -354,6 +354,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
   const [newOffice, setNewOffice] = useState('');
   const [newStrand, setNewStrand] = useState('');
   const [newDesignation, setNewDesignation] = useState('');
+  const [capacity, setCapacity] = useState('Full');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [justification, setJustification] = useState('');
@@ -392,6 +393,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
     setNewOffice('');
     setNewStrand('');
     setNewDesignation('');
+    setCapacity('Full');
     setJustification('');
     setFromDate(o?.appointment_date ? String(o.appointment_date).split('T')[0] : '');
     setToDate(new Date().toISOString().split('T')[0]);
@@ -413,6 +415,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
     setNewOffice('');
     setNewStrand('');
     setNewDesignation('');
+    setCapacity('Full');
     setJustification('');
     setFromDate('');
     setToDate(new Date().toISOString().split('T')[0]);
@@ -478,25 +481,23 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
   // ── Target Offices derived from real vacant positions ──
   const uniqueTargetOffices = useMemo(() => {
     const offices = vacantSlots.map(s => s.office).filter(Boolean);
-    return [...new Set(offices)].sort();
+    return Array.from(new Set(offices)).sort();
   }, [vacantSlots]);
 
-  // ── Vacant positions scoped to selected office ──
+  // ── Filtered vacant positions based on chosen target office ──
   const filteredVacantPositions = useMemo(() => {
     if (!selectedOffice) return [];
     return vacantSlots.filter(s => s.office === selectedOffice);
   }, [vacantSlots, selectedOffice]);
 
-  const handleSelectOffice = (off) => {
-    setSelectedOffice(off);
+  const handleSelectOffice = (officeName) => {
+    setSelectedOffice(officeName);
     setSelectedVacantItem('');
-    const sample = vacantSlots.find(s => s.office === off);
-    if (sample) {
-      setNewRegion(sample.region || '');
-      setNewDivision(sample.division || '');
-      setNewOffice(sample.office || off);
-      setNewStrand(sample.strand || '');
-    }
+    setNewRegion('');
+    setNewDivision('');
+    setNewOffice('');
+    setNewStrand('');
+    setNewDesignation('');
   };
 
   const handleSelectVacantPosition = (itemNum) => {
@@ -509,6 +510,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
       setNewStrand(slot.strand || '');
       const validTitle = slot.position_title && slot.position_title.toUpperCase() !== 'N/A' ? slot.position_title : (selected?.designation || '');
       setNewDesignation(validTitle);
+      const isOicRole = /oic\b/i.test(validTitle) || /oic\b/i.test(slot.strand || '') || /acting\b/i.test(validTitle);
+      setCapacity(isOicRole ? 'OIC' : 'Full');
     }
   };
 
@@ -573,6 +576,11 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
         formData.append('file', file);
       }
       formData.append('tloId', selected.TLOid);
+      formData.append('tlo_masterlist_id', selected.TLOid);
+      formData.append('tlo_position_id', selectedVacantItem || '');
+      formData.append('capacity', capacity);
+      formData.append('status', 'Active');
+      formData.append('start_date', toDate || '');
       formData.append('vacantItemNumber', selectedVacantItem || '');
       formData.append('target_TLOid', selectedVacantItem || '');
       formData.append('newRegion', newRegion.trim());
@@ -889,6 +897,36 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     </p>
                   </div>
                 )}
+
+                {/* Capacity Selector Toggle */}
+                <div>
+                  <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                    Assignment Capacity <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 p-1.5 rounded-[16px] bg-slate-100 border-2 border-slate-200">
+                    {[
+                      { value: 'Full', label: 'Regular / Full', desc: 'Full capacity appointment' },
+                      { value: 'OIC', label: 'OIC', desc: 'Officer-in-Charge' },
+                      { value: 'Concurrent', label: 'Concurrent', desc: 'Concurrent role' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setCapacity(opt.value)}
+                        className={`flex flex-col items-center justify-center py-2 px-2.5 rounded-[12px] transition-all font-bold ${
+                          capacity === opt.value
+                            ? 'bg-[#08315f] text-white shadow-md'
+                            : 'bg-white text-slate-700 hover:bg-sky-50 border border-slate-200'
+                        }`}
+                      >
+                        <span className="text-[17px] leading-tight">{opt.label}</span>
+                        <span className={`text-[12px] font-semibold mt-0.5 ${capacity === opt.value ? 'text-sky-200' : 'text-slate-400'}`}>
+                          {opt.desc}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Date of Effectivity */}
                 <div>

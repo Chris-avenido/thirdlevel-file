@@ -84,7 +84,8 @@ const CesPlantilla = () => {
         salary_grade: '26',
         incumbent_name: '',
         status_of_appointment: 'Permanent',
-        is_vacant: false
+        is_vacant: false,
+        is_active: true
     });
     const [formErrors, setFormErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
@@ -196,7 +197,8 @@ const CesPlantilla = () => {
             salary_grade: '26',
             incumbent_name: '',
             status_of_appointment: 'Permanent',
-            is_vacant: false
+            is_vacant: false,
+            is_active: true
         });
         setFormErrors({});
         setIsModalOpen(true);
@@ -214,7 +216,8 @@ const CesPlantilla = () => {
             salary_grade: item.salary_grade || '26',
             incumbent_name: item.incumbent_name || '',
             status_of_appointment: item.status_of_appointment || 'Permanent',
-            is_vacant: Boolean(item.is_vacant)
+            is_vacant: Boolean(item.is_vacant),
+            is_active: item.is_active !== undefined ? Boolean(item.is_active) : true
         });
         setFormErrors({});
         setIsModalOpen(true);
@@ -877,11 +880,16 @@ const CesPlantilla = () => {
                                                             ) : '—'}
                                                         </td>
 
-                                                        {/* Vacancy Status Badge */}
+                                                        {/* Vacancy Status & Post Occupancy Badge */}
                                                         <td className="px-2 py-4 align-middle text-center">
-                                                            <span className={`px-3 py-1 rounded-full text-[13.5px] font-black uppercase tracking-widest border-2 ${item.is_vacant ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
-                                                                {item.is_vacant ? 'Vacant' : 'Filled'}
-                                                            </span>
+                                                            <div className="flex flex-col items-center justify-center gap-1">
+                                                                <span className={`px-3 py-0.5 rounded-full text-[13px] font-black uppercase tracking-widest border-2 ${item.is_vacant ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                                                    {item.is_vacant ? 'Vacant' : 'Filled'}
+                                                                </span>
+                                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${item.is_active !== false ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                                                                    {item.is_active !== false ? 'Active Post' : 'Inactive Post'}
+                                                                </span>
+                                                            </div>
                                                         </td>
 
                                                         {/* Actions */}
@@ -1026,7 +1034,7 @@ const CesPlantilla = () => {
                                                         <div className="w-12 h-12 rounded-[1rem] bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-500 font-black text-xl border-2 border-white shadow-md overflow-hidden shrink-0">
                                                             <FiBriefcase size={20} />
                                                         </div>
-                                                        <div className="flex items-center gap-1.5">
+                                                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
                                                             {item.salary_grade && (
                                                                 <span className="px-2 py-0.5 bg-sky-50 text-[#075985] border-2 border-sky-200 rounded-full text-[11px] font-black uppercase tracking-widest">
                                                                     SG {item.salary_grade}
@@ -1034,6 +1042,9 @@ const CesPlantilla = () => {
                                                             )}
                                                             <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-widest border-2 ${item.is_vacant ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
                                                                 {item.is_vacant ? 'Vacant' : 'Filled'}
+                                                            </span>
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${item.is_active !== false ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                                                                {item.is_active !== false ? 'Active' : 'Inactive'}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -1301,6 +1312,26 @@ const CesPlantilla = () => {
                                                             />
                                                             <span className="text-[15px] font-black uppercase tracking-wider text-slate-700">
                                                                 Mark as Vacant Position
+                                                            </span>
+                                                        </label>
+                                                    </div>
+
+                                                    {/* Is Active Checkbox */}
+                                                    <div className="flex items-center pt-8">
+                                                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={formData.is_active}
+                                                                onChange={(e) => {
+                                                                    setFormData(p => ({
+                                                                        ...p,
+                                                                        is_active: e.target.checked
+                                                                    }));
+                                                                }}
+                                                                className="w-6 h-6 rounded-lg text-[#08315F] border-2 border-slate-300 focus:ring-[#08315F] cursor-pointer"
+                                                            />
+                                                            <span className="text-[15px] font-black uppercase tracking-wider text-slate-700">
+                                                                Active Post Occupancy
                                                             </span>
                                                         </label>
                                                     </div>

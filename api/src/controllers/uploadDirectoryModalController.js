@@ -1,4 +1,7 @@
 import pool from '../config/db.js';
+import xlsx from 'xlsx';
+import fs from 'fs';
+import path from 'path';
 
 const ensureColumns = async (client) => {
   const masterRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name='third_level_official_masterlist'`);
@@ -267,4 +270,397 @@ export const bulkProcessAchievements = async (req, res) => {
     client.release();
   }
 };
+
+/**
+ * POST /api/third-level/import-positions-and-assignments
+ * POST /api/third-level/import-plantilla-positions
+ * 
+ * 1. Truncates tlo_positions (TRUNCATE TABLE tlo_positions RESTART IDENTITY CASCADE;)
+ * 2. Populates distinct position catalog records into tlo_positions
+ * 3. Upserts plantilla personnel records into tlo_plantilla
+ * 4. Deactivates pre-existing active assignments for matching items (status = 'Inactive', end_date = CURRENT_DATE)
+ * 5. Appends active assignment records in tlo_assignments with FKs to tlo_positions and tlo_masterlist
+ */
+export const importPositionsAndBuildAssignments = async (req, res) => {
+  const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'CO_PD', 'Regional Office', 'School Division Office'];
+  if (!adminRoles.includes(req.user?.role) && req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied: Insufficient administrative privileges.' });
+  }
+
+  let plantillaRows = [];
+  let positionsRows = [];
+
+  // 1. Check if files were uploaded via Multer
+  if (req.files) {
+    const pFile = req.files['plantilla_file']?.[0] || req.files['plantilla']?.[0];
+    const posFile = req.files['positions_file']?.[0] || req.files['positions']?.[0];
+
+    if (pFile) {
+      const wb1 = xlsx.read(pFile.buffer, { type: 'buffer' });
+      plantillaRows = xlsx.utils.sheet_to_json(wb1.Sheets[wb1.SheetNames[0]], { defval: '' });
+    }
+    if (posFile) {
+      const wb2 = xlsx.read(posFile.buffer, { type: 'buffer' });
+      positionsRows = xlsx.utils.sheet_to_json(wb2.Sheets[wb2.SheetNames[0]], { defval: '' });
+    }
+  }
+
+  // 2. If JSON body was provided instead
+  if (!plantillaRows.length && req.body.plantilla_records) {
+    plantillaRows = req.body.plantilla_records;
+  }
+  if (!positionsRows.length && req.body.position_records) {
+    positionsRows = req.body.position_records;
+  }
+  if (!plantillaRows.length && !positionsRows.length && Array.isArray(req.body.records)) {
+    // If a single combined records array was provided
+    plantillaRows = req.body.records;
+    positionsRows = req.body.records;
+  }
+
+  // 3. Fallback to default CSV files in database/data/ if available and not supplied
+  if (!positionsRows.length) {
+    try {
+      const defaultPosPath = path.resolve(process.cwd(), 'database/data/tlo_positions.csv');
+      if (fs.existsSync(defaultPosPath)) {
+        const fileBuf = fs.readFileSync(defaultPosPath);
+        const wb = xlsx.read(fileBuf, { type: 'buffer' });
+        positionsRows = xlsx.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      }
+    } catch (e) {
+      console.warn('Could not read default tlo_positions.csv:', e.message);
+    }
+  }
+
+  if (!plantillaRows.length) {
+    try {
+      const defaultPlantillaPath = path.resolve(process.cwd(), 'database/data/tlo_plantilla_positions.csv');
+      if (fs.existsSync(defaultPlantillaPath)) {
+        const fileBuf = fs.readFileSync(defaultPlantillaPath);
+        const wb = xlsx.read(fileBuf, { type: 'buffer' });
+        plantillaRows = xlsx.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      }
+    } catch (e) {
+      console.warn('Could not read default tlo_plantilla_positions.csv:', e.message);
+    }
+  }
+
+  const maxLen = Math.max(plantillaRows.length, positionsRows.length);
+  if (maxLen === 0) {
+    return res.status(400).json({ error: 'No plantilla or position records provided for import.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // STEP 1: Safely drop FK constraints before truncating tlo_positions to avoid cascading deletion of assignments
+    await client.query('ALTER TABLE tlo_assignments DROP CONSTRAINT IF EXISTS tlo_assignments_position_id_fkey;');
+    await client.query('ALTER TABLE tlo_plantilla DROP CONSTRAINT IF EXISTS fk_plantilla_position;');
+    await client.query('TRUNCATE TABLE tlo_positions RESTART IDENTITY;');
+
+    const cleanStr = (val) => {
+      if (val === null || val === undefined) return null;
+      const s = String(val).trim();
+      if (!s || s === 'null' || s === 'undefined' || s === '#VALUE!' || s === '#N/A' || s === '#REF!' || s === '—') return null;
+      return s;
+    };
+
+    const cleanSalary = (val) => {
+      if (!val) return null;
+      const s = String(val).replace(/[^0-9.]/g, '').trim();
+      const n = parseFloat(s);
+      return isNaN(n) ? null : n;
+    };
+
+    // Helper to determine standard salary grade
+    const getStandardSG = (title) => {
+      if (!title) return null;
+      const upper = title.toUpperCase();
+      if (upper === 'SECRETARY') return '31';
+      if (upper === 'UNDERSECRETARY') return '30';
+      if (upper === 'ASSISTANT SECRETARY') return '29';
+      if (upper === 'DIRECTOR IV' || upper === 'REGIONAL DIRECTOR') return '28';
+      if (upper === 'DIRECTOR III' || upper === 'ASSISTANT REGIONAL DIRECTOR') return '27';
+      if (upper === 'SCHOOLS DIVISION SUPERINTENDENT') return '26';
+      if (upper === 'ASSISTANT SCHOOLS DIVISION SUPERINTENDENT') return '25';
+      return null;
+    };
+
+    // Helper to determine position code
+    const getPosCode = (title) => {
+      if (!title) return null;
+      const upper = title.toUpperCase();
+      if (upper.includes('SECRETARY') && !upper.includes('UNDER') && !upper.includes('ASSISTANT')) return 'SEC';
+      if (upper.includes('UNDERSECRETARY')) return 'USEC';
+      if (upper.includes('ASSISTANT SECRETARY')) return 'ASEC';
+      if (upper.includes('DIRECTOR IV')) return 'DIR4';
+      if (upper.includes('DIRECTOR III')) return 'DIR3';
+      if (upper.includes('REGIONAL DIRECTOR') && !upper.includes('ASSISTANT')) return 'RD';
+      if (upper.includes('ASSISTANT REGIONAL DIRECTOR')) return 'ARD';
+      if (upper.includes('SCHOOLS DIVISION SUPERINTENDENT') && !upper.includes('ASSISTANT')) return 'SDS';
+      if (upper.includes('ASSISTANT SCHOOLS DIVISION SUPERINTENDENT')) return 'ASDS';
+      return null;
+    };
+
+    // Standard position title mapping to ensure consistent casing
+    const normalizeTitle = (title) => {
+      if (!title) return 'Unassigned Position';
+      const upper = title.toUpperCase();
+      if (upper === 'SECRETARY') return 'Secretary';
+      if (upper === 'UNDERSECRETARY') return 'Undersecretary';
+      if (upper === 'ASSISTANT SECRETARY') return 'Assistant Secretary';
+      if (upper === 'DIRECTOR IV') return 'Director IV';
+      if (upper === 'DIRECTOR III') return 'Director III';
+      if (upper === 'REGIONAL DIRECTOR') return 'Regional Director';
+      if (upper === 'ASSISTANT REGIONAL DIRECTOR') return 'Assistant Regional Director';
+      if (upper === 'SCHOOLS DIVISION SUPERINTENDENT') return 'Schools Division Superintendent';
+      if (upper === 'ASSISTANT SCHOOLS DIVISION SUPERINTENDENT') return 'Assistant Schools Division Superintendent';
+      return title;
+    };
+
+    // STEP 2: Ingest ALL available positions with region, division, bureau, position_title, position_code, salary_grade
+    const insertedPositionIds = [];
+    for (let i = 0; i < maxLen; i++) {
+      const posRow = positionsRows[i] || {};
+      const pRow = plantillaRows[i] || {};
+
+      const region = cleanStr(posRow.region || pRow.region);
+      const division = cleanStr(posRow.division || pRow.division);
+      const bureau = cleanStr(posRow.bureau || posRow.office || pRow.bureau || pRow.office);
+      const rawTitle = cleanStr(posRow.position_title || posRow.position || pRow.position_title || pRow.position) || 'Unassigned Position';
+      const positionTitle = normalizeTitle(rawTitle);
+      const posCode = getPosCode(positionTitle);
+      const salaryGrade = cleanStr(posRow.salary_grade || pRow.salary_grade || pRow.sg) || getStandardSG(positionTitle);
+
+      const insPos = await client.query(
+        `INSERT INTO tlo_positions (position_title, position_code, salary_grade, region, division, bureau, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) RETURNING id`,
+        [positionTitle, posCode, salaryGrade, region, division, bureau]
+      );
+      insertedPositionIds.push(insPos.rows[0].id);
+    }
+
+    let processedCount = 0;
+    let insertedPlantilla = 0;
+    let updatedPlantilla = 0;
+    let assignmentsCreated = 0;
+    let deactivatedAssignments = 0;
+
+    const actor = req.user?.email || req.user?.username || 'SYSTEM_BULK_IMPORT';
+
+    for (let i = 0; i < maxLen; i++) {
+      const pRow = plantillaRows[i] || {};
+      const posRow = positionsRows[i] || {};
+
+      const permanentItemNo = cleanStr(
+        pRow.permanent_item_no || pRow.item_number || pRow.dbm_item_no || pRow.item_no || posRow.permanent_item_no || posRow.item_number
+      );
+      const salaryGrade = cleanStr(pRow.salary_grade || pRow.sg || posRow.salary_grade || posRow.sg);
+      const employmentType = cleanStr(pRow.employment_type || pRow.status_of_appointment) || 'PLANTILLA';
+      const lastName = cleanStr(pRow.last_name || pRow.surname);
+      const firstName = cleanStr(pRow.first_name || pRow.given_name);
+      const middleName = cleanStr(pRow.middle_name || pRow.mi);
+      const suffix = cleanStr(pRow.suffix);
+      const prefix = cleanStr(pRow.prefix);
+      const gender = cleanStr(pRow.gender || pRow.sex);
+      const salary = cleanSalary(pRow.salary);
+
+      const region = cleanStr(posRow.region || pRow.region);
+      const division = cleanStr(posRow.division || pRow.division);
+      const bureau = cleanStr(posRow.bureau || posRow.office || pRow.bureau || pRow.office);
+      const rawTitle = cleanStr(posRow.position_title || posRow.position || pRow.position_title || pRow.position) || 'Unassigned Position';
+      const positionTitle = normalizeTitle(rawTitle);
+
+      // Skip row if completely empty
+      if (!permanentItemNo && !positionTitle && !lastName && !firstName && !region) {
+        continue;
+      }
+
+      // 1. Resolve Position ID from the matched position slot
+      const positionId = insertedPositionIds[i] || null;
+
+      // 2. Upsert tlo_plantilla (linking position_id directly)
+      let plantillaId = null;
+      const isPlaceholder = !permanentItemNo || ['NEW ITEM', 'DETAILED', 'N/A', 'N/A (DETAILED)'].includes(permanentItemNo.toUpperCase());
+      const isVacant = !lastName || lastName.toUpperCase() === 'VACANT' || lastName.toUpperCase() === 'VACANT POSITION';
+
+      if (permanentItemNo && !isPlaceholder) {
+        const plantRes = await client.query(
+          `INSERT INTO tlo_plantilla (
+             permanent_item_no, first_name, middle_name, last_name,
+             suffix, prefix, gender, employment_type, salary_grade, salary, position_id,
+             created_at, updated_at
+           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+           ON CONFLICT (permanent_item_no) WHERE permanent_item_no IS NOT NULL 
+             AND permanent_item_no != '' 
+             AND UPPER(permanent_item_no) NOT IN ('NEW ITEM', 'DETAILED', 'N/A', 'N/A (DETAILED)')
+           DO UPDATE SET
+             first_name = COALESCE(EXCLUDED.first_name, tlo_plantilla.first_name),
+             middle_name = COALESCE(EXCLUDED.middle_name, tlo_plantilla.middle_name),
+             last_name = COALESCE(EXCLUDED.last_name, tlo_plantilla.last_name),
+             suffix = COALESCE(EXCLUDED.suffix, tlo_plantilla.suffix),
+             prefix = COALESCE(EXCLUDED.prefix, tlo_plantilla.prefix),
+             gender = COALESCE(EXCLUDED.gender, tlo_plantilla.gender),
+             employment_type = COALESCE(EXCLUDED.employment_type, tlo_plantilla.employment_type),
+             salary_grade = COALESCE(EXCLUDED.salary_grade, tlo_plantilla.salary_grade),
+             salary = COALESCE(EXCLUDED.salary, tlo_plantilla.salary),
+             position_id = COALESCE(EXCLUDED.position_id, tlo_plantilla.position_id),
+             updated_at = NOW()
+           RETURNING id`,
+          [permanentItemNo, isVacant ? null : firstName, isVacant ? null : middleName, isVacant ? null : lastName, suffix, prefix, gender, employmentType, salaryGrade, salary, isVacant ? null : positionId]
+        );
+        plantillaId = plantRes.rows[0].id;
+        insertedPlantilla++;
+      } else if (!isVacant || isPlaceholder) {
+        // Placeholder item number (e.g. 'NEW ITEM', 'DETAILED')
+        let existingByName = null;
+        if (!isVacant && lastName && firstName) {
+          const byNameRes = await client.query(
+            'SELECT id FROM tlo_plantilla WHERE LOWER(last_name) = LOWER($1) AND LOWER(first_name) = LOWER($2)',
+            [lastName, firstName]
+          );
+          if (byNameRes.rows.length > 0) existingByName = byNameRes.rows[0].id;
+        }
+
+        if (existingByName) {
+          plantillaId = existingByName;
+          await client.query(
+            `UPDATE tlo_plantilla
+             SET middle_name = COALESCE($1, middle_name),
+                 suffix = COALESCE($2, suffix),
+                 prefix = COALESCE($3, prefix),
+                 gender = COALESCE($4, gender),
+                 employment_type = COALESCE($5, employment_type),
+                 salary_grade = COALESCE($6, salary_grade),
+                 salary = COALESCE($7, salary),
+                 permanent_item_no = COALESCE($8, permanent_item_no),
+                 position_id = COALESCE($9, position_id),
+                 updated_at = NOW()
+             WHERE id = $10`,
+            [middleName, suffix, prefix, gender, employmentType, salaryGrade, salary, permanentItemNo, isVacant ? null : positionId, plantillaId]
+          );
+          updatedPlantilla++;
+        } else {
+          const newPlantilla = await client.query(
+            `INSERT INTO tlo_plantilla (
+               permanent_item_no, first_name, middle_name, last_name,
+               suffix, prefix, gender, employment_type, salary_grade, salary, position_id,
+               created_at, updated_at
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+             RETURNING id`,
+            [permanentItemNo, isVacant ? null : firstName, isVacant ? null : middleName, isVacant ? null : lastName, suffix, prefix, gender, employmentType, salaryGrade, salary, isVacant ? null : positionId]
+          );
+          plantillaId = newPlantilla.rows[0].id;
+          insertedPlantilla++;
+        }
+      }
+
+      // 3. Deactivate pre-existing active assignments for matching item
+      if (permanentItemNo && !isPlaceholder) {
+        const deactRes = await client.query(
+          `UPDATE tlo_assignments
+           SET status = 'Inactive',
+               end_date = COALESCE(end_date, CURRENT_DATE),
+               updated_at = NOW(),
+               updated_by = $1
+           WHERE status = 'Active'
+             AND tlo_position_id = $2`,
+          [actor, permanentItemNo]
+        );
+        deactivatedAssignments += deactRes.rowCount;
+      }
+
+      // 4. Resolve masterlist identity and append new assignment ledger record
+      let masterlistId = null;
+      if (!isVacant && (lastName || firstName)) {
+        const mRes = await client.query(
+          `SELECT id FROM tlo_masterlist 
+           WHERE tloid = $1 OR (LOWER(TRIM(last_name)) = LOWER(TRIM($2)) AND LOWER(TRIM(first_name)) = LOWER(TRIM($3)))
+           LIMIT 1`,
+          [permanentItemNo, lastName, firstName]
+        );
+        if (mRes.rows.length > 0) {
+          masterlistId = mRes.rows[0].id;
+        }
+      }
+
+      const assignmentStatus = isVacant ? 'Inactive' : 'Active';
+
+      await client.query(
+        `INSERT INTO tlo_assignments (
+           tlo_position_id,
+           position_id,
+           tlo_masterlist_id,
+           status,
+           capacity,
+           start_date,
+           remarks,
+           created_by,
+           updated_by,
+           created_at,
+           updated_at
+         ) VALUES ($1, $2, $3, $4, 'Full', CURRENT_DATE, $5, $6, $6, NOW(), NOW())`,
+        [
+          permanentItemNo,
+          positionId,
+          masterlistId,
+          assignmentStatus,
+          isVacant ? 'Official Plantilla Vacancy' : `Official Assignment for ${lastName || 'Personnel'}`,
+          actor
+        ]
+      );
+      assignmentsCreated++;
+      processedCount++;
+    }
+
+    // Re-link tlo_masterlist_id across all assignments where tlo_position_id matches tloid
+    await client.query(`
+      UPDATE tlo_assignments a
+      SET tlo_masterlist_id = m.id
+      FROM tlo_masterlist m
+      WHERE a.tlo_position_id = m.tloid
+        AND a.tlo_masterlist_id IS NULL;
+    `);
+
+    // Safely re-add FK constraint to tlo_positions
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'tlo_assignments_position_id_fkey'
+        ) THEN
+          ALTER TABLE tlo_assignments
+          ADD CONSTRAINT tlo_assignments_position_id_fkey
+          FOREIGN KEY (position_id) REFERENCES tlo_positions(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+    `);
+
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      message: 'All available positions imported with regional structure, and personnel FKs linked successfully.',
+      summary: {
+        totalRows: maxLen,
+        processed: processedCount,
+        positionsImported: insertedPositionIds.length,
+        insertedPlantilla,
+        updatedPlantilla,
+        deactivatedAssignments,
+        assignmentsCreated
+      }
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error during importPositionsAndBuildAssignments:', err);
+    res.status(500).json({ error: 'Failed to import positions and assignments: ' + err.message });
+  } finally {
+    client.release();
+  }
+};
+
+export const bulkImportPlantillaAndPositions = importPositionsAndBuildAssignments;
+
+
 

@@ -151,3 +151,102 @@ export async function cloneToNewTloId(client, fromSourceTable, fromTloId, toSour
     [toSourceTable, toTloId, updatedBy, fromSourceTable, fromTloId]
   );
 }
+
+/**
+ * Find or create a position in tlo_positions master inventory table.
+ */
+export async function findOrCreatePosition(client, positionTitle, salaryGrade = null, description = null, region = null, division = null, bureau = null) {
+  if (!positionTitle || !String(positionTitle).trim()) return null;
+  const cleanTitle = String(positionTitle).trim();
+  const cleanGrade = salaryGrade ? String(salaryGrade).trim() : null;
+
+  let query = 'SELECT id, position_title, position_code, salary_grade, description, region, division, bureau FROM tlo_positions WHERE LOWER(TRIM(position_title)) = LOWER(TRIM($1))';
+  const params = [cleanTitle];
+  if (region) {
+    params.push(region);
+    query += ` AND LOWER(TRIM(region)) = LOWER(TRIM($${params.length}))`;
+  }
+  if (division) {
+    params.push(division);
+    query += ` AND LOWER(TRIM(division)) = LOWER(TRIM($${params.length}))`;
+  }
+  query += ' LIMIT 1';
+
+  const existing = await client.query(query, params);
+  if (existing.rows.length > 0) {
+    return existing.rows[0];
+  }
+
+  const res = await client.query(
+    `INSERT INTO tlo_positions (position_title, salary_grade, description, region, division, bureau, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+     RETURNING id, position_title, position_code, salary_grade, description, region, division, bureau`,
+    [cleanTitle, cleanGrade, description, region, division, bureau]
+  );
+  return res.rows[0];
+}
+
+/**
+ * Fetch all recognized positions from tlo_positions master inventory.
+ */
+export async function getAllPositions(client) {
+  const res = await client.query(
+    `SELECT id, position_title, position_code, salary_grade, description, region, division, bureau, created_at, updated_at
+     FROM tlo_positions
+     ORDER BY id ASC`
+  );
+  return res.rows;
+}
+
+/**
+ * Fetch all assignment records for a personnel by canonical masterlist ID or TLOid.
+ * Joins canonical tlo_positions, tlo_items, and tlo_masterlist.
+ */
+export async function findAssignmentsByMasterlistId(client, masterlistIdOrTloId) {
+  if (!masterlistIdOrTloId) return [];
+  const isNumeric = /^\d+$/.test(String(masterlistIdOrTloId));
+  const query = `
+    SELECT a.id, a.tlo_masterlist_id, a.tlo_position_id, a.position_id, a.status, a.capacity,
+           a.designation, a.remarks, a.reassignment_order_binary_id,
+           a.start_date, a.end_date, a.created_at, a.updated_at,
+           COALESCE(pos.position_title, i.position_title) AS position_title,
+           COALESCE(pos.salary_grade, i.salary_grade) AS salary_grade,
+           pos.region, pos.division, pos.bureau,
+           m.tloid, m.first_name, m.last_name
+    FROM tlo_assignments a
+    LEFT JOIN tlo_positions pos ON a.position_id = pos.id
+    LEFT JOIN tlo_items i ON a.tlo_position_id = i.item_number
+    LEFT JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
+    WHERE ${isNumeric ? 'a.tlo_masterlist_id = $1' : 'm.tloid = $1'}
+    ORDER BY a.start_date DESC NULLS LAST, a.id DESC
+  `;
+  const res = await client.query(query, [masterlistIdOrTloId]);
+  return res.rows;
+}
+
+/**
+ * Fetch all assignment records for a canonical position item_number or position_id.
+ */
+export async function findAssignmentsByPositionId(client, positionItemOrId) {
+  if (!positionItemOrId) return [];
+  const isNumeric = /^\d+$/.test(String(positionItemOrId));
+  const query = `
+    SELECT a.id, a.tlo_masterlist_id, a.tlo_position_id, a.position_id, a.status, a.capacity,
+           a.designation, a.remarks, a.reassignment_order_binary_id,
+           a.start_date, a.end_date, a.created_at, a.updated_at,
+           COALESCE(pos.position_title, i.position_title) AS position_title,
+           COALESCE(pos.salary_grade, i.salary_grade) AS salary_grade,
+           pos.region, pos.division, pos.bureau,
+           m.tloid, m.first_name, m.last_name
+    FROM tlo_assignments a
+    LEFT JOIN tlo_positions pos ON a.position_id = pos.id
+    LEFT JOIN tlo_items i ON a.tlo_position_id = i.item_number
+    LEFT JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
+    WHERE ${isNumeric ? '(a.position_id = $1 OR a.tlo_position_id = $1)' : 'a.tlo_position_id = $1'}
+    ORDER BY a.start_date DESC NULLS LAST, a.id DESC
+  `;
+  const res = await client.query(query, [String(positionItemOrId).trim()]);
+  return res.rows;
+}
+
+

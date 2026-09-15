@@ -1,5 +1,18 @@
 import { relations } from "drizzle-orm/relations";
-import { tloPersonnel, tloEducationRecords, tloOtherCourses, tloAccomplishmentRecords, tloEligibilityRecords, tloTrainingRecords, tloItems, tloAssignments } from "./schema";
+import { tloMasterlist, thirdLevelOfficialsProfiles, tloPersonnel, tloEducationRecords, tloOtherCourses, tloAccomplishmentRecords, tloEligibilityRecords, tloTrainingRecords, tloProfile, tloPositions, tloAssignments, tloItems } from "./schema";
+
+export const thirdLevelOfficialsProfilesRelations = relations(thirdLevelOfficialsProfiles, ({one}) => ({
+	tloMasterlist: one(tloMasterlist, {
+		fields: [thirdLevelOfficialsProfiles.tloMasterlistId],
+		references: [tloMasterlist.id]
+	}),
+}));
+
+export const tloMasterlistRelations = relations(tloMasterlist, ({many}) => ({
+	thirdLevelOfficialsProfiles: many(thirdLevelOfficialsProfiles),
+	tloProfiles: many(tloProfile),
+	tloAssignments: many(tloAssignments),
+}));
 
 export const tloEducationRecordsRelations = relations(tloEducationRecords, ({one}) => ({
 	tloPersonnel: one(tloPersonnel, {
@@ -14,7 +27,6 @@ export const tloPersonnelRelations = relations(tloPersonnel, ({many}) => ({
 	tloAccomplishmentRecords: many(tloAccomplishmentRecords),
 	tloEligibilityRecords: many(tloEligibilityRecords),
 	tloTrainingRecords: many(tloTrainingRecords),
-	tloAssignments: many(tloAssignments),
 }));
 
 export const tloOtherCoursesRelations = relations(tloOtherCourses, ({one}) => ({
@@ -45,14 +57,29 @@ export const tloTrainingRecordsRelations = relations(tloTrainingRecords, ({one})
 	}),
 }));
 
+export const tloProfileRelations = relations(tloProfile, ({one}) => ({
+	tloMasterlist: one(tloMasterlist, {
+		fields: [tloProfile.tloMasterlistId],
+		references: [tloMasterlist.id]
+	}),
+}));
+
+export const tloPositionsRelations = relations(tloPositions, ({many}) => ({
+	tloAssignments: many(tloAssignments),
+}));
+
 export const tloAssignmentsRelations = relations(tloAssignments, ({one}) => ({
+	tloMasterlist: one(tloMasterlist, {
+		fields: [tloAssignments.tloMasterlistId],
+		references: [tloMasterlist.id]
+	}),
 	tloItem: one(tloItems, {
-		fields: [tloAssignments.itemNumber],
+		fields: [tloAssignments.tloPositionId],
 		references: [tloItems.itemNumber]
 	}),
-	tloPersonnel: one(tloPersonnel, {
-		fields: [tloAssignments.personnelId],
-		references: [tloPersonnel.id]
+	tloPosition: one(tloPositions, {
+		fields: [tloAssignments.positionId],
+		references: [tloPositions.id]
 	}),
 }));
 

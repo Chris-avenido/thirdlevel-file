@@ -1,6 +1,35 @@
 # CHANGELOG
 
-## 2026-08-12 — Notable Achievements JSONB Column Migration
+## 2026-09-15 — Canonical TLO Assignments Schema Refactor & Elimination of Legacy `tlo_assignment`
+
+### Architectural Change & Database Migrations
+- **Eliminated Singular `tlo_assignment` Table**:
+  - Dropped legacy `tlo_assignment` table in PostgreSQL via migration `20260915_041_delete_tlo_assignment_and_link_positions_to_assignments.sql`.
+  - Standardized all assignment records exclusively on `tlo_assignments` (plural).
+  - Preserved historical backup table `tlo_assignment_backup_schema_refactor`.
+- **Direct Relational Link between `tlo_positions` and `tlo_assignments`**:
+  - Extended `tlo_assignments` with `position_id INT` referencing `tlo_positions(id) ON DELETE SET NULL`.
+  - Added metadata columns: `designation TEXT`, `remarks TEXT`, `reassignment_order_binary_id UUID`, `created_by TEXT`, `updated_by TEXT`.
+  - Backfilled all 1,792 existing assignment records (100% match) with valid `position_id` foreign keys.
+- **Detached Plantilla Architecture**:
+  - `tlo_plantilla` and `ces_plantilla` detached as standalone flat reference tables with 0 foreign keys.
+  - Canonical personnel identity is centered on `tlo_masterlist(id)`.
+  - Canonical position definitions are centered on `tlo_positions(id)` and `tlo_items(item_number)`.
+
+### ORM, Controller & Application Alignment
+- **Drizzle ORM (`schema.ts`, `schema.js`, `relations.ts`, `relations.js`)**:
+  - Removed `tloAssignment` table definition.
+  - Added `positionId` and metadata attributes to `tloAssignments`.
+  - Defined relational linkage `tloPositions.assignments` -> `tloAssignments`.
+- **Repositories & Controllers**:
+  - `tloPositionRepository.js`: Updated assignment lookup methods to join `tlo_positions pos ON pos.id = a.position_id`.
+  - `cesPlantillaController.js`: Standardized `importPlantillaPositions` and `getPlantillaReport` to record and query assignments in `tlo_assignments`.
+  - `uploadDirectoryModalController.js`: Updated directory parser import to write into `tlo_assignments` and safely re-bind `tlo_assignments_position_id_fkey`.
+  - `thirdLevelController.js`: Updated `getVacantPositions`, `executeReassignment`, `deactivateAccountCron`, `cancelVacancy`, and `reassignOfficial` to use `tlo_assignments` ledger without touching dropped table.
+- **Frontend**:
+  - Updated `CesPlantilla.jsx`, `UploadDirectoryModal.jsx`, and `ReassignOfficialModal.jsx` for directory parsing and vacancy management. Verified clean production build with Vite.
+
+---
 
 ### Architectural Change & Database Migration
 - **Converted `notable_achievements` Column to `JSONB`**:
