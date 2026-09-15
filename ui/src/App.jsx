@@ -17,6 +17,7 @@ import NotableAchievements from './pages/NotableAchievements';
 import LoadingScreen from './components/LoadingScreen';
 import AllVacancies from './pages/AllVacancies';
 import ResetPassword from './pages/ResetPassword';
+import CesPlantilla from './pages/CesPlantilla';
 
 import MainDashboard from './pages/MainDashboard';
 
@@ -112,6 +113,14 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <AllVacancies />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/ces-plantilla" 
+                element={
+                    <ProtectedRoute>
+                        <CesPlantilla />
                     </ProtectedRoute>
                 } 
             />
