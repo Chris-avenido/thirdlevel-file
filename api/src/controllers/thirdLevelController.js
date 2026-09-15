@@ -94,6 +94,7 @@ const THIRD_LEVEL_POSITIONS = [
   'SDS',
   'ASDS'
 ];
+const THIRD_LEVEL_POSITIONS_UPPER = THIRD_LEVEL_POSITIONS.map(p => p.toUpperCase());
 
 const displayPositionTitle = (positionTitle) => (
   POSITION_TITLE_DISPLAY[positionTitle] || positionTitle
@@ -195,10 +196,21 @@ export const initializeProfile = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const normalizedEmailInit = email.toLowerCase().trim();
+
+    let isTest = false;
+    if (req.user?.is_testaccount !== undefined) {
+      isTest = Boolean(req.user.is_testaccount);
+    } else {
+      const userCheck = await client.query('SELECT is_testaccount FROM tlo_users WHERE LOWER(email) = $1', [normalizedEmailInit]);
+      if (userCheck.rows.length > 0) {
+        isTest = Boolean(userCheck.rows[0].is_testaccount);
+      }
+    }
 
     const checkRes = await client.query(
-      'SELECT application_id, app_TLOid FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1) LIMIT 1',
-      [email]
+      'SELECT application_id, app_TLOid FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2 LIMIT 1',
+      [normalizedEmailInit, isTest]
     );
 
     if (checkRes.rows.length > 0) {
@@ -209,13 +221,12 @@ export const initializeProfile = async (req, res) => {
     const countRes = await client.query('SELECT COUNT(*) FROM third_level_officials_profiling_application');
     const count = parseInt(countRes.rows[0].count) + 1;
     const appTloId = `APP-2026-${String(count).padStart(4, '0')}`;
-    const normalizedEmailInit = email.toLowerCase().trim();
 
     let finalFirstName = first_name;
     let finalLastName = last_name;
 
     if (!finalFirstName || !finalLastName) {
-      const masterCheck = await client.query('SELECT first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmailInit]);
+      const masterCheck = await client.query('SELECT first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND is_testaccount = $2', [normalizedEmailInit, isTest]);
       if (masterCheck.rows.length > 0) {
         finalFirstName = finalFirstName || masterCheck.rows[0].first_name;
         finalLastName = finalLastName || masterCheck.rows[0].last_name;
@@ -224,9 +235,9 @@ export const initializeProfile = async (req, res) => {
 
     await client.query(`
       INSERT INTO third_level_officials_profiling_application (
-          application_id, app_TLOid, first_name, last_name, email, application_status, created_at, updated_at
-      ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, NOW(), NOW())
-    `, [appTloId, finalFirstName || '', finalLastName || '', normalizedEmailInit]);
+          application_id, app_TLOid, first_name, last_name, email, application_status, is_testaccount, created_at, updated_at
+      ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, $5, NOW(), NOW())
+    `, [appTloId, finalFirstName || '', finalLastName || '', normalizedEmailInit, isTest]);
 
     await client.query('COMMIT');
     res.json({ success: true, TLOid: appTloId });
@@ -238,23 +249,200 @@ export const initializeProfile = async (req, res) => {
   }
 };
 
-export const getByEmail = async (req, res) => {
-  const { email } = req.query;
-  if (!email) return res.status(400).json({ error: 'email query param required' });
-  try {
-    const masterRes = await pool.query(`
-      SELECT * FROM third_level_official_masterlist
-      WHERE LOWER(email) = LOWER($1) AND status != 'Inactive'
-      LIMIT 1
-    `, [email]);
+export function normalizeIdentityStr(val) {
+  if (!val) return '';
+  return String(val)
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[.,]/g, '');
+}
 
-    if (masterRes.rows.length > 0) {
-      const row = masterRes.rows[0];
-      const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
-      row.position_title = normalized.position_title;
-      row.is_oic = normalized.is_oic;
-      if (Array.isArray(row.eligibilities)) {
-        row.eligibilities = row.eligibilities.map(e => {
+export function areFirstNamesMatching(nameA, nameB) {
+  if (!nameA || !nameB) return false;
+  if (nameA === nameB) return true;
+
+  // Handle harmless formatting difference: single-letter middle initial appended to first name
+  // e.g. "MIGUEL MAC D" vs "MIGUEL MAC", "RONNIE S" vs "RONNIE", "RONELO AL K" vs "RONELO AL"
+  // Note: Distinct names like "JUAN" / "JUANITO" or "JOSE" / "JOSEPH" do NOT match
+  const regexTrailingInitial = /\s+[A-Z]$/;
+  const baseA = nameA.replace(regexTrailingInitial, '').trim();
+  const baseB = nameB.replace(regexTrailingInitial, '').trim();
+
+  if (baseA === baseB && baseA.length > 0) {
+    return true;
+  }
+  return false;
+}
+
+export function normalizePhone(val) {
+  if (!val) return '';
+  let digits = String(val).replace(/\D/g, '');
+  if (digits.length >= 10) {
+    return digits.slice(-10);
+  }
+  return digits.length >= 7 ? digits : '';
+}
+
+export function formatDateOnly(d) {
+  if (!d) return null;
+  if (typeof d === 'string') return d.split('T')[0];
+  if (d instanceof Date) return d.toISOString().split('T')[0];
+  return String(d).split('T')[0];
+}
+
+/**
+ * Deterministic Identity Resolution
+ * Evaluates multiple masterlist records sharing an email to classify:
+ * - STATE_1_SINGLE (exactly 1 record)
+ * - STATE_2_VERIFIED_MULTI_ROLE (positive proof: matching normalized full name + same DOB, or matching secondary ID)
+ * - STATE_3_CONFIRMED_COLLISION (affirmative contradictory evidence: conflicting DOB)
+ * - STATE_4_UNCERTAIN (incomplete, missing, inconsistent, or insufficient evidence)
+ */
+export function evaluateIdentityResolution(records, baseTloid) {
+  if (!Array.isArray(records) || records.length === 0) {
+    return { state: 'STATE_1_SINGLE', isMultiRole: false, isCollision: false, isUncertain: false };
+  }
+  if (records.length === 1) {
+    return { state: 'STATE_1_SINGLE', isMultiRole: false, isCollision: false, isUncertain: false };
+  }
+
+  const baseIndex = baseTloid ? records.findIndex(r => r.TLOid === baseTloid) : 0;
+  const base = baseIndex >= 0 ? records[baseIndex] : records[0];
+
+  const baseLastName = normalizeIdentityStr(base.last_name);
+  const baseFirstName = normalizeIdentityStr(base.first_name);
+  const baseDob = formatDateOnly(base.date_of_birth);
+  const basePhone = normalizePhone(base.contact_details);
+
+  if (!baseLastName || !baseFirstName) {
+    return { state: 'STATE_4_UNCERTAIN', isMultiRole: false, isCollision: false, isUncertain: true };
+  }
+
+  let hasConfirmedCollision = false;
+  let allVerifiedMultiRole = true;
+
+  for (let i = 0; i < records.length; i++) {
+    const sib = records[i];
+    if (sib.TLOid === base.TLOid) continue;
+
+    const sibLastName = normalizeIdentityStr(sib.last_name);
+    const sibFirstName = normalizeIdentityStr(sib.first_name);
+    const sibDob = formatDateOnly(sib.date_of_birth);
+    const sibPhone = normalizePhone(sib.contact_details);
+
+    if (!sibLastName || !sibFirstName) {
+      allVerifiedMultiRole = false;
+      continue;
+    }
+
+    const sameLastName = baseLastName === sibLastName;
+    const sameFirstName = areFirstNamesMatching(baseFirstName, sibFirstName);
+    const sameName = sameLastName && sameFirstName;
+
+    const hasBothDobs = Boolean(baseDob && sibDob);
+    const sameDob = hasBothDobs && baseDob === sibDob;
+    const conflictingDob = hasBothDobs && baseDob !== sibDob;
+
+    const samePhone = Boolean(basePhone && sibPhone && basePhone === sibPhone);
+
+    if (conflictingDob) {
+      // Conflicting DOB -> affirmative contradictory evidence -> CONFIRMED_COLLISION
+      hasConfirmedCollision = true;
+      allVerifiedMultiRole = false;
+      break;
+    } else if (sameName && sameDob) {
+      // Positive proof: Same normalized full name + same DOB -> Verified
+      continue;
+    } else if (sameName && !hasBothDobs) {
+      // Positive proof: Same normalized full name + DOB unavailable on one/both records, and no conflicting DOB -> Verified
+      continue;
+    } else if (!sameName && conflictingDob) {
+      // Different names + conflicting DOB -> affirmative contradictory evidence -> CONFIRMED_COLLISION
+      hasConfirmedCollision = true;
+      allVerifiedMultiRole = false;
+      break;
+    } else {
+      // Different names + DOB unavailable (e.g. Juan vs Juanito, or distinct people sharing email without DOB) -> UNCERTAIN
+      allVerifiedMultiRole = false;
+    }
+  }
+
+  if (hasConfirmedCollision) {
+    return { state: 'STATE_3_CONFIRMED_COLLISION', isMultiRole: false, isCollision: true, isUncertain: false };
+  }
+
+  if (allVerifiedMultiRole) {
+    return { state: 'STATE_2_VERIFIED_MULTI_ROLE', isMultiRole: true, isCollision: false, isUncertain: false };
+  }
+
+  return { state: 'STATE_4_UNCERTAIN', isMultiRole: false, isCollision: false, isUncertain: true };
+}
+
+export const getByEmail = async (req, res) => {
+  const { email, tloid } = req.query;
+  if (!email && !tloid) return res.status(400).json({ error: 'email or tloid query param required' });
+  const isTest = Boolean(req.user?.is_testaccount);
+  try {
+    let masterRes;
+    if (tloid) {
+      masterRes = await pool.query(
+        `SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND status != 'Inactive' AND is_testaccount = $2`,
+        [tloid, isTest]
+      );
+    } else if (email) {
+      masterRes = await pool.query(
+        `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY "TLOid" ASC`,
+        [email, isTest]
+      );
+    }
+
+    if (masterRes && masterRes.rows.length > 0) {
+      const targetEmail = masterRes.rows[0].email;
+      let allSharingRes = masterRes;
+      if (tloid && targetEmail) {
+        allSharingRes = await pool.query(
+          `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY "TLOid" ASC`,
+          [targetEmail, isTest]
+        );
+      }
+
+      const resolution = evaluateIdentityResolution(allSharingRes.rows, tloid || masterRes.rows[0].TLOid);
+
+      // In STATE_3 or STATE_4: if explicit tloid was NOT passed, enforce strict isolation and require explicit selection
+      if ((resolution.state === 'STATE_3_CONFIRMED_COLLISION' || resolution.state === 'STATE_4_UNCERTAIN') && !tloid) {
+        const disambiguationRecords = allSharingRes.rows.map(r => ({
+          TLOid: r.TLOid,
+          first_name: r.first_name,
+          last_name: r.last_name,
+          middle_name: r.middle_name,
+          position_title: r.position_title,
+          office: r.office,
+          division: r.division,
+          region: r.region,
+          plantilla_item_no: r.plantilla_item_no,
+          email: r.email
+        }));
+        return res.json({
+          success: true,
+          state: resolution.state,
+          isMultiRole: false,
+          isCollision: resolution.isCollision,
+          isUncertain: resolution.isUncertain,
+          disambiguationRecords,
+          data: null
+        });
+      }
+
+      const activeRecord = tloid 
+        ? allSharingRes.rows.find(r => r.TLOid === tloid) || masterRes.rows[0]
+        : masterRes.rows[0];
+
+      const normalized = sanitizeOicPosition(activeRecord.position_title, activeRecord.is_oic);
+      activeRecord.position_title = normalized.position_title;
+      activeRecord.is_oic = normalized.is_oic;
+      if (Array.isArray(activeRecord.eligibilities)) {
+        activeRecord.eligibilities = activeRecord.eligibilities.map(e => {
           if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
           return e;
         });
@@ -262,46 +450,83 @@ export const getByEmail = async (req, res) => {
 
       let childRecords = {};
       try {
-        const tloId = row.TLOid;
-        if (tloId) {
-          childRecords = await fetchAllChildRecords(pool, 'masterlist', tloId);
+        if (activeRecord.TLOid) {
+          childRecords = await fetchAllChildRecords(pool, 'masterlist', activeRecord.TLOid);
         }
       } catch (childErr) {
         console.warn('[getByEmail] Child records fetch skipped for masterlist:', childErr.message);
       }
 
-      return res.json({ success: true, data: { ...row, ...childRecords }, source: 'masterlist' });
+      let availableRoles = [];
+      if (resolution.state === 'STATE_2_VERIFIED_MULTI_ROLE') {
+        availableRoles = allSharingRes.rows.map(r => ({
+          TLOid: r.TLOid,
+          position_title: r.position_title,
+          office: r.office,
+          division: r.division,
+          region: r.region,
+          designation: r.designation,
+          plantilla_item_no: r.plantilla_item_no,
+          appointment_status: r.appointment_status,
+          is_oic: r.is_oic
+        }));
+      }
+
+      return res.json({
+        success: true,
+        state: resolution.state,
+        isMultiRole: resolution.isMultiRole,
+        isCollision: resolution.isCollision,
+        isUncertain: resolution.isUncertain,
+        activeTloId: activeRecord.TLOid,
+        availableRoles,
+        data: { ...activeRecord, ...childRecords },
+        source: 'masterlist'
+      });
     }
 
-    const stagingRes = await pool.query(`
-      SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application
-      WHERE LOWER(email) = LOWER($1) AND application_status IS DISTINCT FROM 'approved'
-      ORDER BY created_at DESC LIMIT 1
-    `, [email]);
+    // Staging table check for new applicants
+    if (email) {
+      const stagingRes = await pool.query(`
+        SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application
+        WHERE LOWER(email) = LOWER($1) AND application_status IS DISTINCT FROM 'approved' AND is_testaccount = $2
+        ORDER BY created_at DESC LIMIT 1
+      `, [email, isTest]);
 
-    if (stagingRes.rows.length > 0) {
-      const row = stagingRes.rows[0];
-      const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
-      row.position_title = normalized.position_title;
-      row.is_oic = normalized.is_oic;
-      if (Array.isArray(row.eligibilities)) {
-        row.eligibilities = row.eligibilities.map(e => {
-          if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
-          return e;
+      if (stagingRes.rows.length > 0) {
+        const row = stagingRes.rows[0];
+        const normalized = sanitizeOicPosition(row.position_title, row.is_oic);
+        row.position_title = normalized.position_title;
+        row.is_oic = normalized.is_oic;
+        if (Array.isArray(row.eligibilities)) {
+          row.eligibilities = row.eligibilities.map(e => {
+            if (typeof e === 'string') return { eligibility: e.toUpperCase(), date: null, rating: null, place_of_assignment: null };
+            return e;
+          });
+        }
+
+        let childRecords = {};
+        try {
+          const tloId = row.TLOid || row.app_TLOid;
+          if (tloId) {
+            childRecords = await fetchAllChildRecords(pool, 'staging', tloId);
+          }
+        } catch (childErr) {
+          console.warn('[getByEmail] Child records fetch skipped for staging:', childErr.message);
+        }
+
+        return res.json({
+          success: true,
+          state: 'STATE_1_SINGLE',
+          isMultiRole: false,
+          isCollision: false,
+          isUncertain: false,
+          activeTloId: row.TLOid,
+          availableRoles: [],
+          data: { ...row, ...childRecords },
+          source: 'staging'
         });
       }
-
-      let childRecords = {};
-      try {
-        const tloId = row.TLOid || row.app_TLOid;
-        if (tloId) {
-          childRecords = await fetchAllChildRecords(pool, 'staging', tloId);
-        }
-      } catch (childErr) {
-        console.warn('[getByEmail] Child records fetch skipped for staging:', childErr.message);
-      }
-
-      return res.json({ success: true, data: { ...row, ...childRecords }, source: 'staging' });
     }
 
     return res.json({ success: false, data: null });
@@ -345,16 +570,23 @@ export const uploadDocument = async (req, res) => {
     const columnName = docMap[docType];
     if (!columnName) throw new Error('Invalid document type');
 
+    const isTest = Boolean(req.user?.is_testaccount);
+    let upRes;
     if (isMasterlist) {
-      await client.query(
-        `UPDATE third_level_official_masterlist SET ${columnName} = $1, updated_at = NOW() WHERE "TLOid" = $2`,
-        [binary_id, TLOid]
+      upRes = await client.query(
+        `UPDATE third_level_official_masterlist SET ${columnName} = $1, updated_at = NOW() WHERE "TLOid" = $2 AND is_testaccount = $3`,
+        [binary_id, TLOid, isTest]
       );
     } else {
-      await client.query(
-        `UPDATE third_level_officials_profiling_application SET ${columnName} = $1, updated_at = NOW() WHERE app_TLOid = $2`,
-        [binary_id, TLOid]
+      upRes = await client.query(
+        `UPDATE third_level_officials_profiling_application SET ${columnName} = $1, updated_at = NOW() WHERE app_TLOid = $2 AND is_testaccount = $3`,
+        [binary_id, TLOid, isTest]
       );
+    }
+
+    if (upRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Profile not found or access denied' });
     }
 
     await client.query('COMMIT');
@@ -424,14 +656,15 @@ export const uploadDocument = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   const { TLOid } = req.params;
+  const isTest = Boolean(req.user?.is_testaccount);
   const isMasterlist = !TLOid.startsWith('APP-') && !(TLOid.startsWith('TLO-') && TLOid.split('-').length > 2);
   try {
     await ensureOicColumn();
     let result;
     if (isMasterlist) {
-      result = await pool.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+      result = await pool.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
     } else {
-      result = await pool.query('SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application WHERE app_TLOid = $1', [TLOid]);
+      result = await pool.query('SELECT *, app_TLOid AS "TLOid" FROM third_level_officials_profiling_application WHERE app_TLOid = $1 AND is_testaccount = $2', [TLOid, isTest]);
     }
     if (result.rows.length === 0) return res.status(404).json({ error: 'Profile not found' });
     const row = result.rows[0];
@@ -700,7 +933,8 @@ export const updateProfile = async (req, res) => {
     }
 
     if (updates.length > 0) {
-      values.push(new Date(), TLOid);
+      const isTest = Boolean(req.user?.is_testaccount);
+      values.push(new Date(), TLOid, isTest);
 
       if (isMasterlist && req.user?.email) {
         await client.query(`SET LOCAL "app.current_user" = '${req.user.email.replace(/'/g, "''")}'`);
@@ -713,10 +947,15 @@ export const updateProfile = async (req, res) => {
         valuesCount: values.length
       });
 
-      await client.query(
-        `UPDATE ${table} SET ${updates.join(', ')}, updated_at = $${values.length - 1} WHERE ${idCol} = $${values.length}`,
+      const updateRes = await client.query(
+        `UPDATE ${table} SET ${updates.join(', ')}, updated_at = $${values.length - 2} WHERE ${idCol} = $${values.length - 1} AND is_testaccount = $${values.length}`,
         values
       );
+
+      if (updateRes.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Profile not found or access denied' });
+      }
     }
 
     // Phase 3: Dual-write to normalized child tables (inside existing transaction)
@@ -725,8 +964,273 @@ export const updateProfile = async (req, res) => {
     const updatedBy = req.user?.email || null;
     await syncAllChildTables(client, sourceTable, TLOid, req.body, updatedBy);
 
+    // ── Phase 4: Assignment & Position History Tracking ──────────────────────
+    // When saving profile in Official Profiling, track changes to:
+    // Region, Division, Position Title, Designation
+    // If changed:
+    // 1. Archive previous position into tlo_position_history (status = 'Inactive')
+    // 2. Mark previous assignment in tlo_assignments as Inactive (end_date = today)
+    // 3. Insert new active assignment in tlo_assignments with updated values (status = 'Active')
+    if (isMasterlist) {
+      const sp_assign = 'sp_assignment_tracking';
+      try {
+        await client.query(`SAVEPOINT ${sp_assign}`);
+
+        const norm = (v) => (v === null || v === undefined || v === '') ? '' : String(v).trim().toUpperCase();
+        const incomingPosTitle = norm(req.body.position_title);
+        const incomingDesig    = norm(req.body.designation);
+        const incomingRegion   = norm(req.body.region);
+        const incomingDivision = norm(req.body.division);
+        const incomingOffice   = req.body.office ? req.body.office.trim() : null;
+        const incomingStrand   = req.body.strand ? req.body.strand.trim() : null;
+        const incomingIsOic    = Boolean(req.body.is_oic || (req.body.designation && req.body.designation.toUpperCase().includes('OIC')));
+
+        if (incomingPosTitle || incomingDesig || incomingRegion || incomingDivision) {
+          // Identify the single authoritative current active assignment for this item_number
+          const curAssignRes = await client.query(
+            `SELECT a.id, a.personnel_id, a.item_number, a.position_title,
+                    a.designation, a.region, a.division, a.office, a.strand,
+                    a.status, a.start_date, a.end_date, a.assignment_type, a.oic
+             FROM tlo_assignments a
+             WHERE a.item_number = $1
+               AND a.status = 'Active'
+             ORDER BY CASE WHEN a.assignment_type = 'Concurrent' THEN 2 ELSE 1 END, a.id DESC
+             LIMIT 1`,
+            [TLOid]
+          );
+
+          if (curAssignRes.rows.length === 0) {
+            // No active assignment exists in ledger — resolve personnel_id and insert initial active row
+            const pRes = await client.query(
+              `SELECT id FROM tlo_personnel WHERE legacy_tlo_id = $1 ORDER BY id ASC LIMIT 1`,
+              [TLOid]
+            );
+            const initialPersonId = pRes.rows[0]?.id || null;
+
+            if (initialPersonId) {
+              await client.query(
+                `INSERT INTO tlo_assignments (
+                   personnel_id, item_number, region, division, office, strand,
+                   position_title, designation, assignment_type, status, oic,
+                   start_date, end_date, remarks, created_by, updated_by,
+                   created_at, updated_at
+                 ) VALUES (
+                   $1, $2, $3, $4, $5, $6,
+                   $7, $8, $9, 'Active', $10,
+                   NOW(), NULL, 'Initial assignment on profile save', $11, $11,
+                   NOW(), NOW()
+                 )`,
+                [
+                  initialPersonId,
+                  TLOid,
+                  req.body.region || null,
+                  req.body.division || null,
+                  incomingOffice,
+                  incomingStrand,
+                  req.body.position_title || null,
+                  req.body.designation || null,
+                  incomingIsOic ? 'OIC' : 'Permanent',
+                  incomingIsOic,
+                  updatedBy
+                ]
+              );
+            }
+          } else {
+            const cur = curAssignRes.rows[0];
+
+            // Change detection: did any of the 4 primary assignment fields change?
+            const hasAssignmentChanged = (
+              (incomingPosTitle && incomingPosTitle !== norm(cur.position_title)) ||
+              (incomingDesig && incomingDesig !== norm(cur.designation)) ||
+              (incomingRegion && incomingRegion !== norm(cur.region)) ||
+              (incomingDivision && incomingDivision !== norm(cur.division))
+            );
+
+            if (hasAssignmentChanged) {
+              const nowStr = new Date().toISOString().split('T')[0];
+              const oldStartDate = cur.start_date ? new Date(cur.start_date).toISOString().split('T')[0] : null;
+              const oldEndDate = nowStr;
+              const newStartDate = nowStr;
+
+              // Step 1: Archive previous position into tlo_position_history
+              const prevPositionTitle = cur.position_title || req.body.position_title || '';
+              const prevDesignation = cur.designation || null;
+              const prevRegion = cur.region || null;
+              const prevDivision = cur.division || null;
+              const prevOffice = cur.office || null;
+              const prevStrand = cur.strand || null;
+              const prevOic = Boolean(cur.oic || (cur.designation && cur.designation.toUpperCase().includes('OIC')));
+
+              await client.query(
+                `INSERT INTO tlo_position_history (
+                   source_table, tlo_id, position_name, designation,
+                   region, division, office, strand,
+                   inclusive_date_start, inclusive_date_end,
+                   status, oic, delete_flg, created_at, updated_at, created_by, updated_by
+                 ) VALUES (
+                   'masterlist', $1, $2, $3,
+                   $4, $5, $6, $7,
+                   $8, $9,
+                   'Inactive', $10, 'No', NOW(), NOW(), $11, $11
+                 )`,
+                [
+                  TLOid,
+                  prevPositionTitle,
+                  prevDesignation,
+                  prevRegion,
+                  prevDivision,
+                  prevOffice,
+                  prevStrand,
+                  oldStartDate,
+                  oldEndDate,
+                  prevOic,
+                  updatedBy
+                ]
+              );
+
+              // Step 2: Transition previous assignment in tlo_assignments to Inactive
+              await client.query(
+                `UPDATE tlo_assignments
+                 SET status = 'Inactive', end_date = $1, updated_at = NOW(), updated_by = $2
+                 WHERE id = $3`,
+                [oldEndDate, updatedBy, cur.id]
+              );
+
+              // Step 3: Insert new current assignment in tlo_assignments with updated values
+              const newAssignedType = incomingIsOic ? 'OIC' : (cur.assignment_type === 'Concurrent' ? 'Concurrent' : 'Permanent');
+
+              await client.query(
+                `INSERT INTO tlo_assignments (
+                   personnel_id, item_number, region, division, office, strand,
+                   position_title, designation, assignment_type, status, oic,
+                   start_date, end_date, remarks, created_by, updated_by,
+                   created_at, updated_at
+                 ) VALUES (
+                   $1, $2, $3, $4, $5, $6,
+                   $7, $8, $9, 'Active', $10,
+                   $11, NULL, 'Updated via Official Profiling', $12, $12,
+                   NOW(), NOW()
+                 )`,
+                [
+                  cur.personnel_id, // SAME personnel_id as mother assignment!
+                  cur.item_number || TLOid,
+                  req.body.region || cur.region,
+                  req.body.division || cur.division,
+                  incomingOffice || cur.office,
+                  incomingStrand || cur.strand,
+                  req.body.position_title || cur.position_title,
+                  req.body.designation || cur.designation,
+                  newAssignedType,
+                  incomingIsOic,
+                  newStartDate,
+                  updatedBy
+                ]
+              );
+            } else {
+              // Secondary non-station fields update in-place if needed
+              if (incomingOffice !== cur.office || incomingStrand !== cur.strand) {
+                await client.query(
+                  `UPDATE tlo_assignments
+                   SET office = COALESCE($1, office), strand = COALESCE($2, strand),
+                       updated_at = NOW(), updated_by = $3
+                   WHERE id = $4`,
+                  [incomingOffice, incomingStrand, updatedBy, cur.id]
+                );
+              }
+            }
+          }
+        }
+        await client.query(`RELEASE SAVEPOINT ${sp_assign}`);
+      } catch (assignErr) {
+        await client.query(`ROLLBACK TO SAVEPOINT ${sp_assign}`).catch(() => {});
+        console.warn(`[updateProfile] Assignment tracking skipped: ${assignErr.message}`);
+      }
+    }
+
+    // ── Phase 5: Personal Data Sync to Verified Sibling Roles ──
+    // Rule: Cross-role personal data sync applies to verified sibling roles (STATE_2_VERIFIED_MULTI_ROLE).
+    // Sibling TLO records update personal data by default when identity is verified,
+    // while respecting explicit user opt-out (applyToVerifiedRoles === false).
+    // Role-specific fields NEVER propagate under any condition. Child records are never cloned.
+    const isExplicitlyOptedOut = req.body.applyToVerifiedRoles === false || req.body.applyToVerifiedRoles === 'false';
+    const shouldSyncVerifiedSiblings = isMasterlist && !isExplicitlyOptedOut;
+    if (shouldSyncVerifiedSiblings) {
+      try {
+        const curOfficialRes = await client.query(
+          `SELECT email, first_name, last_name, date_of_birth, contact_details 
+           FROM third_level_official_masterlist 
+           WHERE "TLOid" = $1`,
+          [TLOid]
+        );
+        const curOfficial = curOfficialRes.rows[0];
+        if (curOfficial && curOfficial.email) {
+          const sibRes = await client.query(
+            `SELECT * FROM third_level_official_masterlist 
+             WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' 
+             ORDER BY "TLOid" ASC`,
+            [curOfficial.email]
+          );
+
+          if (sibRes.rows.length > 1) {
+            const resolution = evaluateIdentityResolution(sibRes.rows, TLOid);
+            if (resolution.state === 'STATE_2_VERIFIED_MULTI_ROLE') {
+              // Role-specific fields that MUST NEVER propagate:
+              const ROLE_SPECIFIC_FIELDS = new Set([
+                'region', 'division', 'office', 'strand', 'position_title', 'designation',
+                'is_oic', 'plantilla_item_no', 'appointment_status', 'appointment_date',
+                'effectivity_date', 'employment_status', 'assignment', 'status', 'tloid', 'sort_index'
+              ]);
+
+              const personalUpdates = [];
+              const personalValues = [];
+
+              allFields.forEach(f => {
+                if (!ROLE_SPECIFIC_FIELDS.has(f.toLowerCase()) && req.body[f] !== undefined && validCols.has(f.toLowerCase())) {
+                  let val = req.body[f] === '' ? null : req.body[f];
+                  if (JSONB_FIELDS.has(f) && val !== null && typeof val !== 'string') {
+                    val = JSON.stringify(val);
+                  } else if (val !== null && typeof val === 'string' && !DO_NOT_UPPERCASE.has(f.toLowerCase())) {
+                    val = toUpper(val);
+                  }
+                  personalValues.push(val);
+                  personalUpdates.push(`"${f}" = $${personalValues.length}`);
+                }
+              });
+
+              if (personalUpdates.length > 0) {
+                const verifiedSiblings = sibRes.rows.filter(r => r.TLOid !== TLOid);
+                for (const sib of verifiedSiblings) {
+                  const sibValues = [...personalValues, new Date(), sib.TLOid];
+                  await client.query(
+                    `UPDATE third_level_official_masterlist 
+                     SET ${personalUpdates.join(', ')}, updated_at = $${sibValues.length - 1} 
+                     WHERE "TLOid" = $${sibValues.length}`,
+                    sibValues
+                  );
+                }
+                console.log(`[updateProfile] Propagated personal fields to ${verifiedSiblings.length} verified sibling roles for ${TLOid}`);
+              }
+            } else {
+              console.warn(`[updateProfile] Opt-in sync skipped: records for ${curOfficial.email} are ${resolution.state}`);
+            }
+          }
+        }
+      } catch (syncErr) {
+        console.warn(`[updateProfile] Sibling personal data sync skipped: ${syncErr.message}`);
+      }
+    }
+
     await client.query('COMMIT');
-    res.json({ success: true });
+
+    let childRecords = {};
+    try {
+      const sourceTable = resolveSourceTable(TLOid);
+      childRecords = await fetchAllChildRecords(pool, sourceTable, TLOid);
+    } catch (childErr) {
+      console.warn('[updateProfile] Child records fetch skipped on response:', childErr.message);
+    }
+
+    res.json({ success: true, data: { ...childRecords } });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
@@ -744,11 +1248,12 @@ export const submitApplication = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const isTest = Boolean(req.user?.is_testaccount);
     const result = await client.query(`
       UPDATE third_level_officials_profiling_application
       SET application_status = 'applied', "target_TLOid" = $1, submitted_at = NOW(), updated_at = NOW()
-      WHERE LOWER(email) = LOWER($2) AND application_status IS DISTINCT FROM 'approved'
-    `, [target_TLOid || null, userEmail]);
+      WHERE LOWER(email) = LOWER($2) AND application_status IS DISTINCT FROM 'approved' AND is_testaccount = $3
+    `, [target_TLOid || null, userEmail, isTest]);
 
     if (result.rowCount === 0) {
       await client.query('ROLLBACK');
@@ -766,6 +1271,7 @@ export const submitApplication = async (req, res) => {
 };
 
 export const getPositions = async (req, res) => {
+  const isTest = Boolean(req.user?.is_testaccount);
   try {
     const posResult = await pool.query(`
       SELECT DISTINCT position_title 
@@ -773,34 +1279,37 @@ export const getPositions = async (req, res) => {
       WHERE position_title IS NOT NULL 
         AND position_title != '' 
         AND position_title NOT ILIKE 'N/A'
+        AND is_testaccount = $1
       ORDER BY position_title
-    `);
+    `, [isTest]);
     const desigResult = await pool.query(`
       SELECT DISTINCT designation 
       FROM third_level_official_masterlist 
       WHERE designation IS NOT NULL 
         AND designation != '' 
         AND designation NOT ILIKE 'N/A'
+        AND is_testaccount = $1
       ORDER BY designation
-    `);
+    `, [isTest]);
     const strandResult = await pool.query(`
-      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' ORDER BY strand
-    `);
+      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' AND is_testaccount = $1 ORDER BY strand
+    `, [isTest]);
     const regionResult = await pool.query(`
-      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' ORDER BY region
-    `);
+      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' AND is_testaccount = $1 ORDER BY region
+    `, [isTest]);
     const officeResult = await pool.query(`
-      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' ORDER BY office
-    `);
+      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' AND is_testaccount = $1 ORDER BY office
+    `, [isTest]);
     const divisionResult = await pool.query(`
-      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' ORDER BY division
-    `);
+      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' AND is_testaccount = $1 ORDER BY division
+    `, [isTest]);
     const regionDivisionResult = await pool.query(`
       SELECT DISTINCT region, division 
       FROM third_level_official_masterlist 
       WHERE division IS NOT NULL AND division != '' 
         AND region IS NOT NULL AND region != ''
-    `);
+        AND is_testaccount = $1
+    `, [isTest]);
 
     const deduplicate = (list) => {
       const map = new Map();
@@ -812,7 +1321,7 @@ export const getPositions = async (req, res) => {
         if (!existing) {
           map.set(up, trimmed);
         } else if (existing === up && trimmed !== up) {
-          map.set(up, trimmed); 
+          map.set(up, trimmed);
         }
       });
       return Array.from(map.values()).sort();
@@ -861,7 +1370,7 @@ export const getPositions = async (req, res) => {
 
       const upReg = regionStr.toUpperCase();
       const upDiv = divStr.toUpperCase();
-      
+
       const bestReg = finalRegions.find(reg => reg.toUpperCase() === upReg) || regionStr;
       const bestDiv = finalDivisions.find(div => div.toUpperCase() === upDiv) || divStr;
 
@@ -902,6 +1411,8 @@ export const getPositions = async (req, res) => {
 export const getVacancies = async (req, res) => {
   try {
     const { region, division, office, strand, search } = req.query;
+    const isTest = Boolean(req.user?.is_testaccount);
+    const params = [isTest];
 
     // A position is considered vacant when either:
     // (1) item_number exists in tlo_items with no matching assignment record at all, OR
@@ -923,12 +1434,11 @@ export const getVacancies = async (req, res) => {
         FROM tlo_assignments
         ORDER BY item_number, id DESC
       ) a ON a.item_number = i.item_number
-      LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number
+      LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $1
       WHERE a.item_number IS NULL
          OR a.status = 'Vacant'
     `;
 
-    const params = [];
     if (office && office !== 'All') {
       params.push(office);
       query += ` AND (COALESCE(a.office, m.office, '') = $${params.length})`;
@@ -965,12 +1475,13 @@ export const getApplications = async (req, res) => {
 
   try {
     await ensureOicColumn();
+    const isTest = Boolean(req.user?.is_testaccount);
     const { search, strand, position } = req.query;
     let query = `
       WITH ActivePositions AS (
         SELECT LOWER(email) as low_email, position_title, office
         FROM third_level_official_masterlist
-        WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+        WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
       )
       SELECT 
         a.*, 
@@ -986,11 +1497,11 @@ export const getApplications = async (req, res) => {
           WHERE ap.low_email = LOWER(a.email)
         ) as concurrent_positions
       FROM third_level_officials_profiling_application a
-      LEFT JOIN third_level_official_masterlist m ON LOWER(a.email) = LOWER(m.email)
-      LEFT JOIN third_level_official_masterlist v ON a."target_TLOid" = v."TLOid"
-      WHERE a.application_status = 'applied'
+      LEFT JOIN third_level_official_masterlist m ON LOWER(a.email) = LOWER(m.email) AND m.is_testaccount = a.is_testaccount
+      LEFT JOIN third_level_official_masterlist v ON a."target_TLOid" = v."TLOid" AND v.is_testaccount = a.is_testaccount
+      WHERE a.application_status = 'applied' AND a.is_testaccount = $1
     `;
-    const params = [];
+    const params = [isTest];
 
     const userRole = req.user.role;
     const isRO = userRole === 'Regional Office' || userRole === 'RO_HRMO' || userRole === 'RO HRMO';
@@ -1047,19 +1558,27 @@ export const processApplication = async (req, res) => {
     await client.query('BEGIN');
     await ensureOicColumn(client);
 
-    const appRes = await client.query('SELECT * FROM third_level_officials_profiling_application WHERE app_TLOid = $1', [app_TLOid]);
+    const isTest = Boolean(req.user?.is_testaccount);
+    const appRes = await client.query('SELECT * FROM third_level_officials_profiling_application WHERE app_TLOid = $1 AND is_testaccount = $2', [app_TLOid, isTest]);
     applicantData = appRes.rows[0];
+    if (!applicantData) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Application not found' });
+    }
 
     if (action === 'reject') {
       await client.query(`
         UPDATE third_level_officials_profiling_application 
         SET application_status = 'disapproved', denial_reason = $1, updated_at = NOW() 
-        WHERE app_TLOid = $2
-      `, [denial_reason || 'No reason provided', app_TLOid]);
+        WHERE app_TLOid = $2 AND is_testaccount = $3
+      `, [denial_reason || 'No reason provided', app_TLOid, isTest]);
     } else if (action === 'approve') {
       const applicant = applicantData;
       if (!applicant) throw new Error('Applicant not found');
       if (!applicant.target_TLOid) throw new Error('No target vacancy associated with this application');
+
+      const targetCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [applicant.target_TLOid, isTest]);
+      if (targetCheck.rows.length === 0) throw new Error('Target vacancy not found in environment');
 
       const masterlistColsRes = await client.query(`
         SELECT column_name 
@@ -1084,23 +1603,23 @@ export const processApplication = async (req, res) => {
         return val;
       });
 
-      values.push('Active', applicant.target_TLOid);
+      values.push('Active', applicant.target_TLOid, isTest);
 
       await client.query(`
         UPDATE third_level_official_masterlist 
-        SET ${sets.join(', ')}, status = $${values.length - 1}, updated_at = NOW()
-        WHERE "TLOid" = $${values.length}
+        SET ${sets.join(', ')}, status = $${values.length - 2}, updated_at = NOW()
+        WHERE "TLOid" = $${values.length - 1} AND is_testaccount = $${values.length}
       `, values);
 
       await client.query(`
         UPDATE third_level_officials_profiling_application 
         SET application_status = 'approved', updated_at = NOW() 
-        WHERE app_TLOid = $1
-      `, [app_TLOid]);
+        WHERE app_TLOid = $1 AND is_testaccount = $2
+      `, [app_TLOid, isTest]);
 
       await client.query(`
-        UPDATE tlo_users SET role = 'Third Level Official' WHERE LOWER(email) = $1 AND role = 'Third Level Applicant'
-      `, [applicant.email.toLowerCase().trim()]);
+        UPDATE tlo_users SET role = 'Third Level Official' WHERE LOWER(email) = $1 AND role = 'Third Level Applicant' AND is_testaccount = $2
+      `, [applicant.email.toLowerCase().trim(), isTest]);
 
       // Phase 3: Clone normalized child table rows from staging → masterlist
       const approvalUpdatedBy = req.user?.email || null;
@@ -1155,46 +1674,49 @@ export const processRegistration = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const mlRes = await client.query('SELECT email, first_name, last_name, position_title, office FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
-    if (mlRes.rows.length > 0) {
-      targetOfficial = mlRes.rows[0];
+    const isTest = Boolean(req.user?.is_testaccount);
+    const mlRes = await client.query('SELECT email, first_name, last_name, position_title, office FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
+    if (mlRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Official not found' });
     }
+    targetOfficial = mlRes.rows[0];
 
     if (action === 'reject') {
       await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'Rejected', updated_at = NOW() 
-        WHERE "TLOid" = $1 AND status = 'For Approval'
-      `, [TLOid]);
+        WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2
+      `, [TLOid, isTest]);
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
-          UPDATE tlo_users SET registration_status = 'Rejected' WHERE LOWER(email) = $1
-        `, [targetOfficial.email.toLowerCase()]);
+          UPDATE tlo_users SET registration_status = 'Rejected' WHERE LOWER(email) = $1 AND is_testaccount = $2
+        `, [targetOfficial.email.toLowerCase(), isTest]);
       }
     } else if (action === 'approve') {
       await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'Active', updated_at = NOW() 
-        WHERE "TLOid" = $1 AND status = 'For Approval'
-      `, [TLOid]);
+        WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2
+      `, [TLOid, isTest]);
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
-          UPDATE tlo_users SET registration_status = 'Approved' WHERE LOWER(email) = $1
-        `, [targetOfficial.email.toLowerCase()]);
+          UPDATE tlo_users SET registration_status = 'Approved' WHERE LOWER(email) = $1 AND is_testaccount = $2
+        `, [targetOfficial.email.toLowerCase(), isTest]);
       }
     } else if (action === 'retrieve') {
       await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'For Approval', updated_at = NOW() 
-        WHERE "TLOid" = $1 AND status = 'Rejected'
-      `, [TLOid]);
+        WHERE "TLOid" = $1 AND status = 'Rejected' AND is_testaccount = $2
+      `, [TLOid, isTest]);
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
-          UPDATE tlo_users SET registration_status = 'For Approval' WHERE LOWER(email) = $1
-        `, [targetOfficial.email.toLowerCase()]);
+          UPDATE tlo_users SET registration_status = 'For Approval' WHERE LOWER(email) = $1 AND is_testaccount = $2
+        `, [targetOfficial.email.toLowerCase(), isTest]);
       }
     }
 
@@ -1270,8 +1792,8 @@ const executeReassignment = async (client, official, effTs, justification, assig
       UPDATE third_level_official_masterlist
       SET first_name = $1, last_name = $2, email = $3, contact_details = $4,
           status = 'Active', updated_at = NOW(), effectivity_date = ${effTs}
-      WHERE "TLOid" = $5
-    `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid]);
+      WHERE "TLOid" = $5 AND is_testaccount = $6
+    `, [assignee.first_name, assignee.last_name, assignee.email, assignee.contact_details, TLOid, Boolean(official.is_testaccount)]);
 
     await client.query(`
       INSERT INTO third_level_officials_updates
@@ -1293,9 +1815,9 @@ const executeReassignment = async (client, official, effTs, justification, assig
          FROM tlo_assignments
          ORDER BY item_number, id DESC
        ) a ON a.item_number = i.item_number
-       LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number
+       LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $2
        WHERE i.item_number = $1`,
-      [target_TLOid]
+      [target_TLOid, Boolean(official.is_testaccount)]
     );
     const targetSlot = targetItemRes.rows[0];
 
@@ -1350,14 +1872,15 @@ const executeReassignment = async (client, official, effTs, justification, assig
       UPDATE third_level_official_masterlist
       SET region = $1, division = $2, office = $3, strand = $4,
           designation = $5, appointment_date = ${effTs}, updated_at = NOW()
-      WHERE "TLOid" = $6
+      WHERE "TLOid" = $6 AND is_testaccount = $7
     `, [
       targetSlot?.region || official.region,
       targetSlot?.division || official.division,
       targetSlot?.office || official.office,
       targetSlot?.strand || official.strand,
       targetSlot?.position_title || official.position_title,
-      TLOid
+      TLOid,
+      Boolean(official.is_testaccount)
     ]);
 
     await client.query(`
@@ -1365,39 +1888,133 @@ const executeReassignment = async (client, official, effTs, justification, assig
         ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), ${effTs}, $9)
     `, [TLOid, official.first_name, official.last_name,
-        targetSlot?.position_title || official.position_title,
-        targetSlot?.office || official.office,
-        targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`, null]);
+      targetSlot?.position_title || official.position_title,
+      targetSlot?.office || official.office,
+      targetSlot?.strand || official.strand, official.email, justification || `Reassigned from ${official.position_title}`, null]);
   } else {
     await client.query(`
     UPDATE third_level_official_masterlist
     SET updated_at = NOW(), effectivity_date = ${effTs}
-    WHERE "TLOid" = $1
-  `, [TLOid]);
+    WHERE "TLOid" = $1 AND is_testaccount = $2
+  `, [TLOid, Boolean(official.is_testaccount)]);
   }
 };
 
 let isProcessingVacancies = false;
 let lastProcessTime = 0;
 
-export const processScheduledVacancies = async (client) => {
+export const processScheduledVacancies = async (client, force = false) => {
   const now = Date.now();
-  if (isProcessingVacancies || now - lastProcessTime < 60000) return; // Only run once per minute
+  if (!force && (isProcessingVacancies || now - lastProcessTime < 60000)) return; // Only run once per minute unless forced
 
   isProcessingVacancies = true;
   lastProcessTime = now;
 
   try {
-    await client.query(`
-      UPDATE third_level_official_masterlist
-      SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW()
-      WHERE status = 'Vacating' AND effectivity_date <= NOW()
+    const matureVacancies = await client.query(`
+      SELECT * FROM third_level_official_masterlist
+      WHERE status IN ('Vacating', 'Resigning') AND effectivity_date <= NOW()
     `);
-    await client.query(`
-      UPDATE third_level_official_masterlist
-      SET status = 'Inactive', updated_at = NOW()
-      WHERE status = 'Resigning' AND effectivity_date <= NOW()
-    `);
+
+    for (const official of matureVacancies.rows) {
+      const conn = typeof client.connect === 'function' ? await client.connect() : client;
+      try {
+        await conn.query('BEGIN');
+        const mLock = await conn.query(
+          'SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 FOR UPDATE',
+          [official.TLOid]
+        );
+        if (mLock.rows.length === 0 || !['Vacating', 'Resigning'].includes(mLock.rows[0].status)) {
+          await conn.query('ROLLBACK');
+          continue;
+        }
+
+        const lockedOfficial = mLock.rows[0];
+
+        const pRes = await conn.query(
+          `SELECT id FROM tlo_personnel
+           WHERE legacy_tlo_id = $1
+              OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+           ORDER BY CASE WHEN legacy_tlo_id = $1 THEN 0 ELSE 1 END, id ASC
+           LIMIT 1`,
+          [lockedOfficial.TLOid, lockedOfficial.email]
+        );
+        const personId = pRes.rows[0]?.id;
+
+        let activeAssignmentId = null;
+
+        if (personId) {
+          const aRes = await conn.query(
+            `SELECT a.id, a.item_number, a.status
+             FROM tlo_assignments a
+             WHERE a.personnel_id = $1
+               AND a.status = 'Active'
+             ORDER BY a.id DESC
+             LIMIT 1
+             FOR UPDATE`,
+            [personId]
+          );
+
+          if (aRes.rows.length > 0) {
+            activeAssignmentId = aRes.rows[0].id;
+
+            await conn.query(
+              `UPDATE tlo_assignments
+               SET status = 'Inactive', end_date = $1, updated_at = NOW(), updated_by = 'SYSTEM_CRON'
+               WHERE id = $2`,
+              [lockedOfficial.effectivity_date, activeAssignmentId]
+            );
+          }
+        }
+
+        const isResignOrRetire = lockedOfficial.status === 'Resigning' || /^(resign|retire)/i.test(lockedOfficial.status || '');
+        const targetStatus = isResignOrRetire ? 'Inactive' : 'Vacated';
+
+        await conn.query(
+          `UPDATE third_level_official_masterlist
+           SET first_name = 'VACANT',
+               last_name = '',
+               email = NULL,
+               status = $1,
+               updated_at = NOW()
+           WHERE "TLOid" = $2`,
+          [targetStatus, lockedOfficial.TLOid]
+        );
+
+        await conn.query(
+          `INSERT INTO third_level_officials_updates
+             ("TLOid", first_name, last_name, middle_name, suffix, email, contact_details, position_title, office, division, region, strand, status, vacate_reason, remarks, assignment, updated_at, effectivity_date, updated_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'Scheduled vacancy executed', $15, NOW(), $16, 'SYSTEM_CRON')`,
+          [
+            lockedOfficial.TLOid,
+            lockedOfficial.first_name,
+            lockedOfficial.last_name,
+            lockedOfficial.middle_name,
+            lockedOfficial.suffix,
+            lockedOfficial.email,
+            lockedOfficial.contact_details,
+            lockedOfficial.position_title,
+            lockedOfficial.office,
+            lockedOfficial.division,
+            lockedOfficial.region,
+            lockedOfficial.strand,
+            targetStatus,
+            lockedOfficial.status === 'Resigning' ? 'Resignation' : 'Scheduled Vacate',
+            activeAssignmentId ? activeAssignmentId.toString() : null,
+            lockedOfficial.effectivity_date
+          ]
+        );
+
+        await conn.query('COMMIT');
+      } catch (err) {
+        await conn.query('ROLLBACK');
+        console.error('Failed processing scheduled vacancy for', official.TLOid, err);
+      } finally {
+        if (typeof client.connect === 'function') {
+          conn.release();
+        }
+      }
+    }
 
     const pendingReassignments = await client.query(`
       SELECT * FROM third_level_official_masterlist
@@ -1465,6 +2082,10 @@ export const buildOfficialsFilterConditions = (query, user) => {
   const params = [];
   const conditions = [];
 
+  const isTestUser = Boolean(user?.is_testaccount);
+  params.push(isTestUser);
+  conditions.push(`m.is_testaccount = $${params.length}`);
+
   const { search, status, strand, category, position, designation, office, is_oic, region, division, name, position_title, level } = query;
 
   const userRole = user?.role;
@@ -1498,7 +2119,7 @@ export const buildOfficialsFilterConditions = (query, user) => {
 
   if (search) {
     params.push(`%${search}%`);
-    conditions.push(`(first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR email ILIKE $${params.length} OR position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR strand ILIKE $${params.length})`);
+    conditions.push(`(first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR email ILIKE $${params.length} OR position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR strand ILIKE $${params.length} OR plantilla_item_no ILIKE $${params.length})`);
   }
 
   const filterStatus = Array.isArray(status) ? status[status.length - 1] : status;
@@ -1576,8 +2197,8 @@ export const buildOfficialsFilterConditions = (query, user) => {
   }
 
   if (category === 'Third Level' || category === 'Third Level Officials') {
-    params.push(THIRD_LEVEL_POSITIONS);
-    conditions.push(`position_title = ANY($${params.length}) AND NOT (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
+    params.push(THIRD_LEVEL_POSITIONS_UPPER);
+    conditions.push(`UPPER(TRIM(COALESCE(position_title, ''))) = ANY($${params.length})`);
   } else if (category === 'Third Level (OIC)' || category === 'Officer in Charge') {
     params.push(THIRD_LEVEL_POSITIONS);
     conditions.push(`(position_title = ANY($${params.length}) OR designation = ANY($${params.length}) OR designation ILIKE '%OIC%') AND (COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
@@ -1590,10 +2211,10 @@ export const buildOfficialsFilterConditions = (query, user) => {
   } else if (category === 'OIC / Chiefs') {
     conditions.push(`(COALESCE(is_oic, FALSE) = TRUE OR designation ILIKE '%OIC%')`);
   } else if (category === 'Concurrent Positions' || category === 'Concurrent Roles' || query.concurrent === 'true' || query.is_concurrent === 'true') {
-    conditions.push(`status = 'Active' AND email IS NOT NULL AND email != '' AND LOWER(email) IN (
+    conditions.push(`m.status = 'Active' AND m.email IS NOT NULL AND m.email != '' AND LOWER(m.email) IN (
       SELECT LOWER(email) 
       FROM third_level_official_masterlist 
-      WHERE status = 'Active' AND email IS NOT NULL AND email != '' 
+      WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
       GROUP BY LOWER(email) 
       HAVING COUNT(*) > 1
     )`);
@@ -1622,12 +2243,68 @@ export const getOfficials = async (req, res) => {
   processScheduledVacancies(pool).catch(err => console.error('Background process error:', err));
 
   const { page, limit, sortColumn, sortDirection, include_test_accounts } = req.query;
+  const isThirdLevelCategory = req.query.category === 'Third Level' || req.query.category === 'Third Level Officials';
   let query = `
     WITH RankedOfficials AS (
       SELECT 
         m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
+        m.plantilla_item_no, m.appointment_status,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
+        (
+          CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' OR m.status = 'Vacated' THEN NULL
+          ELSE (
+            (CASE WHEN 
+              m.first_name IS NOT NULL AND m.first_name != '' AND
+              m.last_name IS NOT NULL AND m.last_name != '' AND
+              m.gender IS NOT NULL AND m.gender != '' AND
+              m.date_of_birth IS NOT NULL AND
+              m.civil_status IS NOT NULL AND m.civil_status != '' AND
+              m.photo_binary_id IS NOT NULL AND
+              m.employment_status IS NOT NULL AND m.employment_status != '' AND
+              m.region IS NOT NULL AND m.region != '' AND
+              m.position_title IS NOT NULL AND m.position_title != '' AND
+              m.appointment_date IS NOT NULL AND
+              (COALESCE(m.is_oic, false) = false OR (m.designation IS NOT NULL AND m.designation != '')) AND
+              m.permanent_address IS NOT NULL AND m.permanent_address != '' AND
+              ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (m.ces_stage IS NOT NULL AND m.ces_stage != '' AND m.ces_stage != 'NOT APPLICABLE') OR
+              m.emt_passer IS NOT NULL OR
+              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE el.source_table = 'masterlist' AND el.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.source_table = 'masterlist' AND ph.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.source_table = 'masterlist' AND ed.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != '' AND
+              m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.source_table = 'masterlist' AND tr.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (m.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(m.notable_achievements) = 'array' THEN m.notable_achievements ELSE '[]'::jsonb END) > 0) OR
+              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE ac.source_table = 'masterlist' AND ac.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.pds_binary_id IS NOT NULL AND m.service_records_binary_id IS NOT NULL
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.pending_admin_case IS NOT NULL AND m.pending_admin_case != '' AND (
+                (m.guilty_admin_details IS NOT NULL AND m.criminally_charged_details IS NOT NULL AND m.convicted_crime_details IS NOT NULL) OR
+                (UPPER(m.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
+              )
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.dpa_consented_at IS NOT NULL
+            THEN 10 ELSE 0 END)
+          ) END
+        ) AS profile_completion,
         ROW_NUMBER() OVER (
           PARTITION BY CASE WHEN m.first_name IS NULL OR m.first_name = 'VACANT' THEN m."TLOid" ELSE LOWER(m.email) END 
           ORDER BY m."TLOid" ASC
@@ -1651,7 +2328,36 @@ export const getOfficials = async (req, res) => {
     ), ActivePositions AS (
       SELECT LOWER(email) as low_email, "TLOid", position_title, office
       FROM third_level_official_masterlist
-      WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+      WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
+    ), DuplicateEmails AS (
+      SELECT LOWER(email) as dup_email,
+             COUNT(*)::integer as duplicate_count,
+             json_agg(
+               json_build_object(
+                 'TLOid', "TLOid",
+                 'first_name', first_name,
+                 'last_name', last_name,
+                 'email', email,
+                 'position_title', position_title,
+                 'designation', designation,
+                 'office', office,
+                 'division', division,
+                 'region', region,
+                 'strand', strand,
+                 'status', status,
+                 'is_oic', is_oic,
+                 'plantilla_item_no', plantilla_item_no,
+                 'appointment_status', appointment_status,
+                 'photo_binary_id', photo_binary_id,
+                 'effectivity_date', effectivity_date,
+                 'created_at', created_at,
+                 'updated_at', updated_at
+               ) ORDER BY "TLOid" ASC
+             ) as duplicate_records
+      FROM third_level_official_masterlist
+      WHERE email IS NOT NULL AND TRIM(email) != '' AND is_testaccount = $1
+      GROUP BY LOWER(email)
+      HAVING COUNT(*) > 1
     )
     SELECT 
       f.*,
@@ -1661,9 +2367,11 @@ export const getOfficials = async (req, res) => {
          FROM ActivePositions t2 
          WHERE t2.low_email = LOWER(f.email)
            AND t2."TLOid" != f."TLOid" 
-      ) as concurrent_positions
+      ) as concurrent_positions,
+      COALESCE(d.duplicate_count, 1)::integer as email_duplicate_count,
+      d.duplicate_records
     FROM RankedOfficials f 
-    WHERE f.rn = 1 
+    LEFT JOIN DuplicateEmails d ON d.dup_email = LOWER(f.email)
   `;
 
   // Server-side sorting
@@ -1675,7 +2383,8 @@ export const getOfficials = async (req, res) => {
     'name': 'f.last_name',
     'region': 'f.strand',
     'division': 'f.office',
-    'designation': 'f.designation'
+    'designation': 'f.designation',
+    'profile_completion': 'f.profile_completion'
   };
   if (sortColumn && sortMap[sortColumn]) {
     query += ` ORDER BY ${sortMap[sortColumn]} ${sortDirection === 'desc' ? 'DESC' : 'ASC'} NULLS LAST`;
@@ -1713,6 +2422,7 @@ export const getOfficials = async (req, res) => {
 export const getKpiSummary = async (req, res) => {
   try {
     await ensureOicColumn();
+    const isTest = Boolean(req.user?.is_testaccount);
     const { params, conditions } = buildOfficialsFilterConditions(req.query, req.user);
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -1720,7 +2430,7 @@ export const getKpiSummary = async (req, res) => {
       WITH ActivePositions AS (
         SELECT LOWER(email) as low_email, "TLOid", position_title, office
         FROM third_level_official_masterlist
-        WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+        WHERE status = 'Active' AND email IS NOT NULL AND email != '' AND is_testaccount = $1
       ),
       FilteredMasterlist AS (
         SELECT 
@@ -1737,9 +2447,7 @@ export const getKpiSummary = async (req, res) => {
       SELECT 
         COUNT(*) FILTER (
           WHERE status = 'Active' 
-            AND COALESCE(is_oic, FALSE) = FALSE 
-            AND (designation NOT ILIKE '%OIC%' OR designation IS NULL) 
-            AND position_title = ANY($${params.length + 1})
+            AND UPPER(TRIM(COALESCE(position_title, ''))) = ANY($${params.length + 1})
         ) AS total_third_level,
         COUNT(*) FILTER (
           WHERE status = 'Vacant' 
@@ -1758,7 +2466,7 @@ export const getKpiSummary = async (req, res) => {
         END) AS total_concurrent
       FROM FilteredMasterlist;
     `;
-    params.push(THIRD_LEVEL_POSITIONS);
+    params.push(THIRD_LEVEL_POSITIONS_UPPER);
 
     const result = await pool.query(query, params);
 
@@ -1766,12 +2474,75 @@ export const getKpiSummary = async (req, res) => {
     const allRowsQuery = `
       SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
         m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
-        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case
+        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case,
+        m.plantilla_item_no, m.appointment_status, m.is_testaccount,
+        (
+          -- Tab 1: Personal
+          (
+            m.first_name IS NOT NULL AND m.first_name != '' AND m.first_name != 'VACANT'
+            AND m.last_name IS NOT NULL AND m.last_name != ''
+            AND m.gender IS NOT NULL AND m.gender != ''
+            AND m.date_of_birth IS NOT NULL
+            AND m.civil_status IS NOT NULL AND m.civil_status != ''
+            AND m.photo_binary_id IS NOT NULL
+            AND m.employment_status IS NOT NULL AND m.employment_status != ''
+            AND m.region IS NOT NULL AND m.region != ''
+            AND m.position_title IS NOT NULL AND m.position_title != ''
+            AND m.appointment_date IS NOT NULL
+            AND (COALESCE(m.is_oic, FALSE) = FALSE OR (m.designation IS NOT NULL AND m.designation != ''))
+            AND m.permanent_address IS NOT NULL AND m.permanent_address != ''
+            AND (COALESCE(m.contact_details, '') != '' OR COALESCE(m.alt_contact_details_1, '') != '')
+          )
+          AND (
+            -- Tab 2: Eligibility
+            (m.ces_stage IS NOT NULL AND m.ces_stage != '')
+            OR m.emt_passer IS NOT NULL
+            OR EXISTS (SELECT 1 FROM tlo_eligibility_records er WHERE er.tlo_id = m."TLOid" AND (er.delete_flg != 'Yes' OR er.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 3: Experience
+            EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 4: Education
+            EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.tlo_id = m."TLOid")
+          )
+          AND (
+            -- Tab 5: Performance
+            m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != ''
+            AND m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
+          )
+          AND (
+            -- Tab 6: Trainings
+            EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
+          )
+          AND (
+            -- Tab 7: Achievements
+            EXISTS (SELECT 1 FROM tlo_accomplishment_records ar WHERE ar.tlo_id = m."TLOid" AND (ar.delete_flg != 'Yes' OR ar.delete_flg IS NULL))
+            OR (m.notable_achievements IS NOT NULL AND m.notable_achievements::text != '[]' AND m.notable_achievements::text != '')
+          )
+          AND (
+            -- Tab 8: Documents
+            m.pds_binary_id IS NOT NULL 
+            AND m.service_records_binary_id IS NOT NULL
+          )
+          AND (
+            -- Tab 9: Legal
+            m.pending_admin_case IS NOT NULL AND m.pending_admin_case != ''
+            AND m.guilty_admin_details IS NOT NULL AND m.guilty_admin_details != ''
+            AND m.criminally_charged_details IS NOT NULL AND m.criminally_charged_details != ''
+            AND m.convicted_crime_details IS NOT NULL AND m.convicted_crime_details != ''
+          )
+          AND (
+            -- Tab 10: Summary
+            m.dpa_consented_at IS NOT NULL
+          )
+        ) AS is_profile_complete
       FROM third_level_official_masterlist m
-      WHERE m.status != 'For Approval' AND m.status != 'Rejected'
+      WHERE m.status != 'For Approval' AND m.status != 'Rejected' AND m.is_testaccount = $1
       ORDER BY m."TLOid" ASC
     `;
-    const allRows = await pool.query(allRowsQuery);
+    const allRows = await pool.query(allRowsQuery, [isTest]);
 
     res.json({
       success: true,
@@ -1786,6 +2557,15 @@ export const getKpiSummary = async (req, res) => {
 export const getLastVacateUpdate = async (req, res) => {
   try {
     const { TLOid } = req.params;
+    const isTest = Boolean(req.user?.is_testaccount);
+    const officialCheck = await pool.query(
+      'SELECT 1 FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2',
+      [TLOid, isTest]
+    );
+    if (officialCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Official not found' });
+    }
+
     const result = await pool.query(`
       SELECT vacate_reason, remarks 
       FROM third_level_officials_updates 
@@ -1800,7 +2580,15 @@ export const getLastVacateUpdate = async (req, res) => {
 
 export const getCareerPath = async (req, res) => {
   const { TLOid } = req.params;
+  const isTest = Boolean(req.user?.is_testaccount);
   try {
+    const officialCheck = await pool.query(
+      'SELECT 1 FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2',
+      [TLOid, isTest]
+    );
+    if (officialCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Official not found' });
+    }
     const result = await pool.query(`
       SELECT
         u.position_title,
@@ -1836,19 +2624,23 @@ export const getPositionIncumbents = async (req, res) => {
   }
 
   try {
+    const isTest = Boolean(req.user?.is_testaccount);
     const isOfficeProvided = office && office !== 'null' && office !== 'undefined' && office !== '';
     const positionTitleVariants = getPositionTitleVariants(position_title);
-    const params = isOfficeProvided ? [positionTitleVariants, office] : [positionTitleVariants];
-    const officeCondition = isOfficeProvided ? 'AND (office = $2 OR office IS NULL)' : '';
+    const params = isOfficeProvided ? [positionTitleVariants, office, isTest] : [positionTitleVariants, isTest];
+    const officeCondition = isOfficeProvided ? 'AND (m_inner.office = $2 OR m_inner.office IS NULL)' : '';
+    const officeCondUpdates = isOfficeProvided ? 'AND (u.office = $2 OR u.office IS NULL)' : '';
+    const testParamIdx = isOfficeProvided ? '$3' : '$2';
 
     const query = `
       WITH AllIncumbents AS (
         SELECT 
-          0 as id, "TLOid", first_name, last_name, strand, office, 'Current' as remarks, updated_at as tenure_date,
+          0 as id, m_inner."TLOid", m_inner.first_name, m_inner.last_name, m_inner.strand, m_inner.office, 'Current' as remarks, m_inner.updated_at as tenure_date,
           1 as is_current
-        FROM third_level_official_masterlist
-        WHERE position_title = ANY($1) ${officeCondition}
-          AND first_name IS NOT NULL AND first_name != 'VACANT'
+        FROM third_level_official_masterlist m_inner
+        WHERE m_inner.position_title = ANY($1) ${officeCondition}
+          AND m_inner.first_name IS NOT NULL AND m_inner.first_name != 'VACANT'
+          AND m_inner.is_testaccount = ${testParamIdx}
         
         UNION ALL
         
@@ -1856,14 +2648,15 @@ export const getPositionIncumbents = async (req, res) => {
           0 as id, u."TLOid", u.first_name, u.last_name, u.strand, u.office, u.remarks, u.updated_at as tenure_date,
           0 as is_current
         FROM third_level_officials_updates u
-        WHERE u.position_title = ANY($1) ${officeCondition}
+        JOIN third_level_official_masterlist mu ON mu."TLOid" = u."TLOid" AND mu.is_testaccount = ${testParamIdx}
+        WHERE u.position_title = ANY($1) ${officeCondUpdates}
           AND u.first_name IS NOT NULL AND u.first_name != 'VACANT'
       ),
       RankedIncumbents AS (
         SELECT ai.*, m.appointment_date,
           ROW_NUMBER() OVER (PARTITION BY LOWER(ai.first_name), LOWER(ai.last_name) ORDER BY ai.is_current DESC, ai.tenure_date DESC) as rn
         FROM AllIncumbents ai
-        LEFT JOIN third_level_official_masterlist m ON ai."TLOid" = m."TLOid"
+        LEFT JOIN third_level_official_masterlist m ON ai."TLOid" = m."TLOid" AND m.is_testaccount = ${testParamIdx}
       )
       SELECT * FROM RankedIncumbents
       WHERE rn = 1
@@ -1879,13 +2672,14 @@ export const getPositionIncumbents = async (req, res) => {
 
 export const getActiveOfficials = async (req, res) => {
   const { exclude_TLOid } = req.query;
+  const isTest = Boolean(req.user?.is_testaccount);
   try {
     await ensureOicColumn();
-    const params = [];
+    const params = [isTest];
     let query = `
       SELECT "TLOid", first_name, last_name, position_title, office, strand, email
       FROM third_level_official_masterlist
-      WHERE status = 'Active' AND first_name IS NOT NULL AND first_name NOT IN ('VACANT', 'Test1', 'Test2', 'Test3')
+      WHERE status = 'Active' AND is_testaccount = $1 AND first_name IS NOT NULL AND first_name NOT IN ('VACANT', 'Test1', 'Test2', 'Test3')
     `;
     if (exclude_TLOid) {
       params.push(exclude_TLOid);
@@ -1910,9 +2704,10 @@ export const createUnassignedPersonnel = async (req, res) => {
 
   const client = await pool.connect();
   try {
-    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1)', [email]);
-    const appCheck = await client.query('SELECT 1 FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1)', [email]);
-    const userCheck = await client.query('SELECT 1 FROM tlo_users WHERE LOWER(email) = LOWER($1)', [email]);
+    const isTest = Boolean(req.user?.is_testaccount);
+    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2', [email, isTest]);
+    const appCheck = await client.query('SELECT 1 FROM third_level_officials_profiling_application WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2', [email, isTest]);
+    const userCheck = await client.query('SELECT 1 FROM tlo_users WHERE LOWER(email) = LOWER($1) AND is_testaccount = $2', [email, isTest]);
 
     if (masterCheck.rows.length > 0 || appCheck.rows.length > 0 || userCheck.rows.length > 0) {
       return res.json({ success: false, error: 'Email already exists. Please use a different email address.' });
@@ -1933,15 +2728,15 @@ export const createUnassignedPersonnel = async (req, res) => {
     if (empCol && employee_number) {
       await client.query(`
         INSERT INTO third_level_officials_profiling_application (
-            application_id, app_TLOid, first_name, last_name, email, "${empCol}", application_status, created_at, updated_at
-        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, NOW(), NOW())
-      `, [appTloId, first_name, last_name, normalizedEmailInit, employee_number]);
+            application_id, app_TLOid, first_name, last_name, email, "${empCol}", application_status, is_testaccount, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, $6, NOW(), NOW())
+      `, [appTloId, first_name, last_name, normalizedEmailInit, employee_number, isTest]);
     } else {
       await client.query(`
         INSERT INTO third_level_officials_profiling_application (
-            application_id, app_TLOid, first_name, last_name, email, application_status, created_at, updated_at
-        ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, NOW(), NOW())
-      `, [appTloId, first_name, last_name, normalizedEmailInit]);
+            application_id, app_TLOid, first_name, last_name, email, application_status, is_testaccount, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, NULL, $5, NOW(), NOW())
+      `, [appTloId, first_name, last_name, normalizedEmailInit, isTest]);
     }
 
     await client.query('COMMIT');
@@ -1981,6 +2776,7 @@ export const registerPersonnel = async (req, res) => {
 
   const client = await pool.connect();
   try {
+    const isTest = Boolean(req.user?.is_testaccount);
     const normalizedEmail = email.toLowerCase().trim();
     if (!normalizedEmail.endsWith('@deped.gov.ph')) {
       return res.json({ success: false, error: 'Only @deped.gov.ph emails are allowed for DepEd Email.' });
@@ -1991,7 +2787,7 @@ export const registerPersonnel = async (req, res) => {
     const upperFirstName = mName ? `${fName} ${mName}` : fName;
     const upperLastName = (last_name || '').trim().toUpperCase();
 
-    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
+    const masterCheck = await client.query('SELECT 1 FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND is_testaccount = $2', [normalizedEmail, isTest]);
 
     if (masterCheck.rows.length > 0) {
       return res.json({ success: false, error: 'Email already exists in the masterlist. Please use a different email address.' });
@@ -2011,12 +2807,13 @@ export const registerPersonnel = async (req, res) => {
           "TLOid", first_name, last_name, email, position_title, 
           strand, region, office, division, designation, 
           alt_email_1, alt_email_2, contact_details, alt_contact_details_1, alt_contact_details_2,
-          status, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'Active', NOW(), NOW())
+          status, is_testaccount, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'Active', $16, NOW(), NOW())
     `, [
       tloId, upperFirstName, upperLastName, normalizedEmail, position_title,
       (strand || '').trim(), (region || '').trim(), (office || '').trim(), (division || '').trim(), (designation || '').trim(),
-      (alt_email_1 || '').trim(), (alt_email_2 || '').trim(), (contact_details || '').trim(), (alt_contact_1 || '').trim(), (alt_contact_2 || '').trim()
+      (alt_email_1 || '').trim(), (alt_email_2 || '').trim(), (contact_details || '').trim(), (alt_contact_1 || '').trim(), (alt_contact_2 || '').trim(),
+      isTest
     ]);
 
     await client.query('COMMIT');
@@ -2036,6 +2833,7 @@ export const getUnassignedPersonnel = async (req, res) => {
   }
 
   const { search } = req.query;
+  const isTest = Boolean(req.user?.is_testaccount);
   const requestedLimit = Number.parseInt(req.query.limit, 10);
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50;
   try {
@@ -2050,7 +2848,7 @@ export const getUnassignedPersonnel = async (req, res) => {
       'u',
       ['employee_number', 'employee_no', 'emp_no']
     );
-    const params = [];
+    const params = [isTest];
     let query = `
       SELECT DISTINCT ON (LOWER(COALESCE(a.email, u.email)))
         COALESCE(a.app_TLOid, u.uid) AS "TLOid",
@@ -2061,13 +2859,16 @@ export const getUnassignedPersonnel = async (req, res) => {
         COALESCE(a.contact_details, u.contact_number) AS contact_details
       FROM tlo_users u
       FULL JOIN third_level_officials_profiling_application a
-        ON LOWER(a.email) = LOWER(u.email)
+        ON LOWER(a.email) = LOWER(u.email) AND a.is_testaccount = $1
       WHERE COALESCE(a.email, u.email) IS NOT NULL
+        AND (u.is_testaccount = $1 OR u.is_testaccount IS NULL)
+        AND (a.is_testaccount = $1 OR a.is_testaccount IS NULL)
         AND NOT EXISTS (
           SELECT 1
           FROM third_level_official_masterlist m
           WHERE LOWER(m.email) = LOWER(COALESCE(a.email, u.email))
             AND m.status = 'Active'
+            AND m.is_testaccount = $1
         )
         AND COALESCE(NULLIF(a.first_name, ''), u.first_name) IS NOT NULL
     `;
@@ -2100,6 +2901,7 @@ export const adminAction = async (req, res) => {
 
   const { TLOid, action, justification, effectivityDate, target_TLOid, successor_TLOid, assignee_TLOid, vacateReason } = req.body;
   if (!TLOid || !action) return res.status(400).json({ error: 'TLOid and action are required' });
+  const updatedBy = req.user?.email || req.user?.username || req.user?.role || 'SYSTEM_ADMIN';
 
   let effTs = 'NOW()';
   let isFuture = false;
@@ -2124,62 +2926,256 @@ export const adminAction = async (req, res) => {
     await client.query('BEGIN');
     await ensureOicColumn(client);
 
-    const currentRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [TLOid]);
+    const isTest = Boolean(req.user?.is_testaccount);
+    const currentRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2 FOR UPDATE', [TLOid, isTest]);
     const official = currentRes.rows[0];
     if (!official) throw new Error('Official not found');
 
-    if (official.first_name && official.first_name !== 'VACANT' && action !== 'reassign') {
-      await client.query(`
-        INSERT INTO third_level_officials_updates
-          ("TLOid", first_name, last_name, position_title, office, strand, email, status, remarks, updated_at, effectivity_date, vacate_reason)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), ${effTs}, $10)
-      `, [official.TLOid, official.first_name, official.last_name, official.position_title,
-      official.office, official.strand, official.email,
-      action === 'vacate' ? 'Vacated' : action === 'succeed' ? 'Succeeded' : action === 'cancel-vacate' ? 'Active' : 'Reassigned',
-      justification || 'Administrative action', vacateReason || null]);
+    if (action === 'vacate' && (official.first_name === 'VACANT' || official.status === 'Vacated' || official.status === 'Inactive')) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Cannot vacate: Position '${TLOid}' is already vacant.` });
     }
 
     if (action === 'cancel-vacate') {
-      await client.query(`
-        UPDATE third_level_official_masterlist
-        SET status = 'Active', updated_at = NOW(), effectivity_date = NULL, reassign_target_tloid = NULL, reassign_assignee_tloid = NULL
-        WHERE "TLOid" = $1
-      `, [TLOid]);
+      // Path A: Future-dated vacancy cancellation (from 'Resigning' or 'Vacating')
+      if (['Vacating', 'Resigning'].includes(official.status)) {
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET status = 'Active', updated_at = NOW(), effectivity_date = NULL, reassign_target_tloid = NULL, reassign_assignee_tloid = NULL
+          WHERE "TLOid" = $1 AND is_testaccount = $2
+        `, [TLOid, isTest]);
+
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, updated_at, effectivity_date, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Active', $13, NOW(), NULL, $14)
+        `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
+            official.position_title, official.office, official.division, official.region, official.strand,
+            official.email, official.contact_details, justification || 'Cancelled scheduled action', updatedBy]);
+
+      } else {
+        // Path B: Post-maturity / immediate vacancy cancellation (from 'VACANT' or 'Inactive')
+        const explicitActions = await client.query(`
+          SELECT "TLOUid", "TLOid", first_name, last_name, middle_name, suffix, email, contact_details, position_title, office, division, region, strand, designation, status, remarks, assignment, effectivity_date, updated_at
+          FROM third_level_officials_updates
+          WHERE "TLOid" = $1
+            AND change_type IS NULL
+            AND (status IN ('Vacated', 'Resigning', 'Vacating', 'Inactive') OR remarks ILIKE '%Cancel%')
+          ORDER BY "TLOUid" DESC
+          LIMIT 2
+        `, [TLOid]);
+
+        if (explicitActions.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: `No vacancy action found for position '${TLOid}'.` });
+        }
+
+        const latestAction = explicitActions.rows[0];
+
+        // Check 1: Must be an uncancelled vacancy
+        if (!['Vacated', 'Resigning', 'Vacating', 'Inactive'].includes(latestAction.status)) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: `Position '${TLOid}' does not have an active uncancelled vacancy to cancel.` });
+        }
+
+        // Check 2: Must contain recorded assignment ID
+        if (!latestAction.assignment || isNaN(parseInt(latestAction.assignment, 10))) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Pre-vacancy assignment reference missing or invalid in audit ledger for '${TLOid}'.` });
+        }
+
+        const targetAssignId = parseInt(latestAction.assignment, 10);
+
+        // Check 3: Assignment ID actually exists & lock it
+        const targetAssignRes = await client.query(
+          `SELECT a.* FROM tlo_assignments a WHERE a.id = $1 FOR UPDATE`,
+          [targetAssignId]
+        );
+        if (targetAssignRes.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Referenced assignment ID '${targetAssignId}' not found.` });
+        }
+        const targetAssign = targetAssignRes.rows[0];
+
+        // Check 4: Assignment belongs to canonical human identity set
+        const canonicalPersonnelRes = await client.query(`
+          SELECT id FROM tlo_personnel
+          WHERE legacy_tlo_id = $1
+             OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+        `, [TLOid, latestAction.email]);
+        const allowedPersonnelIds = canonicalPersonnelRes.rows.map(r => r.id);
+
+        if (!allowedPersonnelIds.includes(targetAssign.personnel_id)) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Referenced assignment does not belong to the original official.` });
+        }
+
+        // Check 5: Assignment item_number matches occupied item
+        const occupiedItemNumber = targetAssign.item_number;
+
+        // Check 6: Assignment is currently Inactive
+        if (targetAssign.status !== 'Inactive') {
+          await client.query('ROLLBACK');
+          return res.status(422).json({ error: `Cannot cancel vacancy: Referenced assignment '${targetAssignId}' is not currently Inactive.` });
+        }
+
+        // Check 7: Masterlist is in an appropriate vacancy state
+        const isVacantState = !official.first_name || official.first_name.trim().toUpperCase() === 'VACANT' || ['VACATED', 'INACTIVE', 'VACANT'].includes((official.status || '').toUpperCase());
+        if (!isVacantState) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: `Cannot cancel vacancy: Masterlist for '${TLOid}' is not in a vacant state.` });
+        }
+
+        // Check 8: Concurrency Guard - verify no genuinely different official occupies occupiedItemNumber
+        const externalOccupantAssign = await client.query(`
+          SELECT a.id, a.personnel_id, a.item_number
+          FROM tlo_assignments a
+          WHERE a.item_number = $1
+            AND a.status = 'Active'
+            AND a.personnel_id NOT IN (
+              SELECT id FROM tlo_personnel
+              WHERE legacy_tlo_id = $2
+                 OR (LOWER(TRIM(email)) = LOWER(TRIM($3)) AND email IS NOT NULL AND email != '')
+            )
+        `, [occupiedItemNumber, TLOid, latestAction.email]);
+
+        const externalOccupantMasterlist = await client.query(`
+          SELECT "TLOid", first_name, last_name, email
+          FROM third_level_official_masterlist
+          WHERE "TLOid" = $1
+            AND is_testaccount = $2
+            AND first_name IS NOT NULL
+            AND first_name != ''
+            AND first_name NOT ILIKE '%VACANT%'
+            AND "TLOid" != $3
+            AND LOWER(TRIM(COALESCE(email, ''))) != LOWER(TRIM($4))
+        `, [occupiedItemNumber, isTest, TLOid, latestAction.email]);
+
+        if (externalOccupantAssign.rows.length > 0 || externalOccupantMasterlist.rows.length > 0) {
+          await client.query('ROLLBACK');
+          const occName = externalOccupantMasterlist.rows[0] ? `${externalOccupantMasterlist.rows[0].first_name} ${externalOccupantMasterlist.rows[0].last_name}` : 'another official';
+          return res.status(409).json({ error: `Cannot cancel vacancy: Position '${occupiedItemNumber}' is currently occupied by ${occName}. The current occupant must be vacated or reassigned before this vacancy can be cancelled.` });
+        }
+
+        // All 8 checks passed! Reactivate exact assignment by PK:
+        await client.query(`
+          UPDATE tlo_assignments
+          SET status = 'Active', end_date = NULL, updated_at = NOW(), updated_by = $1
+          WHERE id = $2
+        `, [updatedBy, targetAssignId]);
+
+        // Restore masterlist with pre-vacancy snapshot from audit row:
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET first_name = $1,
+              last_name = $2,
+              middle_name = $3,
+              suffix = $4,
+              email = $5,
+              contact_details = COALESCE($6, contact_details),
+              status = 'Active',
+              effectivity_date = NULL,
+              updated_at = NOW(),
+              reassign_target_tloid = NULL,
+              reassign_assignee_tloid = NULL
+          WHERE "TLOid" = $7 AND is_testaccount = $8
+        `, [latestAction.first_name, latestAction.last_name, latestAction.middle_name, latestAction.suffix,
+            latestAction.email, latestAction.contact_details, TLOid, isTest]);
+
+        // Insert cancellation audit record:
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, assignment, updated_at, effectivity_date, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Active', $13, $14, NOW(), NULL, $15)
+        `, [TLOid, latestAction.first_name, latestAction.last_name, latestAction.middle_name, latestAction.suffix,
+            latestAction.position_title, latestAction.office, latestAction.division, latestAction.region, latestAction.strand,
+            latestAction.email, latestAction.contact_details, justification || 'Cancelled vacancy / resignation', targetAssignId.toString(), updatedBy]);
+      }
 
     } else if (action === 'vacate') {
       if (isFuture) {
-        if (vacateReason === 'Resignation') {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Resigning', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
-        } else {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Vacating', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
-        }
+        const futureStatus = vacateReason === 'Resignation' ? 'Resigning' : 'Vacating';
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET status = $1, updated_at = NOW(), effectivity_date = ${effTs}
+          WHERE "TLOid" = $2 AND is_testaccount = $3
+        `, [futureStatus, TLOid, isTest]);
+
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, strand, email, contact_details, status, remarks, updated_at, effectivity_date, vacate_reason, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), ${effTs}, $13, $14)
+        `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
+            official.position_title, official.office, official.strand, official.email, official.contact_details,
+            futureStatus, justification || (vacateReason || 'Administrative action'), vacateReason || null, updatedBy]);
+
       } else {
-        if (vacateReason === 'Resignation') {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Inactive', updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
-        } else {
-          await client.query(`
-            UPDATE third_level_official_masterlist
-            SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
-            WHERE "TLOid" = $1
-          `, [TLOid]);
+        // Immediate Vacancy / Resignation
+        // 1. Resolve canonical personnel_id
+        const pRes = await client.query(`
+          SELECT id FROM tlo_personnel
+          WHERE legacy_tlo_id = $1
+             OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+          ORDER BY CASE WHEN legacy_tlo_id = $1 THEN 0 ELSE 1 END, id ASC
+          LIMIT 1
+        `, [official.TLOid, official.email]);
+        const personId = pRes.rows[0]?.id;
+
+        let activeAssignmentId = null;
+
+        // 2. Resolve authoritative active assignment and lock it
+        if (personId) {
+          const aRes = await client.query(`
+            SELECT a.id, a.item_number, a.status
+            FROM tlo_assignments a
+            WHERE a.personnel_id = $1
+              AND a.status = 'Active'
+            ORDER BY a.id DESC
+            LIMIT 1
+            FOR UPDATE
+          `, [personId]);
+
+          if (aRes.rows.length > 0) {
+            activeAssignmentId = aRes.rows[0].id;
+
+            // Deactivate authoritative assignment strictly by locked PK
+            await client.query(`
+              UPDATE tlo_assignments
+              SET status = 'Inactive', end_date = ${effTs}, updated_at = NOW(), updated_by = $1
+              WHERE id = $2
+            `, [updatedBy, activeAssignmentId]);
+          }
         }
+
+        const isResignOrRetire = /^(resign|retire)/i.test(vacateReason || '');
+        const targetStatus = isResignOrRetire ? 'Inactive' : 'Vacated';
+
+        // 3. Update masterlist to established vacancy convention
+        await client.query(`
+          UPDATE third_level_official_masterlist
+          SET first_name = 'VACANT',
+              last_name = '',
+              email = NULL,
+              status = $1,
+              updated_at = NOW(),
+              effectivity_date = ${effTs}
+          WHERE "TLOid" = $2 AND is_testaccount = $3
+        `, [targetStatus, TLOid, isTest]);
+
+        // 4. Record audit ledger with exact assignment ID (keeping "TLOid" = official.TLOid!)
+        await client.query(`
+          INSERT INTO third_level_officials_updates
+            ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, assignment, updated_at, effectivity_date, vacate_reason, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), ${effTs}, $16, $17)
+        `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
+            official.position_title, official.office, official.division, official.region, official.strand,
+            official.email, official.contact_details, targetStatus, justification || (vacateReason || 'Administrative action'),
+            activeAssignmentId ? activeAssignmentId.toString() : null, vacateReason || null, updatedBy]);
       }
 
     } else if (action === 'succeed') {
       if (successor_TLOid) {
-        const successorRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1', [successor_TLOid]);
+        const successorRes = await client.query('SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [successor_TLOid, isTest]);
         const successor = successorRes.rows[0];
         if (!successor) throw new Error('Successor not found in masterlist');
 
@@ -2194,14 +3190,14 @@ export const adminAction = async (req, res) => {
           UPDATE third_level_official_masterlist
           SET status = 'Vacated', first_name = NULL, last_name = NULL, email = NULL,
               updated_at = NOW(), effectivity_date = ${effTs}
-          WHERE "TLOid" = $1
-        `, [successor_TLOid]);
+          WHERE "TLOid" = $1 AND is_testaccount = $2
+        `, [successor_TLOid, isTest]);
 
         await client.query(`
           UPDATE third_level_official_masterlist
           SET first_name = $1, last_name = $2, email = $3, status = 'Active', updated_at = NOW(), effectivity_date = ${effTs}
-          WHERE "TLOid" = $4
-        `, [successor.first_name, successor.last_name, successor.email, TLOid]);
+          WHERE "TLOid" = $4 AND is_testaccount = $5
+        `, [successor.first_name, successor.last_name, successor.email, TLOid, isTest]);
 
         await client.query(`
           INSERT INTO third_level_officials_updates
@@ -2213,8 +3209,8 @@ export const adminAction = async (req, res) => {
         await client.query(`
           UPDATE third_level_official_masterlist
           SET status = 'Succeeded', first_name = NULL, last_name = NULL, email = NULL, updated_at = NOW(), effectivity_date = ${effTs}
-          WHERE "TLOid" = $1
-        `, [TLOid]);
+          WHERE "TLOid" = $1 AND is_testaccount = $2
+        `, [TLOid, isTest]);
       }
 
     } else if (action === 'reassign') {
@@ -2223,8 +3219,8 @@ export const adminAction = async (req, res) => {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Pending Assignment', updated_at = NOW(), effectivity_date = ${effTs}, reassign_assignee_tloid = $2
-            WHERE "TLOid" = $1
-          `, [TLOid, assignee_TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $3
+          `, [TLOid, assignee_TLOid, isTest]);
 
           await client.query(`
             INSERT INTO third_level_officials_updates
@@ -2236,8 +3232,8 @@ export const adminAction = async (req, res) => {
           await client.query(`
             UPDATE third_level_official_masterlist
             SET status = 'Reassigning', updated_at = NOW(), effectivity_date = ${effTs}, reassign_target_tloid = $2
-            WHERE "TLOid" = $1
-          `, [TLOid, target_TLOid]);
+            WHERE "TLOid" = $1 AND is_testaccount = $3
+          `, [TLOid, target_TLOid, isTest]);
 
           await client.query(`
             INSERT INTO third_level_officials_updates
@@ -2280,27 +3276,47 @@ export const toggleTestAccount = async (req, res) => {
     return res.status(400).json({ error: 'TLOid is required' });
   }
 
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    await client.query('BEGIN');
+    const boolVal = Boolean(is_testaccount);
+    const result = await client.query(
       `UPDATE third_level_official_masterlist 
        SET is_testaccount = $1, updated_at = NOW() 
        WHERE "TLOid" = $2 
        RETURNING "TLOid", email, is_testaccount`,
-      [Boolean(is_testaccount), TLOid]
+      [boolVal, TLOid]
     );
 
     if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Official record not found' });
     }
 
+    const official = result.rows[0];
+    if (official.email) {
+      await client.query(
+        'UPDATE tlo_users SET is_testaccount = $1 WHERE LOWER(email) = LOWER($2)',
+        [boolVal, official.email]
+      );
+      await client.query(
+        'UPDATE tlo_personnel SET is_testaccount = $1 WHERE LOWER(email) = LOWER($2)',
+        [boolVal, official.email]
+      );
+    }
+
+    await client.query('COMMIT');
     res.json({
       success: true,
-      message: `Official ${TLOid} test status updated to ${is_testaccount}`,
-      data: result.rows[0]
+      message: `Official ${TLOid} and linked user accounts updated to is_testaccount = ${boolVal}`,
+      data: official
     });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Error toggling test account:', err);
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 };
 
@@ -2340,9 +3356,11 @@ export const reassignOfficial = async (req, res) => {
   }
 
   const safeTloId = tloId.trim();
-  const safeRegion = (newRegion || '').trim().toUpperCase();
-  const safeDivision = (newDivision || '').trim().toUpperCase();
-  const safeDesignation = cleanDesignationOrPosition(newDesignation) || (newDesignation || '').trim();
+  const targetItemId = (vacantItemNumber || target_TLOid || req.body.targetTloId || '').trim();
+  if (!targetItemId) {
+    return res.status(400).json({ error: 'A vacant position must be selected for reassignment.' });
+  }
+
   const userRemarks = (remarks || justification || '').trim();
   const actorEmail = req.user?.email || null;
 
@@ -2361,12 +3379,13 @@ export const reassignOfficial = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // ── Step A: Fetch current official record ─────────────────────────────
+    // ── Step 1: Read current official record ───────────────────────────────
+    const isTest = Boolean(req.user?.is_testaccount);
     const fetchRes = await client.query(
-      `SELECT "TLOid", position_title, office, strand, division, region, designation, appointment_date
+      `SELECT "TLOid", position_title, office, strand, division, region, designation, email, appointment_date, is_oic
        FROM third_level_official_masterlist
-       WHERE "TLOid" = $1`,
-      [safeTloId]
+       WHERE "TLOid" = $1 AND is_testaccount = $2`,
+      [safeTloId, isTest]
     );
 
     if (fetchRes.rows.length === 0) {
@@ -2375,96 +3394,164 @@ export const reassignOfficial = async (req, res) => {
     }
 
     const current = fetchRes.rows[0];
-    const finalStart = dateStart || (current.appointment_date ? new Date(current.appointment_date).toISOString().split('T')[0] : null);
     const finalEnd = dateEnd || new Date().toISOString().split('T')[0];
 
-    // ── Step B: Resolve official's personnel_id and item_number ───────────
-    // Query existing assignment in tlo_assignments WITHOUT modifying it
-    const activeAssignRes = await client.query(
-      `SELECT a.*, p.id AS person_uuid, p.first_name, p.last_name, p.email
-       FROM tlo_assignments a
-       JOIN tlo_personnel p ON p.id = a.personnel_id
-       WHERE (a.item_number = $1 OR p.legacy_tlo_id = $1)
-       ORDER BY a.id DESC
+    // ── Step 2: Resolve official's personnel_id & lock current active assignment ──
+    const pRes = await client.query(
+      `SELECT id, first_name, last_name, email
+       FROM tlo_personnel
+       WHERE legacy_tlo_id = $1
+          OR (LOWER(TRIM(email)) = LOWER(TRIM($2)) AND email IS NOT NULL AND email != '')
+       ORDER BY CASE WHEN legacy_tlo_id = $1 THEN 0 ELSE 1 END, id ASC
        LIMIT 1`,
-      [safeTloId]
+      [safeTloId, current.email]
     );
 
-    let activeAssign = null;
-    let personId = null;
-    let itemNumber = safeTloId;
-
-    if (activeAssignRes.rows.length > 0) {
-      activeAssign = activeAssignRes.rows[0];
-      personId = activeAssign.person_uuid;
-      itemNumber = activeAssign.item_number || safeTloId;
-      // CRITICAL: The previous assignment row must NOT be modified, ended, or deleted!
-      // It remains in place as historical data.
-    } else {
-      // Resolve personnel ID from tlo_personnel if no prior assignment row
-      const pRes = await client.query(
-        `SELECT id FROM tlo_personnel WHERE legacy_tlo_id = $1 LIMIT 1`,
-        [safeTloId]
-      );
-      if (pRes.rows.length > 0) {
-        personId = pRes.rows[0].id;
-      }
+    if (pRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Personnel record not found for official '${safeTloId}'.` });
     }
 
-    // ── Step C: Resolve target organizational values ──────────────────────
-    let targetOffice = newOffice || office || targetOffice || current.office;
-    let targetStrand = newStrand || strand || targetStrand || current.strand;
-    let targetRegion = safeRegion || current.region;
-    let targetDivision = safeDivision || current.division;
-    let targetDesignation = safeDesignation || current.designation;
+    const personId = pRes.rows[0].id;
 
-    const targetItemId = vacantItemNumber || target_TLOid || req.body.targetTloId;
-    if (targetItemId) {
-      const targetItemRes = await client.query(
-        `SELECT i.item_number, i.position_title,
-                COALESCE(a.office, m.office) AS office,
-                COALESCE(a.strand, m.strand) AS strand,
-                COALESCE(a.region, m.region) AS region,
-                COALESCE(a.division, m.division) AS division
-         FROM tlo_items i
-         LEFT JOIN (
-           SELECT DISTINCT ON (item_number) *
-           FROM tlo_assignments
-           ORDER BY item_number, id DESC
-         ) a ON a.item_number = i.item_number
-         LEFT JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number
-         WHERE i.item_number = $1`,
-        [targetItemId]
-      );
-      if (targetItemRes.rows.length > 0) {
-        const ti = targetItemRes.rows[0];
-        if (ti.office) targetOffice = ti.office;
-        if (ti.strand) targetStrand = ti.strand;
-        if (ti.region && (!targetRegion || targetRegion === 'ALL')) targetRegion = ti.region;
-        if (ti.division && (!targetDivision || targetDivision === 'ALL')) targetDivision = ti.division;
-        if (!targetDesignation || targetDesignation.toUpperCase() === 'N/A') targetDesignation = ti.position_title;
-      }
+    // Lock and read the official's CURRENT active assignment via personnel_id
+    const activeAssignRes = await client.query(
+      `SELECT a.*
+       FROM tlo_assignments a
+       WHERE a.personnel_id = $1
+         AND a.status = 'Active'
+       ORDER BY a.id DESC
+       LIMIT 1
+       FOR UPDATE`,
+      [personId]
+    );
+
+    if (activeAssignRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Cannot reassign official '${safeTloId}': No active assignment record found in tlo_assignments.` });
     }
 
-    // ── Step D: Archive old assignment to tlo_position_history & RETURNING id ──
+    const activeAssign = activeAssignRes.rows[0];
+
+    // ── Step 3: Capture ALL OLD values into immutable variables ───────────
+    const oldItemNumber = activeAssign.item_number;
+    const oldPositionTitle = (activeAssign.position_title || current.position_title || '').toUpperCase();
+    const oldDesignation = activeAssign.designation || current.designation || null;
+    const oldOffice = activeAssign.office || current.office || null;
+    const oldStrand = activeAssign.strand || current.strand || null;
+    const oldDivision = activeAssign.division || current.division || null;
+    const oldRegion = activeAssign.region || current.region || null;
+    const oldStartDate = activeAssign.start_date
+      ? new Date(activeAssign.start_date).toISOString().split('T')[0]
+      : (dateStart || (current.appointment_date ? new Date(current.appointment_date).toISOString().split('T')[0] : null));
+    const oldEndDate = finalEnd;
+    const oldOic = Boolean(activeAssign.oic || current.is_oic || (current.designation && current.designation.toUpperCase().includes('OIC')));
+
+    // ── Step 4: Authoritatively resolve & validate selected vacant position ──
+    const targetItemRes = await client.query(
+      `SELECT 
+         i.item_number,
+         m."TLOid",
+         COALESCE(NULLIF(i.position_title, ''), NULLIF(m.position_title, '')) AS position_title,
+         m.region,
+         m.division,
+         m.office,
+         m.strand,
+         m.designation,
+         m.first_name,
+         m.status AS masterlist_status,
+         (
+           SELECT COUNT(*) 
+           FROM tlo_assignments a 
+           WHERE a.item_number = i.item_number 
+             AND a.status = 'Active'
+         ) AS active_assignment_count
+       FROM tlo_items i
+       JOIN third_level_official_masterlist m ON m."TLOid" = i.item_number AND m.is_testaccount = $2
+       WHERE i.item_number = $1`,
+      [targetItemId, isTest]
+    );
+
+    if (targetItemRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Selected vacant position '${targetItemId}' not found in plantilla items.` });
+    }
+
+    const ti = targetItemRes.rows[0];
+
+    // Verify position is genuinely vacant
+    if (Number(ti.active_assignment_count) > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Selected position '${targetItemId}' is already occupied by an active assignment.` });
+    }
+
+    const isVacantMasterlist = !ti.first_name ||
+      ti.first_name.trim() === '' ||
+      ti.first_name.toUpperCase().includes('VACANT') ||
+      ti.masterlist_status === 'Vacant' ||
+      ti.masterlist_status === 'Vacated';
+
+    if (!isVacantMasterlist) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Selected position '${targetItemId}' is currently occupied in the masterlist.` });
+    }
+
+    // Authoritative values strictly from database
+    const targetRegion = ti.region ? ti.region.trim() : null;
+    const targetDivision = ti.division ? ti.division.trim() : null;
+    const targetOffice = ti.office ? ti.office.trim() : null;
+    const targetStrand = ti.strand ? ti.strand.trim() : null;
+    const targetPositionTitle = ti.position_title ? ti.position_title.trim() : null;
+    const targetDesignation = (ti.designation && ti.designation.trim()) || targetPositionTitle;
+
+    if (!targetRegion) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Selected vacant position '${targetItemId}' has no valid Region in database.` });
+    }
+    if (!targetDivision) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Selected vacant position '${targetItemId}' has no valid Division in database.` });
+    }
+    if (!targetOffice) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Selected vacant position '${targetItemId}' has no valid Office in database.` });
+    }
+    if (!targetStrand) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Selected vacant position '${targetItemId}' has no valid Strand in database.` });
+    }
+    if (!targetPositionTitle) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Selected vacant position '${targetItemId}' has no valid Position Title in database.` });
+    }
+
+    const targetIsOic = Boolean(targetDesignation && targetDesignation.toUpperCase().includes('OIC'));
+    const targetAssignmentType = targetIsOic ? 'OIC' : 'Permanent';
+
+    // ── Step 5: Archive OLD position into tlo_position_history & RETURNING id ──
     const historyRes = await client.query(
       `INSERT INTO tlo_position_history (
-         source_table, tlo_id, position_name, office, strand, division, region,
-         inclusive_date_start, inclusive_date_end, remarks, delete_flg, created_at, updated_at, created_by, updated_by
+         source_table, tlo_id, position_name, designation,
+         office, strand, division, region,
+         inclusive_date_start, inclusive_date_end,
+         status, oic, delete_flg, created_at, updated_at, created_by, updated_by
        ) VALUES (
-         'masterlist', $1, $2, $3, $4, $5, $6,
-         $7, $8, $9, 'No', NOW(), NOW(), $10, $10
+         'masterlist', $1, $2, $3,
+         $4, $5, $6, $7,
+         $8, $9,
+         'Inactive', $10, 'No', NOW(), NOW(), $11, $11
        ) RETURNING id`,
       [
         safeTloId,
-        (current.position_title || '').toUpperCase() || '',
-        current.office   || null,
-        current.strand   || null,
-        current.division || null,
-        current.region   || null,
-        finalStart,
-        finalEnd,
-        userRemarks || `Reassigned to ${targetRegion} / ${targetDivision}`,
+        oldPositionTitle,
+        oldDesignation,
+        oldOffice,
+        oldStrand,
+        oldDivision,
+        oldRegion,
+        oldStartDate,
+        oldEndDate,
+        oldOic,
         actorEmail
       ]
     );
@@ -2473,7 +3560,7 @@ export const reassignOfficial = async (req, res) => {
     let binaryId = null;
     let savedFilePath = null;
 
-    // ── Step E: Process Reassignment Order PDF ─────────────────────────────
+    // ── Step 5b: Process Reassignment Order PDF if attached ───────────────
     if (req.file) {
       const mimeType = req.file.mimetype;
       const { binary_id } = await upsertBinary(client, req.file.buffer, mimeType, req.file.buffer.length);
@@ -2483,7 +3570,7 @@ export const reassignOfficial = async (req, res) => {
       const now = new Date();
       const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
       const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
-      
+
       const filename = `reassignment_order_${safeTloId}_history_${historyId}_${timestamp}${ext}`;
       const folderRelative = path.join('uploads', safeTloId, 'reassignment_order');
       const folderAbsolute = path.join(process.cwd(), folderRelative);
@@ -2522,54 +3609,61 @@ export const reassignOfficial = async (req, res) => {
       );
     }
 
-    // ── Step F: APPEND-ONLY INSERT into tlo_assignments ───────────────────
-    // Prior row is NOT modified. This creates the new assignment row.
-    let newAssignmentId = null;
-    if (personId) {
-      const newAssignRes = await client.query(
-        `INSERT INTO tlo_assignments (
-           personnel_id, item_number, region, division, office, strand,
-           designation, assignment_type, status, start_date, end_date,
-           reassignment_order_binary_id, remarks, created_by, updated_by,
-           created_at, updated_at
-         ) VALUES (
-           $1, $2, $3, $4, $5, $6,
-           $7, $8, 'Active', $9, NULL,
-           $10, $11, $12, $12,
-           NOW(), NOW()
-         ) RETURNING id`,
-        [
-          personId,
-          itemNumber, // Carries the official's item number!
-          targetRegion,
-          targetDivision,
-          targetOffice,
-          targetStrand,
-          targetDesignation,
-          activeAssign ? activeAssign.assignment_type : 'Permanent',
-          finalEnd, // Date of effectivity
-          binaryId,
-          userRemarks || `Reassigned to ${targetRegion} / ${targetDivision}`,
-          actorEmail
-        ]
-      );
-      newAssignmentId = newAssignRes.rows[0].id;
-    }
+    // ── Step 6: Update existing OLD tlo_assignments row to Inactive ───────
+    await client.query(
+      `UPDATE tlo_assignments
+       SET status = 'Inactive', end_date = $1, updated_at = NOW(), updated_by = $2
+       WHERE id = $3`,
+      [finalEnd, actorEmail, activeAssign.id]
+    );
 
-    // ── Step G: Synchronize masterlist view ────────────────────────────────
+    // ── Step 7: Insert NEW active assignment in tlo_assignments ───────────
+    const newAssignRes = await client.query(
+      `INSERT INTO tlo_assignments (
+         personnel_id, item_number, region, division, office, strand,
+         position_title, designation, assignment_type, status, oic,
+         start_date, end_date, reassignment_order_binary_id, remarks,
+         created_by, updated_by, created_at, updated_at
+       ) VALUES (
+         $1, $2, $3, $4, $5, $6,
+         $7, $8, $9, 'Active', $10,
+         $11, NULL, $12, $13,
+         $14, $14, NOW(), NOW()
+       ) RETURNING id`,
+      [
+        personId,
+        ti.item_number, // The selected vacant plantilla position's item_number!
+        targetRegion,
+        targetDivision,
+        targetOffice,
+        targetStrand,
+        targetPositionTitle,
+        targetDesignation,
+        targetAssignmentType,
+        targetIsOic,
+        finalEnd,
+        binaryId,
+        userRemarks || `Reassigned to ${targetRegion} / ${targetDivision} (${targetOffice})`,
+        actorEmail
+      ]
+    );
+    const newAssignmentId = newAssignRes.rows[0].id;
+
+    // ── Step 8: Update third_level_official_masterlist view ───────────────
     await client.query(
       `UPDATE third_level_official_masterlist
-       SET region = $1, division = $2, designation = $3,
-           appointment_date = COALESCE($4, appointment_date),
-           reassignment_order_binary_id = COALESCE($5, reassignment_order_binary_id),
+       SET region = $1, division = $2, office = $3, strand = $4,
+           designation = $5,
+           appointment_date = COALESCE($6, appointment_date),
+           reassignment_order_binary_id = COALESCE($7, reassignment_order_binary_id),
            updated_at = NOW()
-       WHERE "TLOid" = $6`,
-      [targetRegion, targetDivision, targetDesignation, finalEnd, binaryId, safeTloId]
+       WHERE "TLOid" = $8 AND is_testaccount = $9`,
+      [targetRegion, targetDivision, targetOffice, targetStrand, targetDesignation, finalEnd, binaryId, safeTloId, isTest]
     );
 
     await client.query('COMMIT');
 
-    console.log(`[reassignOfficial] Official ${safeTloId} reassigned to ${targetRegion} / ${targetDivision} (New Assignment ID: ${newAssignmentId}, Append-only, Prior Assignment Preserved) by ${actorEmail}`);
+    console.log(`[reassignOfficial] Official ${safeTloId} reassigned to ${targetRegion} / ${targetDivision} (Old Item: ${oldItemNumber}, New Item: ${ti.item_number}, Assignment ID: ${newAssignmentId}) by ${actorEmail}`);
 
     res.json({
       success: true,
@@ -2578,8 +3672,11 @@ export const reassignOfficial = async (req, res) => {
         tloId: safeTloId,
         assignmentId: newAssignmentId,
         historyId: historyId,
+        newItemNumber: ti.item_number,
         newRegion: targetRegion,
         newDivision: targetDivision,
+        newOffice: targetOffice,
+        newStrand: targetStrand,
         newDesignation: targetDesignation,
         binaryId: binaryId,
         filePath: savedFilePath

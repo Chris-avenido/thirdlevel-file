@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
@@ -9,8 +9,105 @@ import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
 import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
+import AnalyticsSection from './MainDashboard/components/AnalyticsSection';
+import './MainDashboard/MainDashboard.css';
 import { FiUserPlus, FiUploadCloud, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
-import { getOfficialRegion, getOfficialLevel } from '../utils/officialsUtils';
+import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
+// Text cleaning engine from MainDashboard
+const repairMojibake = (text) => {
+  return String(text || "")
+    .replace(/Ã‘/g, "Ñ").replace(/Ã±/g, "ñ")
+    .replace(/ã‘/g, "Ñ").replace(/ã±/g, "ñ")
+    .replace(/Ã/g, "Á").replace(/Ã¡/g, "á")
+    .replace(/Ã‰/g, "É").replace(/Ã©/g, "é")
+    .replace(/â€“/g, "–").replace(/â€”/g, "—")
+    .replace(/Â /g, " ").replace(/Â/g, "");
+};
+
+const REGION_CANONICAL_MAP = {
+  'CENTRAL OFFICE': 'Central Office',
+  'NCR': 'NCR',
+  'CAR': 'CAR',
+  'NIR': 'NIR',
+  'BARMM': 'BARMM',
+  'CARAGA': 'CARAGA',
+  'REGION I': 'Region I',
+  'REGION II': 'Region II',
+  'REGION III': 'Region III',
+  'REGION IV-A': 'Region IV-A',
+  'REGION IV-B': 'Region IV-B',
+  'REGION V': 'Region V',
+  'REGION VI': 'Region VI',
+  'REGION VII': 'Region VII',
+  'REGION VIII': 'Region VIII',
+  'REGION IX': 'Region IX',
+  'REGION X': 'Region X',
+  'REGION XI': 'Region XI',
+  'REGION XII': 'Region XII',
+  'REGION XIII': 'Region XIII',
+};
+
+const ACRONYMS_AND_NUMERALS = new Set([
+  'NCR', 'CAR', 'NIR', 'BARMM', 'CARAGA', 'SDO', 'RO', 'CO', 'OIC', 'TLO', 'N/A',
+  'I', 'II', 'III', 'IV', 'IV-A', 'IV-B', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII'
+]);
+const LOWER_PARTICLES = new Set(['de', 'del', 'la', 'ng', 'of', 'and', 'in', 'sa', 'at']);
+
+const formatWord = (w, isFirst) => {
+  if (!w) return '';
+  const upper = w.toUpperCase();
+  if (ACRONYMS_AND_NUMERALS.has(upper)) return upper;
+  if (!isFirst && LOWER_PARTICLES.has(w.toLowerCase())) return w.toLowerCase();
+  if (w.includes('-')) {
+    return w.split('-').map((part, pIdx) => formatWord(part, isFirst && pIdx === 0)).join('-');
+  }
+  return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+};
+
+const canonicalCell = (text) => {
+  if (!text) return '';
+  let v = repairMojibake(text).replace(/\s+/g, ' ').trim();
+  v = v.replace(/\bLas\s+Pi(?:ñ|Ã±|ã±|ï¿½||n)as\b/gi, 'Las Piñas')
+       .replace(/\bPara(?:ñ|Ã±|ã±|ï¿½||n)aque\b/gi, 'Parañaque');
+
+  const upper = v.toUpperCase();
+  if (REGION_CANONICAL_MAP[upper]) return REGION_CANONICAL_MAP[upper];
+  if (upper === 'N/A') return 'N/A';
+
+  return v.split(' ').map((word, i) => formatWord(word, i === 0)).join(' ');
+};
+
+// Map backend DB fields to UI data structure for Bar Graph
+const mapOfficialRecord = (row) => {
+  const name = row.first_name && row.last_name
+    ? canonicalCell(`${row.first_name} ${row.last_name}`)
+    : row.first_name
+    ? canonicalCell(row.first_name)
+    : 'VACANT POSITION';
+
+  let status = row.status || 'Regular';
+  if (row.is_oic || (row.designation && row.designation.toUpperCase().includes('OIC'))) {
+    status = 'OIC';
+  } else if (!row.first_name || row.first_name.toUpperCase() === 'VACANT' || row.status === 'Vacated' || row.status === 'Vacant') {
+    status = 'Vacant';
+  } else if (status !== 'OIC' && status !== 'Vacant') {
+    status = 'Regular';
+  }
+
+  return {
+    TLO_id: row.TLOid || `TLO-${String(row.id || '').padStart(4, '0')}`,
+    TLOid: row.TLOid,
+    Name: name,
+    Position: formatPositionTitle(row.position_title) || 'Unassigned Position',
+    Employment_Status: status,
+    Region: canonicalCell(row.region || row.strand || 'Central Office'),
+    Division: canonicalCell(row.division || 'N/A'),
+    Office: canonicalCell(row.office || ''),
+    Province: canonicalCell(row.province || row.region || 'NCR'),
+    Municipality: canonicalCell(row.municipality || row.division || 'Pasig City'),
+    Email: row.email || 'N/A'
+  };
+};
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -27,6 +124,14 @@ const THIRD_LEVEL_POSITIONS = [
   'SDS',
   'ASDS'
 ];
+
+const isThirdLevelPosition = (pos) => {
+  if (!pos) return false;
+  const formatted = formatPositionTitle(pos);
+  if (THIRD_LEVEL_POSITIONS.includes(formatted)) return true;
+  const upper = pos.trim().toUpperCase();
+  return THIRD_LEVEL_POSITIONS.some(p => p.toUpperCase() === upper);
+};
 
 
 const Home = () => {
@@ -49,6 +154,11 @@ const Home = () => {
   const [isRegisterPersonnelOpen, setIsRegisterPersonnelOpen] = useState(false);
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
   const [reassignOfficialTarget, setReassignOfficialTarget] = useState(null);
+
+  // Drilldown Hierarchy State for Bar Graph
+  const [drillLevel, setDrillLevel] = useState(0); // 0: Region, 1: Division, 2: Municipality
+  const [drillPath, setDrillPath] = useState([]);
+  const [drilldownViewType, setDrilldownViewType] = useState('stacked'); // stacked | heatmap
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -182,11 +292,11 @@ const Home = () => {
 
   // KPIs Logic
   const thirdLevelCount = useMemo(() => {
-    return officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
+    return officials.filter(o => isThirdLevelPosition(o.position_title)).length;
   }, [officials]);
 
   const divisionChiefsCount = useMemo(() => {
-    return officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title)).length;
+    return officials.filter(o => !isThirdLevelPosition(o.position_title)).length;
   }, [officials]);
 
   const sortBreakdown = (counts) => {
@@ -216,9 +326,9 @@ const Home = () => {
 
   const thirdLevelBreakdown = useMemo(() => {
     const counts = {};
-    officials.filter(o => !o.is_oic && THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+    officials.filter(o => isThirdLevelPosition(o.position_title)).forEach(o => {
       if (o.first_name && o.first_name !== 'VACANT') {
-        const pos = o.position_title || 'Unassigned';
+        const pos = formatPositionTitle(o.position_title) || o.position_title || 'Unassigned';
         counts[pos] = (counts[pos] || 0) + 1;
       }
     });
@@ -227,9 +337,9 @@ const Home = () => {
 
   const divisionChiefsBreakdown = useMemo(() => {
     const counts = {};
-    officials.filter(o => !o.is_oic && !THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+    officials.filter(o => !isThirdLevelPosition(o.position_title)).forEach(o => {
       if (o.first_name && o.first_name !== 'VACANT') {
-        const pos = o.position_title || 'Unassigned';
+        const pos = formatPositionTitle(o.position_title) || o.position_title || 'Unassigned';
         counts[pos] = (counts[pos] || 0) + 1;
       }
     });
@@ -238,8 +348,15 @@ const Home = () => {
 
   const pendingVerifications = applications.length;
 
+  const isProfileComplete = (o) => {
+    if (o.is_profile_complete !== undefined && o.is_profile_complete !== null) {
+      return Boolean(o.is_profile_complete);
+    }
+    return Boolean(o.photo_binary_id && o.pds_binary_id && o.contact_details);
+  };
+
   const incompleteProfiles = useMemo(() => {
-    return officials.filter(o => !o.photo_binary_id || !o.pds_binary_id || !o.contact_details).length;
+    return officials.filter(o => !isProfileComplete(o)).length;
   }, [officials]);
 
   const flaggedProfiles = useMemo(() => {
@@ -300,7 +417,7 @@ const Home = () => {
 
   const incompleteRegionBreakdown = useMemo(() => {
     const counts = {};
-    const incompleteOfficials = officials.filter(o => !o.photo_binary_id || !o.pds_binary_id || !o.contact_details);
+    const incompleteOfficials = officials.filter(o => !isProfileComplete(o));
     incompleteOfficials.forEach(o => {
       const region = getOfficialRegion(o);
       counts[region] = (counts[region] || 0) + 1;
@@ -410,12 +527,12 @@ const Home = () => {
     });
 
     // Incomplete active profiles
-    officials.filter(o => !o.photo_binary_id || !o.pds_binary_id || !o.contact_details).forEach(o => {
+    officials.filter(o => !isProfileComplete(o)).forEach(o => {
       queue.push({
         id: o.TLOid,
         email: o.email,
         name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
-        desc: `Missing valid PDS/Photo/Contact · ${o.office || 'Unassigned'}`,
+        desc: `Incomplete Profiling · ${o.office || 'Unassigned'}`,
         status: 'Action Required',
         badgeClass: 'risk',
         type: 'incomplete',
@@ -503,12 +620,12 @@ const Home = () => {
 
     // Third Level Officials (Only show when explicitly filtered so it doesn't flood the 'All' queue)
     if (activeQueueFilter === 'thirdLevel') {
-      officials.filter(o => THIRD_LEVEL_POSITIONS.includes(o.position_title)).forEach(o => {
+      officials.filter(o => isThirdLevelPosition(o.position_title)).forEach(o => {
         queue.push({
           id: o.TLOid,
           email: o.email,
           name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
-          desc: `${o.position_title || 'Unassigned'} · ${o.office || 'Unassigned'}`,
+          desc: `${formatPositionTitle(o.position_title) || o.position_title || 'Unassigned'} · ${o.office || 'Unassigned'}`,
           status: 'Active',
           badgeClass: 'neutral',
           type: 'thirdLevel',
@@ -557,7 +674,7 @@ const Home = () => {
     // Category Filter
     if (activeQueueFilter !== 'all') {
       if (activeQueueFilter === 'incomplete') {
-        filtered = filtered.filter(o => o.status === 'Active' && (!o.photo_binary_id || !o.pds_binary_id || !o.contact_details));
+        filtered = filtered.filter(o => o.status === 'Active' && !isProfileComplete(o));
       } else if (activeQueueFilter === 'expiring') {
         filtered = filtered.filter(o => o.status === 'Active' && (o.pending_admin_case === 'Yes' || o.guilty_admin_details === 'Yes' || o.criminally_charged_details === 'Yes' || o.convicted_crime_details === 'Yes'));
       } else if (activeQueueFilter === 'retirees') {
@@ -569,7 +686,7 @@ const Home = () => {
       } else if (activeQueueFilter === 'inactive') {
         filtered = filtered.filter(o => o.status === 'Inactive');
       } else if (activeQueueFilter === 'thirdLevel') {
-        filtered = filtered.filter(o => o.status === 'Active' && THIRD_LEVEL_POSITIONS.includes(o.position_title));
+        filtered = filtered.filter(o => o.status === 'Active' && isThirdLevelPosition(o.position_title));
       } else if (activeQueueFilter === 'pending') {
         filtered = []; // only apps
       }
@@ -604,7 +721,7 @@ const Home = () => {
     let appsToInclude = [];
     if (activeQueueFilter === 'all' || activeQueueFilter === 'pending') {
       appsToInclude = [...applications];
-      
+
       if (filterRegion !== 'All regions') {
         appsToInclude = appsToInclude.filter(a => getOfficialRegion(a) === filterRegion);
       }
@@ -612,7 +729,7 @@ const Home = () => {
         appsToInclude = appsToInclude.filter(a => getOfficialLevel(a) === filterLevel);
       }
       if (filterOffice !== 'All') {
-        appsToInclude = appsToInclude.filter(a => a.target_office === filterOffice || a.office === filterOffice); 
+        appsToInclude = appsToInclude.filter(a => a.target_office === filterOffice || a.office === filterOffice);
       }
       if (filterSearch.trim() !== '') {
         const lowerSearch = filterSearch.toLowerCase();
@@ -659,6 +776,58 @@ const Home = () => {
   const toggleFilter = (filter) => {
     setActiveQueueFilter(prev => prev === filter ? 'all' : filter);
   };
+
+  // Drilldown Navigation Handlers for Bar Graph
+  const handleRowDrill = useCallback((name) => {
+    if (drillLevel < 2) {
+      const newLevel = drillLevel + 1;
+      const newPath = [...drillPath, name];
+      setDrillLevel(newLevel);
+      setDrillPath(newPath);
+    }
+  }, [drillLevel, drillPath]);
+
+  const handleSetDrillLevel = useCallback((level, name) => {
+    setDrillLevel(level);
+    if (level === 0) {
+      setDrillPath([]);
+    } else if (level === 1) {
+      setDrillPath([name]);
+    } else if (level === 2) {
+      setDrillPath([drillPath[0], name]);
+    }
+  }, [drillPath]);
+
+  // Drilldown Aggregations for Bar Graph
+  const { groupKey, groups, maxTotal } = useMemo(() => {
+    let key = 'Region';
+    if (drillLevel === 1) key = 'Division';
+    if (drillLevel === 2) key = 'Municipality';
+
+    let dataToAggregate = allOfficials.map(mapOfficialRecord);
+
+    if (drillLevel >= 1 && drillPath[0]) {
+      dataToAggregate = dataToAggregate.filter(d => d.Region === drillPath[0]);
+    }
+    if (drillLevel >= 2 && drillPath[1]) {
+      dataToAggregate = dataToAggregate.filter(d => d.Division === drillPath[1]);
+    }
+
+    const groupMap = {};
+    dataToAggregate.forEach(d => {
+      const gName = d[key] || 'Unassigned';
+      if (!groupMap[gName]) {
+        groupMap[gName] = { total: 0, regular: 0, oic: 0, vacant: 0 };
+      }
+      groupMap[gName].total++;
+      if (d.Employment_Status === 'Regular') groupMap[gName].regular++;
+      if (d.Employment_Status === 'OIC') groupMap[gName].oic++;
+      if (d.Employment_Status === 'Vacant') groupMap[gName].vacant++;
+    });
+
+    const max = Math.max(...Object.values(groupMap).map(g => g.total), 1);
+    return { groupKey: key, groups: groupMap, maxTotal: max };
+  }, [allOfficials, drillLevel, drillPath]);
 
   return (
     <PageTransition>
@@ -757,67 +926,67 @@ const Home = () => {
           <div className="dashboard-wrap mt-6">
             {/* FILTERS & SEARCH BAR */}
             <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm relative z-20 mt-[-24px] max-w-[1200px] mx-auto">
-                {/* SEARCH BAR */}
-                <div className="relative w-full xl:flex-[1.5] h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
-                    <input
-                        type="text"
-                        value={filterSearch}
-                        onChange={(e) => setFilterSearch(e.target.value)}
-                        placeholder="Search name or email..."
-                        className="w-full h-full bg-transparent py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none placeholder:text-[#08315F]/50 transition-colors"
-                    />
+              {/* SEARCH BAR */}
+              <div className="relative w-full xl:flex-[1.5] h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
+                <input
+                  type="text"
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                  placeholder="Search name or email..."
+                  className="w-full h-full bg-transparent py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none placeholder:text-[#08315F]/50 transition-colors"
+                />
+              </div>
+
+              {/* DROPDOWNS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
+                {/* Region Dropdown */}
+                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                  <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                    <option value="All regions">All Regions</option>
+                    {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                 </div>
 
-                {/* DROPDOWNS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
-                    {/* Region Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                            <option value="All regions">All Regions</option>
-                            {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
-                                <option key={r} value={r}>{r}</option>
-                            ))}
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
-
-                    {/* Level Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                            <option value="All levels">All Levels</option>
-                            <option value="Third Level">Third Level</option>
-                            <option value="Division Chief">Division Chief</option>
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
-
-                    {/* Office Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                            <option value="All">All Offices</option>
-                            {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
-                                <option key={o} value={o}>{o}</option>
-                            ))}
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
+                {/* Level Dropdown */}
+                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                  <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                    <option value="All levels">All Levels</option>
+                    <option value="Third Level">Third Level</option>
+                    <option value="Division Chief">Division Chief</option>
+                  </select>
+                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                 </div>
 
-                {/* Clear Button */}
-                <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-                    <button
-                        onClick={() => {
-                            setFilterSearch('');
-                            setFilterRegion('All regions');
-                            setFilterLevel('All levels');
-                            setFilterOffice('All');
-                        }}
-                        className="h-[38px] px-8 w-full xl:w-auto bg-[#075985] text-white rounded-full font-black text-[11px] tracking-widest uppercase hover:bg-[#0369a1] transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
-                    >
-                        Clear
-                    </button>
+                {/* Office Dropdown */}
+                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                  <select value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                    <option value="All">All Offices</option>
+                    {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
                 </div>
+              </div>
+
+              {/* Clear Button */}
+              <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                <button
+                  onClick={() => {
+                    setFilterSearch('');
+                    setFilterRegion('All regions');
+                    setFilterLevel('All levels');
+                    setFilterOffice('All');
+                  }}
+                  className="h-[38px] px-8 w-full xl:w-auto bg-[#075985] text-white rounded-full font-black text-[11px] tracking-widest uppercase hover:bg-[#0369a1] transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
 
             <section className="kpis">
@@ -976,8 +1145,8 @@ const Home = () => {
                   <div>
                     <h3>Activity Logs</h3>
                     <p>
-                      {activeQueueFilter === 'all' && filterRegion === 'All regions' && filterLevel === 'All levels' && filterOffice === 'All' && filterSearch === '' 
-                        ? "Recent profile updates and creations." 
+                      {activeQueueFilter === 'all' && filterRegion === 'All regions' && filterLevel === 'All levels' && filterOffice === 'All' && filterSearch === ''
+                        ? "Recent profile updates and creations."
                         : "Showing filtered recent activity."}
                     </p>
                   </div>
@@ -1053,6 +1222,21 @@ const Home = () => {
                 </button>
               </aside>
             </section>
+
+            {/* Geographic & Organizational Drilldown Bar Graph */}
+            <div className="mt-6">
+              <AnalyticsSection
+                drillLevel={drillLevel}
+                drillPath={drillPath}
+                drilldownViewType={drilldownViewType}
+                groups={groups}
+                maxTotal={maxTotal}
+                groupKey={groupKey}
+                onToggleView={() => setDrilldownViewType(prev => prev === 'stacked' ? 'heatmap' : 'stacked')}
+                onSetDrillLevel={handleSetDrillLevel}
+                onRowDrill={handleRowDrill}
+              />
+            </div>
           </div>
         </div>
       </div>

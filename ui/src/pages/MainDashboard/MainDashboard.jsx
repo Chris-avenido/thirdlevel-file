@@ -30,10 +30,57 @@ const repairMojibake = (text) => {
     .replace(/Â /g, " ").replace(/Â/g, "");
 };
 
+const REGION_CANONICAL_MAP = {
+  'CENTRAL OFFICE': 'Central Office',
+  'NCR': 'NCR',
+  'CAR': 'CAR',
+  'NIR': 'NIR',
+  'BARMM': 'BARMM',
+  'CARAGA': 'CARAGA',
+  'REGION I': 'Region I',
+  'REGION II': 'Region II',
+  'REGION III': 'Region III',
+  'REGION IV-A': 'Region IV-A',
+  'REGION IV-B': 'Region IV-B',
+  'REGION V': 'Region V',
+  'REGION VI': 'Region VI',
+  'REGION VII': 'Region VII',
+  'REGION VIII': 'Region VIII',
+  'REGION IX': 'Region IX',
+  'REGION X': 'Region X',
+  'REGION XI': 'Region XI',
+  'REGION XII': 'Region XII',
+  'REGION XIII': 'Region XIII',
+};
+
+const ACRONYMS_AND_NUMERALS = new Set([
+  'NCR', 'CAR', 'NIR', 'BARMM', 'CARAGA', 'SDO', 'RO', 'CO', 'OIC', 'TLO', 'N/A',
+  'I', 'II', 'III', 'IV', 'IV-A', 'IV-B', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII'
+]);
+const LOWER_PARTICLES = new Set(['de', 'del', 'la', 'ng', 'of', 'and', 'in', 'sa', 'at']);
+
+const formatWord = (w, isFirst) => {
+  if (!w) return '';
+  const upper = w.toUpperCase();
+  if (ACRONYMS_AND_NUMERALS.has(upper)) return upper;
+  if (!isFirst && LOWER_PARTICLES.has(w.toLowerCase())) return w.toLowerCase();
+  if (w.includes('-')) {
+    return w.split('-').map((part, pIdx) => formatWord(part, isFirst && pIdx === 0)).join('-');
+  }
+  return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+};
+
 const canonicalCell = (text) => {
-  let v = repairMojibake(text).replace(/\s+/g, " ").trim();
-  return v.replace(/\bLas\s+Pi(?:ñ|Ã±|ã±|ï¿½||n)as\b/gi, "Las Piñas")
-          .replace(/\bPara(?:ñ|Ã±|ã±|ï¿½||n)aque\b/gi, "Parañaque");
+  if (!text) return '';
+  let v = repairMojibake(text).replace(/\s+/g, ' ').trim();
+  v = v.replace(/\bLas\s+Pi(?:ñ|Ã±|ã±|ï¿½||n)as\b/gi, 'Las Piñas')
+       .replace(/\bPara(?:ñ|Ã±|ã±|ï¿½||n)aque\b/gi, 'Parañaque');
+
+  const upper = v.toUpperCase();
+  if (REGION_CANONICAL_MAP[upper]) return REGION_CANONICAL_MAP[upper];
+  if (upper === 'N/A') return 'N/A';
+
+  return v.split(' ').map((word, i) => formatWord(word, i === 0)).join(' ');
 };
 
 // Map backend DB fields to UI data structure

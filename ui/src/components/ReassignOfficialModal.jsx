@@ -171,7 +171,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full pl-4 pr-16 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400"
+          className="w-full pl-4 pr-16 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400"
           style={{
             background: '#f8fafc',
             border: isOpen ? '2px solid #075985' : '2px solid #e2e8f0',
@@ -190,7 +190,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
               className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
               title="Clear selection"
             >
-              <FiX size={13} />
+              <FiX size={16} />
             </button>
           )}
           <button
@@ -207,7 +207,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 transition-transform duration-200"
             style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
           >
-            <FiChevronDown size={15} />
+            <FiChevronDown size={18} />
           </button>
         </div>
       </div>
@@ -226,18 +226,18 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
           className="flex flex-col bg-white rounded-[18px] border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgba(8,49,95,0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header Category Filter Tabs */}
-          <div className="flex items-center gap-1.5 p-2 bg-gradient-to-r from-sky-50 to-slate-50 border-b border-sky-100 shrink-0">
+          <div className="flex items-center gap-1.5 p-2 bg-gradient-to-r from-sky-50 to-slate-50 border-b-2 border-sky-100 shrink-0">
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('all'); }}
-              className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'all'
                   ? 'bg-[#075985] text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border border-slate-200/60'
+                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
               }`}
             >
               <span>All</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'all' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              <span className={`text-[13.5px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'all' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {options.length}
               </span>
             </button>
@@ -245,14 +245,14 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('regular'); }}
-              className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'regular'
                   ? 'bg-[#075985] text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border border-slate-200/60'
+                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
               }`}
             >
               <span>Regular</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'regular' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              <span className={`text-[13.5px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'regular' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {regularCount}
               </span>
             </button>
@@ -260,21 +260,21 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('oic'); }}
-              className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'oic'
                   ? 'bg-[#075985] text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border border-slate-200/60'
+                  : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
               }`}
             >
               <span>OIC</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'oic' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              <span className={`text-[13.5px] px-1.5 py-0.2 rounded-full font-bold ${filterTab === 'oic' ? 'bg-sky-900/40 text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {oicCount}
               </span>
             </button>
           </div>
 
           {/* Options Scrollable List */}
-          <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
+          <div className="overflow-y-auto flex-1 divide-y-2 divide-slate-100">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt, idx) => {
                 const isSelected = opt.toLowerCase() === (value || '').trim().toLowerCase();
@@ -298,21 +298,21 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-[6px] shrink-0 tracking-wider uppercase ${
+                      <span className={`text-[15px] font-black px-1.5 py-0.5 rounded-[6px] shrink-0 tracking-wider uppercase ${
                         isOIC
-                          ? 'bg-amber-100/80 text-amber-800 border border-amber-300/60'
-                          : 'bg-sky-100/80 text-sky-800 border border-sky-300/60'
+                          ? 'bg-amber-100/80 text-amber-800 border-2 border-amber-300/60'
+                          : 'bg-sky-100/80 text-sky-800 border-2 border-sky-300/60'
                       }`}>
                         {isOIC ? 'OIC' : 'EXEC'}
                       </span>
-                      <span className="text-[12.5px] truncate">
+                      <span className="text-[19px] truncate">
                         {renderHighlighted(opt)}
                       </span>
                     </div>
 
                     {isSelected && (
                       <div className="w-5 h-5 rounded-full bg-[#075985] text-white flex items-center justify-center shrink-0 shadow-sm">
-                        <FiCheck size={12} strokeWidth={3} />
+                        <FiCheck size={14} strokeWidth={3} />
                       </div>
                     )}
                   </div>
@@ -320,10 +320,10 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
               })
             ) : (
               <div className="p-4 text-center">
-                <p className="text-[12px] font-bold text-slate-600">
+                <p className="text-[18px] font-bold text-slate-600">
                   No preset matching "{value}"
                 </p>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                <p className="text-[16.5px] text-slate-400 font-medium mt-0.5">
                   You can use this custom designation. Press Enter or click outside.
                 </p>
               </div>
@@ -641,31 +641,31 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
           className="flex items-center justify-between px-7 py-5"
           style={{
             background: 'linear-gradient(135deg, #08315f 0%, #0c4a6e 100%)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)'
+            borderBottom: '2px solid rgba(255,255,255,0.15)'
           }}
         >
           <div className="flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-inner"
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner"
               style={{ background: 'rgba(255,255,255,0.12)' }}
             >
-              <FiArrowRight size={18} color="white" />
+              <FiArrowRight size={20} color="white" />
             </div>
             <div>
-              <p className="text-[9px] font-black text-sky-300 uppercase tracking-[0.2em] leading-none mb-0.5">
+              <p className="text-[13.5px] font-black text-sky-300 uppercase tracking-[0.2em] leading-none mb-0.5">
                 Executive Dashboard
               </p>
-              <h2 className="text-base font-black text-white leading-none tracking-tight">
+              <h2 className="text-[24px] font-black text-white leading-none tracking-tight">
                 Reassign Official
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/20"
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/20"
             style={{ background: 'rgba(255,255,255,0.1)' }}
           >
-            <FiX size={16} color="white" />
+            <FiX size={18} color="white" />
           </button>
         </div>
 
@@ -674,12 +674,12 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
 
           {/* — Official Search — */}
           <section>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+            <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-2">
               Select Official
             </label>
             <div className="relative">
               <FiSearch
-                size={14}
+                size={16}
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none"
               />
               <input
@@ -694,7 +694,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 onFocus={() => setDropdownOpen(true)}
                 onBlur={() => setTimeout(() => setDropdownOpen(false), 180)}
                 placeholder={loadingOfficials ? 'Loading officials…' : 'Search by name or email…'}
-                className="w-full pl-9 pr-8 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985]"
+                className="w-full pl-10 pr-8 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985]"
                 style={{
                   background: '#f0f9ff',
                   border: '2px solid #bae6fd',
@@ -711,7 +711,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <FiX size={13} />
+                  <FiX size={16} />
                 </button>
               )}
               {dropdownOpen && filteredOfficials.length > 0 && (
@@ -735,10 +735,10 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     <li
                       key={o.TLOid}
                       onMouseDown={() => selectOfficial(o)}
-                      className="flex flex-col px-4 py-3 cursor-pointer transition-colors hover:bg-sky-50 border-b border-slate-50 last:border-0"
+                      className="flex flex-col px-4 py-3 cursor-pointer transition-colors hover:bg-sky-50 border-b-2 border-slate-50 last:border-0"
                     >
-                      <span className="font-black text-[13px] text-slate-800">{fullName(o)}</span>
-                      <span className="text-[11px] text-slate-400 font-semibold mt-0.5">
+                      <span className="font-black text-[19.5px] text-slate-800">{fullName(o)}</span>
+                      <span className="text-[16.5px] text-slate-400 font-semibold mt-0.5">
                         {o.position_title || o.designation || '—'} · {o.region || '—'}
                       </span>
                     </li>
@@ -757,7 +757,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     background: 'white',
                     borderRadius: '16px',
                     padding: '12px 16px',
-                    fontSize: '12px',
+                    fontSize: '18px',
                     fontWeight: 600,
                     color: '#94a3b8',
                     boxShadow: '0 12px 36px -5px rgba(8,49,95,0.18)'
@@ -779,10 +779,10 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
               }}
             >
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[9px] font-black text-sky-600 uppercase tracking-[0.2em]">
+                <p className="text-[13.5px] font-black text-sky-600 uppercase tracking-[0.2em]">
                   Current Assignment
                 </p>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-sky-200/60 text-sky-800">
+                <span className="text-[15px] font-black px-2 py-0.5 rounded-full bg-sky-200/60 text-sky-800">
                   {selected.TLOid}
                 </span>
               </div>
@@ -799,20 +799,20 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
           {/* — Destination Fields — */}
           {selected && (
             <section className="space-y-4 pt-1">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">
+              <p className="text-[13.5px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">
                 Target Assignment & Vacant Position
               </p>
               <div className="space-y-3.5">
                 {/* 1. Target Office */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                     Select Target Office <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <select
                       value={selectedOffice}
                       onChange={(e) => handleSelectOffice(e.target.value)}
-                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
+                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
                       style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
                     >
                       <option value="">Choose Office…</option>
@@ -821,7 +821,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                       ))}
                     </select>
                     <FiChevronDown
-                      size={14}
+                      size={18}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                     />
                   </div>
@@ -829,18 +829,18 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
 
                 {/* 2. Vacant Position Picker */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                     Select Vacant Position <span className="text-rose-500">*</span>
                   </label>
                   {!selectedOffice ? (
                     <div className="p-3.5 rounded-[14px] bg-slate-50 border-2 border-dashed border-slate-200 text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      <p className="text-[15px] font-black text-slate-400 uppercase tracking-wider">
                         Please select an office first to view vacant positions
                       </p>
                     </div>
                   ) : filteredVacantPositions.length === 0 ? (
                     <div className="p-3.5 rounded-[14px] bg-amber-50 border-2 border-dashed border-amber-200 text-center">
-                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-wider">
+                      <p className="text-[15px] font-black text-amber-600 uppercase tracking-wider">
                         No vacant positions found in {selectedOffice}
                       </p>
                     </div>
@@ -849,7 +849,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                       <select
                         value={selectedVacantItem}
                         onChange={(e) => handleSelectVacantPosition(e.target.value)}
-                        className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[13px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
+                        className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
                         style={{ background: '#f8fafc', border: '2px solid #bae6fd' }}
                       >
                         <option value="">Choose Vacant Position…</option>
@@ -860,7 +860,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                         ))}
                       </select>
                       <FiChevronDown
-                        size={14}
+                        size={18}
                         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none"
                       />
                     </div>
@@ -871,20 +871,20 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 {selectedVacantItem && (
                   <div
                     className="rounded-[14px] p-3.5 transition-all"
-                    style={{ background: '#f0fdf4', border: '1.5px solid #86efac' }}
+                    style={{ background: '#f0fdf4', border: '2px solid #86efac' }}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[9px] font-black text-green-700 uppercase tracking-widest">
+                      <span className="text-[13.5px] font-black text-green-700 uppercase tracking-widest">
                         Selected Vacancy
                       </span>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-green-200 text-green-800">
+                      <span className="text-[15px] font-black px-2 py-0.5 rounded-full bg-green-200 text-green-800">
                         {selectedVacantItem}
                       </span>
                     </div>
-                    <p className="text-[12.5px] font-bold text-slate-800">
+                    <p className="text-[19px] font-bold text-slate-800">
                       {newDesignation || 'Plantilla Position'}
                     </p>
-                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    <p className="text-[16.5px] text-slate-500 font-medium mt-0.5">
                       {newOffice} {newStrand ? `· ${newStrand}` : ''} {newRegion ? `(${newRegion})` : ''}
                     </p>
                   </div>
@@ -892,20 +892,20 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
 
                 {/* Date of Effectivity */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                     Date of Effectivity <span className="text-rose-500">*</span>
                   </label>
                   <ModernDatePicker
                     value={toDate}
                     onChange={(val) => setToDate(val)}
                     placeholder="Select effective date"
-                    className="!rounded-[14px] !py-2.5 !px-3 !text-[13px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
+                    className="!rounded-[14px] !py-2.5 !px-3 !text-[19.5px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
                   />
                 </div>
 
                 {/* Justification / Remarks */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
                     Justification / Remarks
                   </label>
                   <textarea
@@ -913,7 +913,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     value={justification}
                     onChange={(e) => setJustification(e.target.value)}
                     placeholder="Optional reassignment note or administrative justification..."
-                    className="w-full px-3.5 py-2 rounded-[14px] text-[12.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985] resize-none"
+                    className="w-full px-3.5 py-2 rounded-[14px] text-[19px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985] resize-none"
                     style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
                   />
                 </div>
@@ -922,8 +922,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
               {/* Same-assignment warning guard */}
               {isSameAssignment && (
                 <div className="flex items-start gap-2.5 mt-3 px-4 py-3 rounded-[14px] bg-amber-50/90 border-2 border-amber-200">
-                  <FiAlertCircle size={15} className="text-amber-500 mt-0.5 shrink-0" />
-                  <p className="text-[11.5px] font-bold text-amber-800 leading-snug">
+                  <FiAlertCircle size={18} className="text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-[17px] font-bold text-amber-800 leading-snug">
                     New assignment is identical to the current one. Please select a different target office or vacant position.
                   </p>
                 </div>
@@ -934,7 +934,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
           {/* — Reassignment Order Upload (PDF) — */}
           {selected && (
             <section className="pt-1">
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+              <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-2">
                 Reassignment Order (PDF) <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <div
@@ -947,21 +947,21 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
               >
                 {file ? (
                   <>
-                    <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
-                      <FiCheck size={18} strokeWidth={3} />
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                      <FiCheck size={20} strokeWidth={3} />
                     </div>
-                    <p className="text-[12px] font-black text-green-700">{file.name}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">
+                    <p className="text-[18px] font-black text-green-700">{file.name}</p>
+                    <p className="text-[15px] text-slate-400 font-semibold">
                       {(file.size / 1024).toFixed(1)} KB · Click to change PDF
                     </p>
                   </>
                 ) : (
                   <>
-                    <div className="w-9 h-9 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
-                      <FiUploadCloud size={18} />
+                    <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
+                      <FiUploadCloud size={20} />
                     </div>
-                    <p className="text-[11.5px] font-black text-slate-700">Attach Reassignment Order (Optional)</p>
-                    <p className="text-[9.5px] text-slate-400 font-semibold">PDF document only, max 10 MB</p>
+                    <p className="text-[17px] font-black text-slate-700">Attach Reassignment Order (Optional)</p>
+                    <p className="text-[14px] text-slate-400 font-semibold">PDF document only, max 10 MB</p>
                   </>
                 )}
               </div>
@@ -979,19 +979,19 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
         {/* ── Footer ── */}
         <div
           className="flex items-center justify-end gap-3 px-7 py-4"
-          style={{ borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}
+          style={{ borderTop: '2px solid #e2e8f0', background: '#f8fafc' }}
         >
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-[14px] text-[12px] font-black text-slate-500 transition-colors hover:bg-slate-200/60"
-            style={{ background: '#f1f5f9', border: '1px solid #e2e8f0' }}
+            className="px-5 py-2.5 rounded-[14px] text-[18px] font-black text-slate-500 transition-colors hover:bg-slate-200/60"
+            style={{ background: '#f1f5f9', border: '2px solid #e2e8f0' }}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-[14px] text-[12px] font-black text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-[14px] text-[18px] font-black text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
             style={{
               background: 'linear-gradient(135deg, #075985 0%, #0c4a6e 100%)',
               boxShadow: canSubmit ? '0 4px 14px rgba(7,89,133,0.35)' : 'none'
@@ -999,7 +999,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
           >
             {submitting ? (
               <>
-                <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
@@ -1007,7 +1007,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
               </>
             ) : (
               <>
-                <FiCheck size={13} /> Confirm Reassignment
+                <FiCheck size={16} /> Confirm Reassignment
               </>
             )}
           </button>
@@ -1020,8 +1020,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
 // ── InfoRow sub-component ──────────────────────────────────────────────────
 const InfoRow = ({ label, value, span = 1 }) => (
   <div className={`flex flex-col gap-0.5 ${span === 2 ? 'col-span-2' : ''}`}>
-    <span className="text-[9px] font-black text-sky-600 uppercase tracking-widest">{label}</span>
-    <span className="text-[12.5px] font-bold text-slate-700">{value}</span>
+    <span className="text-[13.5px] font-black text-sky-600 uppercase tracking-widest">{label}</span>
+    <span className="text-[19px] font-bold text-slate-700">{value}</span>
   </div>
 );
 
