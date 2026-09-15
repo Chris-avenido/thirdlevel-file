@@ -408,19 +408,19 @@ const OfficialsRegistry = () => {
     const isOIC = (o) => Boolean(o?.is_oic) || Boolean(o?.designation && String(o.designation).toUpperCase().includes('OIC'));
 
     const thirdLevelOfficials = useMemo(() => {
-        return kpiSummary.filter(o => isThirdLevelPosition(o?.position_title));
+        return kpiSummary.filter(o => o.status !== 'For Approval' && o.status !== 'Rejected' && isThirdLevelPosition(o?.position_title));
     }, [kpiSummary]);
 
     const thirdLevelOic = useMemo(() => {
-        return kpiSummary.filter(o => isOIC(o) && isThirdLevel(o));
+        return kpiSummary.filter(o => o.status !== 'For Approval' && o.status !== 'Rejected' && isOIC(o) && isThirdLevel(o));
     }, [kpiSummary]);
 
     const divisionChiefsOic = useMemo(() => {
-        return kpiSummary.filter(o => isOIC(o) && !isThirdLevel(o));
+        return kpiSummary.filter(o => o.status !== 'For Approval' && o.status !== 'Rejected' && isOIC(o) && !isThirdLevel(o));
     }, [kpiSummary]);
 
     const divisionChiefs = useMemo(() => {
-        return kpiSummary.filter(o => !isOIC(o) && !isThirdLevelPosition(o?.position_title));
+        return kpiSummary.filter(o => o.status !== 'For Approval' && o.status !== 'Rejected' && !isOIC(o) && !isThirdLevelPosition(o?.position_title));
     }, [kpiSummary]);
 
     // Active counts for KPI cards (to match Home page logic which only counts Active)
@@ -1157,8 +1157,8 @@ const OfficialsRegistry = () => {
             key: 'profile_completion',
             label: 'Profile Completion',
             width: 'w-[14%]',
-            value: (item) => item.profile_completion != null ? `${item.profile_completion}%` : '—',
-            filterValue: (item) => item.profile_completion != null ? `${item.profile_completion}%` : '—'
+            value: (item) => item.profile_completion != null ? `${Math.round(item.profile_completion)}%` : '—',
+            filterValue: (item) => item.profile_completion != null ? `${Math.round(item.profile_completion)}%` : '—'
         },
         {
             key: 'position_title',
@@ -1212,7 +1212,7 @@ const OfficialsRegistry = () => {
             if (positionFilter !== 'All') {
                 dataForColumn = dataForColumn.filter(item => item.position_title === positionFilter);
             }
-            if (statusTab !== 'All' && column.key !== 'status') {
+            if (statusTab !== 'All') {
                 if (statusTab === 'Vacant') {
                     dataForColumn = dataForColumn.filter(item =>
                         item.status === 'Vacated' ||
@@ -1224,6 +1224,8 @@ const OfficialsRegistry = () => {
                 } else {
                     dataForColumn = dataForColumn.filter(item => item.status === statusTab);
                 }
+            } else {
+                dataForColumn = dataForColumn.filter(item => item.status !== 'For Approval' && item.status !== 'Rejected');
             }
             if (oicOnly) {
                 dataForColumn = dataForColumn.filter(item => item.is_oic);
@@ -1256,7 +1258,15 @@ const OfficialsRegistry = () => {
                 .map(item => (column.filterValue ? column.filterValue(item) : column.value(item))?.trim())
                 .filter(Boolean);
 
-            if (column.key === 'division' && isCentralOfficeView) {
+            if (column.key === 'profile_completion') {
+                options[column.key] = [...new Set(values)].sort((a, b) => {
+                    const numA = parseInt(a, 10);
+                    const numB = parseInt(b, 10);
+                    if (isNaN(numA)) return 1;
+                    if (isNaN(numB)) return -1;
+                    return numA - numB;
+                });
+            } else if (column.key === 'division' && isCentralOfficeView) {
                 // Ensure all strands are always visible in the dropdown, even if currently empty
                 options[column.key] = [...new Set([...values, ...strands])].sort((a, b) => a.localeCompare(b));
             } else {
@@ -1269,12 +1279,41 @@ const OfficialsRegistry = () => {
 
     const dependentOffices = useMemo(() => {
         let data = kpiSummary;
+        if (statusTab !== 'All') {
+            data = data.filter(item => item.status === statusTab);
+        } else {
+            data = data.filter(item => item.status !== 'For Approval' && item.status !== 'Rejected');
+        }
         if (regionFilter !== 'All') {
             data = data.filter(item => getOfficialRegion(item) === regionFilter);
         }
         const availableOffices = data.map(item => item.office).filter(Boolean);
         return [...new Set(availableOffices)].sort((a, b) => a.localeCompare(b));
-    }, [kpiSummary, regionFilter]);
+    }, [kpiSummary, regionFilter, statusTab]);
+
+    const availableDesignations = useMemo(() => {
+        if (statusTab === 'For Approval' || statusTab === 'Rejected') {
+            let data = kpiSummary.filter(item => item.status === statusTab);
+            if (regionFilter !== 'All') {
+                data = data.filter(item => getOfficialRegion(item) === regionFilter);
+            }
+            const desigs = data.map(item => item.designation).filter(Boolean);
+            return [...new Set(desigs)].sort((a, b) => a.localeCompare(b));
+        }
+        return designations;
+    }, [statusTab, kpiSummary, regionFilter, designations]);
+
+    const availablePositions = useMemo(() => {
+        if (statusTab === 'For Approval' || statusTab === 'Rejected') {
+            let data = kpiSummary.filter(item => item.status === statusTab);
+            if (regionFilter !== 'All') {
+                data = data.filter(item => getOfficialRegion(item) === regionFilter);
+            }
+            const pos = data.map(item => (item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim()).filter(Boolean);
+            return [...new Set(pos)].sort((a, b) => a.localeCompare(b));
+        }
+        return tabPositions;
+    }, [statusTab, kpiSummary, regionFilter, tabPositions]);
 
     useEffect(() => {
         setOfficeFilter('All');
@@ -1500,7 +1539,7 @@ const OfficialsRegistry = () => {
                                     <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Designations</option>
-                                            {designations.map(d => (
+                                            {availableDesignations.map(d => (
                                                 <option key={d} value={d}>{expandAcronym(d)}</option>
                                             ))}
                                         </select>
@@ -1511,7 +1550,7 @@ const OfficialsRegistry = () => {
                                     <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Positions</option>
-                                            {tabPositions.map(p => (
+                                            {availablePositions.map(p => (
                                                 <option key={p} value={p}>{p}</option>
                                             ))}
                                         </select>

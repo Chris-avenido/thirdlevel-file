@@ -2374,6 +2374,24 @@ export const getOfficials = async (req, res) => {
     LEFT JOIN DuplicateEmails d ON d.dup_email = LOWER(f.email)
   `;
 
+  const { profile_completion } = req.query;
+  const outerConditions = [];
+  if (profile_completion && profile_completion !== 'All') {
+    if (profile_completion === '—' || profile_completion === 'null') {
+      outerConditions.push('f.profile_completion IS NULL');
+    } else {
+      const parsedPct = parseInt(String(profile_completion).replace('%', '').trim(), 10);
+      if (!isNaN(parsedPct)) {
+        params.push(parsedPct);
+        outerConditions.push(`f.profile_completion = $${params.length}`);
+      }
+    }
+  }
+
+  if (outerConditions.length > 0) {
+    query += ' WHERE ' + outerConditions.join(' AND ');
+  }
+
   // Server-side sorting
   const sortMap = {
     'status': 'f.status',
@@ -2537,9 +2555,63 @@ export const getKpiSummary = async (req, res) => {
             -- Tab 10: Summary
             m.dpa_consented_at IS NOT NULL
           )
-        ) AS is_profile_complete
+        ) AS is_profile_complete,
+        (
+          CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' OR m.status = 'Vacated' THEN NULL
+          ELSE (
+            (CASE WHEN 
+              m.first_name IS NOT NULL AND m.first_name != '' AND
+              m.last_name IS NOT NULL AND m.last_name != '' AND
+              m.gender IS NOT NULL AND m.gender != '' AND
+              m.date_of_birth IS NOT NULL AND
+              m.civil_status IS NOT NULL AND m.civil_status != '' AND
+              m.photo_binary_id IS NOT NULL AND
+              m.employment_status IS NOT NULL AND m.employment_status != '' AND
+              m.region IS NOT NULL AND m.region != '' AND
+              m.position_title IS NOT NULL AND m.position_title != '' AND
+              m.appointment_date IS NOT NULL AND
+              (COALESCE(m.is_oic, false) = false OR (m.designation IS NOT NULL AND m.designation != '')) AND
+              m.permanent_address IS NOT NULL AND m.permanent_address != '' AND
+              ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (m.ces_stage IS NOT NULL AND m.ces_stage != '' AND m.ces_stage != 'NOT APPLICABLE') OR
+              m.emt_passer IS NOT NULL OR
+              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE el.source_table = 'masterlist' AND el.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.source_table = 'masterlist' AND ph.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.source_table = 'masterlist' AND ed.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != '' AND
+              m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.source_table = 'masterlist' AND tr.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (m.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(m.notable_achievements) = 'array' THEN m.notable_achievements ELSE '[]'::jsonb END) > 0) OR
+              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE ac.source_table = 'masterlist' AND ac.tlo_id = m."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.pds_binary_id IS NOT NULL AND m.service_records_binary_id IS NOT NULL
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.pending_admin_case IS NOT NULL AND m.pending_admin_case != '' AND (
+                (m.guilty_admin_details IS NOT NULL AND m.criminally_charged_details IS NOT NULL AND m.convicted_crime_details IS NOT NULL) OR
+                (UPPER(m.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
+              )
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              m.dpa_consented_at IS NOT NULL
+            THEN 10 ELSE 0 END)
+          ) END
+        ) AS profile_completion
       FROM third_level_official_masterlist m
-      WHERE m.status != 'For Approval' AND m.status != 'Rejected' AND m.is_testaccount = $1
+      WHERE m.is_testaccount = $1
       ORDER BY m."TLOid" ASC
     `;
     const allRows = await pool.query(allRowsQuery, [isTest]);
