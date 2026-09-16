@@ -24,6 +24,59 @@ const AdminSidebar = () => {
         setIsMobileOpen(false);
     }, [location.pathname]);
 
+    // Navigation Items configuration with hidden flag for easy re-enabling
+    const navItems = [
+        {
+            id: 'dashboard',
+            label: 'Executive Dashboard',
+            path: '/home',
+            icon: FiGrid,
+            isActive: (pathname, search) => pathname === '/home',
+            hidden: false,
+        },
+        {
+            id: 'personnel-assignment',
+            label: 'Personnel Assignment',
+            path: '/position-assignments',
+            icon: FiBriefcase,
+            isActive: (pathname, search) => pathname === '/position-assignments',
+            hidden: false,
+        },
+        {
+            id: 'pending-approvals',
+            label: 'Pending Approvals',
+            path: '/officials-registry?status=For%20Approval',
+            icon: FiCheckCircle,
+            isActive: (pathname, search) => search.includes('status=For%20Approval'),
+            hidden: false,
+        },
+        {
+            id: 'settings',
+            label: 'Settings',
+            path: '/settings',
+            icon: FiSettings,
+            isActive: (pathname, search) => pathname === '/settings',
+            hidden: false,
+        },
+        // Hidden nav items — preserved so they can be re-enabled without rebuilding
+        {
+            id: 'officials-registry',
+            label: 'Personnel Registry',
+            path: '/officials-registry',
+            icon: FiUsers,
+            isActive: (pathname, search) => pathname === '/officials-registry' && !search.includes('status=For%20Approval'),
+            hidden: true,
+        },
+        {
+            id: 'ces-plantilla',
+            label: 'CES Plantilla',
+            path: '/ces-plantilla',
+            icon: FiBookmark,
+            isActive: (pathname, search) => pathname === '/ces-plantilla',
+            hidden: true,
+        },
+    ];
+
     return (
         <>
             {/* Desktop Spacer */}
@@ -79,56 +132,23 @@ const AdminSidebar = () => {
                 </div>
 
                 <nav className={`flex flex-col gap-3 flex-1 ${sidebarCollapsed ? 'lg:px-4' : 'px-6'}`}>
-                    <button
-                        onClick={() => navigate('/home')}
-                        title="Executive Dashboard"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/home' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <FiGrid size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Executive Dashboard</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/officials-registry')}
-                        title="Personnel Registry"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/officials-registry' && !location.search.includes('status=For%20Approval') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <FiUsers size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Personnel Registry</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/officials-registry?status=For%20Approval')}
-                        title="Pending Approvals"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.search.includes('status=For%20Approval') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <FiCheckCircle size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Pending Approvals</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/ces-plantilla')}
-                        title="CES Plantilla"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/ces-plantilla' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <FiBookmark size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>CES Plantilla</span>
-                    </button>
-
-                    <button
-                        onClick={() => navigate('/position-assignments')}
-                        title="Position Assignments"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/position-assignments' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <FiBriefcase size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Position Assignments</span>
-                    </button>
-
-                    <button
-                        onClick={() => navigate('/settings')}
-                        title="Account Settings"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/settings' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <FiSettings size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Settings</span>
-                    </button>
+                    {navItems.filter(item => !item.hidden).map((item) => {
+                        const Icon = item.icon;
+                        const active = item.isActive(location.pathname, location.search);
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => navigate(item.path)}
+                                title={item.label}
+                                className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${active ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Icon size={18} className="shrink-0" />
+                                <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>
+                                    {item.label}
+                                </span>
+                            </button>
+                        );
+                    })}
                 </nav>
 
                 <div className={`border-t border-blue-800/50 mt-auto flex flex-col gap-4 ${sidebarCollapsed ? 'lg:p-4' : 'p-8'}`}>

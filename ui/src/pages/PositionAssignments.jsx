@@ -219,7 +219,8 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
       (o.official_name && o.official_name.toLowerCase().includes(q)) ||
       (o.tloid && o.tloid.toLowerCase().includes(q)) ||
       (o.first_name && o.first_name.toLowerCase().includes(q)) ||
-      (o.last_name && o.last_name.toLowerCase().includes(q))
+      (o.last_name && o.last_name.toLowerCase().includes(q)) ||
+      (Array.isArray(o.active_designations) && o.active_designations.some(d => d && d.toLowerCase().includes(q)))
     );
   }, [officials, query]);
 
@@ -241,9 +242,11 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
                 <span className="font-['Plus_Jakarta_Sans'] font-black text-[15px] text-[#08315F] block truncate">
                   {selectedOfficial.official_name || `${selectedOfficial.first_name} ${selectedOfficial.last_name}`}
                 </span>
-                <span className="text-[11px] font-mono font-bold text-[#075985]">
-                  {selectedOfficial.tloid}
-                </span>
+                {selectedOfficial.plantilla_item_no && (
+                  <span className="text-[11px] font-mono font-bold text-[#075985]">
+                    {selectedOfficial.plantilla_item_no}
+                  </span>
+                )}
               </div>
             </>
           ) : (
@@ -302,7 +305,7 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search official name or TLO ID..."
+                placeholder="Search official name or active designation..."
                 className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-2 px-3 text-[13px] font-bold text-slate-700 outline-none transition-all"
               />
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 shrink-0">
@@ -319,7 +322,12 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
               ) : (
                 filtered.map((off) => {
                   const isSelected = String(off.id) === String(selectedId);
-                  const hasActive = off.active_assignments && off.active_assignments.length > 0;
+                  const activeDesignations = (Array.isArray(off.active_designations) && off.active_designations.length > 0)
+                    ? off.active_designations
+                    : (off.active_assignments && off.active_assignments.length > 0)
+                      ? off.active_assignments.map(a => a.designation || (a.capacity === 'OIC' ? `OIC - ${a.position_title}` : a.position_title))
+                      : [];
+
                   return (
                     <div
                       key={off.id}
@@ -342,20 +350,23 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
                         >
                           {off.first_name ? off.first_name[0] : 'O'}
                         </div>
-                        <div className="truncate flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
                           <p className="font-['Plus_Jakarta_Sans'] font-black text-[14px] text-slate-900 truncate">
                             {off.official_name || `${off.first_name} ${off.last_name}`}
                           </p>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap sm:flex-nowrap">
-                            <span className="font-mono text-[10px] text-[#075985] font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100 shrink-0">
-                              {off.tloid}
-                            </span>
-                            {hasActive && (
-                              <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 truncate max-w-[200px] sm:max-w-xs" title={`Active: ${off.active_assignments[0].position_title}`}>
-                                Active: {off.active_assignments[0].position_title}
-                              </span>
-                            )}
-                          </div>
+                          {activeDesignations.length > 0 && (
+                            <div className="flex flex-wrap gap-1 items-center mt-1">
+                              {activeDesignations.map((desig, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-[10px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-flex items-center leading-tight whitespace-normal"
+                                  title={`Active: ${desig}`}
+                                >
+                                  Active: {desig}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -638,10 +649,33 @@ const PositionAssignments = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   // Filters & Search
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'official_name', direction: 'asc' });
+  const [columnFilters, setColumnFilters] = useState({
+    official_name: '',
+    position_title: '',
+    capacity: '',
+    region: '',
+    office: '',
+    profile_completion: ''
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
+
+  const handleSort = (key) => {
+    setSortConfig(prev => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const handleColumnFilterChange = (key, value) => {
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  };
 
   // Modals
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -649,7 +683,7 @@ const PositionAssignments = () => {
   const [formData, setFormData] = useState({
     tlo_masterlist_id: '',
     position_id: '',
-    capacity: 'Full',
+    capacity: 'Full-fledged',
     start_date: new Date().toISOString().split('T')[0],
     designation: '',
     remarks: '',
@@ -691,7 +725,7 @@ const PositionAssignments = () => {
     try {
       let url = apiUrl('/api/third-level/assignments');
       const params = new URLSearchParams();
-      if (statusFilter !== 'All') params.append('status', statusFilter);
+      if (statusFilter && statusFilter.toUpperCase() !== 'ALL') params.append('status', statusFilter);
       if (searchTerm) params.append('search', searchTerm);
       if (params.toString()) url += `?${params.toString()}`;
 
@@ -771,32 +805,127 @@ const PositionAssignments = () => {
 
   // Filtered & Paginated assignments for table
   const filteredAssignments = useMemo(() => {
-    let list = assignments;
-    if (statusFilter !== 'All') {
-      list = list.filter(a => a.status && a.status.toLowerCase() === statusFilter.toLowerCase());
+    let list = [...assignments];
+
+    // 1. Status Tab filter
+    if (statusFilter && statusFilter.toUpperCase() !== 'ALL') {
+      list = list.filter(a => a.status && a.status.toUpperCase() === statusFilter.toUpperCase());
     }
+
+    // 2. Global search bar filter
     if (searchTerm.trim()) {
       const q = searchTerm.trim().toLowerCase();
-      list = list.filter(a =>
-        (a.official_name && a.official_name.toLowerCase().includes(q)) ||
-        (a.first_name && a.first_name.toLowerCase().includes(q)) ||
-        (a.last_name && a.last_name.toLowerCase().includes(q)) ||
-        (a.tloid && a.tloid.toLowerCase().includes(q)) ||
-        (a.position_title && a.position_title.toLowerCase().includes(q)) ||
-        (a.position_code && a.position_code.toLowerCase().includes(q)) ||
-        (a.region && a.region.toLowerCase().includes(q)) ||
-        (a.bureau && a.bureau.toLowerCase().includes(q)) ||
-        (a.division && a.division.toLowerCase().includes(q)) ||
-        (a.designation && a.designation.toLowerCase().includes(q))
-      );
+      list = list.filter(a => {
+        const name = (a.official_name || `${a.first_name || ''} ${a.last_name || ''}`).toLowerCase();
+        const itemNum = (a.item_number || a.plantilla_item_no || '').toLowerCase();
+        const pos = (a.position_title || '').toLowerCase();
+        const cap = (a.capacity || '').toLowerCase();
+        const reg = (a.region || '').toLowerCase();
+        const off = (a.office_name || a.bureau || a.division || '').toLowerCase();
+        const st = (a.status || '').toLowerCase();
+        const desig = (a.designation || '').toLowerCase();
+        return (
+          name.includes(q) ||
+          itemNum.includes(q) ||
+          pos.includes(q) ||
+          cap.includes(q) ||
+          reg.includes(q) ||
+          off.includes(q) ||
+          st.includes(q) ||
+          desig.includes(q)
+        );
+      });
     }
-    return list;
-  }, [assignments, statusFilter, searchTerm]);
 
-  // Reset page when search or status tab changes
+    // 3. Per-column filters
+    if (columnFilters.official_name.trim()) {
+      const q = columnFilters.official_name.trim().toLowerCase();
+      list = list.filter(a => {
+        const name = (a.official_name || `${a.first_name || ''} ${a.last_name || ''}`).toLowerCase();
+        const itemNum = (a.item_number || a.plantilla_item_no || '').toLowerCase();
+        return name.includes(q) || itemNum.includes(q);
+      });
+    }
+    if (columnFilters.position_title.trim()) {
+      const q = columnFilters.position_title.trim().toLowerCase();
+      list = list.filter(a => (a.position_title || '').toLowerCase().includes(q) || (a.designation || '').toLowerCase().includes(q));
+    }
+    if (columnFilters.capacity.trim()) {
+      const q = columnFilters.capacity.trim().toLowerCase();
+      list = list.filter(a => (a.capacity || '').toLowerCase().includes(q));
+    }
+    if (columnFilters.region.trim()) {
+      const q = columnFilters.region.trim().toLowerCase();
+      list = list.filter(a => (a.region || '').toLowerCase().includes(q));
+    }
+    if (columnFilters.office.trim()) {
+      const q = columnFilters.office.trim().toLowerCase();
+      list = list.filter(a => (a.office_name || a.bureau || a.division || '').toLowerCase().includes(q));
+    }
+    if (columnFilters.profile_completion && columnFilters.profile_completion.trim()) {
+      const q = columnFilters.profile_completion.trim().replace('%', '');
+      list = list.filter(a => {
+        if (a.profile_completion == null) return q === '—' || q === '-';
+        return String(Math.round(a.profile_completion)).includes(q);
+      });
+    }
+
+    // 4. Sorting
+    if (sortConfig.key) {
+      list.sort((a, b) => {
+        let valA = '';
+        let valB = '';
+
+        switch (sortConfig.key) {
+          case 'official_name':
+            valA = (a.official_name || `${a.first_name || ''} ${a.last_name || ''}`).toLowerCase();
+            valB = (b.official_name || `${b.first_name || ''} ${b.last_name || ''}`).toLowerCase();
+            break;
+          case 'position_title':
+            valA = (a.position_title || '').toLowerCase();
+            valB = (b.position_title || '').toLowerCase();
+            break;
+          case 'capacity':
+            valA = (a.capacity || '').toLowerCase();
+            valB = (b.capacity || '').toLowerCase();
+            break;
+          case 'region':
+            valA = (a.region || '').toLowerCase();
+            valB = (b.region || '').toLowerCase();
+            break;
+          case 'office':
+            valA = (a.office_name || a.bureau || a.division || '').toLowerCase();
+            valB = (b.office_name || b.bureau || b.division || '').toLowerCase();
+            break;
+          case 'profile_completion': {
+            const numA = a.profile_completion != null ? Number(a.profile_completion) : -1;
+            const numB = b.profile_completion != null ? Number(b.profile_completion) : -1;
+            if (numA < numB) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (numA > numB) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+          }
+          case 'status':
+            valA = (a.status || '').toLowerCase();
+            valB = (b.status || '').toLowerCase();
+            break;
+          default:
+            valA = (a[sortConfig.key] || '').toString().toLowerCase();
+            valB = (b[sortConfig.key] || '').toString().toLowerCase();
+        }
+
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return list;
+  }, [assignments, statusFilter, searchTerm, columnFilters, sortConfig]);
+
+  // Reset page when search, status tab, or column filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, columnFilters, sortConfig]);
 
   const pageCount = Math.max(1, Math.ceil(filteredAssignments.length / pageSize));
   const pagedRecords = useMemo(() => {
@@ -821,7 +950,7 @@ const PositionAssignments = () => {
     setFormData({
       tlo_masterlist_id: '',
       position_id: '',
-      capacity: 'Full',
+      capacity: 'Full-fledged',
       start_date: new Date().toISOString().split('T')[0],
       designation: '',
       remarks: '',
@@ -859,13 +988,10 @@ const PositionAssignments = () => {
     );
   }, [selectedOfficialExistingAssignments]);
 
-  // Active assignments to display with per-position question (strictly filtered by selected Capacity / Type where tlo_assignments.capacity)
+  // Active assignments to display with per-position question: renders all active positions of the official without capacity filtering or truncation
   const displayedAssignments = useMemo(() => {
-    if (!formData.capacity) return activeExistingAssignments;
-    return activeExistingAssignments.filter(
-      ea => (ea.capacity || 'Full').toLowerCase() === (formData.capacity || 'Full').toLowerCase()
-    );
-  }, [activeExistingAssignments, formData.capacity]);
+    return activeExistingAssignments;
+  }, [activeExistingAssignments]);
 
   // Sync default vacate decisions when official or active assignments change
   useEffect(() => {
@@ -874,19 +1000,13 @@ const PositionAssignments = () => {
         const next = { ...prev };
         displayedAssignments.forEach(ea => {
           if (next[ea.id] === undefined) {
-            if (formData.capacity === 'Concurrent') {
-              next[ea.id] = false;
-            } else if (displayedAssignments.length === 1 && (ea.capacity || 'Full').toLowerCase() === formData.capacity.toLowerCase()) {
-              next[ea.id] = true;
-            } else {
-              next[ea.id] = false;
-            }
+            next[ea.id] = false;
           }
         });
         return next;
       });
     }
-  }, [displayedAssignments, formData.capacity]);
+  }, [displayedAssignments]);
 
   // Edit Modal Official & Assignments Computation
   const editOfficialObj = useMemo(() => {
@@ -915,11 +1035,8 @@ const PositionAssignments = () => {
   }, [editOfficialExistingAssignments]);
 
   const editDisplayedAssignments = useMemo(() => {
-    if (!editFormData.capacity) return editActiveAssignments;
-    return editActiveAssignments.filter(
-      ea => (ea.capacity || 'Full').toLowerCase() === (editFormData.capacity || 'Full').toLowerCase()
-    );
-  }, [editActiveAssignments, editFormData.capacity]);
+    return editActiveAssignments;
+  }, [editActiveAssignments]);
 
   // Submit New Assignment
   const handleSubmitAssignment = async (e) => {
@@ -1172,7 +1289,7 @@ const PositionAssignments = () => {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
                 {/* Status Tabs */}
                 <div className="flex items-center gap-1.5 p-1 bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full">
-                  {['All', 'Active', 'Inactive'].map((st) => (
+                  {['ACTIVE', 'INACTIVE', 'ALL'].map((st) => (
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
@@ -1215,7 +1332,7 @@ const PositionAssignments = () => {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by official name, TLO ID, position title, code, bureau, or region..."
+                  placeholder="Search by official name, plantilla item no, position title, office, or region..."
                   className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-10 text-[15px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                 />
                 {searchTerm && (
@@ -1234,8 +1351,8 @@ const PositionAssignments = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full">
               {/* Card 1: Active Assignments */}
               <div
-                onClick={() => setStatusFilter(prev => prev === 'Active' ? 'All' : 'Active')}
-                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusFilter === 'Active' ? 'border-l-sky-500 shadow-md ring-1 ring-sky-200' : 'border-l-sky-400 hover:shadow-sm'
+                onClick={() => setStatusFilter(prev => prev === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
+                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusFilter === 'ACTIVE' ? 'border-l-sky-500 shadow-md ring-1 ring-sky-200' : 'border-l-sky-400 hover:shadow-sm'
                   }`}
               >
                 <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">Total Active Assignments</div>
@@ -1280,7 +1397,7 @@ const PositionAssignments = () => {
                   </div>
                   <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Assignment Records Found</h3>
                   <p className="text-slate-400 font-medium mt-2">
-                    {searchTerm ? 'Adjust your search query or reset status filters.' : 'Click "New Position Assignment" to deploy an official into an available plantilla post.'}
+                    {searchTerm || Object.values(columnFilters).some(Boolean) ? 'Adjust your search query or reset column and status filters.' : 'Click "New Position Assignment" to deploy an official into an available plantilla post.'}
                   </p>
                 </motion.div>
               ) : (
@@ -1289,115 +1406,244 @@ const PositionAssignments = () => {
                     {/* Desktop Table View */}
                     <table className="hidden md:table w-full text-left border-collapse table-fixed">
                       <thead>
-                        <tr className="bg-white border-b-2 border-slate-200">
-                          <th className="px-5 py-4 text-left align-top text-[13px] font-black text-slate-400 uppercase tracking-widest w-[28%]">
-                            Official Name & TLO ID
+                        <tr className="bg-slate-50/80 border-b border-slate-200 select-none">
+                          <th
+                            onClick={() => handleSort('official_name')}
+                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[22%]"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Official Name</span>
+                              {sortConfig.key === 'official_name' ? (
+                                sortConfig.direction === 'asc' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
                           </th>
-                          <th className="px-4 py-4 text-left align-top text-[13px] font-black text-slate-400 uppercase tracking-widest w-[26%]">
-                            Position Title & Code
+                          <th
+                            onClick={() => handleSort('position_title')}
+                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[24%]"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Position Title</span>
+                              {sortConfig.key === 'position_title' ? (
+                                sortConfig.direction === 'asc' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
                           </th>
-                          <th className="px-2 py-4 text-center align-top text-[13px] font-black text-slate-400 uppercase tracking-widest w-[8%]">
-                            SG
+                          <th
+                            onClick={() => handleSort('capacity')}
+                            className="px-3 py-3.5 text-center text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[12%]"
+                          >
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span>Capacity</span>
+                              {sortConfig.key === 'capacity' ? (
+                                sortConfig.direction === 'asc' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
                           </th>
-                          <th className="px-3 py-4 text-left align-top text-[13px] font-black text-slate-400 uppercase tracking-widest w-[16%]">
-                            Office / Region
+                          <th
+                            onClick={() => handleSort('region')}
+                            className="px-3 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[13%]"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Region</span>
+                              {sortConfig.key === 'region' ? (
+                                sortConfig.direction === 'asc' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
                           </th>
-                          <th className="px-2 py-4 text-center align-top text-[13px] font-black text-slate-400 uppercase tracking-widest w-[11%]">
-                            Capacity
+                          <th
+                            onClick={() => handleSort('office')}
+                            className="px-3 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[17%]"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Office</span>
+                              {sortConfig.key === 'office' ? (
+                                sortConfig.direction === 'asc' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
                           </th>
-                          <th className="px-2 py-4 text-center align-top text-[13px] font-black text-slate-400 uppercase tracking-widest w-[11%]">
-                            Status
+                          <th
+                            onClick={() => handleSort('profile_completion')}
+                            className="px-3 py-3.5 text-center text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[12%]"
+                          >
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span>Profile Completion</span>
+                              {sortConfig.key === 'profile_completion' ? (
+                                sortConfig.direction === 'asc' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
+                          </th>
+                        </tr>
+                        {/* Secondary Filter Row */}
+                        <tr className="bg-slate-50/50 border-b-2 border-slate-200">
+                          <th className="px-3 py-2">
+                            <input
+                              type="text"
+                              value={columnFilters.official_name}
+                              onChange={(e) => handleColumnFilterChange('official_name', e.target.value)}
+                              placeholder="Filter official..."
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#08315F] focus:ring-1 focus:ring-[#08315F]/20"
+                            />
+                          </th>
+                          <th className="px-3 py-2">
+                            <input
+                              type="text"
+                              value={columnFilters.position_title}
+                              onChange={(e) => handleColumnFilterChange('position_title', e.target.value)}
+                              placeholder="Filter position..."
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#08315F] focus:ring-1 focus:ring-[#08315F]/20"
+                            />
+                          </th>
+                          <th className="px-2 py-2">
+                            <input
+                              type="text"
+                              value={columnFilters.capacity}
+                              onChange={(e) => handleColumnFilterChange('capacity', e.target.value)}
+                              placeholder="Filter capacity..."
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[12px] font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#08315F] focus:ring-1 focus:ring-[#08315F]/20 text-center"
+                            />
+                          </th>
+                          <th className="px-2 py-2">
+                            <input
+                              type="text"
+                              value={columnFilters.region}
+                              onChange={(e) => handleColumnFilterChange('region', e.target.value)}
+                              placeholder="Filter region..."
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[12px] font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#08315F] focus:ring-1 focus:ring-[#08315F]/20"
+                            />
+                          </th>
+                          <th className="px-2 py-2">
+                            <input
+                              type="text"
+                              value={columnFilters.office}
+                              onChange={(e) => handleColumnFilterChange('office', e.target.value)}
+                              placeholder="Filter office..."
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[12px] font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#08315F] focus:ring-1 focus:ring-[#08315F]/20"
+                            />
+                          </th>
+                          <th className="px-2 py-2">
+                            <input
+                              type="text"
+                              value={columnFilters.profile_completion}
+                              onChange={(e) => handleColumnFilterChange('profile_completion', e.target.value)}
+                              placeholder="Filter %..."
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[12px] font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#08315F] focus:ring-1 focus:ring-[#08315F]/20 text-center"
+                            />
                           </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y-2 divide-slate-200/60 bg-white">
                         {pagedRecords.map((item) => {
                           const isActive = item.status === 'Active' && !item.end_date;
+
                           return (
                             <tr key={item.id} className="group transition-colors relative hover:bg-slate-50/80">
-                              {/* Official Name & TLO ID */}
-                              <td className="px-5 py-4 align-middle">
+                              {/* 1. Official Name */}
+                              <td className="px-4 py-4 align-middle">
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-[#08315F] font-black text-sm border-2 border-white shadow-sm overflow-hidden shrink-0">
                                     {item.first_name ? item.first_name[0] : 'O'}
                                   </div>
-                                  <div className="min-w-0">
-                                    <div className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[17px] leading-snug truncate">
-                                      {item.official_name || `${item.first_name || ''} ${item.last_name || ''}`}
-                                    </div>
-                                    <div className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 flex items-center gap-1.5 truncate">
+                                  <div className="min-w-0 flex-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const tloidParam = item.tloid || item.tlo_id || item.TLOid;
+                                        if (tloidParam) {
+                                          navigate(`/official-profiling?tloid=${encodeURIComponent(tloidParam)}&TLOid=${encodeURIComponent(tloidParam)}${item.email ? `&email=${encodeURIComponent(item.email)}` : ''}`);
+                                        }
+                                      }}
+                                      className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] hover:text-[#004A99] hover:underline text-[16px] leading-snug truncate text-left cursor-pointer transition-colors flex items-center max-w-full"
+                                      title={item.official_name || `${item.first_name || ''} ${item.last_name || ''}`}
+                                    >
+                                      <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 shrink-0 ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                      <span className="truncate">{item.official_name || `${item.first_name || ''} ${item.last_name || ''}`}</span>
+                                    </button>
+                                    <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 flex items-center gap-1.5 truncate">
                                       <FiArrowRight className="text-[#075985] shrink-0" size={10} />
-                                      <span className="font-mono font-bold text-[#075985]">{item.tloid}</span>
-                                      {item.start_date && (
-                                        <>
-                                          <span className="text-slate-300">•</span>
-                                          <FiCalendar className="text-slate-300 shrink-0" size={10} />
-                                          <span>{new Date(item.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                                        </>
-                                      )}
+                                      <span className="font-mono font-bold text-[#075985] truncate" title={item.item_number || item.plantilla_item_no || '—'}>
+                                        {item.item_number || item.plantilla_item_no || '—'}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
                               </td>
 
-                              {/* Position Title & Code */}
+                              {/* 2. Position Title */}
                               <td className="px-4 py-4 align-middle">
                                 <div className="space-y-1">
                                   <div className="flex w-fit max-w-full items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50/80 border-2 border-amber-300 text-amber-700 text-[12.5px] font-black uppercase tracking-tight shadow-2xs">
                                     <span className="truncate" title={item.position_title}>{item.position_title}</span>
                                   </div>
-                                  <div className="text-[11.5px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 truncate">
-                                    <span className="font-mono">{item.position_code || 'POS'}</span>
-                                    {item.designation && (
-                                      <>
-                                        <span className="text-slate-300">•</span>
-                                        <span className="text-purple-600 font-bold truncate" title={item.designation}>
-                                          Desig: {item.designation}
-                                        </span>
-                                      </>
-                                    )}
-                                  </div>
+                                  {item.designation && (
+                                    <div className="text-[11.5px] font-bold text-purple-600 uppercase tracking-wider truncate" title={item.designation}>
+                                      Desig: {item.designation}
+                                    </div>
+                                  )}
                                 </div>
                               </td>
 
-                              {/* Salary Grade */}
-                              <td className="px-2 py-4 align-middle text-center">
-                                <span className="font-black text-[#08315F] text-[15px]">
-                                  {item.salary_grade ? `SG ${item.salary_grade}` : '—'}
-                                </span>
-                              </td>
-
-                              {/* Office / Region */}
-                              <td className="px-3 py-4 align-middle">
-                                <div className="text-[14px] font-black text-[#08315F] uppercase tracking-tight truncate" title={item.region || 'CENTRAL OFFICE'}>
-                                  {item.region || 'CENTRAL OFFICE'}
-                                </div>
-                                <div className="text-[11.5px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5" title={item.bureau || item.division || 'General'}>
-                                  {item.bureau || item.division || '—'}
-                                </div>
-                              </td>
-
-                              {/* Capacity Badge */}
-                              <td className="px-2 py-4 align-middle text-center">
-                                <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-widest border-2 ${item.capacity === 'Full'
+                              {/* 3. Capacity */}
+                              <td className="px-3 py-4 align-middle text-center">
+                                <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-widest border-2 ${item.capacity === 'Full' || item.capacity === 'Full-fledged'
                                     ? 'bg-blue-50 text-[#075985] border-blue-200'
-                                    : item.capacity === 'OIC'
+                                    : item.capacity === 'OIC' || item.capacity === 'Officer-in-Charge (OIC)'
                                       ? 'bg-[#FCD116]/20 border-[#FCD116] text-[#0038A8]'
                                       : 'bg-purple-50 text-purple-700 border-purple-200'
                                   }`}>
-                                  {item.capacity}
+                                  {item.capacity === 'Full' ? 'Full-fledged' : item.capacity === 'OIC' ? 'OIC' : item.capacity}
                                 </span>
                               </td>
 
-                              {/* Status & Floating Action Toolbar */}
-                              <td className="px-2 py-4 align-middle text-center static md:relative">
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-widest border-2 ${isActive
-                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                    : 'bg-slate-50 text-slate-400 border-slate-200'
-                                  }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                                  {isActive ? 'Active' : 'Inactive'}
-                                </span>
+                              {/* 4. Region */}
+                              <td className="px-3 py-4 align-middle">
+                                <div className="text-[13.5px] font-black text-[#08315F] uppercase tracking-tight truncate" title={item.region || 'CENTRAL OFFICE'}>
+                                  {item.region || 'CENTRAL OFFICE'}
+                                </div>
+                              </td>
+
+                              {/* 5. Office */}
+                              <td className="px-3 py-4 align-middle">
+                                <div className="text-[13px] font-bold text-slate-600 uppercase tracking-tight truncate" title={item.office_name || item.bureau || item.division || '—'}>
+                                  {item.office_name || item.bureau || item.division || '—'}
+                                </div>
+                              </td>
+
+                              {/* 6. Profile Completion & Floating Action Toolbar */}
+                              <td className="px-3 py-4 align-middle text-center static md:relative">
+                                {(!item.first_name || item.first_name === 'VACANT' || item.profile_completion == null) ? (
+                                  <span className="text-slate-300 font-bold text-[16px]">—</span>
+                                ) : (
+                                  <div className="flex flex-col gap-1 w-full max-w-[110px] mx-auto">
+                                    <span className="text-[14px] font-black text-[#08315F] leading-none">
+                                      {Math.min(100, Math.max(0, Math.round(item.profile_completion)))}%
+                                    </span>
+                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                      <div
+                                        className={`h-full rounded-full transition-all duration-300 ${
+                                          Number(item.profile_completion) >= 100
+                                            ? 'bg-emerald-500'
+                                            : Number(item.profile_completion) >= 70
+                                              ? 'bg-[#08315F]'
+                                              : 'bg-amber-500'
+                                        }`}
+                                        style={{ width: `${Math.min(100, Math.max(0, Math.round(item.profile_completion)))}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
 
                                 {/* Group Hover Action Toolbar (Matching OfficialsRegistry) */}
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-md border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">
@@ -1439,11 +1685,21 @@ const PositionAssignments = () => {
                                   {item.first_name ? item.first_name[0] : 'O'}
                                 </div>
                                 <div className="min-w-0">
-                                  <div className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[17px] leading-tight truncate">
-                                    {item.official_name || `${item.first_name || ''} ${item.last_name || ''}`}
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const tloidParam = item.tloid || item.tlo_id || item.TLOid;
+                                      if (tloidParam) {
+                                        navigate(`/official-profiling?tloid=${encodeURIComponent(tloidParam)}&TLOid=${encodeURIComponent(tloidParam)}${item.email ? `&email=${encodeURIComponent(item.email)}` : ''}`);
+                                      }
+                                    }}
+                                    className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] hover:text-[#004A99] hover:underline text-[17px] leading-tight truncate text-left cursor-pointer flex items-center max-w-full"
+                                  >
+                                    <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 shrink-0 ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                    <span className="truncate">{item.official_name || `${item.first_name || ''} ${item.last_name || ''}`}</span>
+                                  </button>
                                   <div className="text-[12px] font-bold text-slate-400 mt-0.5 truncate font-mono">
-                                    {item.tloid}
+                                    {item.item_number || item.plantilla_item_no || '—'}
                                   </div>
                                 </div>
                               </div>
@@ -1458,6 +1714,12 @@ const PositionAssignments = () => {
 
                             <div className="flex flex-col gap-2 mt-1 bg-slate-50/70 rounded-2xl p-3.5 border-2 border-slate-200">
                               <div className="flex justify-between items-center text-[13px] gap-2">
+                                <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Profile Completion</span>
+                                <span className="font-black text-[#08315F] text-right">
+                                  {item.profile_completion != null ? `${Math.round(item.profile_completion)}%` : '—'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center text-[13px] gap-2">
                                 <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Position</span>
                                 <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">
                                   {item.position_title}
@@ -1471,13 +1733,13 @@ const PositionAssignments = () => {
                               </div>
                               <div className="flex justify-between items-center text-[13px] gap-2">
                                 <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Capacity</span>
-                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-widest border-2 ${item.capacity === 'Full'
+                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-widest border-2 ${item.capacity === 'Full' || item.capacity === 'Full-fledged'
                                     ? 'bg-blue-50 text-[#075985] border-blue-200'
-                                    : item.capacity === 'OIC'
+                                    : item.capacity === 'OIC' || item.capacity === 'Officer-in-Charge (OIC)'
                                       ? 'bg-[#FCD116]/20 border-[#FCD116] text-[#0038A8]'
                                       : 'bg-purple-50 text-purple-700 border-purple-200'
                                   }`}>
-                                  {item.capacity}
+                                  {item.capacity === 'Full' ? 'Full-fledged' : item.capacity === 'OIC' ? 'OIC' : item.capacity}
                                 </span>
                               </div>
                               {item.designation && (
@@ -1607,8 +1869,8 @@ const PositionAssignments = () => {
                       />
                     </div>
 
-                    {/* Official's Active Positions: Displayed base on selected Capacity / Type where tlo_assignments.capacity (only if data exists) */}
-                    {selectedOfficialObj && displayedAssignments.length > 0 && (
+                    {/* Official's Active Positions: Display all active positions of selected official */}
+                    {selectedOfficialObj && (
                       <div className="bg-slate-50/90 border-2 border-slate-200 rounded-2xl p-4 sm:p-5">
                         {/* Header: Start = Current Positions of Official, End = Active Positions badge, Next row = Subtitle */}
                         <div className="mb-3.5 space-y-1">
@@ -1624,12 +1886,21 @@ const PositionAssignments = () => {
                             </span>
                           </div>
                           <p className="text-[11.5px] text-slate-500">
-                            Select below which position(s) should be vacated:
+                            {displayedAssignments.length > 0
+                              ? 'Select below which position(s) should be vacated:'
+                              : 'No active positions currently held by this official.'}
                           </p>
                         </div>
 
-                        {/* Per-Position Display & Vacancy Question */}
-                        <div className="space-y-3">
+                        {displayedAssignments.length === 0 ? (
+                          <div className="p-4 bg-white rounded-xl border-2 border-dashed border-slate-200 text-center">
+                            <p className="text-[12.5px] font-bold text-slate-400">
+                              No active positions found for this official.
+                            </p>
+                          </div>
+                        ) : (
+                          /* Per-Position Display & Vacancy Question with container scroll support */
+                          <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                             {displayedAssignments.map((ea) => {
                               const isVacate = vacateDecisions[ea.id] === true;
                               return (
@@ -1663,13 +1934,13 @@ const PositionAssignments = () => {
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${ea.capacity === 'Full'
+                                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${ea.capacity === 'Full' || ea.capacity === 'Full-fledged'
                                           ? 'bg-blue-50 text-[#075985] border-blue-200'
-                                          : ea.capacity === 'OIC'
+                                          : ea.capacity === 'OIC' || ea.capacity === 'Officer-in-Charge (OIC)'
                                             ? 'bg-amber-50 text-amber-800 border-amber-200'
                                             : 'bg-purple-50 text-purple-700 border-purple-200'
                                         }`}>
-                                        Current: {ea.capacity || 'Full'}
+                                        Current: {ea.capacity === 'Full' ? 'Full-fledged' : ea.capacity === 'OIC' ? 'Officer-in-Charge (OIC)' : ea.capacity || 'Full-fledged'}
                                       </span>
                                     </div>
                                   </div>
@@ -1726,8 +1997,9 @@ const PositionAssignments = () => {
                               );
                             })}
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
+                    )}
 
                     {/* Capacity / Type - 1 row */}
                     <div>
@@ -1736,13 +2008,18 @@ const PositionAssignments = () => {
                       </label>
                       <div className="relative">
                         <select
-                          value={formData.capacity}
+                          value={
+                            formData.capacity === 'Full' || formData.capacity === 'Full-fledged'
+                              ? 'Full-fledged'
+                              : formData.capacity === 'OIC' || formData.capacity === 'Officer-in-Charge (OIC)'
+                                ? 'Officer-in-Charge (OIC)'
+                                : formData.capacity
+                          }
                           onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
                           className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3.5 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all appearance-none pr-10 cursor-pointer"
                         >
-                          <option value="Full">Full (Substantive)</option>
-                          <option value="OIC">OIC (Officer-in-Charge)</option>
-                          <option value="Concurrent">Concurrent</option>
+                          <option value="Full-fledged">Full-fledged</option>
+                          <option value="Officer-in-Charge (OIC)">Officer-in-Charge (OIC)</option>
                         </select>
                         <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
                       </div>
@@ -1917,8 +2194,8 @@ const PositionAssignments = () => {
                           </p>
                         </div>
 
-                        {/* List of positions */}
-                        <div className="space-y-3">
+                        {/* List of positions with container scroll support */}
+                        <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                           {editDisplayedAssignments.map((ea) => {
                             const isCurrentEditing = selectedAssignmentToEdit && String(ea.id) === String(selectedAssignmentToEdit.id);
                             const isVacate = editVacateDecisions[ea.id] === true;
@@ -1959,13 +2236,13 @@ const PositionAssignments = () => {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">
-                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${ea.capacity === 'Full'
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${ea.capacity === 'Full' || ea.capacity === 'Full-fledged'
                                         ? 'bg-blue-50 text-[#075985] border-blue-200'
-                                        : ea.capacity === 'OIC'
+                                        : ea.capacity === 'OIC' || ea.capacity === 'Officer-in-Charge (OIC)'
                                           ? 'bg-amber-50 text-amber-800 border-amber-200'
                                           : 'bg-purple-50 text-purple-700 border-purple-200'
                                       }`}>
-                                      Current: {ea.capacity || 'Full'}
+                                      Current: {ea.capacity === 'Full' ? 'Full-fledged' : ea.capacity === 'OIC' ? 'Officer-in-Charge (OIC)' : ea.capacity || 'Full-fledged'}
                                     </span>
                                   </div>
                                 </div>
@@ -2037,13 +2314,18 @@ const PositionAssignments = () => {
                       </div>
                       <div className="relative">
                         <select
-                          value={editFormData.capacity}
+                          value={
+                            editFormData.capacity === 'Full' || editFormData.capacity === 'Full-fledged'
+                              ? 'Full-fledged'
+                              : editFormData.capacity === 'OIC' || editFormData.capacity === 'Officer-in-Charge (OIC)'
+                                ? 'Officer-in-Charge (OIC)'
+                                : editFormData.capacity
+                          }
                           disabled
                           className="w-full bg-slate-100/90 border-2 border-slate-200 text-slate-500 rounded-2xl py-3.5 px-4 text-[15px] font-bold outline-none transition-all appearance-none pr-10 cursor-not-allowed opacity-75 select-none"
                         >
-                          <option value="Full">Full (Substantive / Regular)</option>
-                          <option value="OIC">OIC (Officer-in-Charge)</option>
-                          <option value="Concurrent">Concurrent</option>
+                          <option value="Full-fledged">Full-fledged</option>
+                          <option value="Officer-in-Charge (OIC)">Officer-in-Charge (OIC)</option>
                         </select>
                         <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none w-4 h-4" />
                       </div>

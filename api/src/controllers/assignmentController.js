@@ -24,11 +24,68 @@ export const getAssignments = async (req, res) => {
         -- Official details
         m.id AS tlo_masterlist_id,
         m.tloid,
+        m.plantilla_item_no,
+        m.plantilla_item_no AS item_number,
         m.first_name,
         m.middle_name,
         m.last_name,
         m.suffix,
         CONCAT_WS(' ', m.first_name, NULLIF(m.middle_name, ''), m.last_name, NULLIF(m.suffix, '')) AS official_name,
+        tlo.email,
+        (
+          CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' THEN NULL
+          ELSE (
+            (CASE WHEN 
+              tlo.first_name IS NOT NULL AND tlo.first_name != '' AND
+              tlo.last_name IS NOT NULL AND tlo.last_name != '' AND
+              tlo.gender IS NOT NULL AND tlo.gender != '' AND
+              tlo.date_of_birth IS NOT NULL AND
+              tlo.civil_status IS NOT NULL AND tlo.civil_status != '' AND
+              tlo.photo_binary_id IS NOT NULL AND
+              tlo.employment_status IS NOT NULL AND tlo.employment_status != '' AND
+              tlo.region IS NOT NULL AND tlo.region != '' AND
+              tlo.position_title IS NOT NULL AND tlo.position_title != '' AND
+              tlo.appointment_date IS NOT NULL AND
+              (COALESCE(tlo.is_oic, false) = false OR (tlo.designation IS NOT NULL AND tlo.designation != '')) AND
+              tlo.permanent_address IS NOT NULL AND tlo.permanent_address != '' AND
+              ((tlo.contact_details IS NOT NULL AND tlo.contact_details != '') OR (tlo.alt_contact_details_1 IS NOT NULL AND tlo.alt_contact_details_1 != ''))
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (tlo.ces_stage IS NOT NULL AND tlo.ces_stage != '' AND tlo.ces_stage != 'NOT APPLICABLE') OR
+              tlo.emt_passer IS NOT NULL OR
+              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE el.source_table = 'masterlist' AND el.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.source_table = 'masterlist' AND ph.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.source_table = 'masterlist' AND ed.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.performance_rating_1 IS NOT NULL AND tlo.performance_rating_1 != '' AND
+              tlo.performance_rating_1_period IS NOT NULL AND tlo.performance_rating_1_period != ''
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.source_table = 'masterlist' AND tr.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (tlo.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(tlo.notable_achievements) = 'array' THEN tlo.notable_achievements ELSE '[]'::jsonb END) > 0) OR
+              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE ac.source_table = 'masterlist' AND ac.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.pds_binary_id IS NOT NULL AND tlo.service_records_binary_id IS NOT NULL
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.pending_admin_case IS NOT NULL AND tlo.pending_admin_case != '' AND (
+                (tlo.guilty_admin_details IS NOT NULL AND tlo.criminally_charged_details IS NOT NULL AND tlo.convicted_crime_details IS NOT NULL) OR
+                (UPPER(tlo.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
+              )
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.dpa_consented_at IS NOT NULL
+            THEN 10 ELSE 0 END)
+          ) END
+        ) AS profile_completion,
         -- Position details
         p.id AS position_id,
         p.position_code,
@@ -40,14 +97,15 @@ export const getAssignments = async (req, res) => {
       FROM tlo_assignments a
       INNER JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
       INNER JOIN tlo_positions p ON a.position_id = p.id
+      LEFT JOIN third_level_official_masterlist tlo ON LOWER(tlo."TLOid") = LOWER(m.tloid)
       WHERE 1=1
     `;
 
     const params = [];
 
-    if (status && status !== 'All') {
+    if (status && status.toLowerCase() !== 'all') {
       params.push(status);
-      query += ` AND a.status = $${params.length}`;
+      query += ` AND a.status ILIKE $${params.length}`;
     }
 
     if (search && search.trim() !== '') {
@@ -55,6 +113,7 @@ export const getAssignments = async (req, res) => {
       const pIdx = params.length;
       query += ` AND (
         m.tloid ILIKE $${pIdx} OR
+        m.plantilla_item_no ILIKE $${pIdx} OR
         m.first_name ILIKE $${pIdx} OR
         m.last_name ILIKE $${pIdx} OR
         p.position_title ILIKE $${pIdx} OR
@@ -175,11 +234,87 @@ export const getOfficialsForAssignment = async (req, res) => {
       SELECT 
         m.id,
         m.tloid,
+        m.plantilla_item_no,
         m.first_name,
         m.middle_name,
         m.last_name,
         m.suffix,
         CONCAT_WS(' ', m.first_name, NULLIF(m.middle_name, ''), m.last_name, NULLIF(m.suffix, '')) AS official_name,
+        CONCAT_WS(' ', m.first_name, NULLIF(m.middle_name, ''), m.last_name, NULLIF(m.suffix, '')) AS full_name,
+        tlo.email,
+        (
+          CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' THEN NULL
+          ELSE (
+            (CASE WHEN 
+              tlo.first_name IS NOT NULL AND tlo.first_name != '' AND
+              tlo.last_name IS NOT NULL AND tlo.last_name != '' AND
+              tlo.gender IS NOT NULL AND tlo.gender != '' AND
+              tlo.date_of_birth IS NOT NULL AND
+              tlo.civil_status IS NOT NULL AND tlo.civil_status != '' AND
+              tlo.photo_binary_id IS NOT NULL AND
+              tlo.employment_status IS NOT NULL AND tlo.employment_status != '' AND
+              tlo.region IS NOT NULL AND tlo.region != '' AND
+              tlo.position_title IS NOT NULL AND tlo.position_title != '' AND
+              tlo.appointment_date IS NOT NULL AND
+              (COALESCE(tlo.is_oic, false) = false OR (tlo.designation IS NOT NULL AND tlo.designation != '')) AND
+              tlo.permanent_address IS NOT NULL AND tlo.permanent_address != '' AND
+              ((tlo.contact_details IS NOT NULL AND tlo.contact_details != '') OR (tlo.alt_contact_details_1 IS NOT NULL AND tlo.alt_contact_details_1 != ''))
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (tlo.ces_stage IS NOT NULL AND tlo.ces_stage != '' AND tlo.ces_stage != 'NOT APPLICABLE') OR
+              tlo.emt_passer IS NOT NULL OR
+              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE el.source_table = 'masterlist' AND el.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.source_table = 'masterlist' AND ph.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.source_table = 'masterlist' AND ed.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.performance_rating_1 IS NOT NULL AND tlo.performance_rating_1 != '' AND
+              tlo.performance_rating_1_period IS NOT NULL AND tlo.performance_rating_1_period != ''
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.source_table = 'masterlist' AND tr.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              (tlo.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(tlo.notable_achievements) = 'array' THEN tlo.notable_achievements ELSE '[]'::jsonb END) > 0) OR
+              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE ac.source_table = 'masterlist' AND ac.tlo_id = tlo."TLOid")
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.pds_binary_id IS NOT NULL AND tlo.service_records_binary_id IS NOT NULL
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.pending_admin_case IS NOT NULL AND tlo.pending_admin_case != '' AND (
+                (tlo.guilty_admin_details IS NOT NULL AND tlo.criminally_charged_details IS NOT NULL AND tlo.convicted_crime_details IS NOT NULL) OR
+                (UPPER(tlo.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
+              )
+            THEN 10 ELSE 0 END) +
+            (CASE WHEN 
+              tlo.dpa_consented_at IS NOT NULL
+            THEN 10 ELSE 0 END)
+          ) END
+        ) AS profile_completion,
+        COALESCE(
+          (
+            SELECT json_agg(
+              COALESCE(
+                NULLIF(a.designation, ''),
+                CASE 
+                  WHEN a.capacity = 'OIC' THEN CONCAT('OIC - ', pos.position_title)
+                  ELSE pos.position_title
+                END,
+                'Active Assignment'
+              )
+              ORDER BY a.created_at DESC, a.id DESC
+            )
+            FROM tlo_assignments a
+            LEFT JOIN tlo_positions pos ON a.position_id = pos.id
+            WHERE a.tlo_masterlist_id = m.id AND a.status ILIKE 'Active' AND a.end_date IS NULL
+          ),
+          '[]'::json
+        ) AS active_designations,
         (
           SELECT json_agg(json_build_object(
             'id', a.id,
@@ -193,6 +328,7 @@ export const getOfficialsForAssignment = async (req, res) => {
             'bureau', pos.bureau,
             'capacity', a.capacity,
             'status', a.status,
+            'designation', a.designation,
             'start_date', a.start_date,
             'end_date', a.end_date,
             'remarks', a.remarks
@@ -214,15 +350,17 @@ export const getOfficialsForAssignment = async (req, res) => {
             'bureau', pos.bureau,
             'capacity', a.capacity,
             'status', a.status,
+            'designation', a.designation,
             'start_date', a.start_date,
             'end_date', a.end_date,
             'remarks', a.remarks
           ) ORDER BY a.created_at DESC, a.id DESC)
           FROM tlo_assignments a
           JOIN tlo_positions pos ON a.position_id = pos.id
-          WHERE a.tlo_masterlist_id = m.id AND a.status = 'Active' AND a.end_date IS NULL
+          WHERE a.tlo_masterlist_id = m.id AND a.status ILIKE 'Active' AND a.end_date IS NULL
         ) AS active_assignments
       FROM tlo_masterlist m
+      LEFT JOIN third_level_official_masterlist tlo ON LOWER(tlo."TLOid") = LOWER(m.tloid)
       ORDER BY m.last_name ASC, m.first_name ASC
     `;
 
@@ -264,11 +402,15 @@ export const createAssignment = async (req, res) => {
     });
   }
 
-  const validCapacities = ['Full', 'OIC', 'Concurrent'];
+  let normalizedCapacity = capacity;
+  if (normalizedCapacity === 'Full-fledged') normalizedCapacity = 'Full';
+  if (normalizedCapacity === 'Officer-in-Charge (OIC)') normalizedCapacity = 'OIC';
+
+  const validCapacities = ['Full', 'OIC', 'Concurrent', 'Full-fledged', 'Officer-in-Charge (OIC)'];
   if (!validCapacities.includes(capacity)) {
     return res.status(400).json({
       success: false,
-      error: `Invalid capacity '${capacity}'. Must be one of: ${validCapacities.join(', ')}.`
+      error: `Invalid capacity '${capacity}'. Must be one of: Full-fledged, Officer-in-Charge (OIC).`
     });
   }
 
@@ -427,7 +569,7 @@ export const createAssignment = async (req, res) => {
     const insertRes = await client.query(insertQuery, [
       tlo_masterlist_id,
       position_id,
-      capacity,
+      normalizedCapacity,
       start_date || null,
       designation || null,
       remarks || null,
@@ -436,7 +578,8 @@ export const createAssignment = async (req, res) => {
 
     await client.query('COMMIT');
 
-    let successMessage = `Successfully assigned ${officialRecord.first_name} ${officialRecord.last_name} (${officialRecord.tloid}) to ${positionRecord.position_title} as ${capacity}.`;
+    const displayCapacity = capacity === 'Full' ? 'Full-fledged' : capacity === 'OIC' ? 'Officer-in-Charge (OIC)' : capacity;
+    let successMessage = `Successfully assigned ${officialRecord.first_name} ${officialRecord.last_name} (${officialRecord.tloid}) to ${positionRecord.position_title} as ${displayCapacity}.`;
     if (vacatedPositions.length > 0) {
       const titles = vacatedPositions.map(vp => vp.position_title || vp.position_code || 'Previous Position').join(', ');
       successMessage += ` Previous position (${titles}) was set to Inactive and is now vacant.`;
@@ -603,13 +746,18 @@ export const updateAssignment = async (req, res) => {
       }
     }
 
-    // Validate capacity if provided
-    const targetCapacity = capacity || current.capacity;
-    const validCapacities = ['Full', 'OIC', 'Concurrent'];
+    // Validate and normalize capacity if provided
+    let normalizedCapacity = capacity ? (
+      capacity === 'Full-fledged' ? 'Full' :
+      capacity === 'Officer-in-Charge (OIC)' ? 'OIC' : capacity
+    ) : current.capacity;
+
+    const validCapacities = ['Full', 'OIC', 'Concurrent', 'Full-fledged', 'Officer-in-Charge (OIC)'];
     if (capacity && !validCapacities.includes(capacity)) {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: `Invalid capacity '${capacity}'.` });
     }
+    const targetCapacity = normalizedCapacity;
 
     // Validate status if provided
     const targetStatus = status || current.status;
