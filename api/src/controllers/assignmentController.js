@@ -182,11 +182,42 @@ export const getOfficialsForAssignment = async (req, res) => {
         CONCAT_WS(' ', m.first_name, NULLIF(m.middle_name, ''), m.last_name, NULLIF(m.suffix, '')) AS official_name,
         (
           SELECT json_agg(json_build_object(
+            'id', a.id,
             'assignment_id', a.id,
+            'position_id', a.position_id,
             'position_title', pos.position_title,
+            'position_code', pos.position_code,
+            'salary_grade', pos.salary_grade,
+            'region', pos.region,
+            'division', pos.division,
+            'bureau', pos.bureau,
             'capacity', a.capacity,
-            'start_date', a.start_date
-          ))
+            'status', a.status,
+            'start_date', a.start_date,
+            'end_date', a.end_date,
+            'remarks', a.remarks
+          ) ORDER BY a.created_at DESC, a.id DESC)
+          FROM tlo_assignments a
+          JOIN tlo_positions pos ON a.position_id = pos.id
+          WHERE a.tlo_masterlist_id = m.id
+        ) AS existing_assignments,
+        (
+          SELECT json_agg(json_build_object(
+            'id', a.id,
+            'assignment_id', a.id,
+            'position_id', a.position_id,
+            'position_title', pos.position_title,
+            'position_code', pos.position_code,
+            'salary_grade', pos.salary_grade,
+            'region', pos.region,
+            'division', pos.division,
+            'bureau', pos.bureau,
+            'capacity', a.capacity,
+            'status', a.status,
+            'start_date', a.start_date,
+            'end_date', a.end_date,
+            'remarks', a.remarks
+          ) ORDER BY a.created_at DESC, a.id DESC)
           FROM tlo_assignments a
           JOIN tlo_positions pos ON a.position_id = pos.id
           WHERE a.tlo_masterlist_id = m.id AND a.status = 'Active' AND a.end_date IS NULL
@@ -211,7 +242,7 @@ export const getOfficialsForAssignment = async (req, res) => {
   }
 };
 
-// 4. Create Assignment (Strict Transactional Vacancy Validation)
+// 4. Create Assignment (Strict Transactional Vacancy Validation & Optional Previous Post Vacating)
 export const createAssignment = async (req, res) => {
   const {
     tlo_masterlist_id,
@@ -219,7 +250,10 @@ export const createAssignment = async (req, res) => {
     capacity = 'Full',
     start_date,
     designation,
-    remarks
+    remarks,
+    vacate_previous_position = false,
+    vacate_assignment_ids = null,
+    vacate_position_ids = null
   } = req.body;
 
   // Basic Validation
@@ -243,7 +277,7 @@ export const createAssignment = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Lock the position row to prevent concurrent assignment race conditions
+    // 1. Lock the target position row to prevent concurrent assignment race conditions
     const posCheck = await client.query(
       `SELECT id, position_title, position_code FROM tlo_positions WHERE id = $1 FOR UPDATE`,
       [position_id]
@@ -259,7 +293,7 @@ export const createAssignment = async (req, res) => {
 
     const positionRecord = posCheck.rows[0];
 
-    // 2. Strict Vacancy Check: Verify if an active assignment already occupies this position
+    // 2. Strict Vacancy Check: Verify if an active assignment already occupies this target position
     const activeAssignCheck = await client.query(
       `SELECT a.id, a.tlo_masterlist_id, a.capacity, a.start_date, a.status,
               m.tloid, CONCAT_WS(' ', m.first_name, m.last_name) AS incumbent_name
@@ -295,8 +329,74 @@ export const createAssignment = async (req, res) => {
     }
 
     const officialRecord = officialCheck.rows[0];
+    const createdBy = req.user?.username || req.user?.name || 'admin';
 
-    // 4. Insert the new active assignment record
+    // 4. Inactivate specific selected positions (per position) or all active positions if requested
+    let vacatedPositions = [];
+
+    const specificAssignIds = Array.isArray(vacate_assignment_ids)
+      ? vacate_assignment_ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id))
+      : [];
+
+    const specificPosIds = Array.isArray(vacate_position_ids)
+      ? vacate_position_ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id))
+      : [];
+
+    const hasSpecificVacates = specificAssignIds.length > 0 || specificPosIds.length > 0;
+    const shouldVacateAll = (vacate_previous_position === true || vacate_previous_position === 'true') && !hasSpecificVacates;
+
+    if (hasSpecificVacates || shouldVacateAll) {
+      let selectSql = `
+        SELECT a.id, a.position_id, p.position_title, p.position_code
+        FROM tlo_assignments a
+        LEFT JOIN tlo_positions p ON (a.position_id = p.id OR (a.position_id IS NULL AND a.tlo_position_id = p.id::text))
+        WHERE a.tlo_masterlist_id = $1 
+          AND a.status = 'Active' 
+          AND a.end_date IS NULL
+      `;
+      const selectParams = [tlo_masterlist_id];
+
+      if (hasSpecificVacates) {
+        if (specificAssignIds.length > 0 && specificPosIds.length > 0) {
+          selectParams.push(specificAssignIds, specificPosIds);
+          selectSql += ` AND (a.id = ANY($2::int[]) OR a.position_id = ANY($3::int[]))`;
+        } else if (specificAssignIds.length > 0) {
+          selectParams.push(specificAssignIds);
+          selectSql += ` AND a.id = ANY($2::int[])`;
+        } else {
+          selectParams.push(specificPosIds);
+          selectSql += ` AND a.position_id = ANY($2::int[])`;
+        }
+      }
+
+      selectSql += ` FOR UPDATE OF a`;
+
+      const prevActiveRes = await client.query(selectSql, selectParams);
+
+      if (prevActiveRes.rowCount > 0) {
+        vacatedPositions = prevActiveRes.rows;
+        const effectiveEndDate = start_date || new Date().toISOString().split('T')[0];
+        const vacatedIds = prevActiveRes.rows.map(r => r.id);
+
+        await client.query(
+          `UPDATE tlo_assignments
+           SET 
+             status = 'Inactive',
+             end_date = COALESCE($2, CURRENT_DATE),
+             remarks = CASE 
+               WHEN remarks IS NOT NULL AND remarks <> '' 
+               THEN CONCAT_WS(' | ', remarks, 'Vacated upon reassignment to ' || $3)
+               ELSE 'Vacated upon reassignment to ' || $3
+             END,
+             updated_at = CURRENT_TIMESTAMP,
+             updated_by = $4
+           WHERE id = ANY($1::int[])`,
+          [vacatedIds, effectiveEndDate, positionRecord.position_title, createdBy]
+        );
+      }
+    }
+
+    // 5. Insert the new active assignment record
     const insertQuery = `
       INSERT INTO tlo_assignments (
         tlo_masterlist_id,
@@ -324,7 +424,6 @@ export const createAssignment = async (req, res) => {
       RETURNING id, status, capacity, start_date, created_at
     `;
 
-    const createdBy = req.user?.username || req.user?.name || 'admin';
     const insertRes = await client.query(insertQuery, [
       tlo_masterlist_id,
       position_id,
@@ -337,10 +436,17 @@ export const createAssignment = async (req, res) => {
 
     await client.query('COMMIT');
 
+    let successMessage = `Successfully assigned ${officialRecord.first_name} ${officialRecord.last_name} (${officialRecord.tloid}) to ${positionRecord.position_title} as ${capacity}.`;
+    if (vacatedPositions.length > 0) {
+      const titles = vacatedPositions.map(vp => vp.position_title || vp.position_code || 'Previous Position').join(', ');
+      successMessage += ` Previous position (${titles}) was set to Inactive and is now vacant.`;
+    }
+
     return res.status(201).json({
       success: true,
-      message: `Successfully assigned ${officialRecord.first_name} ${officialRecord.last_name} (${officialRecord.tloid}) to ${positionRecord.position_title} as ${capacity}.`,
-      data: insertRes.rows[0]
+      message: successMessage,
+      data: insertRes.rows[0],
+      vacatedPositions
     });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -424,7 +530,8 @@ export const updateAssignment = async (req, res) => {
     end_date,
     designation,
     remarks,
-    status
+    status,
+    vacate_assignment_ids
   } = req.body;
 
   if (!id) {
@@ -543,6 +650,32 @@ export const updateAssignment = async (req, res) => {
       updatedBy,
       id
     ]);
+
+    // Inactivate any selectively vacated assignments
+    if (vacate_assignment_ids && Array.isArray(vacate_assignment_ids) && vacate_assignment_ids.length > 0) {
+      const validVacateIds = vacate_assignment_ids
+        .map(v => parseInt(v, 10))
+        .filter(v => Number.isInteger(v) && v !== parseInt(id, 10));
+
+      if (validVacateIds.length > 0) {
+        const effectiveEndDate = start_date || current.start_date || new Date().toISOString().split('T')[0];
+        await client.query(
+          `UPDATE tlo_assignments
+           SET 
+             status = 'Inactive',
+             end_date = COALESCE($2, CURRENT_DATE),
+             remarks = CASE 
+               WHEN remarks IS NOT NULL AND remarks <> '' 
+               THEN CONCAT_WS(' | ', remarks, 'Vacated during assignment update')
+               ELSE 'Vacated during assignment update'
+             END,
+             updated_at = CURRENT_TIMESTAMP,
+             updated_by = $3
+           WHERE id = ANY($1::int[]) AND status = 'Active'`,
+          [validVacateIds, effectiveEndDate, updatedBy]
+        );
+      }
+    }
 
     await client.query('COMMIT');
 

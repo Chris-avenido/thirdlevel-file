@@ -24,7 +24,8 @@ import {
   FiInfo,
   FiAward,
   FiArrowRight,
-  FiUser
+  FiUser,
+  FiHelpCircle
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import AdminSidebar from '../components/AdminSidebar';
@@ -38,7 +39,7 @@ import { apiUrl } from '../utils/api';
 // =============================================================================
 const filterAndRankPositions = (positions, query) => {
   if (!query || !query.trim()) return positions;
-  
+
   const rawQ = query.trim().toLowerCase();
   const tokens = rawQ.split(/\s+/).filter(Boolean);
 
@@ -227,9 +228,8 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
       {/* Selected Box / Toggle Button */}
       <div
         onClick={toggleOpen}
-        className={`w-full bg-slate-50 border-2 border-slate-200 hover:border-[#08315F]/20 cursor-pointer rounded-2xl py-3.5 px-4 flex justify-between items-center transition-all group ${
-          isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10 bg-white' : ''
-        }`}
+        className={`w-full bg-slate-50 border-2 border-slate-200 hover:border-[#08315F]/20 cursor-pointer rounded-2xl py-3.5 px-4 flex justify-between items-center transition-all group ${isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10 bg-white' : ''
+          }`}
       >
         <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
           {selectedOfficial ? (
@@ -328,19 +328,17 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
                         setIsOpen(false);
                         setQuery('');
                       }}
-                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                        isSelected
+                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${isSelected
                           ? 'bg-blue-50/70 border-l-4 border-[#08315F]'
                           : 'hover:bg-slate-50 border-l-4 border-transparent'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
-                            isSelected
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isSelected
                               ? 'bg-[#08315F] text-white'
                               : 'bg-gradient-to-br from-blue-50 to-indigo-50 text-[#08315F] border border-blue-200'
-                          }`}
+                            }`}
                         >
                           {off.first_name ? off.first_name[0] : 'O'}
                         </div>
@@ -479,9 +477,8 @@ const PositionCombobox = ({ positions, selectedId, onSelect, placeholder = "Sele
     <div className="relative w-full" ref={triggerRef}>
       <div
         onClick={toggleOpen}
-        className={`w-full bg-slate-50 border-2 border-slate-200 hover:border-[#08315F]/20 cursor-pointer rounded-2xl py-3.5 px-4 flex justify-between items-center transition-all group ${
-          isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10 bg-white' : ''
-        }`}
+        className={`w-full bg-slate-50 border-2 border-slate-200 hover:border-[#08315F]/20 cursor-pointer rounded-2xl py-3.5 px-4 flex justify-between items-center transition-all group ${isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10 bg-white' : ''
+          }`}
       >
         <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
           {selectedPosition ? (
@@ -577,11 +574,10 @@ const PositionCombobox = ({ positions, selectedId, onSelect, placeholder = "Sele
                         setIsOpen(false);
                         setQuery('');
                       }}
-                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                        isSelected
+                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${isSelected
                           ? 'bg-blue-50/70 border-l-4 border-[#08315F]'
                           : 'hover:bg-slate-50 border-l-4 border-transparent'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
                         <span className="px-2 py-1 bg-amber-50 text-amber-800 font-mono font-bold text-[10px] rounded-lg border border-amber-200 shrink-0">
@@ -615,275 +611,7 @@ const PositionCombobox = ({ positions, selectedId, onSelect, placeholder = "Sele
   );
 };
 
-// =============================================================================
-// SUB-COMPONENT: Searchable Special Designation Dropdown (Vacant Only)
-// Matching OfficialsRegistry Design with Viewport-Portalled Overlay
-// =============================================================================
-const SpecialDesignationCombobox = ({ vacantPositions, value, onChange, excludePositionId, placeholder = "Select Special Designation (Vacant Only)..." }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const triggerRef = useRef(null);
-  const menuRef = useRef(null);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 360, placement: 'bottom' });
 
-  const availablePositions = useMemo(() => {
-    if (!excludePositionId) return vacantPositions;
-    return vacantPositions.filter(p => String(p.id) !== String(excludePositionId));
-  }, [vacantPositions, excludePositionId]);
-
-  const updatePosition = () => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
-      const spaceBelow = viewportHeight - rect.bottom - 16;
-      const spaceAbove = rect.top - 16;
-      const preferredHeight = 360;
-
-      const width = Math.min(rect.width, viewportWidth - 24);
-      const left = Math.max(12, Math.min(rect.left, viewportWidth - width - 12));
-
-      if (spaceBelow < 220 && spaceAbove > spaceBelow) {
-        const maxHeight = Math.min(preferredHeight, Math.max(160, spaceAbove));
-        setDropdownPos({
-          top: Math.max(8, rect.top - maxHeight - 6),
-          left,
-          width,
-          maxHeight,
-          placement: 'top'
-        });
-      } else {
-        const maxHeight = Math.min(preferredHeight, Math.max(160, spaceBelow));
-        setDropdownPos({
-          top: rect.bottom + 6,
-          left,
-          width,
-          maxHeight,
-          placement: 'bottom'
-        });
-      }
-    }
-  };
-
-  const toggleOpen = () => {
-    const next = !isOpen;
-    if (next) {
-      updatePosition();
-      if (triggerRef.current) {
-        setTimeout(() => {
-          triggerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          updatePosition();
-        }, 50);
-      }
-    }
-    setIsOpen(next);
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      updatePosition();
-      const handleScroll = () => updatePosition();
-      const handleResize = () => updatePosition();
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleResize);
-      return () => {
-        window.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('resize', handleResize);
-      };
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (
-        triggerRef.current && !triggerRef.current.contains(e.target) &&
-        menuRef.current && !menuRef.current.contains(e.target)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen]);
-
-  const filtered = useMemo(() => {
-    return filterAndRankPositions(availablePositions, query);
-  }, [availablePositions, query]);
-
-  return (
-    <div className="relative w-full" ref={triggerRef}>
-      {/* Selected Box / Toggle Button */}
-      <div
-        onClick={toggleOpen}
-        className={`w-full bg-slate-50 border-2 border-slate-200 hover:border-[#08315F]/20 cursor-pointer rounded-2xl py-3.5 px-4 flex justify-between items-center transition-all group ${
-          isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10 bg-white' : ''
-        }`}
-      >
-        <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
-          {value ? (
-            <>
-              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 font-bold text-xs flex items-center justify-center shrink-0 border border-purple-200 shadow-2xs">
-                <FiAward className="w-4 h-4" />
-              </div>
-              <div className="truncate flex-1 min-w-0">
-                <span className="font-['Plus_Jakarta_Sans'] font-black text-[14.5px] text-[#08315F] block truncate" title={value}>
-                  {value}
-                </span>
-                <span className="text-[11px] text-purple-600 font-bold uppercase tracking-wider block">
-                  Special Designation (Vacant)
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-2 text-slate-400 text-[14px] font-bold">
-              <FiAward className="w-4 h-4 text-slate-400 shrink-0" />
-              <span className="truncate">{placeholder}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {value && (
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                onChange('');
-              }}
-              className="p-1 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
-              title="Clear Special Designation"
-            >
-              <FiX className="w-3.5 h-3.5" />
-            </span>
-          )}
-          <FiChevronRight
-            className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-[#075985]' : 'text-slate-300'}`}
-            size={18}
-          />
-        </div>
-      </div>
-
-      {/* Portalled Floating Special Designation Menu (Free from modal and footer clipping) */}
-      {isOpen && createPortal(
-        <>
-          <div className="fixed inset-0 z-[125]" onClick={() => setIsOpen(false)} />
-          <motion.div
-            ref={menuRef}
-            initial={{ opacity: 0, y: dropdownPos.placement === 'top' ? 6 : -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: dropdownPos.placement === 'top' ? 6 : -6, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            style={{
-              position: 'fixed',
-              top: `${dropdownPos.top}px`,
-              left: `${dropdownPos.left}px`,
-              width: `${dropdownPos.width}px`,
-              maxHeight: `${dropdownPos.maxHeight}px`,
-              zIndex: 130
-            }}
-            className="bg-white rounded-3xl shadow-[0_25px_60px_-15px_rgba(8,49,95,0.35)] border-2 border-slate-200 overflow-hidden flex flex-col"
-          >
-            {/* Search Input */}
-            <div className="p-3 border-b-2 border-slate-100 bg-slate-50/90 sticky top-0 z-10 flex items-center gap-2 shrink-0">
-              <FiSearch className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
-              <input
-                type="text"
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search vacant positions for designation..."
-                className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-2 px-3 text-[13px] font-bold text-slate-700 outline-none transition-all"
-              />
-              <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-1.5 rounded-lg border border-purple-200 shrink-0">
-                {filtered.length} vacant
-              </span>
-            </div>
-
-            {/* Options List */}
-            <div className="overflow-y-auto divide-y divide-slate-100 flex-1 p-1 custom-scrollbar">
-              {/* Option to clear / No Special Designation */}
-              <div
-                onClick={() => {
-                  onChange('');
-                  setIsOpen(false);
-                  setQuery('');
-                }}
-                className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                  !value
-                    ? 'bg-purple-50/70 border-l-4 border-purple-600'
-                    : 'hover:bg-slate-50 border-l-4 border-transparent'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
-                    <FiX className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <p className="font-['Plus_Jakarta_Sans'] font-black text-[14px] text-slate-800">None (No Special Designation)</p>
-                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Regular appointment only</p>
-                  </div>
-                </div>
-                {!value && (
-                  <div className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <FiCheck className="w-3 h-3" />
-                  </div>
-                )}
-              </div>
-
-              {filtered.length === 0 ? (
-                <div className="py-6 text-center text-[13px] text-slate-400 font-bold uppercase tracking-wider">
-                  No vacant positions matching "{query}"
-                </div>
-              ) : (
-                filtered.map((pos) => {
-                  const label = `${pos.position_title}${pos.bureau ? ` - ${pos.bureau}` : pos.division ? ` - ${pos.division}` : pos.region ? ` - ${pos.region}` : ''}`;
-                  const isSelected = value === label || value === pos.position_title;
-                  return (
-                    <div
-                      key={pos.id}
-                      onClick={() => {
-                        onChange(label);
-                        setIsOpen(false);
-                        setQuery('');
-                      }}
-                      className={`p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                        isSelected
-                          ? 'bg-purple-50/70 border-l-4 border-purple-600'
-                          : 'hover:bg-slate-50 border-l-4 border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 font-mono font-bold text-[10px] rounded-lg shrink-0">
-                          {pos.position_code || 'POS'}
-                        </span>
-                        <div className="truncate flex-1 min-w-0">
-                          <p className="font-['Plus_Jakarta_Sans'] font-black text-[14px] text-slate-900 truncate" title={pos.position_title}>
-                            {pos.position_title}
-                          </p>
-                          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 truncate">
-                            {pos.region || 'CO'} • {pos.bureau || pos.division || 'General'} | SG {pos.salary_grade || '—'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {isSelected && (
-                        <div className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                          <FiCheck className="w-3 h-3" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </motion.div>
-        </>,
-        document.body
-      )}
-    </div>
-  );
-};
 
 // =============================================================================
 // MAIN COMPONENT: Position Assignments
@@ -924,8 +652,10 @@ const PositionAssignments = () => {
     capacity: 'Full',
     start_date: new Date().toISOString().split('T')[0],
     designation: '',
-    remarks: ''
+    remarks: '',
+    vacate_previous_position: true
   });
+  const [vacateDecisions, setVacateDecisions] = useState({});
 
   // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -940,6 +670,7 @@ const PositionAssignments = () => {
     designation: '',
     remarks: ''
   });
+  const [editVacateDecisions, setEditVacateDecisions] = useState({});
 
   // Deactivate Modal State
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
@@ -1093,8 +824,10 @@ const PositionAssignments = () => {
       capacity: 'Full',
       start_date: new Date().toISOString().split('T')[0],
       designation: '',
-      remarks: ''
+      remarks: '',
+      vacate_previous_position: true
     });
+    setVacateDecisions({});
     fetchVacantPositions();
     setShowAssignModal(true);
   };
@@ -1103,6 +836,90 @@ const PositionAssignments = () => {
     if (!formData.tlo_masterlist_id) return null;
     return officials.find(o => String(o.id) === String(formData.tlo_masterlist_id));
   }, [officials, formData.tlo_masterlist_id]);
+
+  // Lookup existing assignments in table for the selected official
+  const selectedOfficialExistingAssignments = useMemo(() => {
+    if (!formData.tlo_masterlist_id) return [];
+    if (selectedOfficialObj?.active_assignments && selectedOfficialObj.active_assignments.length > 0) {
+      return selectedOfficialObj.active_assignments;
+    }
+    if (selectedOfficialObj?.existing_assignments && selectedOfficialObj.existing_assignments.length > 0) {
+      return selectedOfficialObj.existing_assignments;
+    }
+    const fromAssignments = assignments.filter(
+      a => String(a.tlo_masterlist_id) === String(formData.tlo_masterlist_id)
+    );
+    return fromAssignments;
+  }, [formData.tlo_masterlist_id, selectedOfficialObj, assignments]);
+
+  // Active existing assignments that would be vacated if requested
+  const activeExistingAssignments = useMemo(() => {
+    return selectedOfficialExistingAssignments.filter(
+      ea => ea.status === 'Active' && !ea.end_date
+    );
+  }, [selectedOfficialExistingAssignments]);
+
+  // Active assignments to display with per-position question (strictly filtered by selected Capacity / Type where tlo_assignments.capacity)
+  const displayedAssignments = useMemo(() => {
+    if (!formData.capacity) return activeExistingAssignments;
+    return activeExistingAssignments.filter(
+      ea => (ea.capacity || 'Full').toLowerCase() === (formData.capacity || 'Full').toLowerCase()
+    );
+  }, [activeExistingAssignments, formData.capacity]);
+
+  // Sync default vacate decisions when official or active assignments change
+  useEffect(() => {
+    if (displayedAssignments.length > 0) {
+      setVacateDecisions(prev => {
+        const next = { ...prev };
+        displayedAssignments.forEach(ea => {
+          if (next[ea.id] === undefined) {
+            if (formData.capacity === 'Concurrent') {
+              next[ea.id] = false;
+            } else if (displayedAssignments.length === 1 && (ea.capacity || 'Full').toLowerCase() === formData.capacity.toLowerCase()) {
+              next[ea.id] = true;
+            } else {
+              next[ea.id] = false;
+            }
+          }
+        });
+        return next;
+      });
+    }
+  }, [displayedAssignments, formData.capacity]);
+
+  // Edit Modal Official & Assignments Computation
+  const editOfficialObj = useMemo(() => {
+    if (!editFormData.tlo_masterlist_id) return null;
+    return officials.find(o => String(o.id) === String(editFormData.tlo_masterlist_id));
+  }, [officials, editFormData.tlo_masterlist_id]);
+
+  const editOfficialExistingAssignments = useMemo(() => {
+    if (!editFormData.tlo_masterlist_id) return [];
+    if (editOfficialObj?.active_assignments && editOfficialObj.active_assignments.length > 0) {
+      return editOfficialObj.active_assignments;
+    }
+    if (editOfficialObj?.existing_assignments && editOfficialObj.existing_assignments.length > 0) {
+      return editOfficialObj.existing_assignments;
+    }
+    const fromAssignments = assignments.filter(
+      a => String(a.tlo_masterlist_id) === String(editFormData.tlo_masterlist_id)
+    );
+    return fromAssignments;
+  }, [editFormData.tlo_masterlist_id, editOfficialObj, assignments]);
+
+  const editActiveAssignments = useMemo(() => {
+    return editOfficialExistingAssignments.filter(
+      ea => ea.status === 'Active' && !ea.end_date
+    );
+  }, [editOfficialExistingAssignments]);
+
+  const editDisplayedAssignments = useMemo(() => {
+    if (!editFormData.capacity) return editActiveAssignments;
+    return editActiveAssignments.filter(
+      ea => (ea.capacity || 'Full').toLowerCase() === (editFormData.capacity || 'Full').toLowerCase()
+    );
+  }, [editActiveAssignments, editFormData.capacity]);
 
   // Submit New Assignment
   const handleSubmitAssignment = async (e) => {
@@ -1119,10 +936,20 @@ const PositionAssignments = () => {
 
     setSubmittingAssign(true);
     try {
+      const vacatedAssignIds = Object.keys(vacateDecisions)
+        .filter(id => vacateDecisions[id] === true)
+        .map(id => parseInt(id, 10));
+
+      const payload = {
+        ...formData,
+        vacate_previous_position: vacatedAssignIds.length > 0,
+        vacate_assignment_ids: vacatedAssignIds
+      };
+
       const res = await fetch(apiUrl('/api/third-level/assignments'), {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -1161,14 +988,16 @@ const PositionAssignments = () => {
   // Open Edit Modal
   const handleOpenEditModal = async (assignment) => {
     setSelectedAssignmentToEdit(assignment);
+    const initialCapacity = assignment.capacity || 'Full';
     setEditFormData({
       tlo_masterlist_id: assignment.tlo_masterlist_id,
       position_id: assignment.position_id,
-      capacity: assignment.capacity || 'Full',
+      capacity: initialCapacity,
       start_date: assignment.start_date ? assignment.start_date.split('T')[0] : '',
       designation: assignment.designation || '',
       remarks: assignment.remarks || ''
     });
+    setEditVacateDecisions({});
 
     try {
       const res = await fetch(
@@ -1203,10 +1032,22 @@ const PositionAssignments = () => {
 
     setSubmittingEdit(true);
     try {
+      const vacatedAssignIds = Object.entries(editVacateDecisions)
+        .filter(([_, shouldVacate]) => shouldVacate === true)
+        .map(([id]) => parseInt(id, 10));
+
+      const isCurrentVacated = editVacateDecisions[selectedAssignmentToEdit.id] === true;
+
+      const payload = {
+        ...editFormData,
+        ...(isCurrentVacated ? { status: 'Inactive' } : {}),
+        vacate_assignment_ids: vacatedAssignIds
+      };
+
       const res = await fetch(apiUrl(`/api/third-level/assignments/${selectedAssignmentToEdit.id}`), {
         method: 'PUT',
         headers: authHeaders,
-        body: JSON.stringify(editFormData)
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -1335,11 +1176,10 @@ const PositionAssignments = () => {
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
-                      className={`h-[36px] px-5 rounded-full text-[13.5px] font-black uppercase tracking-widest transition-all ${
-                        statusFilter === st
+                      className={`h-[36px] px-5 rounded-full text-[13.5px] font-black uppercase tracking-widest transition-all ${statusFilter === st
                           ? 'bg-[#08315F] text-white shadow-sm'
                           : 'text-[#08315F] hover:bg-sky-100'
-                      }`}
+                        }`}
                     >
                       {st}
                     </button>
@@ -1395,9 +1235,8 @@ const PositionAssignments = () => {
               {/* Card 1: Active Assignments */}
               <div
                 onClick={() => setStatusFilter(prev => prev === 'Active' ? 'All' : 'Active')}
-                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${
-                  statusFilter === 'Active' ? 'border-l-sky-500 shadow-md ring-1 ring-sky-200' : 'border-l-sky-400 hover:shadow-sm'
-                }`}
+                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusFilter === 'Active' ? 'border-l-sky-500 shadow-md ring-1 ring-sky-200' : 'border-l-sky-400 hover:shadow-sm'
+                  }`}
               >
                 <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">Total Active Assignments</div>
                 <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">{stats.activeAssignments}</div>
@@ -1540,24 +1379,22 @@ const PositionAssignments = () => {
 
                               {/* Capacity Badge */}
                               <td className="px-2 py-4 align-middle text-center">
-                                <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-widest border-2 ${
-                                  item.capacity === 'Full'
+                                <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-widest border-2 ${item.capacity === 'Full'
                                     ? 'bg-blue-50 text-[#075985] border-blue-200'
                                     : item.capacity === 'OIC'
-                                    ? 'bg-[#FCD116]/20 border-[#FCD116] text-[#0038A8]'
-                                    : 'bg-purple-50 text-purple-700 border-purple-200'
-                                }`}>
+                                      ? 'bg-[#FCD116]/20 border-[#FCD116] text-[#0038A8]'
+                                      : 'bg-purple-50 text-purple-700 border-purple-200'
+                                  }`}>
                                   {item.capacity}
                                 </span>
                               </td>
 
                               {/* Status & Floating Action Toolbar */}
                               <td className="px-2 py-4 align-middle text-center static md:relative">
-                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-widest border-2 ${
-                                  isActive
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-widest border-2 ${isActive
                                     ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
                                     : 'bg-slate-50 text-slate-400 border-slate-200'
-                                }`}>
+                                  }`}>
                                   <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                                   {isActive ? 'Active' : 'Inactive'}
                                 </span>
@@ -1610,11 +1447,10 @@ const PositionAssignments = () => {
                                   </div>
                                 </div>
                               </div>
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border-2 shrink-0 ${
-                                isActive
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border-2 shrink-0 ${isActive
                                   ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
                                   : 'bg-slate-50 text-slate-400 border-slate-200'
-                              }`}>
+                                }`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                                 {isActive ? 'Active' : 'Inactive'}
                               </span>
@@ -1635,13 +1471,12 @@ const PositionAssignments = () => {
                               </div>
                               <div className="flex justify-between items-center text-[13px] gap-2">
                                 <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Capacity</span>
-                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-widest border-2 ${
-                                  item.capacity === 'Full'
+                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-widest border-2 ${item.capacity === 'Full'
                                     ? 'bg-blue-50 text-[#075985] border-blue-200'
                                     : item.capacity === 'OIC'
-                                    ? 'bg-[#FCD116]/20 border-[#FCD116] text-[#0038A8]'
-                                    : 'bg-purple-50 text-purple-700 border-purple-200'
-                                }`}>
+                                      ? 'bg-[#FCD116]/20 border-[#FCD116] text-[#0038A8]'
+                                      : 'bg-purple-50 text-purple-700 border-purple-200'
+                                  }`}>
                                   {item.capacity}
                                 </span>
                               </div>
@@ -1693,11 +1528,10 @@ const PositionAssignments = () => {
                           <button
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`w-10 h-10 rounded-xl text-[14px] font-black border-2 transition-all ${
-                              currentPage === page
+                            className={`w-10 h-10 rounded-xl text-[14px] font-black border-2 transition-all ${currentPage === page
                                 ? 'bg-[#08315F] text-white border-[#004A99] shadow-sm'
                                 : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'
-                            }`}
+                              }`}
                           >
                             {page}
                           </button>
@@ -1768,22 +1602,150 @@ const PositionAssignments = () => {
                       <OfficialCombobox
                         officials={officials}
                         selectedId={formData.tlo_masterlist_id}
-                        onSelect={(id) => setFormData({ ...formData, tlo_masterlist_id: id })}
+                        onSelect={(id) => setFormData(prev => ({ ...prev, tlo_masterlist_id: id }))}
                         placeholder="Search official by name or TLO ID..."
                       />
+                    </div>
 
-                      {/* Advisory notice */}
-                      {selectedOfficialObj && selectedOfficialObj.active_assignments && selectedOfficialObj.active_assignments.length > 0 && (
-                        <div className="mt-2.5 p-3.5 bg-amber-50 border-2 border-amber-200 rounded-2xl flex items-start gap-2.5 text-[13px] text-amber-900">
-                          <FiAlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="font-bold">Notice: Official already holds an active assignment</p>
-                            <p className="text-[12px] text-amber-700 mt-0.5">
-                              Currently assigned to <strong>{selectedOfficialObj.active_assignments[0].position_title}</strong> as <strong>{selectedOfficialObj.active_assignments[0].capacity}</strong>. You may proceed if designating concurrently or as OIC.
-                            </p>
+                    {/* Official's Active Positions: Displayed base on selected Capacity / Type where tlo_assignments.capacity (only if data exists) */}
+                    {selectedOfficialObj && displayedAssignments.length > 0 && (
+                      <div className="bg-slate-50/90 border-2 border-slate-200 rounded-2xl p-4 sm:p-5">
+                        {/* Header: Start = Current Positions of Official, End = Active Positions badge, Next row = Subtitle */}
+                        <div className="mb-3.5 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <FiLayers className="w-4 h-4 text-[#075985]" />
+                              <h3 className="text-[13px] font-black text-[#08315F] uppercase tracking-wider">
+                                Current Positions of Official
+                              </h3>
+                            </div>
+                            <span className="text-[10.5px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-100 text-[#075985] border border-sky-200 shrink-0">
+                              {displayedAssignments.length} {displayedAssignments.length === 1 ? 'Active Position' : 'Active Positions'}
+                            </span>
+                          </div>
+                          <p className="text-[11.5px] text-slate-500">
+                            Select below which position(s) should be vacated:
+                          </p>
+                        </div>
+
+                        {/* Per-Position Display & Vacancy Question */}
+                        <div className="space-y-3">
+                            {displayedAssignments.map((ea) => {
+                              const isVacate = vacateDecisions[ea.id] === true;
+                              return (
+                                <div
+                                  key={ea.id}
+                                  className={`p-4 rounded-xl border-2 transition-all bg-white ${isVacate
+                                      ? 'border-amber-500 ring-2 ring-amber-400/30 shadow-xs'
+                                      : 'border-slate-200 shadow-2xs'
+                                    }`}
+                                >
+                                  {/* Position info */}
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-black text-slate-800 text-[13.5px]">
+                                          {ea.position_title}
+                                        </span>
+                                        <span className="font-mono text-[9.5px] text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200 font-bold">
+                                          {ea.position_code || 'POS'}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-slate-500 mt-1">
+                                        <span className="font-bold text-[#08315F]">{ea.region || 'CENTRAL OFFICE'}</span>
+                                        {ea.bureau && <span>• {ea.bureau}</span>}
+                                        {ea.salary_grade && <span className="font-bold text-slate-700">• SG {ea.salary_grade}</span>}
+                                        {ea.start_date && (
+                                          <span className="font-mono text-slate-400">
+                                            • Since {new Date(ea.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${ea.capacity === 'Full'
+                                          ? 'bg-blue-50 text-[#075985] border-blue-200'
+                                          : ea.capacity === 'OIC'
+                                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                            : 'bg-purple-50 text-purple-700 border-purple-200'
+                                        }`}>
+                                        Current: {ea.capacity || 'Full'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Question per position */}
+                                  <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                    <div className="flex items-center gap-2">
+                                      <FiHelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                                      <div>
+                                        <span className="text-[12px] font-black text-slate-800 uppercase tracking-wide">
+                                          Need to vacate this position?
+                                        </span>
+                                        <p className="text-[11px] text-slate-500">
+                                          {isVacate ? (
+                                            <span className="text-amber-700 font-bold">
+                                              Will be marked Inactive and returned to the vacant pool.
+                                            </span>
+                                          ) : (
+                                            <span className="text-[#075985] font-semibold">
+                                              Will remain Active alongside new deployment (Retained).
+                                            </span>
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Decision buttons per position */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => setVacateDecisions(prev => ({ ...prev, [ea.id]: true }))}
+                                        className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-1.5 ${isVacate
+                                            ? 'bg-amber-500 border-amber-600 text-white shadow-xs'
+                                            : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                                          }`}
+                                      >
+                                        <FiCheck className="w-3.5 h-3.5 stroke-[3]" />
+                                        YES — Vacate
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setVacateDecisions(prev => ({ ...prev, [ea.id]: false }))}
+                                        className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-1.5 ${!isVacate
+                                            ? 'bg-[#08315F] border-[#08315F] text-white shadow-xs'
+                                            : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                                          }`}
+                                      >
+                                        <FiX className="w-3.5 h-3.5 stroke-[3]" />
+                                        NO — Retain
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
+
+                    {/* Capacity / Type - 1 row */}
+                    <div>
+                      <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                        Capacity / Type <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={formData.capacity}
+                          onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
+                          className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3.5 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all appearance-none pr-10 cursor-pointer"
+                        >
+                          <option value="Full">Full (Substantive)</option>
+                          <option value="OIC">OIC (Officer-in-Charge)</option>
+                          <option value="Concurrent">Concurrent</option>
+                        </select>
+                        <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
+                      </div>
                     </div>
 
                     {/* 2. Vacant Position Selection */}
@@ -1805,26 +1767,8 @@ const PositionAssignments = () => {
                       />
                     </div>
 
-                    {/* 3. Capacity & Start Date */}
+                    {/* 3. Deployment Details: Start Date & Remarks */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                          Capacity / Type <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={formData.capacity}
-                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                            className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3.5 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all appearance-none pr-10 cursor-pointer"
-                          >
-                            <option value="Full">Full (Substantive / Regular)</option>
-                            <option value="OIC">OIC (Officer-in-Charge)</option>
-                            <option value="Concurrent">Concurrent</option>
-                          </select>
-                          <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
-                        </div>
-                      </div>
-
                       <div>
                         <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
                           Start Date <span className="text-red-500">*</span>
@@ -1837,39 +1781,19 @@ const PositionAssignments = () => {
                           className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all"
                         />
                       </div>
-                    </div>
 
-                    {/* 4. Special Designation (Vacant Only) */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest block">
-                          Special Designation (Vacant Only)
+                      <div>
+                        <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                          Remarks / Notes
                         </label>
-                        <span className="text-[11px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 shrink-0">
-                          Optional
-                        </span>
+                        <input
+                          type="text"
+                          value={formData.remarks}
+                          onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                          placeholder="e.g., Special Order No. 2026-081"
+                          className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all placeholder:text-slate-400"
+                        />
                       </div>
-                      <SpecialDesignationCombobox
-                        vacantPositions={displayVacantPositions}
-                        value={formData.designation}
-                        onChange={(val) => setFormData({ ...formData, designation: val })}
-                        excludePositionId={formData.position_id}
-                        placeholder="Select Special Designation (Vacant Only)..."
-                      />
-                    </div>
-
-                    {/* 5. Remarks */}
-                    <div>
-                      <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                        Remarks / Notes
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.remarks}
-                        onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                        placeholder="e.g., Special Order No. 2026-081"
-                        className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all placeholder:text-slate-400"
-                      />
                     </div>
                   </div>
 
@@ -1895,7 +1819,22 @@ const PositionAssignments = () => {
                       ) : (
                         <>
                           <FiCheckCircle className="w-4 h-4" />
-                          <span>Confirm Assignment</span>
+                          <span>
+                            {(() => {
+                              const vacateCount = activeExistingAssignments.filter(ea => vacateDecisions[ea.id] === true).length;
+                              const retainCount = activeExistingAssignments.length - vacateCount;
+                              if (activeExistingAssignments.length === 0) {
+                                return 'Confirm Assignment';
+                              }
+                              if (vacateCount > 0 && retainCount > 0) {
+                                return `Assign & Vacate ${vacateCount} (Retain ${retainCount})`;
+                              }
+                              if (vacateCount > 0) {
+                                return `Assign & Vacate ${vacateCount} ${vacateCount === 1 ? 'Position' : 'Positions'}`;
+                              }
+                              return `Confirm Assignment (Retain ${retainCount} ${retainCount === 1 ? 'Position' : 'Positions'})`;
+                            })()}
+                          </span>
                         </>
                       )}
                     </button>
@@ -1957,6 +1896,159 @@ const PositionAssignments = () => {
                       />
                     </div>
 
+                    {/* Official's Active Positions: Displayed base on Capacity / Type (only if data exists) */}
+                    {editOfficialObj && editDisplayedAssignments.length > 0 && (
+                      <div className="bg-slate-50/90 border-2 border-slate-200 rounded-2xl p-4 sm:p-5">
+                        {/* Header: Start = Title, End = Count */}
+                        <div className="mb-3.5 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <FiLayers className="w-4 h-4 text-[#075985]" />
+                              <h3 className="text-[13px] font-black text-[#08315F] uppercase tracking-wider">
+                                Current Positions of Official
+                              </h3>
+                            </div>
+                            <span className="text-[10.5px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-100 text-[#075985] border border-sky-200 shrink-0">
+                              {editDisplayedAssignments.length} {editDisplayedAssignments.length === 1 ? 'Active Position' : 'Active Positions'}
+                            </span>
+                          </div>
+                          <p className="text-[11.5px] text-slate-500">
+                            Select below which position(s) should be vacated:
+                          </p>
+                        </div>
+
+                        {/* List of positions */}
+                        <div className="space-y-3">
+                          {editDisplayedAssignments.map((ea) => {
+                            const isCurrentEditing = selectedAssignmentToEdit && String(ea.id) === String(selectedAssignmentToEdit.id);
+                            const isVacate = editVacateDecisions[ea.id] === true;
+                            return (
+                              <div
+                                key={ea.id}
+                                className={`p-4 rounded-xl border-2 transition-all bg-white ${isVacate
+                                    ? 'border-amber-500 ring-2 ring-amber-400/30 shadow-xs'
+                                    : isCurrentEditing
+                                      ? 'border-sky-500 ring-2 ring-sky-400/20 shadow-xs'
+                                      : 'border-slate-200 shadow-2xs'
+                                  }`}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-black text-slate-800 text-[13.5px]">
+                                        {ea.position_title}
+                                      </span>
+                                      <span className="font-mono text-[9.5px] text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200 font-bold">
+                                        {ea.position_code || 'POS'}
+                                      </span>
+                                      {isCurrentEditing && (
+                                        <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                          Currently Editing
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-slate-500 mt-1">
+                                      <span className="font-bold text-[#08315F]">{ea.region || 'CENTRAL OFFICE'}</span>
+                                      {ea.bureau && <span>• {ea.bureau}</span>}
+                                      {ea.salary_grade && <span className="font-bold text-slate-700">• SG {ea.salary_grade}</span>}
+                                      {ea.start_date && (
+                                        <span className="font-mono text-slate-400">
+                                          • Since {new Date(ea.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${ea.capacity === 'Full'
+                                        ? 'bg-blue-50 text-[#075985] border-blue-200'
+                                        : ea.capacity === 'OIC'
+                                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                          : 'bg-purple-50 text-purple-700 border-purple-200'
+                                      }`}>
+                                      Current: {ea.capacity || 'Full'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Question per position */}
+                                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                  <div className="flex items-center gap-2">
+                                    <FiHelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                                    <div>
+                                      <span className="text-[12px] font-black text-slate-800 uppercase tracking-wide">
+                                        Need to vacate this position?
+                                      </span>
+                                      <p className="text-[11px] text-slate-500">
+                                        {isVacate ? (
+                                          <span className="text-amber-700 font-bold">
+                                            Will be marked Inactive and returned to the vacant pool.
+                                          </span>
+                                        ) : (
+                                          <span className="text-[#075985] font-semibold">
+                                            Will remain Active alongside new deployment (Retained).
+                                          </span>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Decision buttons per position */}
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditVacateDecisions(prev => ({ ...prev, [ea.id]: true }))}
+                                      className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-1.5 ${isVacate
+                                          ? 'bg-amber-500 border-amber-600 text-white shadow-xs'
+                                          : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                      <FiCheck className="w-3.5 h-3.5 stroke-[3]" />
+                                      YES — Vacate
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditVacateDecisions(prev => ({ ...prev, [ea.id]: false }))}
+                                      className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-1.5 ${!isVacate
+                                          ? 'bg-[#08315F] border-[#08315F] text-white shadow-xs'
+                                          : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    >
+                                      <FiX className="w-3.5 h-3.5 stroke-[3]" />
+                                      NO — Retain
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Capacity / Type - Disabled in Edit Mode */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest block">
+                          Capacity / Type <span className="text-red-500">*</span>
+                        </label>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          Disabled in Edit
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <select
+                          value={editFormData.capacity}
+                          disabled
+                          className="w-full bg-slate-100/90 border-2 border-slate-200 text-slate-500 rounded-2xl py-3.5 px-4 text-[15px] font-bold outline-none transition-all appearance-none pr-10 cursor-not-allowed opacity-75 select-none"
+                        >
+                          <option value="Full">Full (Substantive / Regular)</option>
+                          <option value="OIC">OIC (Officer-in-Charge)</option>
+                          <option value="Concurrent">Concurrent</option>
+                        </select>
+                        <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none w-4 h-4" />
+                      </div>
+                    </div>
+
                     {/* 2. Position Selection */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -1976,26 +2068,8 @@ const PositionAssignments = () => {
                       />
                     </div>
 
-                    {/* 3. Capacity & Start Date */}
+                    {/* 3. Start Date & Remarks */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                          Capacity / Type <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={editFormData.capacity}
-                            onChange={(e) => setEditFormData({ ...editFormData, capacity: e.target.value })}
-                            className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3.5 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all appearance-none pr-10 cursor-pointer"
-                          >
-                            <option value="Full">Full (Substantive / Regular)</option>
-                            <option value="OIC">OIC (Officer-in-Charge)</option>
-                            <option value="Concurrent">Concurrent</option>
-                          </select>
-                          <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-4 h-4" />
-                        </div>
-                      </div>
-
                       <div>
                         <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
                           Start Date <span className="text-red-500">*</span>
@@ -2008,39 +2082,19 @@ const PositionAssignments = () => {
                           className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all"
                         />
                       </div>
-                    </div>
 
-                    {/* 4. Special Designation */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest block">
-                          Special Designation (Vacant Only)
+                      <div>
+                        <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                          Remarks / Notes
                         </label>
-                        <span className="text-[11px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 shrink-0">
-                          Optional
-                        </span>
+                        <input
+                          type="text"
+                          value={editFormData.remarks}
+                          onChange={(e) => setEditFormData({ ...editFormData, remarks: e.target.value })}
+                          placeholder="e.g., Reassignment Order Ref"
+                          className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all placeholder:text-slate-400"
+                        />
                       </div>
-                      <SpecialDesignationCombobox
-                        vacantPositions={displayVacantPositions}
-                        value={editFormData.designation}
-                        onChange={(val) => setEditFormData({ ...editFormData, designation: val })}
-                        excludePositionId={editFormData.position_id}
-                        placeholder="Select Special Designation (Vacant Only)..."
-                      />
-                    </div>
-
-                    {/* 5. Remarks */}
-                    <div>
-                      <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                        Remarks / Notes
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.remarks}
-                        onChange={(e) => setEditFormData({ ...editFormData, remarks: e.target.value })}
-                        placeholder="e.g., Reassignment Order Ref"
-                        className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-3 px-4 text-[15px] font-bold text-slate-700 outline-none transition-all placeholder:text-slate-400"
-                      />
                     </div>
                   </div>
 
