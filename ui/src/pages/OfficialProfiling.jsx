@@ -3492,21 +3492,21 @@ const OfficialProfiling = () => {
                                                                 { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx' },
                                                                 { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf' },
                                                             ].map(({ id, label, note, accept }) => (
-                                                                <div key={id} className="flex flex-col gap-3 p-6 bg-slate-50/40 hover:bg-transparent border-2 border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 bg-transparent rounded-xl flex items-center justify-center text-[#08315F]"><FiFileText size={18} /></div>
-                                                                        <div className="flex-1">
-                                                                            <p className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight">{label}</p>
-                                                                            <p className="text-[13.5px] font-bold text-slate-400 italic mt-0.5">{note}</p>
+                                                                <div key={id} className="flex flex-col justify-between gap-4 p-6 bg-slate-50/40 hover:bg-slate-50/70 border-2 border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md min-w-0 overflow-hidden">
+                                                                    <div className="flex items-center gap-3 min-w-0">
+                                                                        <div className="w-10 h-10 bg-white border border-slate-200/80 rounded-xl flex items-center justify-center text-[#08315F] shadow-xs shrink-0"><FiFileText size={18} /></div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight truncate">{label}</p>
+                                                                            <p className="text-[13.5px] font-bold text-slate-400 italic mt-0.5 truncate">{note}</p>
                                                                         </div>
                                                                         {profile[`${id}_binary_id`] && (
-                                                                            <div className="text-emerald-500 flex items-center gap-1 text-[13.5px] font-black uppercase">
-                                                                                <FiCheckCircle /> Linked
+                                                                            <div className="text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[12px] font-black uppercase tracking-wider shrink-0">
+                                                                                <FiCheckCircle size={13} /> Linked
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    <div className="flex gap-2 h-11">
-                                                                        <div className="relative group/upload flex-1 h-full">
+                                                                    {!profile[`${id}_binary_id`] ? (
+                                                                        <div className="relative group/upload w-full h-11">
                                                                             <input disabled={!isEditing}
                                                                                 type="file"
                                                                                 accept={accept}
@@ -3514,36 +3514,64 @@ const OfficialProfiling = () => {
                                                                                     const file = e.target.files[0];
                                                                                     if (file) handleFileUpload(file, id);
                                                                                 }}
-                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
                                                                             />
-                                                                            <div className={`h-full flex items-center justify-center gap-2.5 border-2 border-dashed rounded-xl px-4 py-2.5 text-[18px] font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile[`${id}_binary_id`] ? 'bg-emerald-50/50 border-emerald-300 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
-                                                                                <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce' : ''} />
-                                                                                <span className="text-[15px] font-black uppercase tracking-widest truncate max-w-[200px]">
-                                                                                    {uploadingDocs[id] ? 'Processing...' : profile[`${id}_binary_id`] ? (uploadedFileNames[id] ? `Saved ✓ — ${uploadedFileNames[id]}` : 'Document on file ✓') : 'Upload Document'}
+                                                                            <div className="h-full w-full flex items-center justify-center gap-2.5 border-2 border-dashed border-slate-300 rounded-xl px-4 py-2 text-slate-500 bg-white group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F] group-hover/upload:bg-blue-50/20 transition-all duration-200 shadow-xs group-hover/upload:shadow-sm">
+                                                                                <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce text-[#0038A8]' : 'transition-transform group-hover/upload:-translate-y-0.5'} />
+                                                                                <span className="text-[14px] font-black uppercase tracking-wider truncate">
+                                                                                    {uploadingDocs[id] ? 'Processing...' : 'Upload Document'}
                                                                                 </span>
                                                                             </div>
                                                                         </div>
-                                                                        {profile[`${id}_binary_id`] && (
-                                                                            <>
+                                                                    ) : (
+                                                                        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full min-w-0">
+                                                                            <div className="relative group/upload flex-1 min-w-0 h-10">
+                                                                                <input disabled={!isEditing}
+                                                                                    type="file"
+                                                                                    accept={accept}
+                                                                                    onChange={(e) => {
+                                                                                        const file = e.target.files[0];
+                                                                                        if (file) handleFileUpload(file, id);
+                                                                                    }}
+                                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
+                                                                                    title={isEditing ? 'Click to replace document' : 'Document uploaded (editing disabled)'}
+                                                                                />
+                                                                                <div className="h-full w-full flex items-center justify-between gap-2 border-2 border-dashed border-emerald-300/80 bg-emerald-50/50 group-hover/upload:bg-emerald-50/80 group-hover/upload:border-emerald-400 rounded-xl px-3 transition-all duration-200 shadow-xs">
+                                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                                        <FiUpload size={14} className={`text-emerald-700 shrink-0 ${uploadingDocs[id] ? 'animate-bounce' : 'transition-transform group-hover/upload:-translate-y-0.5'}`} />
+                                                                                        <span className="text-[13px] font-black uppercase tracking-wider text-emerald-800 truncate">
+                                                                                            {uploadingDocs[id] ? 'Processing...' : (uploadedFileNames[id] ? `Saved ✓ — ${uploadedFileNames[id]}` : 'Document on file ✓')}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    {isEditing && (
+                                                                                        <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-100/90 hover:bg-emerald-200/80 px-2 py-0.5 rounded-md shrink-0 border border-emerald-300/60 transition-colors">
+                                                                                            Replace
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="grid grid-cols-2 xl:flex items-center gap-2 shrink-0">
                                                                                 <button
+                                                                                    type="button"
                                                                                     onClick={() => handleViewDocument(profile[`${id}_binary_id`])}
-                                                                                    className="h-full flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-[18px] font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/view shrink-0"
+                                                                                    className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/view active:scale-[0.98]"
                                                                                     title="View Document"
                                                                                 >
-                                                                                    <FiEye size={14} className="group-hover/view:scale-110 transition-transform" />
-                                                                                    <span className="text-[15px] font-black uppercase tracking-widest hidden sm:inline">View</span>
+                                                                                    <FiEye size={14} className="group-hover/view:scale-110 transition-transform text-[#0038A8]" />
+                                                                                    <span>View</span>
                                                                                 </button>
                                                                                 <button
+                                                                                    type="button"
                                                                                     onClick={() => handleDownloadDocument(profile[`${id}_binary_id`], label)}
-                                                                                    className="h-full flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-[18px] font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
+                                                                                    className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/download active:scale-[0.98]"
                                                                                     title="Download Document"
                                                                                 >
-                                                                                    <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
-                                                                                    <span className="text-[15px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
+                                                                                    <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform text-[#0038A8]" />
+                                                                                    <span>Download</span>
                                                                                 </button>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -3635,9 +3663,9 @@ const OfficialProfiling = () => {
                                                             </div>
                                                             <div className="pt-6 border-t-2 border-slate-100 mt-6">
                                                                 <Field label="Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents">
-                                                                    <div className="flex flex-col gap-3 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl">
-                                                                        <div className="flex gap-2 h-11">
-                                                                            <div className="relative group/upload flex-1 h-full">
+                                                                    <div className="flex flex-col gap-3 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl min-w-0 overflow-hidden">
+                                                                        {!profile.executive_summary_binary_id ? (
+                                                                            <div className="relative group/upload w-full h-11">
                                                                                 <input disabled={!isEditing}
                                                                                     type="file"
                                                                                     accept=".pdf,.doc,.docx"
@@ -3645,36 +3673,64 @@ const OfficialProfiling = () => {
                                                                                         const file = e.target.files[0];
                                                                                         if (file) handleFileUpload(file, 'executive_summary');
                                                                                     }}
-                                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
                                                                                 />
-                                                                                <div className={`h-full flex items-center justify-center gap-2.5 border-2 border-dashed rounded-xl px-4 py-2.5 text-[18px] font-semibold transition-all shadow-sm group-hover/upload:shadow-md ${profile.executive_summary_binary_id ? 'bg-emerald-50/50 border-emerald-300 text-emerald-700 shadow-inner' : 'bg-white border-slate-300 text-slate-500 group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F]'}`}>
-                                                                                    <FiUpload size={14} className={uploadingDocs.executive_summary ? 'animate-bounce' : ''} />
-                                                                                    <span className="text-[15px] font-black uppercase tracking-widest truncate max-w-[200px]">
-                                                                                        {uploadingDocs.executive_summary ? 'Processing...' : profile.executive_summary_binary_id ? (uploadedFileNames.executive_summary ? `Saved ✓ — ${uploadedFileNames.executive_summary}` : 'Document on file ✓') : 'Upload Document'}
+                                                                                <div className="h-full w-full flex items-center justify-center gap-2.5 border-2 border-dashed border-slate-300 rounded-xl px-4 py-2.5 text-slate-500 bg-white group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F] group-hover/upload:bg-blue-50/20 transition-all duration-200 shadow-xs group-hover/upload:shadow-sm">
+                                                                                    <FiUpload size={14} className={uploadingDocs.executive_summary ? 'animate-bounce text-[#0038A8]' : 'transition-transform group-hover/upload:-translate-y-0.5'} />
+                                                                                    <span className="text-[14px] font-black uppercase tracking-wider truncate">
+                                                                                        {uploadingDocs.executive_summary ? 'Processing...' : 'Upload Document'}
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
-                                                                            {profile.executive_summary_binary_id && (
-                                                                                <>
+                                                                        ) : (
+                                                                            <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full min-w-0">
+                                                                                <div className="relative group/upload flex-1 min-w-0 h-10">
+                                                                                    <input disabled={!isEditing}
+                                                                                        type="file"
+                                                                                        accept=".pdf,.doc,.docx"
+                                                                                        onChange={(e) => {
+                                                                                            const file = e.target.files[0];
+                                                                                            if (file) handleFileUpload(file, 'executive_summary');
+                                                                                        }}
+                                                                                        className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
+                                                                                        title={isEditing ? 'Click to replace document' : 'Document uploaded (editing disabled)'}
+                                                                                    />
+                                                                                    <div className="h-full w-full flex items-center justify-between gap-2 border-2 border-dashed border-emerald-300/80 bg-emerald-50/50 group-hover/upload:bg-emerald-50/80 group-hover/upload:border-emerald-400 rounded-xl px-3 transition-all duration-200 shadow-xs">
+                                                                                        <div className="flex items-center gap-2 min-w-0">
+                                                                                            <FiUpload size={14} className={`text-emerald-700 shrink-0 ${uploadingDocs.executive_summary ? 'animate-bounce' : 'transition-transform group-hover/upload:-translate-y-0.5'}`} />
+                                                                                            <span className="text-[13px] font-black uppercase tracking-wider text-emerald-800 truncate">
+                                                                                                {uploadingDocs.executive_summary ? 'Processing...' : (uploadedFileNames.executive_summary ? `Saved ✓ — ${uploadedFileNames.executive_summary}` : 'Document on file ✓')}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        {isEditing && (
+                                                                                            <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-100/90 hover:bg-emerald-200/80 px-2 py-0.5 rounded-md shrink-0 border border-emerald-300/60 transition-colors">
+                                                                                                Replace
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="grid grid-cols-2 xl:flex items-center gap-2 shrink-0">
                                                                                     <button
+                                                                                        type="button"
                                                                                         onClick={() => handleViewDocument(profile.executive_summary_binary_id)}
-                                                                                        className="h-full flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-[18px] font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/view shrink-0"
+                                                                                        className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/view active:scale-[0.98]"
                                                                                         title="View Document"
                                                                                     >
-                                                                                        <FiEye size={14} className="group-hover/view:scale-110 transition-transform" />
-                                                                                        <span className="text-[15px] font-black uppercase tracking-widest hidden sm:inline">View</span>
+                                                                                        <FiEye size={14} className="group-hover/view:scale-110 transition-transform text-[#0038A8]" />
+                                                                                        <span>View</span>
                                                                                     </button>
                                                                                     <button
+                                                                                        type="button"
                                                                                         onClick={() => handleDownloadDocument(profile.executive_summary_binary_id, 'Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents')}
-                                                                                        className="h-full flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-[18px] font-semibold transition-all shadow-sm hover:shadow-md bg-white hover:border-[#08315F] text-[#08315F] group/download shrink-0"
+                                                                                        className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/download active:scale-[0.98]"
                                                                                         title="Download Document"
                                                                                     >
-                                                                                        <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform" />
-                                                                                        <span className="text-[15px] font-black uppercase tracking-widest hidden sm:inline">Download</span>
+                                                                                        <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform text-[#0038A8]" />
+                                                                                        <span>Download</span>
                                                                                     </button>
-                                                                                </>
-                                                                            )}
-                                                                        </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </Field>
                                                             </div>
