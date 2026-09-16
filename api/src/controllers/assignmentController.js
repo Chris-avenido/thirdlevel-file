@@ -621,35 +621,137 @@ export const updateAssignment = async (req, res) => {
 
     const updatedBy = req.user?.username || req.user?.name || 'admin';
 
-    const updateQuery = `
-      UPDATE tlo_assignments
-      SET 
-        tlo_masterlist_id = $1,
-        position_id = $2,
-        capacity = $3,
-        status = $4,
-        start_date = COALESCE($5, start_date),
-        end_date = $6,
-        designation = $7,
-        remarks = $8,
-        updated_at = CURRENT_TIMESTAMP,
-        updated_by = $9
-      WHERE id = $10
-      RETURNING *
-    `;
+    const positionChanged = targetPosId !== current.position_id;
+    const isCurrentVacated = (vacate_assignment_ids && vacate_assignment_ids.map(Number).includes(parseInt(id, 10))) || status === 'Inactive';
 
-    const updateRes = await client.query(updateQuery, [
-      targetMasterlistId,
-      targetPosId,
-      targetCapacity,
-      targetStatus,
-      start_date || current.start_date,
-      end_date !== undefined ? (end_date || null) : current.end_date,
-      designation !== undefined ? (designation || null) : current.designation,
-      remarks !== undefined ? (remarks || null) : current.remarks,
-      updatedBy,
-      id
-    ]);
+    let resultRecord;
+
+    if (positionChanged) {
+      // 1. Handle previous assignment record: Retain (keep active) or Vacate (inactive)
+      if (isCurrentVacated) {
+        // YES — Vacate: previous position is marked Inactive
+        await client.query(
+          `UPDATE tlo_assignments
+           SET 
+             status = 'Inactive',
+             end_date = COALESCE($2, CURRENT_DATE),
+             remarks = CASE 
+               WHEN remarks IS NOT NULL AND remarks <> '' 
+               THEN CONCAT_WS(' | ', remarks, 'Vacated upon reassignment')
+               ELSE 'Vacated upon reassignment'
+             END,
+             updated_at = CURRENT_TIMESTAMP,
+             updated_by = $3
+           WHERE id = $1`,
+          [id, start_date || current.start_date || null, updatedBy]
+        );
+      } else {
+        // "NO — Retain": retain previous position as Active alongside new deployment
+        await client.query(
+          `UPDATE tlo_assignments
+           SET 
+             status = 'Active',
+             updated_at = CURRENT_TIMESTAMP,
+             updated_by = $2
+           WHERE id = $1`,
+          [id, updatedBy]
+        );
+      }
+
+      // 2. Insert new assignment data for the newly selected position
+      const insertQuery = `
+        INSERT INTO tlo_assignments (
+          tlo_masterlist_id,
+          position_id,
+          tlo_position_id,
+          status,
+          capacity,
+          start_date,
+          end_date,
+          designation,
+          remarks,
+          created_by,
+          updated_by
+        ) VALUES (
+          $1,
+          $2,
+          NULL,
+          'Active',
+          $3,
+          COALESCE($4, CURRENT_DATE),
+          NULL,
+          $5,
+          $6,
+          $7,
+          $7
+        )
+        RETURNING *
+      `;
+
+      const insertRes = await client.query(insertQuery, [
+        targetMasterlistId,
+        targetPosId,
+        targetCapacity,
+        start_date || current.start_date || null,
+        designation !== undefined ? (designation || null) : null,
+        remarks !== undefined ? (remarks || null) : null,
+        updatedBy
+      ]);
+      resultRecord = insertRes.rows[0];
+
+    } else {
+      // Position was NOT changed (standard update in place)
+      if (isCurrentVacated) {
+        const updateQuery = `
+          UPDATE tlo_assignments
+          SET 
+            status = 'Inactive',
+            end_date = COALESCE($1, CURRENT_DATE),
+            remarks = CASE 
+              WHEN $2::text IS NOT NULL AND $2::text <> '' THEN $2::text
+              WHEN remarks IS NOT NULL AND remarks <> '' THEN CONCAT_WS(' | ', remarks, 'Vacated')
+              ELSE 'Vacated'
+            END,
+            updated_at = CURRENT_TIMESTAMP,
+            updated_by = $3
+          WHERE id = $4
+          RETURNING *
+        `;
+        const res = await client.query(updateQuery, [
+          start_date || end_date || null,
+          remarks || null,
+          updatedBy,
+          id
+        ]);
+        resultRecord = res.rows[0];
+      } else {
+        const updateQuery = `
+          UPDATE tlo_assignments
+          SET 
+            tlo_masterlist_id = $1,
+            capacity = $2,
+            status = 'Active',
+            start_date = COALESCE($3, start_date),
+            end_date = NULL,
+            designation = $4,
+            remarks = $5,
+            updated_at = CURRENT_TIMESTAMP,
+            updated_by = $6
+          WHERE id = $7
+          RETURNING *
+        `;
+        const res = await client.query(updateQuery, [
+          targetMasterlistId,
+          targetCapacity,
+          start_date || current.start_date,
+          designation !== undefined ? (designation || null) : current.designation,
+          remarks !== undefined ? (remarks || null) : current.remarks,
+          updatedBy,
+          id
+        ]);
+        resultRecord = res.rows[0];
+      }
+    }
 
     // Inactivate any selectively vacated assignments
     if (vacate_assignment_ids && Array.isArray(vacate_assignment_ids) && vacate_assignment_ids.length > 0) {
@@ -679,10 +781,18 @@ export const updateAssignment = async (req, res) => {
 
     await client.query('COMMIT');
 
+    const msg = positionChanged
+      ? (isCurrentVacated
+          ? 'New position successfully assigned; previous position vacated.'
+          : 'New position successfully assigned; previous position retained alongside.')
+      : (isCurrentVacated
+          ? 'Assignment successfully vacated.'
+          : 'Assignment record successfully updated.');
+
     return res.status(200).json({
       success: true,
-      message: 'Assignment successfully updated.',
-      data: updateRes.rows[0]
+      message: msg,
+      data: resultRecord || current
     });
   } catch (error) {
     await client.query('ROLLBACK');

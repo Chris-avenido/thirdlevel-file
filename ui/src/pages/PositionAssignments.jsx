@@ -1067,8 +1067,8 @@ const PositionAssignments = () => {
 
       Swal.fire({
         icon: 'success',
-        title: 'Assignment Updated',
-        text: 'The assignment record and deployment details have been successfully updated.',
+        title: 'Assignment Saved',
+        text: data.message || 'The assignment record and deployment details have been successfully updated.',
         confirmButtonColor: '#08315F',
         timer: 2000
       });
