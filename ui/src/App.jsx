@@ -18,6 +18,7 @@ import LoadingScreen from './components/LoadingScreen';
 import AllVacancies from './pages/AllVacancies';
 import ResetPassword from './pages/ResetPassword';
 import CesPlantilla from './pages/CesPlantilla';
+import PositionAssignments from './pages/PositionAssignments';
 
 import MainDashboard from './pages/MainDashboard';
 
@@ -121,6 +122,14 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <CesPlantilla />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/position-assignments" 
+                element={
+                    <ProtectedRoute>
+                        <PositionAssignments />
                     </ProtectedRoute>
                 } 
             />
