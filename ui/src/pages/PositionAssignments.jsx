@@ -132,7 +132,7 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 360, placement: 'bottom' });
 
   const selectedOfficial = useMemo(() => {
-    return officials.find(o => String(o.id) === String(selectedId)) || null;
+    return officials.find(o => String(o.id) === String(selectedId) || (Array.isArray(o.other_masterlist_ids) && o.other_masterlist_ids.includes(Number(selectedId)))) || null;
   }, [officials, selectedId]);
 
   const updatePosition = () => {
@@ -212,17 +212,33 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
     }
   }, [isOpen]);
 
+  // Deduplicate officials by unique name / identity so duplicates never render twice
+  const uniqueOfficials = useMemo(() => {
+    if (!Array.isArray(officials)) return [];
+    const seen = new Set();
+    const result = [];
+    for (const off of officials) {
+      const nameKey = (off.official_name || `${off.first_name || ''} ${off.last_name || ''}`).trim().toUpperCase();
+      const key = nameKey || `id_${off.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(off);
+      }
+    }
+    return result;
+  }, [officials]);
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return officials;
+    if (!query.trim()) return uniqueOfficials;
     const q = query.toLowerCase();
-    return officials.filter(o =>
+    return uniqueOfficials.filter(o =>
       (o.official_name && o.official_name.toLowerCase().includes(q)) ||
       (o.tloid && o.tloid.toLowerCase().includes(q)) ||
       (o.first_name && o.first_name.toLowerCase().includes(q)) ||
       (o.last_name && o.last_name.toLowerCase().includes(q)) ||
       (Array.isArray(o.active_designations) && o.active_designations.some(d => d && d.toLowerCase().includes(q)))
     );
-  }, [officials, query]);
+  }, [uniqueOfficials, query]);
 
   return (
     <div className="relative w-full" ref={triggerRef}>
@@ -963,7 +979,7 @@ const PositionAssignments = () => {
 
   const selectedOfficialObj = useMemo(() => {
     if (!formData.tlo_masterlist_id) return null;
-    return officials.find(o => String(o.id) === String(formData.tlo_masterlist_id));
+    return officials.find(o => String(o.id) === String(formData.tlo_masterlist_id) || (Array.isArray(o.other_masterlist_ids) && o.other_masterlist_ids.includes(Number(formData.tlo_masterlist_id)))) || null;
   }, [officials, formData.tlo_masterlist_id]);
 
   // Lookup existing assignments in table for the selected official
@@ -1011,7 +1027,7 @@ const PositionAssignments = () => {
   // Edit Modal Official & Assignments Computation
   const editOfficialObj = useMemo(() => {
     if (!editFormData.tlo_masterlist_id) return null;
-    return officials.find(o => String(o.id) === String(editFormData.tlo_masterlist_id));
+    return officials.find(o => String(o.id) === String(editFormData.tlo_masterlist_id) || (Array.isArray(o.other_masterlist_ids) && o.other_masterlist_ids.includes(Number(editFormData.tlo_masterlist_id)))) || null;
   }, [officials, editFormData.tlo_masterlist_id]);
 
   const editOfficialExistingAssignments = useMemo(() => {

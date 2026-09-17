@@ -1,6 +1,43 @@
 # CHANGELOG
 
-## 2026-09-15 — Canonical TLO Assignments Schema Refactor & Elimination of Legacy `tlo_assignment`
+## 2026-09-17 — Reconciled Duplicate Personnel Display & Masterlist Consolidation Migration
+
+### Root Cause & Forensic Findings
+- Investigation of modal duplicate display (e.g., `ALDRIN GAYRAMA CORPIN` displayed twice with `2 FOUND`):
+  - Database table `tlo_masterlist` contained duplicate rows for identical individuals (e.g. `id = 528` with `tloid = 'TLO-0091'` and `id = 696` with `tloid = 'TLO-0608'`) resulting from historical multi-file personnel imports.
+  - Endpoint `GET /api/third-level/assignments/officials` directly queried `tlo_masterlist`, causing 2 rows to be emitted to the frontend combobox.
+
+### API & Frontend Deduplication Defense
+- **Backend Controller (`api/src/controllers/assignmentController.js`)**:
+  - Enhanced `getOfficialsForAssignment` to consolidate duplicate masterlist records by canonical normalized full name and email.
+  - Automatically merges `existing_assignments`, `active_assignments`, and `active_designations` across duplicate masterlist IDs.
+  - Selects the primary record with verified `plantilla_item_no` and highest profile completion while recording all merged IDs in `other_masterlist_ids`.
+- **Frontend Dropdown (`OfficialCombobox` in `ReassignOfficialModal.jsx` and `PositionAssignments.jsx`)**:
+  - Deduplicated `officials` list by canonical official identity before calculating `filtered` results, ensuring exact `1 found` display and single-entry selection.
+  - Updated selection resolution to match either primary `id` or any ID within `other_masterlist_ids`.
+
+### Database Schema Migration
+- Created migration `database/migrations/20260917_044_reconcile_duplicate_tlo_masterlist_records.sql`:
+  - Scoped **exclusively to `tlo_masterlist`** based on email from `third_level_official_masterlist`.
+  - Re-points foreign key references in `tlo_assignments` from secondary masterlist IDs to canonical primary IDs (e.g. 528 -> 696).
+  - Removes secondary duplicate rows strictly from `tlo_masterlist`.
+  - Leaves child tables and `third_level_official_masterlist` completely untouched.
+  - Fully transactional (`BEGIN ... COMMIT`) with complete rollback instructions.
+
+---
+
+## 2026-09-17 — Unified "Staffing Action: New Position Assignment" Modal & Elimination of Legacy `reassignOfficial`
+
+### Architectural Change & Controller Refactoring
+- **Replaced Legacy "Executive Dashboard Reassign Official" Modal**:
+  - Replaced `ui/src/components/ReassignOfficialModal.jsx` with the canonical **Staffing Action: New Position Assignment** modal ("Deploy an official into a verified vacant plantilla position").
+  - Unified `Home.jsx` ("Reassign Official" button) and `OfficialsRegistry.jsx` to trigger the standardized New Position Assignment workflow with official pre-selection and vacancy validation.
+- **Eliminated Legacy Backend Endpoint & Handler**:
+  - Removed `POST /api/third-level/reassign-official` route from `api/src/routes/officialsRegistryRoutes.js`.
+  - Removed deprecated `reassignOfficial` controller from `api/src/controllers/thirdLevelController.js`.
+  - Standardized all staffing deployments exclusively on `POST /api/third-level/assignments` (`assignmentController.js`), ensuring concurrent vacancy verification, automatic position archiving into `tlo_position_history`, and multi-position retention/vacating support.
+
+---
 
 ### Architectural Change & Database Migrations
 - **Eliminated Singular `tlo_assignment` Table**:

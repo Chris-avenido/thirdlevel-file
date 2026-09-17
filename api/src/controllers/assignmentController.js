@@ -366,10 +366,78 @@ export const getOfficialsForAssignment = async (req, res) => {
 
     const result = await pool.query(query);
 
+    // Deduplicate officials by canonical normalized full name / identity
+    // Consolidates multiple masterlist records for the same individual, merging existing & active assignments
+    const deduplicatedMap = new Map();
+    for (const row of result.rows) {
+      const normalizedName = [row.first_name, row.middle_name, row.last_name, row.suffix]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+
+      const key = normalizedName || `id_${row.id}`;
+
+      if (!deduplicatedMap.has(key)) {
+        deduplicatedMap.set(key, {
+          ...row,
+          other_masterlist_ids: [row.id],
+          existing_assignments: Array.isArray(row.existing_assignments) ? [...row.existing_assignments] : [],
+          active_assignments: Array.isArray(row.active_assignments) ? [...row.active_assignments] : [],
+          active_designations: Array.isArray(row.active_designations) ? [...row.active_designations] : []
+        });
+      } else {
+        const existing = deduplicatedMap.get(key);
+        existing.other_masterlist_ids.push(row.id);
+
+        // Merge existing_assignments without duplicating
+        if (Array.isArray(row.existing_assignments)) {
+          for (const a of row.existing_assignments) {
+            if (!existing.existing_assignments.some(ea => ea.id === a.id)) {
+              existing.existing_assignments.push(a);
+            }
+          }
+        }
+
+        // Merge active_assignments without duplicating
+        if (Array.isArray(row.active_assignments)) {
+          for (const a of row.active_assignments) {
+            if (!existing.active_assignments.some(ea => ea.id === a.id)) {
+              existing.active_assignments.push(a);
+            }
+          }
+        }
+
+        // Merge active_designations without duplicating
+        if (Array.isArray(row.active_designations)) {
+          for (const d of row.active_designations) {
+            if (!existing.active_designations.includes(d)) {
+              existing.active_designations.push(d);
+            }
+          }
+        }
+
+        // Favor the canonical record that has plantilla_item_no and higher profile completion
+        const currentScore = (row.plantilla_item_no ? 100 : 0) + (row.profile_completion || 0);
+        const existingScore = (existing.plantilla_item_no ? 100 : 0) + (existing.profile_completion || 0);
+
+        if (currentScore > existingScore) {
+          existing.id = row.id;
+          existing.tloid = row.tloid;
+          existing.plantilla_item_no = row.plantilla_item_no || existing.plantilla_item_no;
+          existing.email = row.email || existing.email;
+          existing.profile_completion = row.profile_completion;
+        }
+      }
+    }
+
+    const officialsData = Array.from(deduplicatedMap.values());
+
     return res.status(200).json({
       success: true,
-      count: result.rowCount,
-      data: result.rows
+      count: officialsData.length,
+      data: officialsData
     });
   } catch (error) {
     console.error('Error in getOfficialsForAssignment:', error);
