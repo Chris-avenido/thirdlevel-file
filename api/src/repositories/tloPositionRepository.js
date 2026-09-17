@@ -249,4 +249,260 @@ export async function findAssignmentsByPositionId(client, positionItemOrId) {
   return res.rows;
 }
 
+/**
+ * Query positions with search, filter, pagination, and sorting.
+ * Note: Base ordering is strictly ORDER BY id ASC by default as required.
+ */
+export async function queryPositions(client, {
+  search = '',
+  region = '',
+  salary_grade = '',
+  page = 1,
+  limit = 20,
+  sortBy = 'id',
+  sortOrder = 'ASC'
+} = {}) {
+  const conditions = [];
+  const params = [];
 
+  if (search && String(search).trim()) {
+    params.push(`%${String(search).trim()}%`);
+    const pIdx = params.length;
+    conditions.push(`(
+      position_title ILIKE $${pIdx} OR
+      position_code ILIKE $${pIdx} OR
+      salary_grade ILIKE $${pIdx} OR
+      region ILIKE $${pIdx} OR
+      division ILIKE $${pIdx} OR
+      bureau ILIKE $${pIdx} OR
+      description ILIKE $${pIdx}
+    )`);
+  }
+
+  if (region && String(region).trim() && String(region).trim().toUpperCase() !== 'ALL') {
+    params.push(String(region).trim());
+    conditions.push(`region = $${params.length}`);
+  }
+
+  if (salary_grade && String(salary_grade).trim() && String(salary_grade).trim().toUpperCase() !== 'ALL') {
+    params.push(String(salary_grade).trim());
+    conditions.push(`salary_grade = $${params.length}`);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  // Count total matching records
+  const countRes = await client.query(
+    `SELECT COUNT(*)::int AS total FROM tlo_positions ${whereClause}`,
+    params
+  );
+  const total = countRes.rows[0]?.total || 0;
+
+  // Sorting: strictly validate allowed sort columns; default to id ASC
+  const allowedSortKeys = ['id', 'position_title', 'position_code', 'salary_grade', 'region', 'division', 'bureau', 'created_at', 'updated_at'];
+  const safeSortBy = allowedSortKeys.includes(sortBy) ? sortBy : 'id';
+  const safeSortOrder = String(sortOrder).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+  const orderClause = `ORDER BY ${safeSortBy} ${safeSortOrder}`;
+
+  let paginationClause = '';
+  const parsedLimit = parseInt(limit, 10);
+  const parsedPage = parseInt(page, 10) || 1;
+
+  if (parsedLimit > 0) {
+    const offset = (parsedPage - 1) * parsedLimit;
+    params.push(parsedLimit);
+    const limitIdx = params.length;
+    params.push(offset);
+    const offsetIdx = params.length;
+    paginationClause = `LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  }
+
+  const query = `
+    SELECT id, position_title, position_code, salary_grade, description, region, division, bureau, created_at, updated_at
+    FROM tlo_positions
+    ${whereClause}
+    ${orderClause}
+    ${paginationClause}
+  `;
+
+  const result = await client.query(query, params);
+  return {
+    rows: result.rows,
+    total,
+    page: parsedPage,
+    limit: parsedLimit || total,
+    totalPages: parsedLimit > 0 ? Math.ceil(total / parsedLimit) : 1
+  };
+}
+
+/**
+ * Fetch Position KPI statistics dynamically from tlo_positions.
+ */
+export async function getPositionKpis(client) {
+  const result = await client.query(`
+    SELECT
+      COUNT(*)::int AS total_positions,
+      COUNT(DISTINCT position_title)::int AS unique_titles,
+      COUNT(DISTINCT NULLIF(TRIM(region), ''))::int AS total_regions,
+      MAX(NULLIF(regexp_replace(salary_grade, '[^0-9]', '', 'g'), '')::int) AS highest_salary_grade
+    FROM tlo_positions
+  `);
+  return result.rows[0] || {
+    total_positions: 0,
+    unique_titles: 0,
+    total_regions: 0,
+    highest_salary_grade: null
+  };
+}
+
+/**
+ * Fetch distinct filter values (regions, salary grades, titles) from tlo_positions.
+ */
+export async function getPositionFilterOptions(client) {
+  const regionsRes = await client.query(`
+    SELECT DISTINCT region 
+    FROM tlo_positions 
+    WHERE region IS NOT NULL AND TRIM(region) <> '' 
+    ORDER BY region ASC
+  `);
+  const gradesRes = await client.query(`
+    SELECT DISTINCT salary_grade 
+    FROM tlo_positions 
+    WHERE salary_grade IS NOT NULL AND TRIM(salary_grade) <> '' 
+    ORDER BY salary_grade ASC
+  `);
+  const titlesRes = await client.query(`
+    SELECT DISTINCT position_title
+    FROM tlo_positions
+    WHERE position_title IS NOT NULL AND TRIM(position_title) <> ''
+    ORDER BY position_title ASC
+  `);
+
+  return {
+    regions: regionsRes.rows.map(r => r.region),
+    salaryGrades: gradesRes.rows.map(r => r.salary_grade),
+    titles: titlesRes.rows.map(r => r.position_title)
+  };
+}
+
+/**
+ * Get position by ID.
+ */
+export async function getPositionById(client, id) {
+  const res = await client.query(
+    `SELECT id, position_title, position_code, salary_grade, description, region, division, bureau, created_at, updated_at
+     FROM tlo_positions
+     WHERE id = $1`,
+    [id]
+  );
+  return res.rows[0] || null;
+}
+
+/**
+ * Create a new position record.
+ */
+export async function createPosition(client, {
+  position_title,
+  position_code = null,
+  salary_grade = null,
+  description = null,
+  region = null,
+  division = null,
+  bureau = null
+}) {
+  const cleanTitle = String(position_title).trim();
+  const res = await client.query(
+    `INSERT INTO tlo_positions (position_title, position_code, salary_grade, description, region, division, bureau, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+     RETURNING id, position_title, position_code, salary_grade, description, region, division, bureau, created_at, updated_at`,
+    [
+      cleanTitle,
+      position_code ? String(position_code).trim() : null,
+      salary_grade ? String(salary_grade).trim() : null,
+      description ? String(description).trim() : null,
+      region ? String(region).trim() : null,
+      division ? String(division).trim() : null,
+      bureau ? String(bureau).trim() : null
+    ]
+  );
+  return res.rows[0];
+}
+
+/**
+ * Update an existing position record.
+ */
+export async function updatePosition(client, id, {
+  position_title,
+  position_code,
+  salary_grade,
+  description,
+  region,
+  division,
+  bureau
+}) {
+  const cleanTitle = position_title ? String(position_title).trim() : null;
+  const res = await client.query(
+    `UPDATE tlo_positions
+     SET position_title = COALESCE($1, position_title),
+         position_code = $2,
+         salary_grade = $3,
+         description = $4,
+         region = $5,
+         division = $6,
+         bureau = $7,
+         updated_at = NOW()
+     WHERE id = $8
+     RETURNING id, position_title, position_code, salary_grade, description, region, division, bureau, created_at, updated_at`,
+    [
+      cleanTitle,
+      position_code !== undefined ? (position_code ? String(position_code).trim() : null) : null,
+      salary_grade !== undefined ? (salary_grade ? String(salary_grade).trim() : null) : null,
+      description !== undefined ? (description ? String(description).trim() : null) : null,
+      region !== undefined ? (region ? String(region).trim() : null) : null,
+      division !== undefined ? (division ? String(division).trim() : null) : null,
+      bureau !== undefined ? (bureau ? String(bureau).trim() : null) : null,
+      id
+    ]
+  );
+  return res.rows[0] || null;
+}
+
+/**
+ * Count active and total assignment references to a position.
+ */
+export async function countPositionAssignments(client, id) {
+  const res = await client.query(
+    `SELECT 
+       COUNT(*)::int AS total_assignments,
+       COUNT(CASE WHEN a.status <> 'Inactive' THEN 1 END)::int AS active_assignments,
+       COALESCE(
+         JSON_AGG(
+           JSON_BUILD_OBJECT(
+             'assignment_id', a.id,
+             'status', a.status,
+             'capacity', a.capacity,
+             'official_name', CONCAT_WS(' ', m.first_name, m.last_name),
+             'tloid', m.tloid
+           )
+         ) FILTER (WHERE a.id IS NOT NULL),
+         '[]'::json
+       ) AS assignments
+     FROM tlo_assignments a
+     LEFT JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
+     WHERE a.position_id = $1 OR (a.position_id IS NULL AND a.tlo_position_id = $1::text)`,
+    [id]
+  );
+  return res.rows[0] || { total_assignments: 0, active_assignments: 0, assignments: [] };
+}
+
+/**
+ * Delete a position from tlo_positions by ID.
+ */
+export async function deletePosition(client, id) {
+  const res = await client.query(
+    `DELETE FROM tlo_positions WHERE id = $1 RETURNING id`,
+    [id]
+  );
+  return res.rowCount > 0;
+}

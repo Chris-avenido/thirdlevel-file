@@ -2926,6 +2926,17 @@ export const registerPersonnel = async (req, res) => {
       isTest
     ]);
 
+    await client.query(`
+      INSERT INTO tlo_masterlist (
+          tloid, first_name, last_name, middle_name, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, NOW(), NOW())
+      ON CONFLICT (tloid) DO UPDATE SET
+          first_name = EXCLUDED.first_name,
+          last_name = EXCLUDED.last_name,
+          middle_name = EXCLUDED.middle_name,
+          updated_at = NOW()
+    `, [tloId, upperFirstName, upperLastName, (middle_name || '').trim().toUpperCase() || null]);
+
     await client.query('COMMIT');
     res.json({ success: true, TLOid: tloId, message: 'Personnel registered successfully', newPersonnel: { TLOid: tloId, first_name: upperFirstName, last_name: upperLastName, email: normalizedEmail, position_title } });
   } catch (err) {

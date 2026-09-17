@@ -117,7 +117,7 @@ const buildFullName = (profile) => {
     return [profile.first_name, profile.middle_name, profile.last_name, suffix].filter(Boolean).join(' ').trim();
 };
 
-// Canonical positions and salary grades from public.tlo_positions (managerial: salary_grade >= 24)
+// Canonical positions and salary grades from public.tlo_positions (managerial: salary_grade >= 18)
 const DEFAULT_TLO_POSITIONS = [
     { position_title: 'Assistant Regional Director', salary_grade: 27 },
     { position_title: 'Assistant Schools Division Superintendent', salary_grade: 28 },
@@ -132,6 +132,95 @@ const DEFAULT_TLO_POSITIONS = [
 
 const PREVIOUS_POSITION_OPTIONS = DEFAULT_TLO_POSITIONS.map(p => p.position_title);
 
+const MANAGERIAL_MIN_SALARY_GRADE = 18;
+
+const STANDARD_POSITION_SALARY_GRADES = {
+    // Executive / Third-Level
+    'SECRETARY': 31,
+    'UNDERSECRETARY': 30,
+    'ASSISTANT SECRETARY': 29,
+    'REGIONAL DIRECTOR': 28,
+    'DIRECTOR IV': 28,
+    'ASSISTANT REGIONAL DIRECTOR': 27,
+    'DIRECTOR III': 27,
+    'SCHOOLS DIVISION SUPERINTENDENT': 26,
+    'DIRECTOR II': 26,
+    'ASSISTANT SCHOOLS DIVISION SUPERINTENDENT': 25,
+    'DIRECTOR I': 25,
+    'ATTORNEY V': 25,
+
+    // Division Chiefs & Second-Level Supervisory / Managerial (SG 18-24)
+    'CHIEF EDUCATION SUPERVISOR': 24,
+    'CHIEF ADMINISTRATIVE OFFICER': 24,
+    'CHIEF EDUCATION PROGRAM SUPERVISOR': 24,
+    'CHIEF, CURRICULUM IMPLEMENTATION DIVISION': 24,
+    'CHIEF, SCHOOL GOVERNANCE AND OPERATIONS DIVISION': 24,
+    'CID CHIEF': 24,
+    'SGOD CHIEF': 24,
+    'CHIEF SUPERVISORS': 24,
+    'VOCATIONAL SCHOOL ADMINISTRATOR II': 24,
+    'ATTORNEY IV': 23,
+    'PUBLIC SCHOOLS DISTRICT SUPERVISOR': 22,
+    'EDUCATION PROGRAM SUPERVISOR': 22,
+    'EDUCATION PROGRAM SUPERVISOR I': 22,
+    'EDUCATION PROGRAM SUPERVISOR II': 22,
+    'EDUCATION SUPERVISOR I': 22,
+    'EDUCATION SUPERVISOR II': 22,
+    'SUPERVISING ADMINISTRATIVE OFFICER': 22,
+    'SUPERVISING EDUCATION PROGRAM SPECIALIST': 22,
+    'VOCATIONAL SCHOOL ADMINISTRATOR I': 22,
+    'PRINCIPAL IV': 22,
+    'PRINCIPAL III': 21,
+    'PRINCIPAL II': 20,
+    'PRINCIPAL I': 19,
+    'PRINCIPAL': 19,
+    'ASSISTANT PRINCIPAL II': 19,
+    'SENIOR EDUCATION PROGRAM SPECIALIST': 19,
+    'ASSISTANT PRINCIPAL I': 18,
+    'ASSISTANT PRINCIPAL': 18,
+    'ADMINISTRATIVE OFFICER V': 18,
+    'ACCOUNTANT III': 18,
+    'ATTORNEY III': 18,
+    'COLLEGE PRESIDENT': 30,
+
+    // Below SG 18 (Non-Managerial / Non-Supervisory for DepEd Third Level qualification)
+    'HEAD TEACHER VI': 19,
+    'HEAD TEACHER III': 16,
+    'HEAD TEACHER II': 15,
+    'HEAD TEACHER I': 14,
+    'HEAD TEACHER': 14,
+    'HED TEACHER II': 15,
+    'EDUCATION PROGRAM SPECIALIST II': 16,
+    'PLANNING OFFICER II': 15,
+    'PROJECT DEVELOPMENT OFFICER II': 15,
+    'PROJECT DEVELOPMENT OFFICER 2': 15,
+    'ADMINISTRATIVE OFFICER IV': 15,
+    'ADMINISTRATIVE OFFICER II': 11,
+    'ADMINISTRATIVE OFFICER': 11,
+    'MASTER TEACHER II': 19,
+    'MASTER TEACHER I': 18,
+    'MASTER TEACHER': 18,
+    'TEACHER III': 13,
+    'TEACHER II': 12,
+    'TEACHER I': 11,
+    'TEACHER': 11,
+    'CLASSROOM TEACHER': 11,
+    'ELEMENTARY GRADE TEACHER III': 13,
+    'ELEMENTARY GRADE TEACHER II': 12,
+    'ELEMENTARY GRADE TEACHER I': 11,
+    'SECONDARY SCHOOL TEACHER I': 11,
+    'SECONDARY SCHOOL TEACHER': 11,
+    'ADMINISTRATIVE ASSISTANT III': 9,
+    'ADMINISTRATIVE ASSISTANT II': 8,
+    'ADMINISTRATIVE ASSISTANT I': 7,
+    'ADMINISTRATIVE AIDE VI': 6,
+    'ADMINISTRATIVE AIDE IV': 4,
+    'ADMINISTRATIVE AIDE III': 3,
+    'ADMINISTRATIVE AIDE I': 1,
+    'CLERK I': 3,
+    'CLERK': 3
+};
+
 const PREVIOUS_POSITION_ACRONYMS = {
     'SDS': 'Schools Division Superintendent',
     'ASDS': 'Assistant Schools Division Superintendent',
@@ -143,8 +232,31 @@ const PREVIOUS_POSITION_ACRONYMS = {
     'OSEC': 'Secretary',
     'DIR IV': 'Director IV',
     'DIR III': 'Director III',
+    'DIR II': 'Director II',
     'DIR4': 'Director IV',
-    'DIR3': 'Director III'
+    'DIR3': 'Director III',
+    'DIR2': 'Director II',
+    'PSDS': 'Public Schools District Supervisor',
+    'EPS': 'Education Program Supervisor',
+    'EPS I': 'Education Program Supervisor I',
+    'EPS II': 'Education Program Supervisor II',
+    'SEPS': 'Senior Education Program Specialist',
+    'CES': 'Chief Education Supervisor',
+    'CAO': 'Chief Administrative Officer',
+    'AO V': 'Administrative Officer V',
+    'AOV': 'Administrative Officer V',
+    'P1': 'Principal I',
+    'P2': 'Principal II',
+    'P3': 'Principal III',
+    'P4': 'Principal IV',
+    'HT3': 'Head Teacher III',
+    'HT2': 'Head Teacher II',
+    'HT1': 'Head Teacher I',
+    'T3': 'Teacher III',
+    'T2': 'Teacher II',
+    'T1': 'Teacher I',
+    'MT2': 'Master Teacher II',
+    'MT1': 'Master Teacher I'
 };
 
 const normalizeManagerialTitle = (rawTitle) => {
@@ -158,6 +270,8 @@ const normalizeManagerialTitle = (rawTitle) => {
     title = title.replace(/\bASSIST\./i, 'ASSISTANT');
     title = title.replace(/\bDIR\./i, 'DIRECTOR');
     title = title.replace(/\bSUPT\./i, 'SUPERINTENDENT');
+    title = title.replace(/\bADMIN\./i, 'ADMINISTRATIVE');
+    title = title.replace(/\bOFF\./i, 'OFFICER');
 
     // Strip trailing parenthesis like (SGOD), (CID), (CESO VI), etc.
     title = title.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
@@ -172,25 +286,66 @@ const normalizeManagerialTitle = (rawTitle) => {
     return title;
 };
 
-// Managerial position identification: salary_grade >= 24 from public.tlo_positions
-const isManagerialPosition = (rawTitle, positionsList = DEFAULT_TLO_POSITIONS) => {
+const getSalaryGradeForPosition = (rawTitle, positionsList = DEFAULT_TLO_POSITIONS, explicitGrade = null) => {
+    if (explicitGrade !== null && explicitGrade !== undefined && explicitGrade !== '') {
+        const num = parseInt(explicitGrade, 10);
+        if (!isNaN(num) && num > 0) return num;
+    }
+
+    if (!rawTitle || typeof rawTitle !== 'string') return 0;
+
+    // Check if title mentions explicit SG like 'SG 18', 'SG-24', 'Salary Grade 22'
+    const sgMatch = rawTitle.match(/\b(?:SG|SALARY\s*GRADE)\s*[-:]*\s*(\d{1,2})\b/i);
+    if (sgMatch) {
+        const num = parseInt(sgMatch[1], 10);
+        if (!isNaN(num) && num > 0) return num;
+    }
+
+    const clean = normalizeManagerialTitle(rawTitle);
+    if (!clean || clean === 'OTHERS' || clean === 'N/A') return 0;
+
+    // 1. Direct match in positionsList (e.g. from tlo_positions)
+    const match = (positionsList || []).find(p => p.position_title && p.position_title.trim().toUpperCase() === clean);
+    if (match && match.salary_grade) {
+        const num = parseInt(match.salary_grade, 10);
+        if (!isNaN(num) && num > 0) return num;
+    }
+
+    // 2. Direct match in STANDARD_POSITION_SALARY_GRADES
+    if (STANDARD_POSITION_SALARY_GRADES[clean] !== undefined) {
+        return STANDARD_POSITION_SALARY_GRADES[clean];
+    }
+
+    // 3. Prefix/keyword matches in STANDARD_POSITION_SALARY_GRADES
+    for (const [key, sg] of Object.entries(STANDARD_POSITION_SALARY_GRADES)) {
+        if (clean === key || clean.startsWith(key + ' ') || clean.startsWith(key + '-') || clean.endsWith(' ' + key)) {
+            return sg;
+        }
+    }
+
+    // 4. Prefix match against positionsList
+    const prefixMatch = (positionsList || []).find(p => p.position_title && clean.startsWith(p.position_title.trim().toUpperCase()));
+    if (prefixMatch && prefixMatch.salary_grade) {
+        const num = parseInt(prefixMatch.salary_grade, 10);
+        if (!isNaN(num) && num > 0) return num;
+    }
+
+    return 0;
+};
+
+// Managerial position identification: salary_grade >= 18 (DepEd / CSC standard)
+const isManagerialPosition = (rawTitle, positionsList = DEFAULT_TLO_POSITIONS, explicitGrade = null) => {
     if (!rawTitle || typeof rawTitle !== 'string') return false;
     const clean = normalizeManagerialTitle(rawTitle);
     if (!clean || clean === 'OTHERS' || clean === 'N/A') return false;
 
-    // Direct match against tlo_positions
-    const match = (positionsList || []).find(p => p.position_title?.toUpperCase() === clean);
-    if (match) {
-        return (parseInt(match.salary_grade, 10) || 0) >= 24;
+    // Master Teachers are teaching track (individual contributor) - exclude unless TIC
+    if (clean.startsWith('MASTER TEACHER') && !clean.includes('CHARGE')) {
+        return false;
     }
 
-    // Prefix match (e.g. "Director IV - Planning Service")
-    const prefixMatch = (positionsList || []).find(p => p.position_title && clean.startsWith(p.position_title.toUpperCase()));
-    if (prefixMatch) {
-        return (parseInt(prefixMatch.salary_grade, 10) || 0) >= 24;
-    }
-
-    return false;
+    const sg = getSalaryGradeForPosition(rawTitle, positionsList, explicitGrade);
+    return sg >= MANAGERIAL_MIN_SALARY_GRADE;
 };
 
 const SearchableSelect = ({ value, onChange, options, placeholder, className, disabled }) => {
@@ -782,8 +937,8 @@ const OfficialProfiling = () => {
         const intervals = [];
 
         prevPositions.forEach(pos => {
-            // 1. Base Position: only count if it is an approved managerial position (salary_grade >= 24)
-            if (pos.start_date && isManagerialPosition(pos.position_name, tloPositions)) {
+            // 1. Base Position: only count if it is an approved managerial position (salary_grade >= 18)
+            if (pos.start_date && isManagerialPosition(pos.position_name, tloPositions, pos.salary_grade)) {
                 const start = new Date(pos.start_date);
                 const end = pos.end_date ? new Date(pos.end_date) : new Date();
                 if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
@@ -794,7 +949,7 @@ const OfficialProfiling = () => {
             // 2. Child OIC positions: each OIC period is evaluated independently
             if (Array.isArray(pos.oic_positions)) {
                 pos.oic_positions.forEach(oic => {
-                    if (oic.oic_start_date && isManagerialPosition(oic.oic_position_name, tloPositions)) {
+                    if (oic.oic_start_date && isManagerialPosition(oic.oic_position_name, tloPositions, oic.salary_grade)) {
                         const start = new Date(oic.oic_start_date);
                         const end = oic.oic_end_date ? new Date(oic.oic_end_date) : new Date();
                         if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
@@ -2964,7 +3119,7 @@ const OfficialProfiling = () => {
                                                                 <div className="bg-[#F4F8FB]/50 p-6 rounded-3xl border-2 border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                                                                     <div>
                                                                         <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest mb-1">Total Managerial Experience</p>
-                                                                        <p className="text-[13.5px] font-bold text-slate-400 italic leading-tight">Automatically computed based on your previous positions.</p>
+                                                                        <p className="text-[13.5px] font-bold text-slate-400 italic leading-tight">Automatically computed based on supervisory & managerial positions (Salary Grade 18 and above).</p>
                                                                     </div>
                                                                     <div className="bg-white px-6 py-3 rounded-2xl border-2 border-blue-200 shadow-sm">
                                                                         <p className="text-[30px] font-black text-[#08315F] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
@@ -3007,6 +3162,25 @@ const OfficialProfiling = () => {
                                                                                                     autoFocus
                                                                                                 />
                                                                                             )}
+                                                                                            {pos.position_name && pos.position_name !== 'Others' && (() => {
+                                                                                                const sg = getSalaryGradeForPosition(pos.position_name, tloPositions, pos.salary_grade);
+                                                                                                const isMgr = isManagerialPosition(pos.position_name, tloPositions, pos.salary_grade);
+                                                                                                return (
+                                                                                                    <div className="flex items-center gap-1.5 mt-1 px-1">
+                                                                                                        {isMgr ? (
+                                                                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                                                                                {sg ? `SG ${sg} • ` : ''}Managerial (Counted)
+                                                                                                            </span>
+                                                                                                        ) : (
+                                                                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                                                                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                                                                                {sg ? `SG ${sg} • ` : ''}Non-Managerial (&lt; SG 18)
+                                                                                                            </span>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                );
+                                                                                            })()}
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                                             <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Office / Division</span>
@@ -3066,6 +3240,25 @@ const OfficialProfiling = () => {
                                                                                                                 autoFocus
                                                                                                             />
                                                                                                         )}
+                                                                                                        {oic.oic_position_name && oic.oic_position_name !== 'Others' && (() => {
+                                                                                                            const oicSg = getSalaryGradeForPosition(oic.oic_position_name, tloPositions, oic.salary_grade);
+                                                                                                            const isOicMgr = isManagerialPosition(oic.oic_position_name, tloPositions, oic.salary_grade);
+                                                                                                            return (
+                                                                                                                <div className="flex items-center gap-1.5 mt-1 px-1">
+                                                                                                                    {isOicMgr ? (
+                                                                                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                                                                                            {oicSg ? `SG ${oicSg} • ` : ''}Managerial OIC (Counted)
+                                                                                                                        </span>
+                                                                                                                    ) : (
+                                                                                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                                                                                                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                                                                                            {oicSg ? `SG ${oicSg} • ` : ''}Non-Managerial (&lt; SG 18)
+                                                                                                                        </span>
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                            );
+                                                                                                        })()}
                                                                                                     </div>
                                                                                                     <div className="flex flex-col gap-1.5 w-full">
                                                                                                         <span className="text-[13.5px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Office / Division</span>

@@ -19,6 +19,7 @@ import AllVacancies from './pages/AllVacancies';
 import ResetPassword from './pages/ResetPassword';
 import CesPlantilla from './pages/CesPlantilla';
 import PositionAssignments from './pages/PositionAssignments';
+import TloPositions from './pages/TloPositions';
 
 import MainDashboard from './pages/MainDashboard';
 
@@ -130,6 +131,14 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <PositionAssignments />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/tlo-positions" 
+                element={
+                    <ProtectedRoute>
+                        <TloPositions />
                     </ProtectedRoute>
                 } 
             />

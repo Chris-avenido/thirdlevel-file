@@ -173,6 +173,26 @@ export const bulkProcessDirectory = async (req, res) => {
           office text, division text, strand text, region text, designation text, email text, contact_details text
         )
       `, [JSON.stringify(toInsert), isTest]);
+
+      await client.query(`
+        INSERT INTO tlo_masterlist (
+          tloid, first_name, last_name, created_at, updated_at
+        )
+        SELECT 
+          "TLOid", first_name, last_name, NOW(), NOW()
+        FROM json_to_recordset($1::json) AS c(
+          "TLOid" text, first_name text, last_name text
+        )
+        WHERE NOT (
+          UPPER(TRIM(COALESCE(c.first_name, ''))) LIKE '%VACANT%'
+          OR UPPER(TRIM(COALESCE(c.last_name, ''))) LIKE '%VACANT%'
+          OR ((c.first_name IS NULL OR TRIM(c.first_name) = '') AND (c.last_name IS NULL OR TRIM(c.last_name) = ''))
+        )
+        ON CONFLICT (tloid) DO UPDATE SET
+          first_name = EXCLUDED.first_name,
+          last_name = EXCLUDED.last_name,
+          updated_at = NOW()
+      `, [JSON.stringify(toInsert)]);
     }
 
     if (toHistory.length > 0) {

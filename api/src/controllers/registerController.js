@@ -259,6 +259,16 @@ export const registerUser = async (req, res) => {
               "TLOid", first_name, last_name, email, position_title, status, is_testaccount, created_at, updated_at
           ) VALUES ($1, $2, $3, $4, '', 'For Approval', $5, NOW(), NOW())
         `, [newTloId, firstName, lastName, normalizedEmail, isTestAccount]);
+
+        await client.query(`
+          INSERT INTO tlo_masterlist (
+              tloid, first_name, last_name, created_at, updated_at
+          ) VALUES ($1, $2, $3, NOW(), NOW())
+          ON CONFLICT (tloid) DO UPDATE SET
+              first_name = EXCLUDED.first_name,
+              last_name = EXCLUDED.last_name,
+              updated_at = NOW()
+        `, [newTloId, firstName, lastName]);
       }
     }
 
