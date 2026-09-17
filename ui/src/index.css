@@ -799,3 +799,14 @@ body {
 .thin-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgba(148, 163, 184, 0.5);
 }
+
+/* DatePicker Portal and Popper stacking fix */
+#root-portal {
+  position: relative;
+  z-index: 99999;
+}
+
+.react-datepicker-popper {
+  z-index: 99999 !important;
+}
+

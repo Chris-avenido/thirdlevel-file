@@ -1357,6 +1357,16 @@ export const getPositions = async (req, res) => {
       regionDivisionsMap[k] = Array.from(regionDivisionsMap[k]).sort();
     });
 
+    const tloPosResult = await pool.query(`
+      SELECT 
+        TRIM(position_title) AS position_title,
+        MAX(CAST(NULLIF(regexp_replace(salary_grade::text, '[^0-9]', '', 'g'), '') AS INTEGER)) AS salary_grade
+      FROM public.tlo_positions
+      WHERE position_title IS NOT NULL AND TRIM(position_title) != ''
+      GROUP BY TRIM(position_title)
+      ORDER BY TRIM(position_title) ASC
+    `);
+
     const rawPositions = [...THIRD_LEVEL_POSITIONS, ...posResult.rows.map(r => r.position_title)];
     const rawDesignations = [...STANDARD_DESIGNATIONS, ...desigResult.rows.map(r => r.designation)];
 
@@ -1364,6 +1374,7 @@ export const getPositions = async (req, res) => {
       success: true,
       positions: deduplicateClean(rawPositions),
       designations: deduplicateClean(rawDesignations),
+      tlo_positions: tloPosResult.rows,
       strands: deduplicate(strandResult.rows.map(r => r.strand)),
       regions: finalRegions,
       offices: deduplicate(officeResult.rows.map(r => r.office)),

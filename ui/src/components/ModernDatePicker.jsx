@@ -48,6 +48,16 @@ const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, clas
         }
     };
 
+    React.useEffect(() => {
+        if (typeof document !== 'undefined' && !document.getElementById('root-portal')) {
+            const portalEl = document.createElement('div');
+            portalEl.id = 'root-portal';
+            portalEl.style.position = 'relative';
+            portalEl.style.zIndex = '99999';
+            document.body.appendChild(portalEl);
+        }
+    }, []);
+
     return (
         <div className="relative w-full">
             <DatePicker
@@ -117,7 +127,8 @@ const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, clas
                 showMonthYearPicker={isMonthPicker && !isYearPicker}
                 showYearPicker={isYearPicker}
                 popperPlacement="bottom-start"
-                portalId={typeof document !== 'undefined' && document.getElementById('root-portal') ? 'root-portal' : undefined}
+                popperClassName="!z-[99999]"
+                portalId="root-portal"
                 className={`w-full bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all pr-10 shadow-sm cursor-pointer ${className || ''}`}
             />
             <FiCalendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />

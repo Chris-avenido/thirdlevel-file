@@ -117,26 +117,81 @@ const buildFullName = (profile) => {
     return [profile.first_name, profile.middle_name, profile.last_name, suffix].filter(Boolean).join(' ').trim();
 };
 
-const PREVIOUS_POSITION_OPTIONS = [
-    'Secretary',
-    'Undersecretary',
-    'Assistant Secretary',
-    'Director IV',
-    'Director III',
-    'Regional Director',
-    'Assistant Regional Director',
-    'Schools Division Superintendent',
-    'Assistant Schools Division Superintendent',
-    'Chief Administrative Officer',
-    'Supervising Administrative Officer',
-    'Administrative Officer V',
-    'Education Program Supervisor',
-    'Public Schools District Supervisor',
-    'Principal IV',
-    'Principal III',
-    'Principal II',
-    'Principal I'
+// Canonical positions and salary grades from public.tlo_positions (managerial: salary_grade >= 24)
+const DEFAULT_TLO_POSITIONS = [
+    { position_title: 'Assistant Regional Director', salary_grade: 27 },
+    { position_title: 'Assistant Schools Division Superintendent', salary_grade: 28 },
+    { position_title: 'Assistant Secretary', salary_grade: 29 },
+    { position_title: 'Director III', salary_grade: 27 },
+    { position_title: 'Director IV', salary_grade: 28 },
+    { position_title: 'Regional Director', salary_grade: 28 },
+    { position_title: 'Schools Division Superintendent', salary_grade: 26 },
+    { position_title: 'Secretary', salary_grade: 31 },
+    { position_title: 'Undersecretary', salary_grade: 30 }
 ];
+
+const PREVIOUS_POSITION_OPTIONS = DEFAULT_TLO_POSITIONS.map(p => p.position_title);
+
+const PREVIOUS_POSITION_ACRONYMS = {
+    'SDS': 'Schools Division Superintendent',
+    'ASDS': 'Assistant Schools Division Superintendent',
+    'RD': 'Regional Director',
+    'ARD': 'Assistant Regional Director',
+    'USEC': 'Undersecretary',
+    'ASEC': 'Assistant Secretary',
+    'SEC': 'Secretary',
+    'OSEC': 'Secretary',
+    'DIR IV': 'Director IV',
+    'DIR III': 'Director III',
+    'DIR4': 'Director IV',
+    'DIR3': 'Director III'
+};
+
+const normalizeManagerialTitle = (rawTitle) => {
+    if (!rawTitle || typeof rawTitle !== 'string') return '';
+    let title = rawTitle.trim().toUpperCase();
+
+    // Strip OIC / Acting prefixes
+    title = title.replace(/^(OIC|OFFICER-IN-CHARGE|OFFICER\s+IN\s+CHARGE|ACTING)\s*[-–—:]*\s*/i, '');
+
+    // Expand common abbreviations safely
+    title = title.replace(/\bASSIST\./i, 'ASSISTANT');
+    title = title.replace(/\bDIR\./i, 'DIRECTOR');
+    title = title.replace(/\bSUPT\./i, 'SUPERINTENDENT');
+
+    // Strip trailing parenthesis like (SGOD), (CID), (CESO VI), etc.
+    title = title.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+
+    // Remove extra whitespace
+    title = title.replace(/\s+/g, ' ');
+
+    if (PREVIOUS_POSITION_ACRONYMS[title]) {
+        return PREVIOUS_POSITION_ACRONYMS[title].toUpperCase();
+    }
+
+    return title;
+};
+
+// Managerial position identification: salary_grade >= 24 from public.tlo_positions
+const isManagerialPosition = (rawTitle, positionsList = DEFAULT_TLO_POSITIONS) => {
+    if (!rawTitle || typeof rawTitle !== 'string') return false;
+    const clean = normalizeManagerialTitle(rawTitle);
+    if (!clean || clean === 'OTHERS' || clean === 'N/A') return false;
+
+    // Direct match against tlo_positions
+    const match = (positionsList || []).find(p => p.position_title?.toUpperCase() === clean);
+    if (match) {
+        return (parseInt(match.salary_grade, 10) || 0) >= 24;
+    }
+
+    // Prefix match (e.g. "Director IV - Planning Service")
+    const prefixMatch = (positionsList || []).find(p => p.position_title && clean.startsWith(p.position_title.toUpperCase()));
+    if (prefixMatch) {
+        return (parseInt(prefixMatch.salary_grade, 10) || 0) >= 24;
+    }
+
+    return false;
+};
 
 const SearchableSelect = ({ value, onChange, options, placeholder, className, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -284,6 +339,11 @@ const OfficialProfiling = () => {
     const [vacancies, setVacancies] = useState([]);
     const [vacanciesLoading, setVacanciesLoading] = useState(false);
     const [positionsList, setPositionsList] = useState([]);
+    const [tloPositions, setTloPositions] = useState(DEFAULT_TLO_POSITIONS);
+    const tloPositionOptions = React.useMemo(() => {
+        const list = (tloPositions || []).map(p => p.position_title).filter(Boolean);
+        return Array.from(new Set(list)).sort((a, b) => a.localeCompare(b));
+    }, [tloPositions]);
     const [designationsList, setDesignationsList] = useState([]);
     const [regionsList, setRegionsList] = useState([]);
     const [regionDivisions, setRegionDivisions] = useState({});
@@ -712,19 +772,78 @@ const OfficialProfiling = () => {
 
     // Managerial Experience Auto-Computation
     useEffect(() => {
-        let totalYears = 0;
-        let totalMonths = 0;
+        if (!Array.isArray(prevPositions) || prevPositions.length === 0) {
+            if (profile.managerial_experience_total !== '0 Years, 0 Months') {
+                setProfile(prev => ({ ...prev, managerial_experience_total: '0 Years, 0 Months' }));
+            }
+            return;
+        }
 
-        // 1. Previous Positions
+        const intervals = [];
+
         prevPositions.forEach(pos => {
-            if (pos.start_date) {
-                const dur = calculateDuration(pos.start_date, pos.end_date);
-                totalYears += dur.years;
-                totalMonths += dur.months;
+            // 1. Base Position: only count if it is an approved managerial position (salary_grade >= 24)
+            if (pos.start_date && isManagerialPosition(pos.position_name, tloPositions)) {
+                const start = new Date(pos.start_date);
+                const end = pos.end_date ? new Date(pos.end_date) : new Date();
+                if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+                    intervals.push({ start, end });
+                }
+            }
+
+            // 2. Child OIC positions: each OIC period is evaluated independently
+            if (Array.isArray(pos.oic_positions)) {
+                pos.oic_positions.forEach(oic => {
+                    if (oic.oic_start_date && isManagerialPosition(oic.oic_position_name, tloPositions)) {
+                        const start = new Date(oic.oic_start_date);
+                        const end = oic.oic_end_date ? new Date(oic.oic_end_date) : new Date();
+                        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+                            intervals.push({ start, end });
+                        }
+                    }
+                });
             }
         });
 
-        // Normalize months
+        if (intervals.length === 0) {
+            const emptyStr = '0 Years, 0 Months';
+            if (profile.managerial_experience_total !== emptyStr) {
+                setProfile(prev => ({ ...prev, managerial_experience_total: emptyStr }));
+            }
+            return;
+        }
+
+        // Sort intervals by start date ascending
+        intervals.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+        // Merge overlapping intervals to prevent double-counting
+        const merged = [];
+        for (const curr of intervals) {
+            if (merged.length === 0) {
+                merged.push({ start: new Date(curr.start), end: new Date(curr.end) });
+            } else {
+                const last = merged[merged.length - 1];
+                if (curr.start.getTime() <= last.end.getTime()) {
+                    // Overlaps or touches: extend end date if current ends later
+                    if (curr.end.getTime() > last.end.getTime()) {
+                        last.end = new Date(curr.end);
+                    }
+                } else {
+                    merged.push({ start: new Date(curr.start), end: new Date(curr.end) });
+                }
+            }
+        }
+
+        // Calculate total duration across disjoint merged intervals
+        let totalYears = 0;
+        let totalMonths = 0;
+
+        merged.forEach(interval => {
+            const dur = calculateDuration(interval.start, interval.end);
+            totalYears += dur.years;
+            totalMonths += dur.months;
+        });
+
         totalYears += Math.floor(totalMonths / 12);
         totalMonths = totalMonths % 12;
 
@@ -732,7 +851,7 @@ const OfficialProfiling = () => {
         if (profile.managerial_experience_total !== resultStr) {
             setProfile(prev => ({ ...prev, managerial_experience_total: resultStr }));
         }
-    }, [prevPositions]);
+    }, [prevPositions, tloPositions]);
 
     // Training Hours Auto-Computation
     useEffect(() => {
@@ -1552,6 +1671,9 @@ const OfficialProfiling = () => {
                 });
                 setDesignationsList(validDesignations);
 
+                if (Array.isArray(data.tlo_positions) && data.tlo_positions.length > 0) {
+                    setTloPositions(data.tlo_positions);
+                }
                 if (Array.isArray(data.regions)) setRegionsList(data.regions);
                 if (data.regionDivisions && typeof data.regionDivisions === 'object') setRegionDivisions(data.regionDivisions);
                 if (Array.isArray(data.divisions)) setDivisionsList(data.divisions);
@@ -2858,12 +2980,12 @@ const OfficialProfiling = () => {
                                                                     {['Position', 'Office / Division', 'From', 'To', 'OIC?', ''].map(h => <span key={h} className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest">{h}</span>)}
                                                                 </div>
                                                                 {prevPositions.map((pos, idx) => (
-                                                                    <div key={pos.id || pos.position_id || `pos-${idx}`} className="relative mb-2">
+                                                                    <div key={pos.id || pos.position_id || `pos-${idx}`} className="relative mb-2 focus-within:z-50" style={{ zIndex: prevPositions.length - idx + 10 }}>
                                                                         {(() => {
-                                                                            const isPrevPosOthers = pos.position_name === 'Others' || (pos.position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === pos.position_name.toUpperCase()));
+                                                                            const isPrevPosOthers = pos.position_name === 'Others' || (pos.position_name && !tloPositionOptions.some(o => o.toUpperCase() === pos.position_name.toUpperCase()));
                                                                             return (
                                                                                 <>
-                                                                                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border-2 border-slate-200/60 transition-colors shadow-sm relative z-10">
+                                                                                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border-2 border-slate-200/60 transition-colors shadow-sm relative">
                                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                                             <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
                                                                                             <select disabled={!isEditing}
@@ -2872,7 +2994,7 @@ const OfficialProfiling = () => {
                                                                                                 className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
                                                                                             >
                                                                                                 <option value="">Select Position</option>
-                                                                                                {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                                                {tloPositionOptions.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
                                                                                                 <option value="Others">Others</option>
                                                                                             </select>
                                                                                             {isPrevPosOthers && (
@@ -2918,9 +3040,9 @@ const OfficialProfiling = () => {
                                                                                     </motion.div>
 
                                                                                     {(pos.oic_positions || []).map((oic, oicIdx) => {
-                                                                                        const isOicPosOthers = oic.oic_position_name === 'Others' || (oic.oic_position_name && !PREVIOUS_POSITION_OPTIONS.some(o => o.toUpperCase() === oic.oic_position_name.toUpperCase()));
+                                                                                        const isOicPosOthers = oic.oic_position_name === 'Others' || (oic.oic_position_name && !tloPositionOptions.some(o => o.toUpperCase() === oic.oic_position_name.toUpperCase()));
                                                                                         return (
-                                                                                            <motion.div key={oic.id || `oic-${idx}-${oicIdx}`} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative">
+                                                                                            <motion.div key={oic.id || `oic-${idx}-${oicIdx}`} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative focus-within:z-40">
                                                                                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-white p-4 rounded-2xl border-2 border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
                                                                                                     <div className="absolute -left-6 top-1/2 w-6 h-0.5 border-t-2 border-dashed border-[#FCD116]"></div>
                                                                                                     <div className="flex flex-col gap-1.5 w-full">
@@ -2931,7 +3053,7 @@ const OfficialProfiling = () => {
                                                                                                             className="bg-white border-2 border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
                                                                                                         >
                                                                                                             <option value="">Select OIC Position</option>
-                                                                                                            {PREVIOUS_POSITION_OPTIONS.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
+                                                                                                            {tloPositionOptions.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
                                                                                                             <option value="Others">Others</option>
                                                                                                         </select>
                                                                                                         {isOicPosOthers && (
