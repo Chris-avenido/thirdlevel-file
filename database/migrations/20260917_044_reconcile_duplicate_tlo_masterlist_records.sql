@@ -49,13 +49,26 @@ JOIN RankedByEmail p ON d.email = p.email AND p.rn = 1
 WHERE d.rn > 1;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 2. Safeguard: Re-point tlo_assignments Foreign Keys to Primary Masterlist ID
+-- 2. Safeguard: Re-point tlo_assignments Foreign Keys to Primary Masterlist ID (if column exists)
 -- ─────────────────────────────────────────────────────────────────────────────
-UPDATE tlo_assignments a
-SET tlo_masterlist_id = map.primary_id,
-    updated_at = NOW()
-FROM tmp_duplicate_masterlist_by_email map
-WHERE a.tlo_masterlist_id = map.secondary_id;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'tlo_assignments' 
+          AND column_name = 'tlo_masterlist_id'
+    ) THEN
+        EXECUTE '
+            UPDATE tlo_assignments a
+            SET tlo_masterlist_id = map.primary_id,
+                updated_at = NOW()
+            FROM tmp_duplicate_masterlist_by_email map
+            WHERE a.tlo_masterlist_id = map.secondary_id
+        ';
+    END IF;
+END $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. Delete Secondary Duplicate Rows ONLY from tlo_masterlist
