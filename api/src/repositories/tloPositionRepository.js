@@ -114,9 +114,9 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     }
   }
 
-  // Soft-delete omitted rows ONLY if they are not system-archived inactive assignment records
+  // Soft-delete omitted rows
   const idsToSoftDelete = existingRows
-    .filter(r => !incomingIds.has(r.id) && r.status !== 'Inactive')
+    .filter(r => !incomingIds.has(r.id))
     .map(r => r.id);
 
   if (idsToSoftDelete.length > 0) {
