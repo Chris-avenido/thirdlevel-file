@@ -379,6 +379,67 @@ export function evaluateIdentityResolution(records, baseTloid) {
   return { state: 'STATE_4_UNCERTAIN', isMultiRole: false, isCollision: false, isUncertain: true };
 }
 
+export const fetchActiveAssignmentsForOfficial = async (clientOrPool, tloId, firstName = '', lastName = '') => {
+  if (!tloId && !firstName && !lastName) return [];
+  try {
+    const res = await clientOrPool.query(`
+      SELECT 
+        a.id AS assignment_id,
+        a.status,
+        a.capacity,
+        a.designation,
+        a.start_date,
+        a.end_date,
+        a.remarks,
+        p.id AS position_id,
+        COALESCE(NULLIF(TRIM(p.position_title), ''), NULLIF(TRIM(i.position_title), ''), NULLIF(TRIM(a.designation), '')) AS position_title,
+        p.position_code,
+        COALESCE(NULLIF(TRIM(p.salary_grade::text), ''), NULLIF(TRIM(i.salary_grade::text), '')) AS salary_grade,
+        p.region,
+        p.division,
+        p.bureau
+      FROM tlo_assignments a
+      LEFT JOIN tlo_positions p ON a.position_id = p.id
+      LEFT JOIN tlo_items i ON a.tlo_position_id = i.item_number
+      LEFT JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
+      WHERE a.status ILIKE 'Active'
+        AND (
+          (NULLIF($1, '') IS NOT NULL AND LOWER(TRIM(COALESCE(m.tloid, ''))) = LOWER(TRIM($1)))
+          OR (NULLIF($1, '') IS NOT NULL AND LOWER(TRIM(COALESCE(a.tlo_position_id, ''))) = LOWER(TRIM($1)))
+          OR (
+            NULLIF($2, '') IS NOT NULL AND NULLIF($3, '') IS NOT NULL
+            AND a.tlo_masterlist_id IN (
+              SELECT id FROM tlo_masterlist
+              WHERE LOWER(TRIM(first_name)) = LOWER(TRIM($2))
+                AND LOWER(TRIM(last_name)) = LOWER(TRIM($3))
+            )
+          )
+        )
+      ORDER BY 
+        CASE 
+          WHEN LOWER(TRIM(COALESCE(a.capacity, ''))) = 'full' THEN 1
+          WHEN LOWER(TRIM(COALESCE(a.capacity, ''))) = 'oic' THEN 2
+          ELSE 3
+        END ASC,
+        a.id ASC
+    `, [tloId || '', firstName || '', lastName || '']);
+    return res.rows;
+  } catch (err) {
+    console.warn('[fetchActiveAssignmentsForOfficial] Error:', err.message);
+    return [];
+  }
+};
+
+export const getActiveAssignments = async (req, res) => {
+  const { TLOid } = req.params;
+  try {
+    const assignments = await fetchActiveAssignmentsForOfficial(pool, TLOid);
+    res.json({ success: true, data: assignments });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 export const getByEmail = async (req, res) => {
   const { email, tloid } = req.query;
   if (!email && !tloid) return res.status(400).json({ error: 'email or tloid query param required' });
@@ -472,6 +533,13 @@ export const getByEmail = async (req, res) => {
         }));
       }
 
+      let activeAssignments = [];
+      try {
+        activeAssignments = await fetchActiveAssignmentsForOfficial(pool, activeRecord.TLOid, activeRecord.first_name, activeRecord.last_name);
+      } catch (asgErr) {
+        console.warn('[getByEmail] Active assignments fetch skipped:', asgErr.message);
+      }
+
       return res.json({
         success: true,
         state: resolution.state,
@@ -480,7 +548,7 @@ export const getByEmail = async (req, res) => {
         isUncertain: resolution.isUncertain,
         activeTloId: activeRecord.TLOid,
         availableRoles,
-        data: { ...activeRecord, ...childRecords },
+        data: { ...activeRecord, ...childRecords, active_assignments: activeAssignments },
         source: 'masterlist'
       });
     }
@@ -515,6 +583,14 @@ export const getByEmail = async (req, res) => {
           console.warn('[getByEmail] Child records fetch skipped for staging:', childErr.message);
         }
 
+        let activeAssignments = [];
+        try {
+          const tloId = row.TLOid || row.app_TLOid;
+          activeAssignments = await fetchActiveAssignmentsForOfficial(pool, tloId, row.first_name, row.last_name);
+        } catch (asgErr) {
+          console.warn('[getByEmail] Active assignments fetch skipped for staging:', asgErr.message);
+        }
+
         return res.json({
           success: true,
           state: 'STATE_1_SINGLE',
@@ -523,7 +599,7 @@ export const getByEmail = async (req, res) => {
           isUncertain: false,
           activeTloId: row.TLOid,
           availableRoles: [],
-          data: { ...row, ...childRecords },
+          data: { ...row, ...childRecords, active_assignments: activeAssignments },
           source: 'staging'
         });
       }
@@ -691,7 +767,14 @@ export const getProfile = async (req, res) => {
       };
     }
 
-    res.json({ success: true, data: { ...row, ...childRecords } });
+    let activeAssignments = [];
+    try {
+      activeAssignments = await fetchActiveAssignmentsForOfficial(pool, TLOid, row.first_name, row.last_name);
+    } catch (asgErr) {
+      console.warn('[getProfile] Active assignments fetch skipped:', asgErr.message);
+    }
+
+    res.json({ success: true, data: { ...row, ...childRecords, active_assignments: activeAssignments } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

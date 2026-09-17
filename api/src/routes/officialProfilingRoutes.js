@@ -11,7 +11,8 @@ import {
   updateProfile,
   uploadDocument,
   getNotableAchievements,
-  getPositions
+  getPositions,
+  getActiveAssignments
 } from '../controllers/thirdLevelController.js';
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.post('/initialize', initializeProfile);
 router.get('/by-email', authMiddleware, getByEmail);
 router.post('/:TLOid/upload/:docType', authMiddleware, memoryUpload.single('file'), uploadDocument);
 router.get('/:TLOid/profile', authMiddleware, getProfile);
+router.get('/:TLOid/active-assignments', authMiddleware, getActiveAssignments);
 router.put('/:TLOid/profile', authMiddleware, updateProfile);
 router.get('/submit-application', authMiddleware, submitApplication);
 router.post('/submit-application', authMiddleware, submitApplication);

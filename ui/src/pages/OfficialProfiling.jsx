@@ -503,10 +503,41 @@ const OfficialProfiling = () => {
     const [regionsList, setRegionsList] = useState([]);
     const [regionDivisions, setRegionDivisions] = useState({});
     const [divisionsList, setDivisionsList] = useState([]);
+    const [activeAssignments, setActiveAssignments] = useState([]);
     const [isLocationLocked, setIsLocationLocked] = useState(true);
     const [showLocationUnlockModal, setShowLocationUnlockModal] = useState(false);
     const [targetVacancyId, setTargetVacancyId] = useState(null);
     const [notableAchievementsOptions, setNotableAchievementsOptions] = useState([]);
+
+    const sortAssignmentsByCapacity = (list) => {
+        if (!Array.isArray(list)) return [];
+        return [...list].sort((a, b) => {
+            const getRank = (cap) => {
+                const c = (cap || '').trim().toUpperCase();
+                if (c === 'FULL') return 1;
+                if (c === 'OIC') return 2;
+                return 3;
+            };
+            const rankDiff = getRank(a.capacity) - getRank(b.capacity);
+            if (rankDiff !== 0) return rankDiff;
+            return (a.assignment_id || a.id || 0) - (b.assignment_id || b.id || 0);
+        });
+    };
+
+    const fetchActiveAssignments = async (id) => {
+        if (!id) return;
+        try {
+            const res = await fetch(apiUrl(`/api/third-level/${encodeURIComponent(id)}/active-assignments`), {
+                headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+            });
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data)) {
+                setActiveAssignments(sortAssignmentsByCapacity(json.data));
+            }
+        } catch (e) {
+            console.warn('[fetchActiveAssignments] Failed to load active assignments:', e);
+        }
+    };
 
     const [exportModalOpen, setExportModalOpen] = useState(false);
     const [selectedExportType, setSelectedExportType] = useState('csv');
@@ -1084,6 +1115,10 @@ const OfficialProfiling = () => {
                 if (data.data) {
                     const d = data.data;
                     setTlid(d.TLOid || d.app_TLOid);
+                    setActiveAssignments(sortAssignmentsByCapacity(d.active_assignments));
+                    if ((!Array.isArray(d.active_assignments) || d.active_assignments.length === 0) && (d.TLOid || d.app_TLOid)) {
+                        fetchActiveAssignments(d.TLOid || d.app_TLOid);
+                    }
                     setApplicationId(d.application_id || null);
                     setApplicationStatus(data.source === 'masterlist' ? null : d.application_status);
                     setDenialReason(d.denial_reason || '');
@@ -2439,28 +2474,105 @@ const OfficialProfiling = () => {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-blue-200/80 text-[18px] md:text-[21px] font-medium mt-1 truncate flex items-center gap-2">
-                                                        <span>{profile.position_title || 'No position selected'}{(profile.designation && profile.designation !== profile.position_title) ? ` - ${profile.designation}` : ''}</span>
-                                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[12px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                    </p>
-                                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[13.5px] md:text-[16.5px] font-medium">
+                                                    {Array.isArray(activeAssignments) && activeAssignments.length > 0 ? (
+                                                        activeAssignments.length === 1 ? (
+                                                            <div className="mt-1 flex items-center gap-2 flex-wrap max-w-full">
+                                                                <p className="text-white text-[16.5px] sm:text-[19px] md:text-[22px] font-black tracking-tight flex items-center gap-2 drop-shadow-sm flex-wrap leading-tight">
+                                                                    <span className="break-words">{activeAssignments[0].position_title || profile.position_title || 'No position selected'}</span>
+                                                                    {activeAssignments[0].designation && activeAssignments[0].designation !== activeAssignments[0].position_title && (
+                                                                        <span className="text-blue-200/80 font-medium text-[14px] sm:text-[16px] md:text-[18px]">({activeAssignments[0].designation})</span>
+                                                                    )}
+                                                                </p>
+                                                                {activeAssignments[0].capacity && (
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none shadow-sm flex items-center gap-1 shrink-0 ${
+                                                                        activeAssignments[0].capacity.toUpperCase() === 'OIC'
+                                                                            ? 'bg-[#FCD116] text-[#08315F] border border-yellow-300'
+                                                                            : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30'
+                                                                    }`}>
+                                                                        <span className={`w-1.5 h-1.5 rounded-full ${activeAssignments[0].capacity.toUpperCase() === 'OIC' ? 'bg-[#08315F]' : 'bg-emerald-400'}`}></span>
+                                                                        {activeAssignments[0].capacity}
+                                                                    </span>
+                                                                )}
+                                                                {activeAssignments[0].salary_grade && (
+                                                                    <span className="px-1.5 py-0.5 rounded-md text-[9.5px] sm:text-[10.5px] font-black bg-blue-500/25 text-blue-100 border border-blue-400/30 shrink-0">
+                                                                        SG {activeAssignments[0].salary_grade}
+                                                                    </span>
+                                                                )}
+                                                                {(activeAssignments[0].bureau || activeAssignments[0].division || activeAssignments[0].region) && (
+                                                                    <span className="text-blue-200/75 text-[12px] sm:text-[13px] md:text-[14.5px] font-medium flex items-center gap-1.5">
+                                                                        <span className="text-blue-300/40">•</span>
+                                                                        <span className="break-words">{activeAssignments[0].bureau || activeAssignments[0].division || activeAssignments[0].region}</span>
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="mt-1.5 flex flex-col gap-1.5 max-w-full">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-black uppercase tracking-wider bg-[#FCD116]/15 text-[#FCD116] border border-[#FCD116]/40 shadow-sm">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#FCD116] animate-pulse"></span>
+                                                                        {activeAssignments.length} Active Plantilla Positions
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex flex-wrap items-center gap-2 pt-0.5 max-w-full">
+                                                                    {activeAssignments.map((asg, idx) => {
+                                                                        const isOic = asg.capacity && asg.capacity.toUpperCase() === 'OIC';
+                                                                        return (
+                                                                            <div
+                                                                                key={asg.assignment_id || asg.id || idx}
+                                                                                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/35 backdrop-blur-md transition-all shadow-sm group max-w-full flex-wrap sm:flex-nowrap"
+                                                                            >
+                                                                                <span className="text-white text-[13.5px] sm:text-[15px] md:text-[17px] font-black tracking-tight break-words">
+                                                                                    {asg.position_title || asg.designation || 'Plantilla Position'}
+                                                                                </span>
+                                                                                {asg.capacity && (
+                                                                                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider leading-none shadow-sm shrink-0 ${
+                                                                                        isOic
+                                                                                            ? 'bg-[#FCD116] text-[#08315F] font-black border border-yellow-300'
+                                                                                            : 'bg-emerald-400/20 text-emerald-200 border border-emerald-400/30'
+                                                                                    }`}>
+                                                                                        {asg.capacity}
+                                                                                    </span>
+                                                                                )}
+                                                                                {asg.salary_grade && (
+                                                                                    <span className="px-1.5 py-0.5 rounded-md text-[9.5px] sm:text-[10px] font-black bg-blue-500/30 text-blue-100 border border-blue-400/30 shrink-0">
+                                                                                        SG {asg.salary_grade}
+                                                                                    </span>
+                                                                                )}
+                                                                                {(asg.bureau || asg.division || asg.region) && (
+                                                                                    <span className="hidden sm:inline-block text-blue-200/80 text-[12px] font-medium border-l border-white/20 pl-2 max-w-[220px] truncate shrink-0" title={asg.bureau || asg.division || asg.region}>
+                                                                                        {asg.bureau || asg.division || asg.region}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        <p className="text-blue-200/80 text-[16.5px] sm:text-[18px] md:text-[21px] font-medium mt-1 truncate flex items-center gap-2 flex-wrap">
+                                                            <span>{profile.position_title || 'No position selected'}{(profile.designation && profile.designation !== profile.position_title) ? ` - ${profile.designation}` : ''}</span>
+                                                            {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[11px] sm:text-[12px] font-black uppercase tracking-widest leading-none shrink-0">OIC</span>}
+                                                        </p>
+                                                    )}
+                                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[13px] sm:text-[13.5px] md:text-[16.5px] font-medium max-w-full">
                                                         {isMultiRole && availableRoles.length > 1 ? (
-                                                            <div className="relative inline-block">
+                                                            <div className="relative inline-block max-w-full">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setShowRoleDropdown(prev => !prev)}
-                                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FCD116] text-[#08315F] hover:bg-yellow-400 font-black text-[12px] md:text-[13px] uppercase tracking-wider rounded-full shadow-md transition-all active:scale-95 border border-yellow-300"
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FCD116] text-[#08315F] hover:bg-yellow-400 font-black text-[11.5px] sm:text-[12px] md:text-[13px] uppercase tracking-wider rounded-full shadow-md transition-all active:scale-95 border border-yellow-300 max-w-full"
                                                                     title="Switch between verified roles for this official"
                                                                 >
-                                                                    <span>Active Role: {TLOid}</span>
-                                                                    <span className="bg-[#08315F]/20 px-1.5 py-0.2 rounded text-[11px] font-bold">
+                                                                    <span className="truncate">Active Role: {TLOid}</span>
+                                                                    <span className="bg-[#08315F]/20 px-1.5 py-0.2 rounded text-[10.5px] sm:text-[11px] font-bold shrink-0">
                                                                         {availableRoles.findIndex(r => r.TLOid === TLOid) + 1} of {availableRoles.length}
                                                                     </span>
-                                                                    <FiChevronDown size={14} className={`transition-transform duration-200 ${showRoleDropdown ? 'rotate-180' : ''}`} />
+                                                                    <FiChevronDown size={14} className={`transition-transform duration-200 shrink-0 ${showRoleDropdown ? 'rotate-180' : ''}`} />
                                                                 </button>
 
                                                                 {showRoleDropdown && (
-                                                                    <div className="absolute left-0 mt-2 w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border-2 border-slate-200 z-50 p-2 overflow-hidden">
+                                                                    <div className="absolute left-0 mt-2 w-[min(20rem,calc(100vw-2.5rem))] max-w-[calc(100vw-2.5rem)] bg-white text-slate-800 rounded-2xl shadow-2xl border-2 border-slate-200 z-50 p-2 overflow-hidden">
                                                                         <div className="px-3 py-2 border-b border-slate-100 mb-1">
                                                                             <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Verified Multi-Role Official</p>
                                                                             <p className="text-[12.5px] font-bold text-[#08315F]">Select active role to view/edit:</p>
@@ -4987,35 +5099,35 @@ const OfficialProfiling = () => {
                             </div>
                         </div>
 
-                        {/* Persistent Bottom Action Bar (Reduced Height) */}
-                        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t-2 border-slate-200 py-2 sm:py-2.5 px-4 sm:px-6 lg:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-20 lg:bg-white lg:shadow-none flex items-center justify-between shrink-0 transition-all duration-300 min-h-[46px] sm:min-h-[50px]">
-                            <span className="text-[13px] sm:text-[14px] font-bold text-slate-400 uppercase tracking-widest hidden sm:flex items-center gap-2">
+                        {/* Persistent Bottom Action Bar (Reduced Height & Mobile Optimized) */}
+                        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t-2 border-slate-200 py-2 sm:py-2.5 px-3 sm:px-6 lg:px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-20 lg:bg-white lg:shadow-none flex items-center justify-between shrink-0 transition-all duration-300 min-h-[46px] sm:min-h-[50px] w-full max-w-[100vw] box-border">
+                            <span className="text-[13px] sm:text-[14px] font-bold text-slate-400 uppercase tracking-widest hidden sm:flex items-center gap-2 shrink-0">
                                 <FiShield className="text-emerald-500 shrink-0" size={16} /> Securely stored in DepEd database
                             </span>
-                            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end min-w-0">
                                 {isMultiRole && availableRoles.length > 1 && (
-                                    <label className="flex items-center gap-2 cursor-pointer select-none bg-blue-50/90 hover:bg-blue-100/90 border border-blue-200 px-2.5 py-1 rounded-lg transition-all">
+                                    <label className="flex items-center gap-1.5 cursor-pointer select-none bg-blue-50/90 hover:bg-blue-100/90 border border-blue-200 px-2 py-1 rounded-lg transition-all min-w-0 max-w-[45%] sm:max-w-none shrink">
                                         <input
                                             type="checkbox"
                                             checked={applyToVerifiedRoles}
                                             onChange={(e) => setApplyToVerifiedRoles(e.target.checked)}
-                                            className="w-3.5 h-3.5 text-[#08315F] rounded border-slate-300 focus:ring-[#08315F] cursor-pointer"
+                                            className="w-3.5 h-3.5 text-[#08315F] rounded border-slate-300 focus:ring-[#08315F] cursor-pointer shrink-0"
                                         />
-                                        <span className="text-[11.5px] sm:text-[12px] font-bold text-blue-950 truncate max-w-[200px] sm:max-w-none">
-                                            Apply personal info to verified sibling role(s)
+                                        <span className="text-[10px] sm:text-[12px] font-bold text-blue-950 truncate">
+                                            Apply to sibling roles
                                         </span>
                                     </label>
                                 )}
-                                <span className="text-[13px] font-bold text-slate-400 uppercase tracking-widest sm:hidden flex items-center gap-1.5">
-                                    <FiShield className="text-emerald-500 shrink-0" size={15} /> Protected
+                                <span className="text-[11px] sm:text-[13px] font-bold text-slate-400 uppercase tracking-widest sm:hidden flex items-center gap-1 shrink-0 select-none">
+                                    <FiShield className="text-emerald-500 shrink-0" size={13} /> Protected
                                 </span>
                                 <button
                                     onClick={handleSave}
                                     disabled={saving || !isEditing}
-                                    className="w-full sm:w-auto px-5 sm:px-7 py-1.5 sm:py-2 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[13px] sm:text-[14px] uppercase tracking-wider rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
+                                    className="flex-1 sm:flex-initial sm:w-auto px-3 sm:px-7 py-2 bg-[#08315F] hover:bg-blue-800 text-white font-black text-[12px] sm:text-[14px] uppercase tracking-wider rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
                                 >
-                                    {saving ? <FiLoader className="animate-spin" size={15} /> : <FiSave size={15} />}
-                                    <span>{saving ? 'Saving...' : 'Save Progress'}</span>
+                                    {saving ? <FiLoader className="animate-spin shrink-0" size={14} /> : <FiSave className="shrink-0" size={14} />}
+                                    <span className="truncate">{saving ? 'Saving...' : 'Save Progress'}</span>
                                 </button>
                             </div>
                         </div>
