@@ -185,7 +185,8 @@ const MainDashboard = () => {
 
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
-        const mapped = json.data.map(mapOfficialRecord);
+        const approvedData = json.data.filter(o => o.status !== 'For Approval' && o.status !== 'Rejected');
+        const mapped = approvedData.map(mapOfficialRecord);
         setAllData(mapped);
       } else {
         throw new Error(json.error || 'Failed to parse official registry records');

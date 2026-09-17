@@ -98,7 +98,7 @@ export const getAssignments = async (req, res) => {
       INNER JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
       INNER JOIN tlo_positions p ON a.position_id = p.id
       LEFT JOIN third_level_official_masterlist tlo ON LOWER(tlo."TLOid") = LOWER(m.tloid)
-      WHERE 1=1
+      WHERE 1=1 AND (tlo.status IS NULL OR (tlo.status != 'For Approval' AND tlo.status != 'Rejected'))
     `;
 
     const params = [];
@@ -242,6 +242,7 @@ export const getOfficialsForAssignment = async (req, res) => {
         CONCAT_WS(' ', m.first_name, NULLIF(m.middle_name, ''), m.last_name, NULLIF(m.suffix, '')) AS official_name,
         CONCAT_WS(' ', m.first_name, NULLIF(m.middle_name, ''), m.last_name, NULLIF(m.suffix, '')) AS full_name,
         tlo.email,
+        tlo.status,
         (
           CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' THEN NULL
           ELSE (
@@ -360,7 +361,8 @@ export const getOfficialsForAssignment = async (req, res) => {
           WHERE a.tlo_masterlist_id = m.id AND a.status ILIKE 'Active' AND a.end_date IS NULL
         ) AS active_assignments
       FROM tlo_masterlist m
-      LEFT JOIN third_level_official_masterlist tlo ON LOWER(tlo."TLOid") = LOWER(m.tloid)
+      INNER JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid))
+      WHERE TRIM(tlo.status) = 'Active'
       ORDER BY m.last_name ASC, m.first_name ASC
     `;
 
@@ -524,9 +526,12 @@ export const createAssignment = async (req, res) => {
       });
     }
 
-    // 3. Verify Official exists in tlo_masterlist
+    // 3. Verify Official exists in tlo_masterlist and is Active
     const officialCheck = await client.query(
-      `SELECT id, tloid, first_name, last_name FROM tlo_masterlist WHERE id = $1`,
+      `SELECT m.id, m.tloid, m.first_name, m.last_name, tlo.status
+       FROM tlo_masterlist m
+       LEFT JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid))
+       WHERE m.id = $1`,
       [tlo_masterlist_id]
     );
 
@@ -539,6 +544,14 @@ export const createAssignment = async (req, res) => {
     }
 
     const officialRecord = officialCheck.rows[0];
+    if (officialRecord.status && officialRecord.status.toLowerCase() !== 'active') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: `Cannot assign position: Official status is '${officialRecord.status}'. Only active officials can be assigned.`
+      });
+    }
+
     const createdBy = req.user?.username || req.user?.name || 'admin';
 
     // 4. Inactivate specific selected positions (per position) or all active positions if requested
@@ -802,15 +815,25 @@ export const updateAssignment = async (req, res) => {
       }
     }
 
-    // 3. If official changed, verify official exists
+    // 3. If official changed, verify official exists and is Active
     if (targetMasterlistId !== current.tlo_masterlist_id) {
       const offCheck = await client.query(
-        `SELECT id FROM tlo_masterlist WHERE id = $1`,
+        `SELECT m.id, tlo.status
+         FROM tlo_masterlist m
+         LEFT JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid))
+         WHERE m.id = $1`,
         [targetMasterlistId]
       );
       if (offCheck.rowCount === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({ success: false, error: 'Selected official does not exist in masterlist.' });
+      }
+      if (offCheck.rows[0].status && offCheck.rows[0].status.toLowerCase() !== 'active') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          error: `Cannot assign position: Official status is '${offCheck.rows[0].status}'. Only active officials can be assigned.`
+        });
       }
     }
 

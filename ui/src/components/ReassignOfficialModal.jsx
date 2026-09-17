@@ -179,6 +179,11 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
     const seen = new Set();
     const result = [];
     for (const off of officials) {
+      // Exclude officials whose status is 'For Approval' / 'For Approve' or not 'Active'
+      const statusLower = (off.status || off.official_status || '').toLowerCase();
+      if (statusLower.includes('approv') || (statusLower && statusLower !== 'active')) {
+        continue;
+      }
       const nameKey = (off.official_name || `${off.first_name || ''} ${off.last_name || ''}`).trim().toUpperCase();
       const key = nameKey || `id_${off.id}`;
       if (!seen.has(key)) {

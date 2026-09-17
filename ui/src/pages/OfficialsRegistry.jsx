@@ -679,6 +679,9 @@ const OfficialsRegistry = () => {
             if (levelFilter !== 'All') queryParams.append('level', levelFilter);
             if (regionFilter !== 'All') queryParams.append('region', regionFilter);
             if (oicOnly) queryParams.append('is_oic', 'true');
+            if (statusTab && statusTab !== 'All') {
+                queryParams.append('status', statusTab === 'Vacant' ? 'Vacated' : statusTab);
+            }
 
             const res = await fetch(apiUrl(`/api/third-level/officials-kpi-summary?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }

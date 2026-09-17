@@ -190,8 +190,9 @@ const Home = () => {
 
         if (appsData.success) setApplications(appsData.data);
         if (offData.success) {
-          setAllOfficials(offData.data);
-          setOfficials(offData.data.filter(o => o.status === 'Active'));
+          const approvedOfficials = (offData.data || []).filter(o => o.status !== 'For Approval' && o.status !== 'Rejected');
+          setAllOfficials(approvedOfficials);
+          setOfficials(approvedOfficials.filter(o => o.status === 'Active'));
         }
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);

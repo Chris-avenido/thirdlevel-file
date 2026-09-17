@@ -1329,6 +1329,7 @@ export const getPositions = async (req, res) => {
       WHERE position_title IS NOT NULL 
         AND position_title != '' 
         AND position_title NOT ILIKE 'N/A'
+        AND status != 'For Approval' AND status != 'Rejected'
         AND is_testaccount = $1
       ORDER BY position_title
     `, [isTest]);
@@ -1338,27 +1339,30 @@ export const getPositions = async (req, res) => {
       WHERE designation IS NOT NULL 
         AND designation != '' 
         AND designation NOT ILIKE 'N/A'
+        AND status != 'For Approval' AND status != 'Rejected'
         AND is_testaccount = $1
       ORDER BY designation
     `, [isTest]);
     const strandResult = await pool.query(`
-      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' AND is_testaccount = $1 ORDER BY strand
+      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' AND status != 'For Approval' AND status != 'Rejected' AND is_testaccount = $1 ORDER BY strand
     `, [isTest]);
     const regionResult = await pool.query(`
-      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' AND is_testaccount = $1 ORDER BY region
+      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' AND status != 'For Approval' AND status != 'Rejected' AND is_testaccount = $1 ORDER BY region
     `, [isTest]);
     const officeResult = await pool.query(`
-      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' AND is_testaccount = $1 ORDER BY office
+      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' AND status != 'For Approval' AND status != 'Rejected' AND is_testaccount = $1 ORDER BY office
     `, [isTest]);
     const divisionResult = await pool.query(`
-      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' AND is_testaccount = $1 ORDER BY division
+      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' AND status != 'For Approval' AND status != 'Rejected' AND is_testaccount = $1 ORDER BY division
     `, [isTest]);
     const regionDivisionResult = await pool.query(`
       SELECT DISTINCT region, division 
       FROM third_level_official_masterlist 
       WHERE division IS NOT NULL AND division != '' 
         AND region IS NOT NULL AND region != ''
+        AND status != 'For Approval' AND status != 'Rejected'
         AND is_testaccount = $1
+      ORDER BY region, division
     `, [isTest]);
 
     const deduplicate = (list) => {
@@ -2476,7 +2480,7 @@ export const getOfficials = async (req, res) => {
                ) ORDER BY "TLOid" ASC
              ) as duplicate_records
       FROM third_level_official_masterlist
-      WHERE email IS NOT NULL AND TRIM(email) != '' AND is_testaccount = $1
+      WHERE email IS NOT NULL AND TRIM(email) != '' AND status != 'For Approval' AND status != 'Rejected' AND is_testaccount = $1
       GROUP BY LOWER(email)
       HAVING COUNT(*) > 1
     )
@@ -2609,7 +2613,17 @@ export const getKpiSummary = async (req, res) => {
 
     const result = await pool.query(query, params);
 
-    // Also fetch all masterlist rows for filter dropdowns / directory compatibility
+    // Also fetch masterlist rows for filter dropdowns / directory compatibility
+    const allRowsParams = [isTest];
+    let allRowsStatusCondition = `AND m.status != 'For Approval' AND m.status != 'Rejected'`;
+    if (req.query.status === 'For Approval') {
+      allRowsParams.push('For Approval');
+      allRowsStatusCondition = `AND m.status = $${allRowsParams.length}`;
+    } else if (req.query.status === 'Rejected') {
+      allRowsParams.push('Rejected');
+      allRowsStatusCondition = `AND m.status = $${allRowsParams.length}`;
+    }
+
     const allRowsQuery = `
       SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
         m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
@@ -2732,10 +2746,10 @@ export const getKpiSummary = async (req, res) => {
           ) END
         ) AS profile_completion
       FROM third_level_official_masterlist m
-      WHERE m.is_testaccount = $1
+      WHERE m.is_testaccount = $1 ${allRowsStatusCondition}
       ORDER BY m."TLOid" ASC
     `;
-    const allRows = await pool.query(allRowsQuery, [isTest]);
+    const allRows = await pool.query(allRowsQuery, allRowsParams);
 
     res.json({
       success: true,
@@ -2833,6 +2847,7 @@ export const getPositionIncumbents = async (req, res) => {
         FROM third_level_official_masterlist m_inner
         WHERE m_inner.position_title = ANY($1) ${officeCondition}
           AND m_inner.first_name IS NOT NULL AND m_inner.first_name != 'VACANT'
+          AND m_inner.status != 'For Approval' AND m_inner.status != 'Rejected'
           AND m_inner.is_testaccount = ${testParamIdx}
         
         UNION ALL
@@ -2841,7 +2856,7 @@ export const getPositionIncumbents = async (req, res) => {
           0 as id, u."TLOid", u.first_name, u.last_name, u.strand, u.office, u.remarks, u.updated_at as tenure_date,
           0 as is_current
         FROM third_level_officials_updates u
-        JOIN third_level_official_masterlist mu ON mu."TLOid" = u."TLOid" AND mu.is_testaccount = ${testParamIdx}
+        JOIN third_level_official_masterlist mu ON mu."TLOid" = u."TLOid" AND mu.status != 'For Approval' AND mu.status != 'Rejected' AND mu.is_testaccount = ${testParamIdx}
         WHERE u.position_title = ANY($1) ${officeCondUpdates}
           AND u.first_name IS NOT NULL AND u.first_name != 'VACANT'
       ),
