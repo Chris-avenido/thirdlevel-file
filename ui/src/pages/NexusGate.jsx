@@ -246,7 +246,7 @@ const NexusGate = () => {
 
             {/* Cards Container */}
             <div className="nexus-cards-stack">
-                {/* ── CARD 1: THIRD LEVEL PORTAL ── */}
+                {/* ── CARD 1: THIRD LEVEL OFFICIALS ── */}
                 <motion.div
                     variants={direction === 'right' ? itemRight : itemLeft}
                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
@@ -290,7 +290,7 @@ const NexusGate = () => {
 
                     <div className="nexus-card-body">
                         <span className="nexus-role-tag text-[#D97706]">FOR THIRD LEVEL PERSONNEL</span>
-                        <h2 className="nexus-card-title">Third Level Portal</h2>
+                        <h2 className="nexus-card-title">Third Level Officials</h2>
                         <p className="nexus-card-desc">
                             Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.
                         </p>

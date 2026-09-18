@@ -230,6 +230,7 @@ async function runBackup() {
     sqlStream.write(`CREATE TABLE IF NOT EXISTS "unified_binaries" (\n`);
     sqlStream.write(`  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n`);
     sqlStream.write(`  "hash" TEXT,\n`);
+    sqlStream.write(`  "content" BYTEA,\n`);
     sqlStream.write(`  "mime_type" TEXT,\n`);
     sqlStream.write(`  "size_bytes" INTEGER,\n`);
     sqlStream.write(`  "azure_blob_url" TEXT,\n`);
