@@ -587,11 +587,6 @@ const OfficialProfiling = () => {
                 profile.date_of_birth &&
                 profile.civil_status &&
                 profile.photo_binary_id &&
-                profile.employment_status &&
-                profile.region &&
-                profile.position_title &&
-                profile.appointment_date &&
-                (!profile.is_oic || profile.designation) &&
                 profile.permanent_address &&
                 (profile.alt_contact_details_1 || profile.contact_details)
             );
