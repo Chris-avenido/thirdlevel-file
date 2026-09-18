@@ -364,7 +364,8 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                   </div>
 
                   <div
-                    className="border-2 border-dashed border-blue-200 rounded-[24px] p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/30 hover:border-blue-300 transition-all cursor-pointer group relative mt-4 mx-4 shadow-[0_0_40px_rgba(240,249,255,1)]"
+                    style={{ display: 'none' }}
+                    className="hidden border-2 border-dashed border-blue-200 rounded-[24px] p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/30 hover:border-blue-300 transition-all cursor-pointer group relative mt-4 mx-4 shadow-[0_0_40px_rgba(240,249,255,1)]"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}
                     onClick={() => fileInputRef.current?.click()}
