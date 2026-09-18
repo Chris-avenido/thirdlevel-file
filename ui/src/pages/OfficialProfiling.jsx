@@ -581,45 +581,57 @@ const OfficialProfiling = () => {
     const isTabCompleted = (tabId) => {
         if (tabId === 'personal') {
             return !!(
-                profile.first_name &&
-                profile.last_name &&
-                profile.gender &&
+                profile.first_name?.trim() &&
+                profile.last_name?.trim() &&
+                profile.gender?.trim() &&
                 profile.date_of_birth &&
-                profile.civil_status &&
+                profile.civil_status?.trim() &&
                 profile.photo_binary_id &&
-                profile.permanent_address &&
-                (profile.alt_contact_details_1 || profile.contact_details)
+                profile.permanent_address?.trim() &&
+                (profile.alt_contact_details_1?.trim() || profile.contact_details?.trim())
             );
         }
         if (tabId === 'eligibility') {
-            return !!(profile.ces_stage || profile.emt_passer !== null || (profile.eligibilities && profile.eligibilities.length > 0));
+            return !!(
+                profile.ces_stage?.trim() ||
+                (profile.emt_passer === true && profile.emt_date) ||
+                (Array.isArray(profile.eligibilities) && profile.eligibilities.some(e => e && (e.eligibility?.trim() || e.title?.trim())))
+            );
         }
         if (tabId === 'experience') {
-            return prevPositions.length > 0;
+            return prevPositions.some(p => p && (p.position_name?.trim() || p.office?.trim()));
         }
         if (tabId === 'education') {
             return !!(
-                (profile.education_degrees && profile.education_degrees.length > 0) ||
-                profile.bachelor_degree ||
-                profile.master_degree ||
-                profile.doctorate_degree ||
-                profile.highest_education
+                profile.bachelor_degree?.trim() ||
+                profile.master_degree?.trim() ||
+                profile.doctorate_degree?.trim() ||
+                profile.highest_education?.trim() ||
+                (Array.isArray(profile.education_degrees) && profile.education_degrees.some(d => d && (d.specific_degree?.trim() || d.education_program?.trim())))
             );
         }
         if (tabId === 'performance') {
             return !!(profile.performance_rating_1 && profile.performance_rating_1_period);
         }
         if (tabId === 'trainings') {
-            return trainings.length > 0;
+            return trainings.some(t => t && (t.training_name?.trim() || t.date_from?.trim()));
         }
         if (tabId === 'achievements') {
-            return !!((Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0) || (profile.individual_accomplishments && profile.individual_accomplishments.length > 0));
+            return !!(
+                (Array.isArray(profile.notable_achievements) && profile.notable_achievements.some(a => a && (a.title?.trim() || (typeof a === 'string' && a.trim())))) ||
+                (Array.isArray(profile.individual_accomplishments) && profile.individual_accomplishments.some(a => a && (a.title?.trim() || (typeof a === 'string' && a.trim()))))
+            );
         }
         if (tabId === 'documents') {
             return !!(profile.pds_binary_id && profile.service_records_binary_id);
         }
         if (tabId === 'legal') {
-            return !!(profile.pending_admin_case && profile.guilty_admin_details && profile.criminally_charged_details && profile.convicted_crime_details);
+            return !!(
+                profile.pending_admin_case?.trim() &&
+                profile.guilty_admin_details?.trim() &&
+                profile.criminally_charged_details?.trim() &&
+                profile.convicted_crime_details?.trim()
+            );
         }
         if (tabId === 'application') {
             return !!targetVacancyId;
@@ -3058,7 +3070,7 @@ const OfficialProfiling = () => {
                                                                         <input disabled={!isEditing} type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                                                        <Field label="Phone Number"><input disabled={!isEditing} type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
+                                                                        <Field label="Phone Number"><input disabled={!isEditing} type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setProfile(p => ({ ...p, alt_contact_details_1: val, contact_details: val })); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
                                                                         <Field label="Alternative Email 1"><input disabled={!isEditing} type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" className={inp} /></Field>
                                                                         <Field label="Alternative Email 2"><input disabled={!isEditing} type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" className={inp} /></Field>
                                                                     </div>
