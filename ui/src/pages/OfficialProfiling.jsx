@@ -619,7 +619,7 @@ const OfficialProfiling = () => {
         if (tabId === 'achievements') {
             return !!(
                 (Array.isArray(profile.notable_achievements) && profile.notable_achievements.some(a => a && (a.title?.trim() || (typeof a === 'string' && a.trim())))) ||
-                (Array.isArray(profile.individual_accomplishments) && profile.individual_accomplishments.some(a => a && (a.title?.trim() || (typeof a === 'string' && a.trim()))))
+                (Array.isArray(profile.individual_accomplishments) && profile.individual_accomplishments.some(a => a && (a.description?.trim() || a.title?.trim() || (typeof a === 'string' && a.trim()))))
             );
         }
         if (tabId === 'documents') {
@@ -655,6 +655,7 @@ const OfficialProfiling = () => {
                 'Notable Achievements', 'Previous Position 1', 'Documents 2x2 Photo', 'Administrative Cases', 'Ombudsman / CSC Cases'
             ];
             const achFormatted = (Array.isArray(profile.notable_achievements) ? profile.notable_achievements : []).map(a => typeof a === 'object' && a !== null ? `${a.title || ''}${a.year ? ' (' + a.year + ')' : ''}` : String(a)).join(' | ');
+            const indAccFormatted = (Array.isArray(profile.individual_accomplishments) ? profile.individual_accomplishments : []).map(a => typeof a === 'object' && a !== null ? `${a.description || a.title || ''}${a.award_year ? ' (' + a.award_year + ')' : ''}` : String(a)).filter(Boolean).join(' | ');
             const row = [
                 profile.first_name, profile.last_name, profile.middle_name, sanitizeSuffix(profile.suffix), profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
                 profile.position_title, profile.designation, profile.appointment_date, profile.permanent_address,
@@ -662,7 +663,7 @@ const OfficialProfiling = () => {
                 (profile.eligibilities || []).map(e => `${e.eligibility || e.title || 'Untitled'} (${[e.date ? new Date(e.date).toLocaleDateString() : '', e.rating ? 'Rating: ' + e.rating : '', e.place_of_assignment ? 'Place: ' + e.place_of_assignment : '', e.details || ''].filter(Boolean).join(' | ')})`).join('; '),
                 profile.highest_education, profile.specific_degree, profile.education_program, profile.education_year_graduated,
                 profile.performance_rating_1, profile.performance_rating_2, profile.cespes_1_rating, profile.cespes_2_rating, profile.managerial_experience_total,
-                [achFormatted, ...(profile.individual_accomplishments || [])].filter(Boolean).join(' | '), prevPositions[0]?.position_name || '', profile.photo_binary_id ? 'Uploaded' : 'Missing', profile.pending_admin_case, profile.ombudsman_case
+                [achFormatted, indAccFormatted].filter(Boolean).join(' | '), prevPositions[0]?.position_name || '', profile.photo_binary_id ? 'Uploaded' : 'Missing', profile.pending_admin_case, profile.ombudsman_case
             ].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',');
 
             const csvContent = "data:text/csv;charset=utf-8," + header.join(',') + "\n" + row;
@@ -3788,7 +3789,7 @@ const OfficialProfiling = () => {
                                                                     const accYear = typeof acc === 'object' && acc !== null ? (acc.award_year || '') : '';
                                                                     const accId = typeof acc === 'object' && acc !== null ? acc.id : undefined;
                                                                     return (
-                                                                        <motion.div key={accId || `acc-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border-2 border-slate-200/50 transition-colors shadow-sm">
+                                                                        <motion.div key={accId || `acc-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border-2 border-slate-200/50 transition-colors shadow-sm">
                                                                             <input disabled={!isEditing}
                                                                                 type="text"
                                                                                 maxLength={150}
@@ -3802,9 +3803,9 @@ const OfficialProfiling = () => {
                                                                                     setP('individual_accomplishments', newAccs);
                                                                                 }}
                                                                                 placeholder="Award / Recognition / Notable accomplishment title"
-                                                                                className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
+                                                                                className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3.5 py-2 text-[15px] sm:text-[16px] font-semibold text-slate-800 outline-none transition-all flex-1 min-h-[44px] h-[44px] shadow-sm w-full"
                                                                             />
-                                                                            <div className="w-full md:w-44 shrink-0">
+                                                                            <div className="w-full sm:w-44 md:w-52 shrink-0">
                                                                                 <YearInput disabled={!isEditing}
                                                                                     value={accYear}
                                                                                     onChange={val => {
@@ -3823,10 +3824,10 @@ const OfficialProfiling = () => {
                                                                                     const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
                                                                                     setP('individual_accomplishments', newAccs);
                                                                                 }}
-                                                                                className="w-11 h-11 flex items-center justify-center shrink-0 bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"
+                                                                                className="w-11 h-11 min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0 self-end sm:self-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all cursor-pointer"
                                                                                 title="Remove Award"
                                                                             >
-                                                                                <FiTrash2 size={14} />
+                                                                                <FiTrash2 size={16} />
                                                                             </button>}
                                                                         </motion.div>
                                                                     );
