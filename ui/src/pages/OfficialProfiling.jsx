@@ -1513,21 +1513,6 @@ const OfficialProfiling = () => {
             }
         }
 
-        // 1b. Position Title and Designation "Others" validation
-        const posTitle = (profile.position_title || '').trim();
-        if (posTitle.toUpperCase() === 'OTHERS' || !posTitle) {
-            Swal.fire('Validation Error', 'Please specify your Position Title.', 'error');
-            return false;
-        }
-
-        if (profile.is_oic) {
-            const desig = (profile.designation || '').trim();
-            if (desig.toUpperCase() === 'OTHERS' || !desig) {
-                Swal.fire('Validation Error', 'Please specify your Designation.', 'error');
-                return false;
-            }
-        }
-
         // 2. Alternative Email 1 & 2
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (profile.alt_email_1) {
