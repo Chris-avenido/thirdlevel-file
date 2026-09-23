@@ -6,7 +6,8 @@
     "install-all": "cd api && npm install && cd ../ui && npm install",
     "dev": "node dev.js",
     "dev:full": "node dev.js",
-    "dev:turbo": "node dev.js"
+    "dev:turbo": "node dev.js",
+    "backup:prod": "node database/backup-prod.js"
   },
   "dependencies": {
     "all": "^0.0.0",

@@ -464,6 +464,7 @@ const OfficialProfiling = () => {
     const [historyLoading, setHistoryLoading] = useState(false);
 
     const [profile, setProfile] = useState({
+        email: '',
         last_name: '', first_name: '', middle_name: '', suffix: '',
         gender: '', date_of_birth: '', age: '', civil_status: '',
         employment_status: '', position_title: '', designation: '', is_oic: false, appointment_date: '',
@@ -648,6 +649,7 @@ const OfficialProfiling = () => {
         try {
             const header = [
                 'First Name', 'Last Name', 'Middle Name', 'Suffix', 'Gender', 'Date of Birth', 'Age', 'Civil Status',
+                'DepEd Email', 'Phone Number', 'Alternative Email 1', 'Alternative Email 2',
                 'Position Title', 'Designation', 'Date of Present Position', 'Permanent Address',
                 'Career Executive Service (CES)', 'CES Conferment Date', 'Educational Management Test (EMT)', 'EMT Date', 'Other Eligibilities',
                 'Highest Education', 'Specific Degree', 'Program / Course', 'Year Graduated',
@@ -658,6 +660,7 @@ const OfficialProfiling = () => {
             const indAccFormatted = (Array.isArray(profile.individual_accomplishments) ? profile.individual_accomplishments : []).map(a => typeof a === 'object' && a !== null ? `${a.description || a.title || ''}${a.award_year ? ' (' + a.award_year + ')' : ''}` : String(a)).filter(Boolean).join(' | ');
             const row = [
                 profile.first_name, profile.last_name, profile.middle_name, sanitizeSuffix(profile.suffix), profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
+                profile.email || user?.email || '', profile.alt_contact_details_1 || profile.contact_details || '', profile.alt_email_1 || '', profile.alt_email_2 || '',
                 profile.position_title, profile.designation, profile.appointment_date, profile.permanent_address,
                 profile.ces_stage, profile.ces_conferment_date, profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '', profile.emt_date,
                 (profile.eligibilities || []).map(e => `${e.eligibility || e.title || 'Untitled'} (${[e.date ? new Date(e.date).toLocaleDateString() : '', e.rating ? 'Rating: ' + e.rating : '', e.place_of_assignment ? 'Place: ' + e.place_of_assignment : '', e.details || ''].filter(Boolean).join(' | ')})`).join('; '),
@@ -748,14 +751,14 @@ const OfficialProfiling = () => {
 
             // Managerial Experience Table
             let histRows = [
-                [{ text: 'Managerial Experience', options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 14 } }]
+                [{ text: `Managerial Experience${profile.managerial_experience_total ? ` — Total: ${profile.managerial_experience_total}` : ''}`, options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 13 } }]
             ];
             const displayHistory = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
             const filteredHistory = displayHistory.filter(h => h.position_title || h.position_name || h.office).slice(0, 4);
             filteredHistory.forEach(h => {
                 const title = h.position_title || h.position_name || '—';
                 const officeName = h.office || '—';
-                const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
                 histRows.push([
                     { text: title, options: { fill: 'F8FAFC', fontSize: 10, color: '000000', bold: true } },
                     { text: officeName, options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } },
@@ -768,7 +771,7 @@ const OfficialProfiling = () => {
                         if (oic.oic_position_name || oic.oic_office) {
                             const oicTitle = `   └─ OIC: ${oic.oic_position_name || 'OIC Position'}`;
                             const oicOffice = oic.oic_office || '—';
-                            const oicDur = oic.oic_start_date && oic.oic_end_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
+                            const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
                             histRows.push([
                                 { text: oicTitle, options: { fill: 'FEF3C7', fontSize: 9, color: '08315F' } },
                                 { text: oicOffice, options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } },
@@ -779,6 +782,13 @@ const OfficialProfiling = () => {
                 }
             });
             if (filteredHistory.length === 0) histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 10, align: 'center' } }]);
+            if (profile.managerial_experience_total) {
+                const todayFormatted = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                histRows.push([
+                    { text: `Total Managerial Experience (As of ${todayFormatted}):`, options: { colspan: 2, fill: 'E2E8F0', fontSize: 9, bold: true, align: 'right', color: '08315F' } },
+                    { text: profile.managerial_experience_total, options: { fill: 'E2E8F0', fontSize: 9, bold: true, align: 'center', color: '08315F' } }
+                ]);
+            }
             slide.addTable(histRows, { x: 0.4, y: 1.6, w: 5.5, colW: [1.8, 2.3, 1.4], border: { pt: 1, color: '64748B' } });
 
             // Educational Attainment Table
@@ -1265,6 +1275,7 @@ const OfficialProfiling = () => {
                     setIsSuffixNA(isNA);
 
                     setProfile({
+                        email: d.email || user?.email || '',
                         last_name: d.last_name || '',
                         first_name: d.first_name || '',
                         middle_name: d.middle_name || '',
@@ -2477,11 +2488,10 @@ const OfficialProfiling = () => {
                                                                     )}
                                                                 </p>
                                                                 {activeAssignments[0].capacity && (
-                                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none shadow-sm flex items-center gap-1 shrink-0 ${
-                                                                        activeAssignments[0].capacity.toUpperCase() === 'OIC'
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none shadow-sm flex items-center gap-1 shrink-0 ${activeAssignments[0].capacity.toUpperCase() === 'OIC'
                                                                             ? 'bg-[#FCD116] text-[#08315F] border border-yellow-300'
                                                                             : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30'
-                                                                    }`}>
+                                                                        }`}>
                                                                         <span className={`w-1.5 h-1.5 rounded-full ${activeAssignments[0].capacity.toUpperCase() === 'OIC' ? 'bg-[#08315F]' : 'bg-emerald-400'}`}></span>
                                                                         {activeAssignments[0].capacity}
                                                                     </span>
@@ -2518,11 +2528,10 @@ const OfficialProfiling = () => {
                                                                                     {asg.position_title || asg.designation || 'Plantilla Position'}
                                                                                 </span>
                                                                                 {asg.capacity && (
-                                                                                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider leading-none shadow-sm shrink-0 ${
-                                                                                        isOic
+                                                                                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider leading-none shadow-sm shrink-0 ${isOic
                                                                                             ? 'bg-[#FCD116] text-[#08315F] font-black border border-yellow-300'
                                                                                             : 'bg-emerald-400/20 text-emerald-200 border border-emerald-400/30'
-                                                                                    }`}>
+                                                                                        }`}>
                                                                                         {asg.capacity}
                                                                                     </span>
                                                                                 )}
@@ -3015,50 +3024,50 @@ const OfficialProfiling = () => {
                                                                                             className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
                                                                                             title="Switch back to list selection"
                                                                                         >
-                                                                                        <FiRotateCcw size={13} />
-                                                                                    </button>
-                                                                                </div>
+                                                                                            <FiRotateCcw size={13} />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || ''} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                                        <option value="">Select Designation</option>
+                                                                                        {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
+                                                                                        <option value="Others">Others</option>
+                                                                                    </select>
+                                                                                )
                                                                             ) : (
-                                                                                <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || ''} onChange={e => setP('designation', e.target.value)} className={sel}>
-                                                                                    <option value="">Select Designation</option>
-                                                                                    {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
-                                                                                    <option value="Others">Others</option>
-                                                                                </select>
-                                                                            )
-                                                                        ) : (
-                                                                            <div className="w-full bg-slate-50/70 border-2 border-slate-200 rounded-lg py-2 px-3.5 text-[18px] font-semibold text-slate-400 min-h-[38px] h-[38px] flex items-center italic">
-                                                                                Not Applicable (Regular)
+                                                                                <div className="w-full bg-slate-50/70 border-2 border-slate-200 rounded-lg py-2 px-3.5 text-[18px] font-semibold text-slate-400 min-h-[38px] h-[38px] flex items-center italic">
+                                                                                    Not Applicable (Regular)
+                                                                                </div>
+                                                                            )}
+                                                                        </Field>
+                                                                        <Field label="Officer-in-Charge (OIC) Status">
+                                                                            <div className="flex items-center justify-between px-3.5 py-1.5 rounded-lg border-2 border-slate-200 bg-slate-50/60 min-h-[38px] h-[38px]">
+                                                                                <span className={`text-[18px] font-bold ${profile.is_oic ? 'text-[#08315F]' : 'text-slate-500'}`}>
+                                                                                    {profile.is_oic ? 'Officer-in-Charge (OIC)' : 'Regular Appointment'}
+                                                                                </span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    disabled={!isEditing}
+                                                                                    onClick={() => {
+                                                                                        const newOicStatus = !profile.is_oic;
+                                                                                        setP('is_oic', newOicStatus);
+                                                                                        if (!newOicStatus) {
+                                                                                            setP('designation', '');
+                                                                                        }
+                                                                                    }}
+                                                                                    className={`w-11 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-300'}`}
+                                                                                >
+                                                                                    <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                                                </button>
                                                                             </div>
-                                                                        )}
-                                                                    </Field>
-                                                                    <Field label="Officer-in-Charge (OIC) Status">
-                                                                        <div className="flex items-center justify-between px-3.5 py-1.5 rounded-lg border-2 border-slate-200 bg-slate-50/60 min-h-[38px] h-[38px]">
-                                                                            <span className={`text-[18px] font-bold ${profile.is_oic ? 'text-[#08315F]' : 'text-slate-500'}`}>
-                                                                                {profile.is_oic ? 'Officer-in-Charge (OIC)' : 'Regular Appointment'}
-                                                                            </span>
-                                                                            <button
-                                                                                type="button"
-                                                                                disabled={!isEditing}
-                                                                                onClick={() => {
-                                                                                    const newOicStatus = !profile.is_oic;
-                                                                                    setP('is_oic', newOicStatus);
-                                                                                    if (!newOicStatus) {
-                                                                                        setP('designation', '');
-                                                                                    }
-                                                                                }}
-                                                                                className={`w-11 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-300'}`}
-                                                                            >
-                                                                                <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
-                                                                            </button>
-                                                                        </div>
-                                                                    </Field>
-                                                                    <Field label="Date of Present Position (Appointment Date)">
-                                                                        <div className="relative">
-                                                                            <ModernDatePicker disabled={!isEditing} value={profile.appointment_date} onChange={val => setP('appointment_date', val)} className={inp} />
-                                                                        </div>
-                                                                    </Field>
+                                                                        </Field>
+                                                                        <Field label="Date of Present Position (Appointment Date)">
+                                                                            <div className="relative">
+                                                                                <ModernDatePicker disabled={!isEditing} value={profile.appointment_date} onChange={val => setP('appointment_date', val)} className={inp} />
+                                                                            </div>
+                                                                        </Field>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
                                                             )}
 
                                                             <div className="border-t-2 border-slate-100 pt-8">
@@ -3070,10 +3079,52 @@ const OfficialProfiling = () => {
                                                                     <Field label="Temporary Address">
                                                                         <input disabled={!isEditing} type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                                                        <Field label="Phone Number"><input disabled={!isEditing} type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setProfile(p => ({ ...p, alt_contact_details_1: val, contact_details: val })); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
-                                                                        <Field label="Alternative Email 1"><input disabled={!isEditing} type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" className={inp} /></Field>
-                                                                        <Field label="Alternative Email 2"><input disabled={!isEditing} type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" className={inp} /></Field>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <Field label="Phone Number">
+                                                                            <input
+                                                                                disabled={!isEditing}
+                                                                                type="text"
+                                                                                value={profile.alt_contact_details_1 || ''}
+                                                                                onChange={e => {
+                                                                                    const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                                                                                    setProfile(p => ({ ...p, alt_contact_details_1: val, contact_details: val }));
+                                                                                }}
+                                                                                placeholder="e.g. 0917 123 4567"
+                                                                                className={inp}
+                                                                            />
+                                                                        </Field>
+                                                                        <Field label="DepEd Email">
+                                                                            <input
+                                                                                disabled={!isEditing}
+                                                                                type="email"
+                                                                                value={profile.email || user?.email || ''}
+                                                                                onChange={e => setP('email', e.target.value)}
+                                                                                placeholder="e.g. juan.delacruz@deped.gov.ph"
+                                                                                className={inp}
+                                                                            />
+                                                                        </Field>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <Field label="Alternative Email 1">
+                                                                            <input
+                                                                                disabled={!isEditing}
+                                                                                type="email"
+                                                                                value={profile.alt_email_1 || ''}
+                                                                                onChange={e => setP('alt_email_1', e.target.value)}
+                                                                                placeholder="e.g. personal@gmail.com"
+                                                                                className={inp}
+                                                                            />
+                                                                        </Field>
+                                                                        <Field label="Alternative Email 2">
+                                                                            <input
+                                                                                disabled={!isEditing}
+                                                                                type="email"
+                                                                                value={profile.alt_email_2 || ''}
+                                                                                onChange={e => setP('alt_email_2', e.target.value)}
+                                                                                placeholder="e.g. backup@yahoo.com"
+                                                                                className={inp}
+                                                                            />
+                                                                        </Field>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -3223,8 +3274,13 @@ const OfficialProfiling = () => {
                                                                 <SectionLabel>Managerial Experience</SectionLabel>
                                                                 <div className="bg-[#F4F8FB]/50 p-6 rounded-3xl border-2 border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                                                                     <div>
-                                                                        <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest mb-1">Total Managerial Experience</p>
-                                                                        <p className="text-[13.5px] font-bold text-slate-400 italic leading-tight">Automatically computed based on supervisory & managerial positions (Salary Grade 18 and above).</p>
+                                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                                            <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest">Total Managerial Experience</p>
+                                                                            <span className="text-[12px] font-bold text-blue-700 bg-blue-100/80 px-2.5 py-0.5 rounded-full border border-blue-200">
+                                                                                As of {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className="text-[13.5px] font-bold text-slate-400 italic leading-tight">Automatically computed based on supervisory & managerial positions (Salary Grade 18 and above) as of current date.</p>
                                                                     </div>
                                                                     <div className="bg-white px-6 py-3 rounded-2xl border-2 border-blue-200 shadow-sm">
                                                                         <p className="text-[30px] font-black text-[#08315F] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
@@ -3245,7 +3301,7 @@ const OfficialProfiling = () => {
                                                                             const isPrevPosOthers = pos.position_name === 'Others' || (pos.position_name && !tloPositionOptions.some(o => o.toUpperCase() === pos.position_name.toUpperCase()));
                                                                             return (
                                                                                 <>
-                                                                                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:p-4 rounded-2xl border-2 border-slate-200/60 transition-colors shadow-sm relative">
+                                                                                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-start bg-slate-50/40 hover:bg-transparent p-4 md:p-6 xl:px-4 xl:pb-4 xl:pt-7 rounded-2xl border-2 border-slate-200/60 transition-colors shadow-sm relative">
                                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                                             <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Position</span>
                                                                                             <select disabled={!isEditing}
@@ -3297,24 +3353,60 @@ const OfficialProfiling = () => {
                                                                                                 <ModernDatePicker disabled={!isEditing} value={pos.start_date ? pos.start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, start_date: val } : x))} className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                                             </div>
                                                                                         </div>
-                                                                                        <div className="flex flex-col gap-1.5 w-full">
-                                                                                            <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
+                                                                                        <div className="flex flex-col gap-1.5 w-full relative">
+                                                                                            <div className="flex items-center justify-between xl:block">
+                                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">To Date</span>
+                                                                                                {isEditing ? (
+                                                                                                    <label className="inline-flex items-center gap-1.5 cursor-pointer select-none text-[11px] font-black text-[#0038A8] hover:text-[#08315F] uppercase tracking-wider ml-auto xl:absolute xl:-top-6 xl:right-0">
+                                                                                                        <input
+                                                                                                            type="checkbox"
+                                                                                                            checked={Boolean(pos.is_current)}
+                                                                                                            onChange={e => {
+                                                                                                                const checked = e.target.checked;
+                                                                                                                setPrevPositions(p => p.map((x, i) => {
+                                                                                                                    if (i !== idx) return x;
+                                                                                                                    return {
+                                                                                                                        ...x,
+                                                                                                                        is_current: checked,
+                                                                                                                        end_date: checked ? '' : (x.end_date || '')
+                                                                                                                    };
+                                                                                                                }));
+                                                                                                            }}
+                                                                                                            className="w-3.5 h-3.5 rounded border-slate-300 text-[#0038A8] focus:ring-[#0038A8] cursor-pointer"
+                                                                                                        />
+                                                                                                        <span>Current</span>
+                                                                                                    </label>
+                                                                                                ) : (
+                                                                                                    pos.is_current && (
+                                                                                                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-blue-700 uppercase tracking-wider ml-auto xl:absolute xl:-top-5.5 xl:right-0">
+                                                                                                            Current
+                                                                                                        </span>
+                                                                                                    )
+                                                                                                )}
+                                                                                            </div>
                                                                                             <div className="relative">
-                                                                                                <ModernDatePicker disabled={!isEditing} value={pos.end_date ? pos.end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val } : x))} minDate={pos.start_date ? new Date(pos.start_date) : undefined} className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                                {pos.start_date && pos.end_date && new Date(pos.end_date) <= new Date(pos.start_date) && (
+                                                                                                <ModernDatePicker
+                                                                                                    disabled={!isEditing || Boolean(pos.is_current)}
+                                                                                                    placeholder={pos.is_current ? "Present" : "Select a date"}
+                                                                                                    value={pos.is_current ? '' : (pos.end_date ? pos.end_date.split('T')[0] : '')}
+                                                                                                    onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val, is_current: false } : x))}
+                                                                                                    minDate={pos.start_date ? new Date(pos.start_date) : undefined}
+                                                                                                    className={`bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm ${pos.is_current ? 'bg-blue-50/50 text-[#0038A8] font-bold' : ''}`}
+                                                                                                />
+                                                                                                {pos.start_date && pos.end_date && !pos.is_current && new Date(pos.end_date) <= new Date(pos.start_date) && (
                                                                                                     <p className="text-red-500 text-[15px] mt-1 font-semibold absolute -bottom-5">Must be after From Date.</p>
                                                                                                 )}
                                                                                             </div>
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                                             <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">OIC Status</span>
-                                                                                            <button type="button" onClick={(e) => { e.preventDefault(); setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: [...(x.oic_positions || []), { id: `tmp-oic-${Date.now()}`, oic_position_name: '', oic_office: '', oic_start_date: '', oic_end_date: '' }] } : x)); }} className="flex items-center justify-center gap-1 text-[13.5px] font-black uppercase py-2 px-1 rounded-xl transition-all bg-white border-2 border-slate-200 text-slate-500 shadow-sm hover:border-[#FCD116] hover:text-[#FBBF24]">
+                                                                                            <button type="button" onClick={(e) => { e.preventDefault(); setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: [...(x.oic_positions || []), { id: `tmp-oic-${Date.now()}`, oic_position_name: '', oic_office: '', oic_start_date: '', oic_end_date: '' }] } : x)); }} className="flex items-center justify-center gap-1 text-[13.5px] font-black uppercase h-[48px] px-1 rounded-xl transition-all bg-white border-2 border-slate-200 text-slate-500 shadow-sm hover:border-[#FCD116] hover:text-[#FBBF24]">
                                                                                                 <FiPlus size={14} /> Add OIC
                                                                                             </button>
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
                                                                                             <span className="text-[13.5px] font-black text-slate-[#FBBF24] uppercase tracking-widest xl:hidden md:invisible">Action</span>
-                                                                                            {isEditing && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemovePosition(idx); }} className="w-full xl:w-11 h-11 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
+                                                                                            {isEditing && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemovePosition(idx); }} className="w-full xl:w-11 h-[48px] flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
                                                                                         </div>
                                                                                     </motion.div>
 
@@ -3322,7 +3414,7 @@ const OfficialProfiling = () => {
                                                                                         const isOicPosOthers = oic.oic_position_name === 'Others' || (oic.oic_position_name && !tloPositionOptions.some(o => o.toUpperCase() === oic.oic_position_name.toUpperCase()));
                                                                                         return (
                                                                                             <motion.div key={oic.id || `oic-${idx}-${oicIdx}`} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-8 mt-2 pl-6 border-l-2 border-dashed border-[#FCD116] relative focus-within:z-40">
-                                                                                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-center bg-white p-4 rounded-2xl border-2 border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
+                                                                                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-4 xl:gap-3 items-start xl:items-start bg-white p-4 md:p-6 xl:px-4 xl:pb-4 xl:pt-7 rounded-2xl border-2 border-[#FCD116]/30 transition-colors shadow-sm relative mb-2">
                                                                                                     <div className="absolute -left-6 top-1/2 w-6 h-0.5 border-t-2 border-dashed border-[#FCD116]"></div>
                                                                                                     <div className="flex flex-col gap-1.5 w-full">
                                                                                                         <span className="text-[13.5px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">OIC Position</span>
@@ -3375,11 +3467,50 @@ const OfficialProfiling = () => {
                                                                                                             <ModernDatePicker disabled={!isEditing} value={oic.oic_start_date ? oic.oic_start_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_start_date: val } : o) } : x))} className="bg-white border-2 border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                                                         </div>
                                                                                                     </div>
-                                                                                                    <div className="flex flex-col gap-1.5 w-full">
-                                                                                                        <span className="text-[13.5px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">To Date</span>
+                                                                                                    <div className="flex flex-col gap-1.5 w-full relative">
+                                                                                                        <div className="flex items-center justify-between xl:block">
+                                                                                                            <span className="text-[13.5px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden">To Date</span>
+                                                                                                            {isEditing ? (
+                                                                                                                <label className="inline-flex items-center gap-1.5 cursor-pointer select-none text-[11px] font-black text-[#08315F] uppercase tracking-wider hover:underline ml-auto xl:absolute xl:-top-6 xl:right-0">
+                                                                                                                    <input
+                                                                                                                        type="checkbox"
+                                                                                                                        checked={Boolean(oic.is_current)}
+                                                                                                                        onChange={e => {
+                                                                                                                            const checked = e.target.checked;
+                                                                                                                            setPrevPositions(p => p.map((x, i) => i === idx ? {
+                                                                                                                                ...x,
+                                                                                                                                oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? {
+                                                                                                                                    ...o,
+                                                                                                                                    is_current: checked,
+                                                                                                                                    oic_end_date: checked ? '' : (o.oic_end_date || '')
+                                                                                                                                } : o)
+                                                                                                                            } : x));
+                                                                                                                        }}
+                                                                                                                        className="w-3.5 h-3.5 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                                                                                                    />
+                                                                                                                    <span>Current</span>
+                                                                                                                </label>
+                                                                                                            ) : (
+                                                                                                                oic.is_current && (
+                                                                                                                    <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 uppercase tracking-wider ml-auto xl:absolute xl:-top-5.5 xl:right-0">
+                                                                                                                        Current
+                                                                                                                    </span>
+                                                                                                                )
+                                                                                                            )}
+                                                                                                        </div>
                                                                                                         <div className="relative">
-                                                                                                            <ModernDatePicker disabled={!isEditing} value={oic.oic_end_date ? oic.oic_end_date.split('T')[0] : ''} onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_end_date: val } : o) } : x))} minDate={oic.oic_start_date ? new Date(oic.oic_start_date) : undefined} className="bg-white border-2 border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                                                            {oic.oic_start_date && oic.oic_end_date && new Date(oic.oic_end_date) <= new Date(oic.oic_start_date) && (
+                                                                                                            <ModernDatePicker
+                                                                                                                disabled={!isEditing || Boolean(oic.is_current)}
+                                                                                                                placeholder={oic.is_current ? "Present" : "Select a date"}
+                                                                                                                value={oic.is_current ? '' : (oic.oic_end_date ? oic.oic_end_date.split('T')[0] : '')}
+                                                                                                                onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? {
+                                                                                                                    ...x,
+                                                                                                                    oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_end_date: val, is_current: false } : o)
+                                                                                                                } : x))}
+                                                                                                                minDate={oic.oic_start_date ? new Date(oic.oic_start_date) : undefined}
+                                                                                                                className={`bg-white border-2 border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm ${oic.is_current ? 'bg-amber-50/70 text-[#08315F] font-bold' : ''}`}
+                                                                                                            />
+                                                                                                            {oic.oic_start_date && oic.oic_end_date && !oic.is_current && new Date(oic.oic_end_date) <= new Date(oic.oic_start_date) && (
                                                                                                                 <p className="text-red-500 text-[15px] mt-1 font-semibold absolute -bottom-5">Must be after From Date.</p>
                                                                                                             )}
                                                                                                         </div>
@@ -3387,7 +3518,7 @@ const OfficialProfiling = () => {
                                                                                                     <div className="hidden xl:block"></div>
                                                                                                     <div className="flex flex-col gap-1.5 w-full md:w-auto md:self-end justify-center xl:items-center">
                                                                                                         <span className="text-[13.5px] font-black text-[#FCD116] uppercase tracking-widest xl:hidden md:invisible">Action</span>
-                                                                                                        {isEditing && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.filter((_, j) => j !== oicIdx) } : x)); }} className="w-full xl:w-11 h-11 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
+                                                                                                        {isEditing && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.filter((_, j) => j !== oicIdx) } : x)); }} className="w-full xl:w-11 h-[48px] flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
                                                                                                     </div>
                                                                                                 </div>
                                                                                             </motion.div>
@@ -4292,6 +4423,8 @@ const OfficialProfiling = () => {
                                                                                                                     {[
                                                                                                                         ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
                                                                                                                         ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
+                                                                                                                        ['Phone Number', profile.alt_contact_details_1 || profile.contact_details], ['DepEd Email', profile.email || user?.email],
+                                                                                                                        ['Alternative Email 1', profile.alt_email_1], ['Alternative Email 2', profile.alt_email_2],
                                                                                                                         ['Total Years in Third Level', profile.total_years_third_level],
                                                                                                                         ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
                                                                                                                         ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
@@ -4347,7 +4480,7 @@ const OfficialProfiling = () => {
                                                                                                                     <div className="col-span-7 space-y-5">
                                                                                                                         <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
-                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience</th></tr>
+                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${profile.managerial_experience_total}` : ''}</th></tr>
                                                                                                                             </thead>
                                                                                                                             <tbody>
                                                                                                                                 {(() => {
@@ -4362,7 +4495,7 @@ const OfficialProfiling = () => {
                                                                                                                                     displayList.forEach((h, i) => {
                                                                                                                                         const title = h.position_title || h.position_name || '—';
                                                                                                                                         const officeName = h.office || '—';
-                                                                                                                                        const dur = h.start_date && h.end_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                                                                                                                                        const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
                                                                                                                                         rows.push(
                                                                                                                                             <tr key={`parent-${i}`} className="text-slate-800 bg-slate-50/30 font-semibold">
                                                                                                                                                 <td className="border-2 border-slate-400 px-3 py-1.5 font-bold w-1/3">{title}</td>
@@ -4375,7 +4508,7 @@ const OfficialProfiling = () => {
                                                                                                                                                 if (oic.oic_position_name || oic.oic_office) {
                                                                                                                                                     const oicTitle = oic.oic_position_name || 'OIC Position';
                                                                                                                                                     const oicOffice = oic.oic_office || '—';
-                                                                                                                                                    const oicDur = oic.oic_start_date && oic.oic_end_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
+                                                                                                                                                    const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
                                                                                                                                                     rows.push(
                                                                                                                                                         <tr key={`child-${i}-${oicIdx}`} className="text-slate-700 text-[11px] bg-amber-50/50">
                                                                                                                                                             <td className="border-2 border-slate-400 px-3 py-1.5 pl-6 font-medium">
@@ -4392,6 +4525,18 @@ const OfficialProfiling = () => {
                                                                                                                                     return rows;
                                                                                                                                 })()}
                                                                                                                             </tbody>
+                                                                                                                            {profile.managerial_experience_total && (
+                                                                                                                                <tfoot>
+                                                                                                                                    <tr className="bg-slate-100 font-bold text-slate-800">
+                                                                                                                                        <td colSpan={2} className="border-2 border-slate-400 px-3 py-1.5 text-right font-black uppercase text-[10px] text-[#08315F] tracking-wider">
+                                                                                                                                            Total Managerial Experience (As of {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}):
+                                                                                                                                        </td>
+                                                                                                                                        <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black text-[#08315F] text-[11px]">
+                                                                                                                                            {profile.managerial_experience_total}
+                                                                                                                                        </td>
+                                                                                                                                    </tr>
+                                                                                                                                </tfoot>
+                                                                                                                            )}
                                                                                                                         </table>
                                                                                                                         <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
@@ -4503,7 +4648,10 @@ const OfficialProfiling = () => {
                                                                         <div><p className="text-[15px] text-slate-400 mb-1">Last Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.last_name || '—'}</p></div>
                                                                         <div><p className="text-[15px] text-slate-400 mb-1">Middle Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.middle_name || '—'}</p></div>
                                                                         <div><p className="text-[15px] text-slate-400 mb-1">Suffix</p><p className="text-[18px] font-black text-slate-800 uppercase">{sanitizeSuffix(profile.suffix) || '—'}</p></div>
-                                                                        <div></div>{/* Empty column for alignment if needed */}
+                                                                        <div>
+                                                                            <p className="text-[15px] text-slate-400 mb-1">DepEd Email</p>
+                                                                            <p className="text-[18px] font-black text-slate-800 lowercase break-all">{profile.email || user?.email || '—'}</p>
+                                                                        </div>
 
                                                                         <div className="flex items-start gap-2">
                                                                             <FiUser size={18} className="text-blue-500 mt-0.5" />

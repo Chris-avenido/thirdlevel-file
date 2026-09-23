@@ -10,6 +10,7 @@
     transform: translateY(20px) scale(0.9);
     opacity: 0;
   }
+
   100% {
     transform: translateY(0) scale(1);
     opacity: 1;
@@ -21,19 +22,47 @@
 }
 
 @keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 
-.animate-blob { animation: blob 7s infinite; }
-.animation-delay-2000 { animation-delay: 2s; }
-.animation-delay-4000 { animation-delay: 4s; }
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
 
 @keyframes gradient-xy {
-  0%, 100% { background-size: 400% 400%; background-position: 0% 0%; }
-  50% { background-size: 200% 200%; background-position: 100% 100%; }
+
+  0%,
+  100% {
+    background-size: 400% 400%;
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-size: 200% 200%;
+    background-position: 100% 100%;
+  }
 }
 
 .animate-gradient-xy {
@@ -51,18 +80,38 @@
 }
 
 @keyframes move-forever {
-  0% { transform: translate3d(-90px, 0, 0); }
-  100% { transform: translate3d(85px, 0, 0); }
+  0% {
+    transform: translate3d(-90px, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(85px, 0, 0);
+  }
 }
 
-.parallax > use {
+.parallax>use {
   animation: move-forever 25s cubic-bezier(.55, .5, .45, .5) infinite;
 }
 
-.parallax > use:nth-child(1) { animation-delay: -2s; animation-duration: 7s; }
-.parallax > use:nth-child(2) { animation-delay: -3s; animation-duration: 10s; }
-.parallax > use:nth-child(3) { animation-delay: -4s; animation-duration: 13s; }
-.parallax > use:nth-child(4) { animation-delay: -5s; animation-duration: 20s; }
+.parallax>use:nth-child(1) {
+  animation-delay: -2s;
+  animation-duration: 7s;
+}
+
+.parallax>use:nth-child(2) {
+  animation-delay: -3s;
+  animation-duration: 10s;
+}
+
+.parallax>use:nth-child(3) {
+  animation-delay: -4s;
+  animation-duration: 13s;
+}
+
+.parallax>use:nth-child(4) {
+  animation-delay: -5s;
+  animation-duration: 20s;
+}
 
 .waves-container {
   position: absolute;
@@ -105,6 +154,7 @@ body {
 .react-datepicker-wrapper {
   width: 100%;
 }
+
 .react-datepicker {
   font-family: inherit !important;
   border: 1px solid #e2e8f0 !important;
@@ -113,23 +163,30 @@ body {
   overflow: hidden;
   z-index: 99999 !important;
 }
+
 .react-datepicker-popper {
   z-index: 99999 !important;
 }
+
 .react-datepicker__header {
   background-color: #f8fafc !important;
   border-bottom: 1px solid #e2e8f0 !important;
   padding-top: 12px !important;
 }
-.react-datepicker__day--selected, .react-datepicker__day--keyboard-selected {
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
   background-color: #0038A8 !important;
   color: white !important;
   border-radius: 0.5rem !important;
 }
+
 .react-datepicker__day:hover {
   border-radius: 0.5rem !important;
 }
-.react-datepicker__month-select, .react-datepicker__year-select {
+
+.react-datepicker__month-select,
+.react-datepicker__year-select {
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid #cbd5e1;
@@ -189,7 +246,7 @@ body {
   align-items: center;
   font-family: var(--font-heading);
   font-size: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-theme .nav {
@@ -246,9 +303,9 @@ body {
   border-radius: calc(var(--radius) + 6px);
   box-shadow: none;
   background:
-    radial-gradient(circle at 92% 50%, rgba(251,191,36,.18) 0 7%, rgba(251,191,36,.08) 7.2% 13%, transparent 13.2%),
-    radial-gradient(circle at 98% 46%, rgba(251,191,36,.28) 0 10%, transparent 10.5%),
-    linear-gradient(112deg, var(--navy) 0 70%, rgba(255,255,255,.96) 70.2% 100%);
+    radial-gradient(circle at 92% 50%, rgba(251, 191, 36, .18) 0 7%, rgba(251, 191, 36, .08) 7.2% 13%, transparent 13.2%),
+    radial-gradient(circle at 98% 46%, rgba(251, 191, 36, .28) 0 10%, transparent 10.5%),
+    linear-gradient(112deg, var(--navy) 0 70%, rgba(255, 255, 255, .96) 70.2% 100%);
 }
 
 .dashboard-theme .topbar::before {
@@ -288,7 +345,7 @@ body {
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.05;
-  text-shadow: 0 2px 0 rgba(15,23,42,.28);
+  text-shadow: 0 2px 0 rgba(15, 23, 42, .28);
   -webkit-text-stroke: 0;
 }
 
@@ -535,9 +592,17 @@ body {
   border-radius: 50%;
 }
 
-.dashboard-theme .dot-blue { background: var(--blue); }
-.dashboard-theme .dot-gold { background: var(--gold); }
-.dashboard-theme .dot-red { background: var(--red); }
+.dashboard-theme .dot-blue {
+  background: var(--blue);
+}
+
+.dashboard-theme .dot-gold {
+  background: var(--gold);
+}
+
+.dashboard-theme .dot-red {
+  background: var(--red);
+}
 
 .dashboard-theme .priority-label {
   font-weight: 800;
@@ -551,10 +616,21 @@ body {
   font-weight: 600;
 }
 
-.dashboard-theme .text-blue { color: var(--blue); }
-.dashboard-theme .text-red { color: var(--red); }
-.dashboard-theme .text-blue-600 { color: var(--blue-600); }
-.dashboard-theme .text-red-600 { color: var(--red); }
+.dashboard-theme .text-blue {
+  color: var(--blue);
+}
+
+.dashboard-theme .text-red {
+  color: var(--red);
+}
+
+.dashboard-theme .text-blue-600 {
+  color: var(--blue-600);
+}
+
+.dashboard-theme .text-red-600 {
+  color: var(--red);
+}
 
 @media (max-width: 1000px) {
   .dashboard-theme.app {
@@ -664,7 +740,7 @@ body {
     border-radius: 14px;
     border-width: 2px;
   }
-  
+
   .dashboard-theme .apply-btn {
     grid-column: 1 / -1;
     height: 38px;
@@ -695,7 +771,7 @@ body {
   .dashboard-theme .kpi-note {
     font-size: 11px;
   }
-  
+
   .dashboard-theme .kpi-accent {
     width: 4px;
   }
@@ -725,7 +801,8 @@ body {
   }
 }
 
-.react-datepicker__month-select, .react-datepicker__year-select {
+.react-datepicker__month-select,
+.react-datepicker__year-select {
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid #cbd5e1;
@@ -737,7 +814,9 @@ body {
   cursor: pointer;
   margin: 0 4px;
 }
-.react-datepicker__month-select:focus, .react-datepicker__year-select:focus {
+
+.react-datepicker__month-select:focus,
+.react-datepicker__year-select:focus {
   border-color: #0038A8;
 }
 
@@ -746,13 +825,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 10px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
@@ -763,15 +845,19 @@ body {
   display: none;
   background: transparent;
 }
+
 .hide-horizontal-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Hide scrollbar but keep scrolling */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -783,19 +869,24 @@ body {
   scrollbar-color: transparent transparent;
   transition: scrollbar-color 0.3s;
 }
+
 .thin-scrollbar:hover {
   scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
 }
+
 .thin-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
+
 .thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .thin-scrollbar::-webkit-scrollbar-thumb {
   background-color: transparent;
   border-radius: 9999px;
 }
+
 .thin-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgba(148, 163, 184, 0.5);
 }
@@ -810,3 +901,22 @@ body {
   z-index: 99999 !important;
 }
 
+.react-datepicker__today-button {
+  background: #08315F !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 8px 12px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-align: center !important;
+}
+
+.react-datepicker__today-button:hover {
+  background: #0038A8 !important;
+  color: #ffffff !important;
+}

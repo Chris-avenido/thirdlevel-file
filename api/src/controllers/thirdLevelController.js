@@ -1742,8 +1742,11 @@ export const processRegistration = async (req, res) => {
   try {
     await client.query('BEGIN');
 
+    const adminEmail = req.user?.email || 'Central Office Admin';
+    await client.query(`SELECT set_config('app.current_user', $1, true)`, [adminEmail]);
+
     const isTest = Boolean(req.user?.is_testaccount);
-    const mlRes = await client.query('SELECT email, first_name, last_name, position_title, office FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
+    const mlRes = await client.query('SELECT email, first_name, last_name, position_title, office, strand FROM third_level_official_masterlist WHERE "TLOid" = $1 AND is_testaccount = $2', [TLOid, isTest]);
     if (mlRes.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Official not found' });
@@ -1751,40 +1754,88 @@ export const processRegistration = async (req, res) => {
     targetOfficial = mlRes.rows[0];
 
     if (action === 'reject') {
-      await client.query(`
+      const updateMl = await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'Rejected', updated_at = NOW() 
         WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2
       `, [TLOid, isTest]);
+      if (updateMl.rowCount === 0) {
+        throw new Error('Official is not in For Approval status or cannot be rejected.');
+      }
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
           UPDATE tlo_users SET registration_status = 'Rejected' WHERE LOWER(email) = $1 AND is_testaccount = $2
         `, [targetOfficial.email.toLowerCase(), isTest]);
       }
+
+      const enrichRes = await client.query(`
+        UPDATE third_level_officials_updates
+        SET change_type = 'REGISTRATION_REJECTED',
+            remarks = $1,
+            updated_by = $2
+        WHERE "TLOUid" = currval('"third_level_officials_updates_TLOUid_seq"')
+          AND "TLOid" = $3
+          AND status = 'Rejected'
+      `, [denial_reason ? denial_reason.trim() : null, adminEmail, TLOid]);
+      if (enrichRes.rowCount !== 1) {
+        throw new Error('Failed to enrich trigger-generated rejection audit record.');
+      }
     } else if (action === 'approve') {
-      await client.query(`
+      const updateMl = await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'Active', updated_at = NOW() 
         WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2
       `, [TLOid, isTest]);
+      if (updateMl.rowCount === 0) {
+        throw new Error('Official is not in For Approval status or cannot be approved.');
+      }
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
           UPDATE tlo_users SET registration_status = 'Approved' WHERE LOWER(email) = $1 AND is_testaccount = $2
         `, [targetOfficial.email.toLowerCase(), isTest]);
       }
+
+      const enrichRes = await client.query(`
+        UPDATE third_level_officials_updates
+        SET change_type = 'REGISTRATION_APPROVED',
+            remarks = 'Registration approved',
+            updated_by = $1
+        WHERE "TLOUid" = currval('"third_level_officials_updates_TLOUid_seq"')
+          AND "TLOid" = $2
+          AND status = 'Active'
+      `, [adminEmail, TLOid]);
+      if (enrichRes.rowCount !== 1) {
+        throw new Error('Failed to enrich trigger-generated approval audit record.');
+      }
     } else if (action === 'retrieve') {
-      await client.query(`
+      const updateMl = await client.query(`
         UPDATE third_level_official_masterlist 
         SET status = 'For Approval', updated_at = NOW() 
         WHERE "TLOid" = $1 AND status = 'Rejected' AND is_testaccount = $2
       `, [TLOid, isTest]);
+      if (updateMl.rowCount === 0) {
+        throw new Error('Official is not in Rejected status or cannot be retrieved.');
+      }
 
       if (targetOfficial && targetOfficial.email) {
         await client.query(`
           UPDATE tlo_users SET registration_status = 'For Approval' WHERE LOWER(email) = $1 AND is_testaccount = $2
         `, [targetOfficial.email.toLowerCase(), isTest]);
+      }
+
+      const enrichRes = await client.query(`
+        UPDATE third_level_officials_updates
+        SET change_type = 'REGISTRATION_RETRIEVED',
+            remarks = 'Registration retrieved for correction',
+            updated_by = $1
+        WHERE "TLOUid" = currval('"third_level_officials_updates_TLOUid_seq"')
+          AND "TLOid" = $2
+          AND status = 'For Approval'
+      `, [adminEmail, TLOid]);
+      if (enrichRes.rowCount !== 1) {
+        throw new Error('Failed to enrich trigger-generated retrieval audit record.');
       }
     }
 
@@ -2375,6 +2426,16 @@ export const getOfficials = async (req, res) => {
         m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
         m.plantilla_item_no, m.appointment_status,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
+        (
+          SELECT u.remarks 
+          FROM third_level_officials_updates u 
+          WHERE u."TLOid" = m."TLOid" 
+            AND u.status = 'Rejected' 
+            AND u.remarks IS NOT NULL 
+            AND TRIM(u.remarks) != '' 
+          ORDER BY u.updated_at DESC, u."TLOUid" DESC 
+          LIMIT 1
+        ) as rejection_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         (
           CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' OR m.status = 'Vacated' THEN NULL

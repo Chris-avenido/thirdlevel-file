@@ -43,3 +43,9 @@ stride.conf.patch
 __pycache__/
 .claude/
 desktop.ini
+
+# Database Backups & Dumps
+database/backups/
+*.sql.gz
+*.dump
+*.tmp
