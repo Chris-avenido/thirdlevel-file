@@ -413,7 +413,7 @@ const OfficialsRegistry = () => {
             });
             const data = await res.json();
             if (data.success) {
-                Swal.fire('Reconciliation Complete', `Official registration ${reconcileTargetItem.TLOid} was successfully reconciled and linked into canonical official ${selectedCandidate.TLOid}.`, 'success');
+                Swal.fire('Reconciliation Complete', `Official registration ${reconcileTargetItem.TLOid} was successfully activated with official details from ${selectedCandidate.TLOid}, and ${selectedCandidate.TLOid} has been marked as Inactive.`, 'success');
                 setReconcileModalOpen(false);
                 setReconcileTargetItem(null);
                 setSelectedCandidate(null);
@@ -2876,7 +2876,7 @@ const OfficialsRegistry = () => {
                                                     <span>Is this the same person?</span>
                                                 </div>
                                                 <p className="text-[14px] text-amber-950/80 font-medium leading-relaxed">
-                                                    Please verify that the registration record and the existing official record belong to the same person before proceeding. This action will link the registration to the existing official record and mark the previous registration record as inactive/reconciled.
+                                                    Please verify that the registration record and the existing official record belong to the same person before proceeding. This action will activate registration record <strong>{reconcileTargetItem.TLOid}</strong>, inherit official position, plantilla item no., and profile details from <strong>{selectedCandidate?.TLOid || 'the existing official'}</strong>, and mark <strong>{selectedCandidate?.TLOid || 'the existing official record'}</strong> as Inactive.
                                                 </p>
                                                 <label className="flex items-start gap-3 pt-2 cursor-pointer select-none">
                                                     <input

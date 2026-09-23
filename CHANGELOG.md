@@ -1,6 +1,27 @@
 # CHANGELOG
 
-## 2026-09-17 — Reconciled Duplicate Personnel Display & Masterlist Consolidation Migration
+## 2026-09-24 — Identity Reconciliation Update: Retain & Activate Registration Record
+
+### System Behavior Update ("Yes, This Is the Same Person — Proceed")
+- **Registration Record Activation**:
+  - When an administrator confirms identity reconciliation on a pending registration (e.g. `TLO-0742`) against an existing official record (e.g. `TLO-0349`), the **Registration Record (`TLO-0742`)** is retained and set to `status = 'Active'`.
+  - The Registration Record inherits all official profile details from the duplicate existing official record: `position_title`, `plantilla_item_no`, `office`, `strand`, `division`, `region`, `designation`, `is_oic`, `appointment_date`, `appointment_status`, `employment_status`, `ces_stage`, `ces_conferment_date`, `emt_passer`, `emt_date`, `total_years_third_level`, `managerial_experience_total`, ratings, clearances, document binary IDs, and bio/address data.
+  - Preserves the existing official's email as an alternate login email (`alt_email_1` / `alt_email_2`) on the newly activated registration record so no historical email access is lost.
+- **Existing Official Record Deactivation**:
+  - The duplicate **Existing Official Record (`TLO-0349`)** is transitioned to `status = 'Inactive'`.
+- **Relational Tables & Assignments Transfer**:
+  - Clones all child table records (education, eligibilities, positions, trainings, accomplishments, other courses) from `TLO-0349` to `TLO-0742` via `cloneMasterlistChildTables`.
+  - Upserts `tlo_masterlist` entry for `TLO-0742` and transfers active assignments in `tlo_assignments` from `TLO-0349`'s masterlist ID to `TLO-0742`'s masterlist ID.
+- **User Account & Staging Application Alignment**:
+  - Activates the registrant's account in `tlo_users` (`registration_status = 'Approved'`, `role = 'Third Level Official'`).
+  - Points profiling staging application targets in `third_level_officials_profiling_application` to `TLO-0742`.
+  - Records distinct audit trail entries in `third_level_officials_updates` for the activation of `TLO-0742` and the deactivation of `TLO-0349`.
+  - Dispatches official approval email to the registrant.
+- **Frontend UI (`OfficialsRegistry.jsx`)**:
+  - Updated reconciliation modal copy, declaration disclaimer, and SweetAlert success feedback to reflect activation of the registration record with inherited official details and deactivation of the candidate record.
+
+---
+
 
 ### Root Cause & Forensic Findings
 - Investigation of modal duplicate display (e.g., `ALDRIN GAYRAMA CORPIN` displayed twice with `2 FOUND`):

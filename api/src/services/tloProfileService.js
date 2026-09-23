@@ -227,3 +227,34 @@ export async function cloneChildTablesOnApproval(client, fromAppTloId, toMasterT
   await safe('accomplishments', () => accomplishmentRepo.cloneToNewTloId(client, 'staging', fromAppTloId, 'masterlist', toMasterTloId, updatedBy));
   await safe('other_courses',   () => otherCoursesRepo.cloneToNewTloId(client, 'staging', fromAppTloId, 'masterlist', toMasterTloId, updatedBy));
 }
+
+/**
+ * Clone all child table rows from one masterlist record to another masterlist record.
+ * Called from processRegistration reconcile flow inside the existing transaction.
+ *
+ * @param {import('pg').PoolClient} client
+ * @param {string} fromMasterTloId candidate masterlist TLOid (e.g. 'TLO-0349')
+ * @param {string} toMasterTloId registration masterlist TLOid (e.g. 'TLO-0742')
+ * @param {string|null} updatedBy
+ */
+export async function cloneMasterlistChildTables(client, fromMasterTloId, toMasterTloId, updatedBy = null) {
+  const safe = async (label, fn) => {
+    const sp = `sp_clone_ml_${label}`;
+    try {
+      await client.query(`SAVEPOINT ${sp}`);
+      await fn();
+      await client.query(`RELEASE SAVEPOINT ${sp}`);
+    } catch (err) {
+      await client.query(`ROLLBACK TO SAVEPOINT ${sp}`).catch(() => {});
+      console.warn(`[tloProfileService] cloneMasterlistChildTables [${label}] skipped: ${err.message}`);
+    }
+  };
+
+  await safe('education',       () => educationRepo.cloneToNewTloId(client, 'masterlist', fromMasterTloId, 'masterlist', toMasterTloId, updatedBy));
+  await safe('eligibility',     () => eligibilityRepo.cloneToNewTloId(client, 'masterlist', fromMasterTloId, 'masterlist', toMasterTloId, updatedBy));
+  await safe('positions',       () => positionRepo.cloneToNewTloId(client, 'masterlist', fromMasterTloId, 'masterlist', toMasterTloId, updatedBy));
+  await safe('trainings',       () => trainingRepo.cloneToNewTloId(client, 'masterlist', fromMasterTloId, 'masterlist', toMasterTloId, updatedBy));
+  await safe('accomplishments', () => accomplishmentRepo.cloneToNewTloId(client, 'masterlist', fromMasterTloId, 'masterlist', toMasterTloId, updatedBy));
+  await safe('other_courses',   () => otherCoursesRepo.cloneToNewTloId(client, 'masterlist', fromMasterTloId, 'masterlist', toMasterTloId, updatedBy));
+}
+

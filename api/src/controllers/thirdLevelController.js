@@ -9,6 +9,7 @@ import {
   fetchAllChildRecords,
   syncAllChildTables,
   cloneChildTablesOnApproval,
+  cloneMasterlistChildTables,
   resolveSourceTable
 } from '../services/tloProfileService.js';
 import { sendOfficialApprovalEmail, sendOfficialRejectionEmail } from '../services/emailService.js';
@@ -1862,7 +1863,7 @@ export const processRegistration = async (req, res) => {
       const lockedMasterlistMap = new Map();
       for (const tid of sortedTloIds) {
         const lockRes = await client.query(
-          `SELECT "TLOid", first_name, last_name, email, status, alt_email_1, alt_email_2, position_title, office, strand, region, division, plantilla_item_no, is_testaccount 
+          `SELECT * 
            FROM third_level_official_masterlist 
            WHERE "TLOid" = $1 AND is_testaccount = $2 FOR UPDATE`,
           [tid, isTest]
@@ -1903,7 +1904,6 @@ export const processRegistration = async (req, res) => {
       }
 
       // 4. Preflight Collision Validations
-      // Check 4a: Registration email must not belong to another distinct active official's primary email
       const primaryEmailCheck = await client.query(
         `SELECT "TLOid", status FROM third_level_official_masterlist 
          WHERE LOWER(email) = $1 AND "TLOid" NOT IN ($2, $3) AND status = 'Active' AND is_testaccount = $4`,
@@ -1913,7 +1913,6 @@ export const processRegistration = async (req, res) => {
         throw new Error(`Registration email ${regEmail} already belongs as primary email to active official ${primaryEmailCheck.rows[0].TLOid}.`);
       }
 
-      // Check 4b: Registration email must not already be claimed as alternate email on another distinct active official
       const altEmailCheck = await client.query(
         `SELECT "TLOid", status FROM third_level_official_masterlist 
          WHERE (LOWER(alt_email_1) = $1 OR LOWER(alt_email_2) = $1) AND "TLOid" NOT IN ($2, $3) AND status = 'Active' AND is_testaccount = $4`,
@@ -1923,85 +1922,201 @@ export const processRegistration = async (req, res) => {
         throw new Error(`Registration email ${regEmail} is already claimed as an alternate email on active official ${altEmailCheck.rows[0].TLOid}.`);
       }
 
-      // Check 4c: Candidate alternate email slot availability
-      const candAlt1 = (candRow.alt_email_1 || '').toLowerCase().trim();
-      const candAlt2 = (candRow.alt_email_2 || '').toLowerCase().trim();
-      let targetAltSlot = null;
-      if (!candAlt1 || candAlt1 === regEmail) {
-        targetAltSlot = 'alt_email_1';
-      } else if (!candAlt2 || candAlt2 === regEmail) {
-        targetAltSlot = 'alt_email_2';
-      } else {
-        throw new Error(`Candidate official ${candidateTLOid} has both alternate email slots occupied (${candRow.alt_email_1}, ${candRow.alt_email_2}). Cannot link.`);
-      }
+      // 5. Execute State Transitions & Data Inheritance
+      // 5a. Activate Registration Record and inherit all canonical official/plantilla details from candRow
+      const updateRegMl = await client.query(`
+        UPDATE third_level_official_masterlist AS target
+        SET 
+          position_title = COALESCE(NULLIF(cand.position_title, ''), target.position_title),
+          plantilla_item_no = COALESCE(NULLIF(cand.plantilla_item_no, ''), target.plantilla_item_no),
+          office = COALESCE(NULLIF(cand.office, ''), target.office),
+          strand = COALESCE(NULLIF(cand.strand, ''), target.strand),
+          division = COALESCE(NULLIF(cand.division, ''), target.division),
+          region = COALESCE(NULLIF(cand.region, ''), target.region),
+          designation = COALESCE(NULLIF(cand.designation, ''), target.designation),
+          is_oic = COALESCE(cand.is_oic, target.is_oic, false),
+          appointment_date = COALESCE(cand.appointment_date, target.appointment_date),
+          appointment_status = COALESCE(NULLIF(cand.appointment_status, ''), target.appointment_status),
+          employment_status = COALESCE(NULLIF(cand.employment_status, ''), target.employment_status),
+          ces_stage = COALESCE(NULLIF(cand.ces_stage, ''), target.ces_stage),
+          ces_conferment_date = COALESCE(cand.ces_conferment_date, target.ces_conferment_date),
+          emt_passer = COALESCE(cand.emt_passer, target.emt_passer),
+          emt_date = COALESCE(cand.emt_date, target.emt_date),
+          total_years_third_level = COALESCE(cand.total_years_third_level, target.total_years_third_level),
+          managerial_experience_total = COALESCE(NULLIF(cand.managerial_experience_total, ''), target.managerial_experience_total),
+          performance_rating_1 = COALESCE(NULLIF(cand.performance_rating_1, ''), target.performance_rating_1),
+          performance_rating_1_period = COALESCE(NULLIF(cand.performance_rating_1_period, ''), target.performance_rating_1_period),
+          performance_rating_2 = COALESCE(NULLIF(cand.performance_rating_2, ''), target.performance_rating_2),
+          performance_rating_2_period = COALESCE(NULLIF(cand.performance_rating_2_period, ''), target.performance_rating_2_period),
+          performance_rating_3 = COALESCE(NULLIF(cand.performance_rating_3, ''), target.performance_rating_3),
+          performance_rating_3_period = COALESCE(NULLIF(cand.performance_rating_3_period, ''), target.performance_rating_3_period),
+          cespes_1_rating = COALESCE(NULLIF(cand.cespes_1_rating, ''), target.cespes_1_rating),
+          cespes_2_rating = COALESCE(NULLIF(cand.cespes_2_rating, ''), target.cespes_2_rating),
+          cespes_rating_1_period = COALESCE(NULLIF(cand.cespes_rating_1_period, ''), target.cespes_rating_1_period),
+          cespes_rating_2_period = COALESCE(NULLIF(cand.cespes_rating_2_period, ''), target.cespes_rating_2_period),
+          performance_rating_ipcrf = COALESCE(NULLIF(cand.performance_rating_ipcrf, ''), target.performance_rating_ipcrf),
+          performance_rating_cespes = COALESCE(NULLIF(cand.performance_rating_cespes, ''), target.performance_rating_cespes),
+          total_training_hours = COALESCE(cand.total_training_hours, target.total_training_hours),
+          notable_achievements = COALESCE(cand.notable_achievements, target.notable_achievements, '[]'::jsonb),
+          photo_binary_id = COALESCE(cand.photo_binary_id, target.photo_binary_id),
+          pds_binary_id = COALESCE(cand.pds_binary_id, target.pds_binary_id),
+          profile_word_binary_id = COALESCE(cand.profile_word_binary_id, target.profile_word_binary_id),
+          profile_ppt_binary_id = COALESCE(cand.profile_ppt_binary_id, target.profile_ppt_binary_id),
+          service_records_binary_id = COALESCE(cand.service_records_binary_id, target.service_records_binary_id),
+          executive_summary_binary_id = COALESCE(NULLIF(cand.executive_summary_binary_id, ''), target.executive_summary_binary_id),
+          reassignment_order_binary_id = COALESCE(cand.reassignment_order_binary_id, target.reassignment_order_binary_id),
+          sandiganbayan_clearance_binary_id = COALESCE(NULLIF(cand.sandiganbayan_clearance_binary_id, ''), target.sandiganbayan_clearance_binary_id),
+          nbi_clearance_binary_id = COALESCE(NULLIF(cand.nbi_clearance_binary_id, ''), target.nbi_clearance_binary_id),
+          csc_clearance_binary_id = COALESCE(NULLIF(cand.csc_clearance_binary_id, ''), target.csc_clearance_binary_id),
+          ombudsman_clearance_binary_id = COALESCE(NULLIF(cand.ombudsman_clearance_binary_id, ''), target.ombudsman_clearance_binary_id),
+          guilty_admin_details = COALESCE(NULLIF(cand.guilty_admin_details, ''), target.guilty_admin_details),
+          criminally_charged_details = COALESCE(NULLIF(cand.criminally_charged_details, ''), target.criminally_charged_details),
+          convicted_crime_details = COALESCE(NULLIF(cand.convicted_crime_details, ''), target.convicted_crime_details),
+          pending_admin_case = COALESCE(NULLIF(cand.pending_admin_case, ''), target.pending_admin_case),
+          ombudsman_case = COALESCE(NULLIF(cand.ombudsman_case, ''), target.ombudsman_case),
+          nationality = COALESCE(NULLIF(cand.nationality, ''), target.nationality),
+          religion = COALESCE(NULLIF(cand.religion, ''), target.religion),
+          blood_type = COALESCE(NULLIF(cand.blood_type, ''), target.blood_type),
+          dependents = COALESCE(NULLIF(cand.dependents, ''), target.dependents),
+          height = COALESCE(NULLIF(cand.height, ''), target.height),
+          weight = COALESCE(NULLIF(cand.weight, ''), target.weight),
+          temporary_address = COALESCE(NULLIF(cand.temporary_address, ''), target.temporary_address),
+          permanent_address = COALESCE(NULLIF(cand.permanent_address, ''), target.permanent_address),
+          gender = COALESCE(NULLIF(target.gender, ''), cand.gender),
+          date_of_birth = COALESCE(target.date_of_birth, cand.date_of_birth),
+          civil_status = COALESCE(NULLIF(target.civil_status, ''), cand.civil_status),
+          suffix = COALESCE(NULLIF(target.suffix, ''), cand.suffix),
+          middle_name = COALESCE(NULLIF(target.middle_name, ''), cand.middle_name),
+          assignment = COALESCE(NULLIF(cand.assignment, ''), target.assignment),
+          date_of_assignment = COALESCE(NULLIF(cand.date_of_assignment, ''), target.date_of_assignment),
+          contact_details = COALESCE(NULLIF(target.contact_details, ''), cand.contact_details),
+          alt_contact_details_1 = COALESCE(NULLIF(target.alt_contact_details_1, ''), cand.alt_contact_details_1),
+          alt_contact_details_2 = COALESCE(NULLIF(target.alt_contact_details_2, ''), cand.alt_contact_details_2),
+          alt_email_1 = CASE 
+            WHEN target.alt_email_1 IS NOT NULL AND target.alt_email_1 != '' THEN target.alt_email_1
+            WHEN cand.email IS NOT NULL AND LOWER(cand.email) != LOWER(target.email) THEN cand.email
+            ELSE target.alt_email_1
+          END,
+          alt_email_2 = CASE 
+            WHEN target.alt_email_2 IS NOT NULL AND target.alt_email_2 != '' THEN target.alt_email_2
+            WHEN cand.alt_email_1 IS NOT NULL AND LOWER(cand.alt_email_1) != LOWER(target.email) AND LOWER(cand.alt_email_1) != LOWER(COALESCE(target.alt_email_1, '')) THEN cand.alt_email_1
+            ELSE target.alt_email_2
+          END,
+          status = 'Active',
+          updated_at = NOW()
+        FROM third_level_official_masterlist AS cand
+        WHERE target."TLOid" = $1 AND cand."TLOid" = $2 AND target.is_testaccount = $3 AND target.status = 'For Approval'
+      `, [registrationTLOid, candidateTLOid, isTest]);
 
-      // 5. Execute State Transitions
-      // 5a. Transition Registration Masterlist Record to 'Reconciled'
-      const updateRegMl = await client.query(
-        `UPDATE third_level_official_masterlist 
-         SET status = 'Reconciled', updated_at = NOW() 
-         WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2`,
-        [registrationTLOid, isTest]
-      );
       if (updateRegMl.rowCount !== 1) {
-        throw new Error(`Failed to transition registration ${registrationTLOid} to 'Reconciled'.`);
+        throw new Error(`Failed to activate registration record ${registrationTLOid}.`);
       }
 
-      // 5b. Link Alternate Login Email on Candidate Official (Primary email NEVER overwritten)
-      if (targetAltSlot === 'alt_email_1') {
-        await client.query(
-          `UPDATE third_level_official_masterlist 
-           SET alt_email_1 = $1, updated_at = NOW() 
-           WHERE "TLOid" = $2 AND is_testaccount = $3`,
-          [regEmail, candidateTLOid, isTest]
-        );
-      } else {
-        await client.query(
-          `UPDATE third_level_official_masterlist 
-           SET alt_email_2 = $1, updated_at = NOW() 
-           WHERE "TLOid" = $2 AND is_testaccount = $3`,
-          [regEmail, candidateTLOid, isTest]
-        );
+      // 5b. Transition Duplicate Candidate Record to 'Inactive'
+      const updateCandMl = await client.query(`
+        UPDATE third_level_official_masterlist 
+        SET status = 'Inactive', updated_at = NOW() 
+        WHERE "TLOid" = $1 AND is_testaccount = $2 AND status = 'Active'
+      `, [candidateTLOid, isTest]);
+
+      if (updateCandMl.rowCount !== 1) {
+        throw new Error(`Failed to set candidate official ${candidateTLOid} to 'Inactive'.`);
       }
 
-      // 5c. Approve registrant tlo_users account
-      await client.query(
-        `UPDATE tlo_users 
-         SET registration_status = 'Approved', alt_email = $1 
-         WHERE LOWER(email) = $2 AND is_testaccount = $3`,
-        [candEmail || null, regEmail, isTest]
-      );
+      // 5c. Clone all child tables (education, eligibilities, positions, trainings, accomplishments, other courses)
+      await cloneMasterlistChildTables(client, candidateTLOid, registrationTLOid, adminEmail);
 
-      // 5d. Link Profiling Staging Application Target
-      await client.query(
-        `UPDATE third_level_officials_profiling_application 
-         SET "target_TLOid" = $1, updated_at = NOW() 
-         WHERE LOWER(email) = $2 AND is_testaccount = $3`,
-        [candidateTLOid, regEmail, isTest]
+      // 5d. Sync tlo_masterlist and transfer active assignments
+      const tloMasterlistUpsert = await client.query(`
+        INSERT INTO tlo_masterlist (
+          tloid, first_name, last_name, middle_name, suffix, gender, created_at, updated_at
+        ) VALUES (
+          $1, 
+          COALESCE(NULLIF($2, ''), $3), 
+          COALESCE(NULLIF($4, ''), $5), 
+          COALESCE(NULLIF($6, ''), $7), 
+          COALESCE(NULLIF($8, ''), $9), 
+          COALESCE(NULLIF($10, ''), $11), 
+          NOW(), NOW()
+        )
+        ON CONFLICT (tloid) DO UPDATE SET
+          first_name = EXCLUDED.first_name,
+          last_name = EXCLUDED.last_name,
+          middle_name = EXCLUDED.middle_name,
+          suffix = EXCLUDED.suffix,
+          gender = EXCLUDED.gender,
+          updated_at = NOW()
+        RETURNING id
+      `, [
+        registrationTLOid,
+        regRow.first_name, candRow.first_name,
+        regRow.last_name, candRow.last_name,
+        regRow.middle_name, candRow.middle_name,
+        regRow.suffix, candRow.suffix,
+        regRow.gender, candRow.gender
+      ]);
+      const regMasterlistId = tloMasterlistUpsert.rows[0]?.id;
+
+      const candMasterlistRes = await client.query(
+        'SELECT id FROM tlo_masterlist WHERE LOWER(tloid) = LOWER($1) LIMIT 1',
+        [candidateTLOid]
       );
+      const candMasterlistId = candMasterlistRes.rows[0]?.id;
+
+      if (candMasterlistId && regMasterlistId) {
+        await client.query(`
+          UPDATE tlo_assignments 
+          SET tlo_masterlist_id = $1, updated_at = NOW(), updated_by = $2 
+          WHERE tlo_masterlist_id = $3
+        `, [regMasterlistId, adminEmail, candMasterlistId]);
+
+        try {
+          await client.query('SAVEPOINT sp_tlo_profile');
+          await client.query(`
+            UPDATE tlo_profile 
+            SET tlo_masterlist_id = $1, updated_at = NOW() 
+            WHERE tlo_masterlist_id = $2
+          `, [regMasterlistId, candMasterlistId]);
+          await client.query('RELEASE SAVEPOINT sp_tlo_profile');
+        } catch (profErr) {
+          await client.query('ROLLBACK TO SAVEPOINT sp_tlo_profile').catch(() => {});
+        }
+      }
+
+      // 5e. Approve registrant tlo_users account
+      await client.query(`
+        UPDATE tlo_users 
+        SET registration_status = 'Approved', role = 'Third Level Official', alt_email = $1 
+        WHERE LOWER(email) = $2 AND is_testaccount = $3
+      `, [candEmail || null, regEmail, isTest]);
+
+      // 5f. Update Profiling Staging Application Target
+      await client.query(`
+        UPDATE third_level_officials_profiling_application 
+        SET "target_TLOid" = $1, updated_at = NOW() 
+        WHERE (LOWER(email) = $2 OR LOWER(email) = $3) AND is_testaccount = $4
+      `, [registrationTLOid, regEmail, candEmail || regEmail, isTest]);
 
       // 6. Explicit Non-Sequence-Dependent Audit Logging
-      const formattedRemarks = `Reconciled into canonical masterlist record ${candidateTLOid}. Admin Confirmed: ${remarks.trim()}`;
-      await client.query(
-        `INSERT INTO third_level_officials_updates (
+      const formattedRemarks = `Reconciled and activated with official details from candidate official ${candidateTLOid}. Admin Confirmed: ${remarks.trim()}`;
+      await client.query(`
+        INSERT INTO third_level_officials_updates (
             "TLOid", change_type, updated_by, remarks, status, email, created_at, updated_at
-         ) VALUES ($1, 'REGISTRATION_RECONCILED', $2, $3, 'Reconciled', $4, NOW(), NOW())`,
-        [registrationTLOid, adminEmail, formattedRemarks, regEmail]
-      );
+        ) VALUES ($1, 'REGISTRATION_RECONCILED', $2, $3, 'Active', $4, NOW(), NOW())
+      `, [registrationTLOid, adminEmail, formattedRemarks, regEmail]);
 
-      await client.query(
-        `INSERT INTO third_level_officials_updates (
-            "TLOid", change_type, updated_by, remarks, status, email, alt_email_1, created_at, updated_at
-         ) VALUES ($1, 'PROFILE_UPDATE', $2, $3, 'Active', $4, $5, NOW(), NOW())`,
-        [candidateTLOid, adminEmail, `Linked alternate login email ${regEmail} via registration reconciliation of ${registrationTLOid}`, candRow.email, regEmail]
-      );
+      await client.query(`
+        INSERT INTO third_level_officials_updates (
+            "TLOid", change_type, updated_by, remarks, status, email, created_at, updated_at
+        ) VALUES ($1, 'RECONCILED_INACTIVE', $2, $3, 'Inactive', $4, NOW(), NOW())
+      `, [candidateTLOid, adminEmail, `Deactivated duplicate official record superseded by registration reconciliation of ${registrationTLOid}`, candRow.email]);
     }
 
     await client.query('COMMIT');
 
     // Email notification dispatch
     if (targetOfficial && targetOfficial.email) {
-      if (action === 'approve') {
+      if (action === 'approve' || action === 'reconcile') {
         sendOfficialApprovalEmail({
           email: targetOfficial.email,
           firstName: targetOfficial.first_name,
