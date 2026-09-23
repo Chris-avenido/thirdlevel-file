@@ -179,9 +179,9 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
     const seen = new Set();
     const result = [];
     for (const off of officials) {
-      // Exclude officials whose status is 'For Approval' / 'For Approve' or not 'Active'
-      const statusLower = (off.status || off.official_status || '').toLowerCase();
-      if (statusLower.includes('approv') || (statusLower && statusLower !== 'active')) {
+      // Exclude officials whose status is not 'Active'
+      const statusLower = (off.status || off.official_status || '').toLowerCase().trim();
+      if (statusLower !== 'active') {
         continue;
       }
       const nameKey = (off.official_name || `${off.first_name || ''} ${off.last_name || ''}`).trim().toUpperCase();
@@ -221,9 +221,14 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
                 {selectedOfficial.first_name ? selectedOfficial.first_name[0] : 'O'}
               </div>
               <div className="truncate flex-1 min-w-0">
-                <span className="font-['Plus_Jakarta_Sans'] font-black text-[15px] text-[#08315F] block truncate">
-                  {selectedOfficial.official_name || `${selectedOfficial.first_name} ${selectedOfficial.last_name}`}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-['Plus_Jakarta_Sans'] font-black text-[15px] text-[#08315F] block truncate">
+                    {selectedOfficial.official_name || `${selectedOfficial.first_name} ${selectedOfficial.last_name}`}
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                    Active
+                  </span>
+                </div>
                 {selectedOfficial.plantilla_item_no && (
                   <span className="text-[11px] font-mono font-bold text-[#075985]">
                     {selectedOfficial.plantilla_item_no}
@@ -332,9 +337,14 @@ const OfficialCombobox = ({ officials, selectedId, onSelect, placeholder = "Sele
                           {off.first_name ? off.first_name[0] : 'O'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-['Plus_Jakarta_Sans'] font-black text-[14px] text-slate-900 truncate">
-                            {off.official_name || `${off.first_name} ${off.last_name}`}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-['Plus_Jakarta_Sans'] font-black text-[14px] text-slate-900 truncate">
+                              {off.official_name || `${off.first_name} ${off.last_name}`}
+                            </p>
+                            <span className="text-[9.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                              Active
+                            </span>
+                          </div>
                           {activeDesignations.length > 0 && (
                             <div className="flex flex-wrap gap-1 items-center mt-1">
                               {activeDesignations.map((desig, idx) => (
@@ -705,10 +715,10 @@ export const NewPositionAssignmentModal = ({
   const displayedAssignments = useMemo(() => {
     if (!selectedOfficialObj) return [];
     if (Array.isArray(selectedOfficialObj.active_assignments) && selectedOfficialObj.active_assignments.length > 0) {
-      return selectedOfficialObj.active_assignments;
+      return selectedOfficialObj.active_assignments.filter(a => (a.status || '').toLowerCase().trim() === 'active');
     }
     if (Array.isArray(selectedOfficialObj.existing_assignments) && selectedOfficialObj.existing_assignments.length > 0) {
-      return selectedOfficialObj.existing_assignments.filter(a => !a.status || a.status.toLowerCase() !== 'inactive');
+      return selectedOfficialObj.existing_assignments.filter(a => (a.status || '').toLowerCase().trim() === 'active');
     }
     return [];
   }, [selectedOfficialObj]);

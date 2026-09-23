@@ -362,7 +362,7 @@ export const getOfficialsForAssignment = async (req, res) => {
         ) AS active_assignments
       FROM tlo_masterlist m
       INNER JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid))
-      WHERE TRIM(tlo.status) = 'Active'
+      WHERE LOWER(TRIM(COALESCE(tlo.status, ''))) = 'active'
       ORDER BY m.last_name ASC, m.first_name ASC
     `;
 
@@ -544,11 +544,11 @@ export const createAssignment = async (req, res) => {
     }
 
     const officialRecord = officialCheck.rows[0];
-    if (officialRecord.status && officialRecord.status.toLowerCase() !== 'active') {
+    if (!officialRecord.status || officialRecord.status.toLowerCase().trim() !== 'active') {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        error: `Cannot assign position: Official status is '${officialRecord.status}'. Only active officials can be assigned.`
+        error: `Cannot assign position: Official status is '${officialRecord.status || 'Unknown'}'. Only active officials can be assigned.`
       });
     }
 
@@ -828,11 +828,11 @@ export const updateAssignment = async (req, res) => {
         await client.query('ROLLBACK');
         return res.status(404).json({ success: false, error: 'Selected official does not exist in masterlist.' });
       }
-      if (offCheck.rows[0].status && offCheck.rows[0].status.toLowerCase() !== 'active') {
+      if (!offCheck.rows[0].status || offCheck.rows[0].status.toLowerCase().trim() !== 'active') {
         await client.query('ROLLBACK');
         return res.status(400).json({
           success: false,
-          error: `Cannot assign position: Official status is '${offCheck.rows[0].status}'. Only active officials can be assigned.`
+          error: `Cannot assign position: Official status is '${offCheck.rows[0].status || 'Unknown'}'. Only active officials can be assigned.`
         });
       }
     }

@@ -6,7 +6,8 @@ import {
     FiUsers, FiSearch, FiFilter, FiExternalLink, FiChevronRight, FiChevronDown, FiChevronUp,
     FiMoreVertical, FiDownload, FiPlus, FiGrid, FiList,
     FiCheckCircle, FiAlertCircle, FiClock, FiActivity, FiArrowRight,
-    FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2, FiRefreshCw, FiCalendar, FiEye
+    FiLogOut, FiUser, FiInfo, FiLayers, FiX, FiTrash2, FiRefreshCw, FiCalendar, FiEye,
+    FiLink, FiUserCheck, FiAlertTriangle
 } from 'react-icons/fi';
 import { GoArrowUpRight } from "react-icons/go";
 import { FaIdBadge, FaVial } from "react-icons/fa";
@@ -248,6 +249,14 @@ const OfficialsRegistry = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddingPersonnel, setIsAddingPersonnel] = useState(false);
 
+    // --- RECONCILIATION MODAL STATE ---
+    const [reconcileModalOpen, setReconcileModalOpen] = useState(false);
+    const [reconcileTargetItem, setReconcileTargetItem] = useState(null);
+    const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [reconcileConfirmed, setReconcileConfirmed] = useState(false);
+    const [reconcileRemarks, setReconcileRemarks] = useState('');
+    const [reconcileLoading, setReconcileLoading] = useState(false);
+
     const [statusTab, setStatusTab] = useState(() => {
         const params = new URLSearchParams(location.search);
         return params.get('status') || 'All';
@@ -363,6 +372,61 @@ const OfficialsRegistry = () => {
         } catch (err) {
             console.error(err);
             Swal.fire('Error', 'An error occurred while processing', 'error');
+        }
+    };
+
+    const handleOpenReconcileModal = (item, candidate = null) => {
+        setReconcileTargetItem(item);
+        const defaultCandidate = candidate || (item.potential_matches && item.potential_matches[0]) || null;
+        setSelectedCandidate(defaultCandidate);
+        setReconcileConfirmed(false);
+        setReconcileRemarks('');
+        setReconcileModalOpen(true);
+    };
+
+    const handleExecuteReconciliation = async () => {
+        if (!reconcileTargetItem || !selectedCandidate) return;
+        if (!reconcileConfirmed) {
+            Swal.fire('Confirmation Required', 'You must verify and check "Yes, I have verified that these records belong to the same person" to proceed.', 'warning');
+            return;
+        }
+        if (!reconcileRemarks || !reconcileRemarks.trim()) {
+            Swal.fire('Remarks Required', 'Please provide an administrative justification/remark for this reconciliation.', 'warning');
+            return;
+        }
+
+        setReconcileLoading(true);
+        try {
+            const res = await fetch(apiUrl('/api/third-level/process-registration'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token || localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    TLOid: reconcileTargetItem.TLOid,
+                    action: 'reconcile',
+                    target_TLOid: selectedCandidate.TLOid,
+                    confirmed_same_person: true,
+                    remarks: reconcileRemarks.trim()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire('Reconciliation Complete', `Official registration ${reconcileTargetItem.TLOid} was successfully reconciled and linked into canonical official ${selectedCandidate.TLOid}.`, 'success');
+                setReconcileModalOpen(false);
+                setReconcileTargetItem(null);
+                setSelectedCandidate(null);
+                fetchOfficials();
+                fetchKpiSummary();
+            } else {
+                Swal.fire('Reconciliation Failed', data.error || 'Unable to process reconciliation', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'An error occurred while submitting reconciliation request.', 'error');
+        } finally {
+            setReconcileLoading(false);
         }
     };
 
@@ -1965,9 +2029,16 @@ const OfficialsRegistry = () => {
                                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">
                                                                 {item.status === 'For Approval' && user?.role === 'Central Office' && (
                                                                     <>
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} title="Approve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border-2 border-emerald-100 shadow-sm shrink-0">
-                                                                            <FiCheckCircle size={14} />
-                                                                        </button>
+                                                                        {item.potential_matches && item.potential_matches.length > 0 ? (
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleOpenReconcileModal(item); }} title="Reconcile with Discovered Canonical Match" className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-[13.5px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all border-2 border-amber-200 shadow-sm shrink-0">
+                                                                                <FiLink size={14} />
+                                                                                <span>Match ({item.potential_matches.length})</span>
+                                                                            </button>
+                                                                        ) : (
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} title="Approve" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all border-2 border-emerald-100 shadow-sm shrink-0">
+                                                                                <FiCheckCircle size={14} />
+                                                                            </button>
+                                                                        )}
                                                                         <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} title="Reject" className="flex items-center justify-center gap-1 px-2 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-100 shadow-sm shrink-0">
                                                                             <FiX size={14} />
                                                                         </button>
@@ -2060,13 +2131,26 @@ const OfficialsRegistry = () => {
 
 
                                                     {item.status === 'For Approval' && user?.role === 'Central Office' && (
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all">
-                                                                <FiCheckCircle size={14} /> Approve
-                                                            </button>
-                                                            <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
-                                                                <FiX size={14} /> Reject
-                                                            </button>
+                                                        <div className="flex flex-col gap-2 mt-1">
+                                                            {item.potential_matches && item.potential_matches.length > 0 ? (
+                                                                <>
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleOpenReconcileModal(item); }} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg text-[13.5px] font-black uppercase tracking-widest border-2 border-amber-200 hover:bg-amber-500 hover:text-white transition-all">
+                                                                        <FiLink size={14} /> Reconcile Match ({item.potential_matches.length})
+                                                                    </button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                                                                        <FiX size={14} /> Reject
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2">
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'approve'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all">
+                                                                        <FiCheckCircle size={14} /> Approve
+                                                                    </button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleRegistrationAction(item.TLOid, 'reject'); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-[15px] font-black uppercase tracking-widest border-2 border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                                                                        <FiX size={14} /> Reject
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                     {item.status === 'Rejected' && (
@@ -2632,6 +2716,228 @@ const OfficialsRegistry = () => {
                         onRefresh={fetchOfficials}
                         token={token}
                     />
+
+                    {/* IDENTITY RECONCILIATION CONFIRMATION MODAL */}
+                    {createPortal(
+                        <AnimatePresence>
+                            {reconcileModalOpen && reconcileTargetItem && (
+                                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                        className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col max-h-[90vh] my-auto"
+                                    >
+                                        {/* Modal Header */}
+                                        <div className="p-6 md:p-8 bg-slate-50 border-b-2 border-slate-200 flex justify-between items-start">
+                                            <div>
+                                                <div className="flex items-center gap-2 text-amber-600 text-[13.5px] font-black uppercase tracking-widest mb-1">
+                                                    <FiLink size={16} />
+                                                    <span>Identity Reconciliation Verification</span>
+                                                </div>
+                                                <h2 className="text-[28px] md:text-[34px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight leading-tight">
+                                                    Reconcile & Link Registration Identity
+                                                </h2>
+                                                <p className="text-slate-500 font-medium text-[15px] mt-1">
+                                                    Please review both records carefully to confirm they represent the same real person before linking.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setReconcileModalOpen(false)}
+                                                className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all border border-slate-200"
+                                            >
+                                                <FiX size={20} />
+                                            </button>
+                                        </div>
+
+                                        {/* Modal Body */}
+                                        <div className="p-6 md:p-8 overflow-y-auto space-y-6">
+                                            {/* Candidate Selector (if multiple potential matches) */}
+                                            {reconcileTargetItem.potential_matches && reconcileTargetItem.potential_matches.length > 1 && (
+                                                <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-200">
+                                                    <label className="text-[13.5px] font-black text-amber-900 uppercase tracking-widest block mb-2">
+                                                        Select Matching Canonical Official ({reconcileTargetItem.potential_matches.length} candidates found)
+                                                    </label>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        {reconcileTargetItem.potential_matches.map((cand) => (
+                                                            <button
+                                                                key={cand.TLOid}
+                                                                type="button"
+                                                                onClick={() => setSelectedCandidate(cand)}
+                                                                className={`p-3 text-left rounded-xl border-2 transition-all ${selectedCandidate?.TLOid === cand.TLOid ? 'bg-[#08315F] text-white border-[#08315F] shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                                                            >
+                                                                <div className="font-black text-[15px]">{cand.first_name} {cand.last_name}</div>
+                                                                <div className={`text-[12px] font-medium truncate ${selectedCandidate?.TLOid === cand.TLOid ? 'text-blue-200' : 'text-slate-500'}`}>
+                                                                    {cand.TLOid} • {cand.position_title || 'No Position'} • {cand.office || 'No Office'}
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Side-by-Side Comparison Cards */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {/* Registration Record Card */}
+                                                <div className="p-5 bg-slate-50 rounded-2xl border-2 border-slate-200 space-y-3">
+                                                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                                                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Registration Record (Pending)</span>
+                                                        <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-black uppercase tracking-wider">For Approval</span>
+                                                    </div>
+                                                    <div className="space-y-2 text-[14px]">
+                                                        <div>
+                                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Full Name</span>
+                                                            <span className="font-black text-[#08315F] text-[16px]">{reconcileTargetItem.first_name} {reconcileTargetItem.last_name || ''}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Registration Email</span>
+                                                            <span className="font-mono font-semibold text-slate-800 break-all">{reconcileTargetItem.email || '—'}</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">TLOid</span>
+                                                                <span className="font-mono font-bold text-[#075985]">{reconcileTargetItem.TLOid}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Registration Date</span>
+                                                                <span className="font-medium text-slate-700">{reconcileTargetItem.created_at ? new Date(reconcileTargetItem.created_at).toLocaleDateString() : '—'}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Position Applied / Title</span>
+                                                            <span className="font-medium text-slate-700">{reconcileTargetItem.position_title || '(Applicant)'}</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Office / Division</span>
+                                                                <span className="font-medium text-slate-700">{[reconcileTargetItem.office, reconcileTargetItem.division].filter(Boolean).join(' / ') || '(Not Set)'}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Region</span>
+                                                                <span className="font-medium text-slate-700">{reconcileTargetItem.region || reconcileTargetItem.strand || '(Not Set)'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Canonical Candidate Record Card */}
+                                                <div className="p-5 bg-blue-50/60 rounded-2xl border-2 border-blue-200 space-y-3">
+                                                    <div className="flex items-center justify-between border-b border-blue-200 pb-2.5">
+                                                        <span className="text-[12px] font-black text-blue-800 uppercase tracking-widest">Existing Official Record (Active)</span>
+                                                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wider">Active Masterlist</span>
+                                                    </div>
+                                                    {selectedCandidate ? (
+                                                        <div className="space-y-2 text-[14px]">
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Canonical Name</span>
+                                                                <span className="font-black text-[#08315F] text-[16px]">{selectedCandidate.first_name} {selectedCandidate.last_name || ''}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Canonical Masterlist Email</span>
+                                                                <span className="font-mono font-semibold text-slate-800 break-all">{selectedCandidate.email || '—'}</span>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Canonical TLOid</span>
+                                                                    <span className="font-mono font-bold text-[#075985]">{selectedCandidate.TLOid}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Plantilla Item No</span>
+                                                                    <span className="font-mono text-xs font-semibold text-slate-700 truncate block">{selectedCandidate.plantilla_item_no || '—'}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Position Title</span>
+                                                                <span className="font-medium text-slate-800">{selectedCandidate.position_title || '—'}</span>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Office / Division</span>
+                                                                    <span className="font-medium text-slate-700">{[selectedCandidate.office, selectedCandidate.division].filter(Boolean).join(' / ') || '—'}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Region</span>
+                                                                    <span className="font-medium text-slate-700">{selectedCandidate.region || selectedCandidate.strand || '—'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-8 text-slate-400 font-medium">
+                                                            No candidate selected.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Confirmation Statement & Declaration Checkbox Box */}
+                                            <div className="p-5 bg-amber-50 rounded-2xl border-2 border-amber-300 space-y-3">
+                                                <div className="flex items-center gap-2 text-amber-900 font-black text-[17px] uppercase tracking-wide">
+                                                    <FiAlertTriangle className="text-amber-600 shrink-0" size={20} />
+                                                    <span>Is this the same person?</span>
+                                                </div>
+                                                <p className="text-[14px] text-amber-950/80 font-medium leading-relaxed">
+                                                    Please verify that the registration record and the existing official record belong to the same person before proceeding. This action will link the registration to the existing official record and mark the previous registration record as inactive/reconciled.
+                                                </p>
+                                                <label className="flex items-start gap-3 pt-2 cursor-pointer select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={reconcileConfirmed}
+                                                        onChange={(e) => setReconcileConfirmed(e.target.checked)}
+                                                        className="mt-1 w-5 h-5 rounded border-2 border-amber-400 text-[#08315F] focus:ring-[#08315F] cursor-pointer"
+                                                    />
+                                                    <span className="text-[14px] font-black text-amber-950 uppercase tracking-wide">
+                                                        Yes, I have verified that these records belong to the same person.
+                                                    </span>
+                                                </label>
+                                            </div>
+
+                                            {/* Administrative Remarks */}
+                                            <div className="space-y-2">
+                                                <label className="text-[13.5px] font-black text-slate-500 uppercase tracking-widest block">
+                                                    Administrative Remarks / Justification <span className="text-rose-500">*</span>
+                                                </label>
+                                                <textarea
+                                                    rows={3}
+                                                    value={reconcileRemarks}
+                                                    onChange={(e) => setReconcileRemarks(e.target.value)}
+                                                    placeholder="Provide detailed justification for this reconciliation (e.g. Verified with Division HRMO, verified GovMail credentials)..."
+                                                    className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F] rounded-2xl p-4 text-[15px] font-medium text-slate-800 outline-none transition-all resize-none"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Modal Footer */}
+                                        <div className="p-6 bg-slate-50 border-t-2 border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setReconcileModalOpen(false)}
+                                                disabled={reconcileLoading}
+                                                className="w-full sm:w-auto px-6 py-3.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[15px] uppercase tracking-wider transition-all"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleExecuteReconciliation}
+                                                disabled={!reconcileConfirmed || !reconcileRemarks.trim() || !selectedCandidate || reconcileLoading}
+                                                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#08315F] hover:bg-blue-800 text-white font-black text-[15px] uppercase tracking-wider shadow-lg shadow-blue-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                                            >
+                                                {reconcileLoading ? (
+                                                    <span>Processing Reconciliation...</span>
+                                                ) : (
+                                                    <>
+                                                        <FiUserCheck size={18} />
+                                                        <span>Yes, This Is the Same Person — Proceed</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>,
+                        document.body
+                    )}
 
                     <footer className="mt-auto p-12 text-center bg-white border-t-2 border-slate-100 flex flex-col items-center gap-6">
                         <div className="space-y-1">

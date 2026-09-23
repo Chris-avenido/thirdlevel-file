@@ -650,7 +650,7 @@ export const uploadDocument = async (req, res) => {
     let upRes;
     if (isMasterlist) {
       upRes = await client.query(
-        `UPDATE third_level_official_masterlist SET ${columnName} = $1, updated_at = NOW() WHERE "TLOid" = $2 AND is_testaccount = $3`,
+        `UPDATE third_level_official_masterlist SET ${columnName} = $1, updated_at = NOW() WHERE "TLOid" = $2 AND is_testaccount = $3 AND (status IS NULL OR status != 'Reconciled')`,
         [binary_id, TLOid, isTest]
       );
     } else {
@@ -1030,8 +1030,9 @@ export const updateProfile = async (req, res) => {
         valuesCount: values.length
       });
 
+      const extraGuard = isMasterlist ? ` AND (status IS NULL OR status != 'Reconciled')` : '';
       const updateRes = await client.query(
-        `UPDATE ${table} SET ${updates.join(', ')}, updated_at = $${values.length - 2} WHERE ${idCol} = $${values.length - 1} AND is_testaccount = $${values.length}`,
+        `UPDATE ${table} SET ${updates.join(', ')}, updated_at = $${values.length - 2} WHERE ${idCol} = $${values.length - 1} AND is_testaccount = $${values.length}${extraGuard}`,
         values
       );
 
@@ -1837,6 +1838,163 @@ export const processRegistration = async (req, res) => {
       if (enrichRes.rowCount !== 1) {
         throw new Error('Failed to enrich trigger-generated retrieval audit record.');
       }
+    } else if (action === 'reconcile') {
+      const { target_TLOid, confirmed_same_person, remarks } = req.body;
+      if (!target_TLOid || typeof target_TLOid !== 'string') {
+        throw new Error('target_TLOid is required for reconciliation.');
+      }
+      if (confirmed_same_person !== true && confirmed_same_person !== 'true') {
+        throw new Error('Explicit confirmation ("Is this the same person?") is required.');
+      }
+      if (!remarks || !remarks.trim()) {
+        throw new Error('Administrative remarks/justification are required for reconciliation.');
+      }
+
+      const candidateTLOid = target_TLOid.trim();
+      const registrationTLOid = TLOid.trim();
+
+      if (candidateTLOid.toUpperCase() === registrationTLOid.toUpperCase()) {
+        throw new Error('Candidate TLOid cannot be identical to the registration TLOid.');
+      }
+
+      // 1. Acquire targeted masterlist row locks in strictly ascending TLOid order to prevent deadlocks
+      const sortedTloIds = [registrationTLOid, candidateTLOid].sort();
+      const lockedMasterlistMap = new Map();
+      for (const tid of sortedTloIds) {
+        const lockRes = await client.query(
+          `SELECT "TLOid", first_name, last_name, email, status, alt_email_1, alt_email_2, position_title, office, strand, region, division, plantilla_item_no, is_testaccount 
+           FROM third_level_official_masterlist 
+           WHERE "TLOid" = $1 AND is_testaccount = $2 FOR UPDATE`,
+          [tid, isTest]
+        );
+        if (lockRes.rows.length === 0) {
+          throw new Error(`Official record ${tid} not found or access denied.`);
+        }
+        lockedMasterlistMap.set(tid, lockRes.rows[0]);
+      }
+
+      const regRow = lockedMasterlistMap.get(registrationTLOid);
+      const candRow = lockedMasterlistMap.get(candidateTLOid);
+
+      // 2. Preflight State Validations
+      if (regRow.status !== 'For Approval') {
+        throw new Error(`Registration record ${registrationTLOid} is not in 'For Approval' status (current: ${regRow.status}).`);
+      }
+      if (candRow.status !== 'Active') {
+        throw new Error(`Candidate official ${candidateTLOid} is not in 'Active' status (current: ${candRow.status}).`);
+      }
+
+      const regEmail = (regRow.email || '').toLowerCase().trim();
+      const candEmail = (candRow.email || '').toLowerCase().trim();
+
+      if (!regEmail) {
+        throw new Error(`Registration record ${registrationTLOid} has no valid email address.`);
+      }
+
+      // 3. Lock registrant tlo_users row
+      const userLockRes = await client.query(
+        `SELECT uid, email, role, registration_status, is_testaccount 
+         FROM tlo_users 
+         WHERE LOWER(email) = $1 AND is_testaccount = $2 FOR UPDATE`,
+        [regEmail, isTest]
+      );
+      if (userLockRes.rows.length === 0) {
+        throw new Error(`No user account found in tlo_users for registration email: ${regEmail}`);
+      }
+
+      // 4. Preflight Collision Validations
+      // Check 4a: Registration email must not belong to another distinct active official's primary email
+      const primaryEmailCheck = await client.query(
+        `SELECT "TLOid", status FROM third_level_official_masterlist 
+         WHERE LOWER(email) = $1 AND "TLOid" NOT IN ($2, $3) AND status = 'Active' AND is_testaccount = $4`,
+        [regEmail, registrationTLOid, candidateTLOid, isTest]
+      );
+      if (primaryEmailCheck.rows.length > 0) {
+        throw new Error(`Registration email ${regEmail} already belongs as primary email to active official ${primaryEmailCheck.rows[0].TLOid}.`);
+      }
+
+      // Check 4b: Registration email must not already be claimed as alternate email on another distinct active official
+      const altEmailCheck = await client.query(
+        `SELECT "TLOid", status FROM third_level_official_masterlist 
+         WHERE (LOWER(alt_email_1) = $1 OR LOWER(alt_email_2) = $1) AND "TLOid" NOT IN ($2, $3) AND status = 'Active' AND is_testaccount = $4`,
+        [regEmail, registrationTLOid, candidateTLOid, isTest]
+      );
+      if (altEmailCheck.rows.length > 0) {
+        throw new Error(`Registration email ${regEmail} is already claimed as an alternate email on active official ${altEmailCheck.rows[0].TLOid}.`);
+      }
+
+      // Check 4c: Candidate alternate email slot availability
+      const candAlt1 = (candRow.alt_email_1 || '').toLowerCase().trim();
+      const candAlt2 = (candRow.alt_email_2 || '').toLowerCase().trim();
+      let targetAltSlot = null;
+      if (!candAlt1 || candAlt1 === regEmail) {
+        targetAltSlot = 'alt_email_1';
+      } else if (!candAlt2 || candAlt2 === regEmail) {
+        targetAltSlot = 'alt_email_2';
+      } else {
+        throw new Error(`Candidate official ${candidateTLOid} has both alternate email slots occupied (${candRow.alt_email_1}, ${candRow.alt_email_2}). Cannot link.`);
+      }
+
+      // 5. Execute State Transitions
+      // 5a. Transition Registration Masterlist Record to 'Reconciled'
+      const updateRegMl = await client.query(
+        `UPDATE third_level_official_masterlist 
+         SET status = 'Reconciled', updated_at = NOW() 
+         WHERE "TLOid" = $1 AND status = 'For Approval' AND is_testaccount = $2`,
+        [registrationTLOid, isTest]
+      );
+      if (updateRegMl.rowCount !== 1) {
+        throw new Error(`Failed to transition registration ${registrationTLOid} to 'Reconciled'.`);
+      }
+
+      // 5b. Link Alternate Login Email on Candidate Official (Primary email NEVER overwritten)
+      if (targetAltSlot === 'alt_email_1') {
+        await client.query(
+          `UPDATE third_level_official_masterlist 
+           SET alt_email_1 = $1, updated_at = NOW() 
+           WHERE "TLOid" = $2 AND is_testaccount = $3`,
+          [regEmail, candidateTLOid, isTest]
+        );
+      } else {
+        await client.query(
+          `UPDATE third_level_official_masterlist 
+           SET alt_email_2 = $1, updated_at = NOW() 
+           WHERE "TLOid" = $2 AND is_testaccount = $3`,
+          [regEmail, candidateTLOid, isTest]
+        );
+      }
+
+      // 5c. Approve registrant tlo_users account
+      await client.query(
+        `UPDATE tlo_users 
+         SET registration_status = 'Approved', alt_email = $1 
+         WHERE LOWER(email) = $2 AND is_testaccount = $3`,
+        [candEmail || null, regEmail, isTest]
+      );
+
+      // 5d. Link Profiling Staging Application Target
+      await client.query(
+        `UPDATE third_level_officials_profiling_application 
+         SET "target_TLOid" = $1, updated_at = NOW() 
+         WHERE LOWER(email) = $2 AND is_testaccount = $3`,
+        [candidateTLOid, regEmail, isTest]
+      );
+
+      // 6. Explicit Non-Sequence-Dependent Audit Logging
+      const formattedRemarks = `Reconciled into canonical masterlist record ${candidateTLOid}. Admin Confirmed: ${remarks.trim()}`;
+      await client.query(
+        `INSERT INTO third_level_officials_updates (
+            "TLOid", change_type, updated_by, remarks, status, email, created_at, updated_at
+         ) VALUES ($1, 'REGISTRATION_RECONCILED', $2, $3, 'Reconciled', $4, NOW(), NOW())`,
+        [registrationTLOid, adminEmail, formattedRemarks, regEmail]
+      );
+
+      await client.query(
+        `INSERT INTO third_level_officials_updates (
+            "TLOid", change_type, updated_by, remarks, status, email, alt_email_1, created_at, updated_at
+         ) VALUES ($1, 'PROFILE_UPDATE', $2, $3, 'Active', $4, $5, NOW(), NOW())`,
+        [candidateTLOid, adminEmail, `Linked alternate login email ${regEmail} via registration reconciliation of ${registrationTLOid}`, candRow.email, regEmail]
+      );
     }
 
     await client.query('COMMIT');
@@ -2307,7 +2465,7 @@ export const buildOfficialsFilterConditions = (query, user) => {
       conditions.push(`status = $${params.length}`);
     }
   } else {
-    conditions.push(`status != 'For Approval' AND status != 'Rejected'`);
+    conditions.push(`status != 'For Approval' AND status != 'Rejected' AND status != 'Reconciled'`);
   }
 
   let filterStrand = Array.isArray(strand) ? strand[strand.length - 1] : strand;
@@ -2609,13 +2767,47 @@ export const getOfficials = async (req, res) => {
 
   try {
     const result = await pool.query(query, params);
+    let officials = result.rows.map(row => ({
+      ...row,
+      position_title: displayPositionTitle(row.position_title)
+    }));
+
+    if (req.query.status === 'For Approval' && officials.length > 0) {
+      try {
+        const isTest = Boolean(req.user?.is_testaccount);
+        const activeOfficialsRes = await pool.query(`
+          SELECT "TLOid", first_name, last_name, email, position_title, office, strand, region, division, status, alt_email_1, alt_email_2, plantilla_item_no
+          FROM third_level_official_masterlist
+          WHERE status = 'Active' AND is_testaccount = $1
+        `, [isTest]);
+
+        const activeOfficials = activeOfficialsRes.rows;
+        officials = officials.map(official => {
+          const normLast = normalizeIdentityStr(official.last_name);
+          const normFirst = normalizeIdentityStr(official.first_name);
+          const potentialMatches = activeOfficials.filter(cand => {
+            if (cand.TLOid === official.TLOid) return false;
+            const candLast = normalizeIdentityStr(cand.last_name);
+            const candFirst = normalizeIdentityStr(cand.first_name);
+            if (normLast && candLast && normLast === candLast) {
+              return areFirstNamesMatching(normFirst, candFirst);
+            }
+            return false;
+          });
+          return {
+            ...official,
+            potential_matches: potentialMatches
+          };
+        });
+      } catch (matchErr) {
+        console.warn('[getOfficials] Potential matches advisory lookup failed:', matchErr.message);
+      }
+    }
+
     res.json({
       success: true,
       total: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0,
-      data: result.rows.map(row => ({
-        ...row,
-        position_title: displayPositionTitle(row.position_title)
-      }))
+      data: officials
     });
   } catch (err) {
     import('fs').then(fs => fs.writeFileSync('getOfficials_error.log', err.stack || err.message)).catch(() => { });
@@ -2811,6 +3003,48 @@ export const getKpiSummary = async (req, res) => {
       ORDER BY m."TLOid" ASC
     `;
     const allRows = await pool.query(allRowsQuery, allRowsParams);
+
+    // If status is 'For Approval', discover potential candidate matches for admin review
+    if (req.query.status === 'For Approval' && allRows.rows.length > 0) {
+      try {
+        const activeCandidatesRes = await pool.query(
+          `SELECT "TLOid", first_name, last_name, middle_name, position_title, office, strand, region, division, designation, plantilla_item_no, email, alt_email_1, alt_email_2, status 
+           FROM third_level_official_masterlist 
+           WHERE status = 'Active' AND is_testaccount = $1`,
+          [isTest]
+        );
+        const activeOfficials = activeCandidatesRes.rows;
+
+        for (const row of allRows.rows) {
+          const regLast = normalizeIdentityStr(row.last_name);
+          const regFirst = normalizeIdentityStr(row.first_name);
+
+          row.potential_matches = activeOfficials.filter(cand => {
+            if (!cand.last_name || !cand.first_name) return false;
+            const candLast = normalizeIdentityStr(cand.last_name);
+            const candFirst = normalizeIdentityStr(cand.first_name);
+            if (candLast !== regLast) return false;
+            return areFirstNamesMatching(candFirst, regFirst);
+          }).map(c => ({
+            TLOid: c.TLOid,
+            first_name: c.first_name,
+            last_name: c.last_name,
+            middle_name: c.middle_name,
+            position_title: c.position_title,
+            office: c.office,
+            strand: c.strand,
+            region: c.region,
+            division: c.division,
+            designation: c.designation,
+            plantilla_item_no: c.plantilla_item_no,
+            email: c.email,
+            status: c.status
+          }));
+        }
+      } catch (matchErr) {
+        console.warn('[getOfficials] Potential match discovery skipped:', matchErr.message);
+      }
+    }
 
     res.json({
       success: true,
