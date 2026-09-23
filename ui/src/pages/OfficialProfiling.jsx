@@ -1367,31 +1367,88 @@ const OfficialProfiling = () => {
                     let resolvedPrevPositions;
                     if (Array.isArray(d.position_history) && d.position_history.length > 0) {
                         // Map relational columns back to frontend shape
-                        resolvedPrevPositions = d.position_history.map(rec => ({
-                            id: rec.id,
-                            position_name: rec.position_name || '',
-                            office: rec.office || rec.division || '',
-                            division: rec.division || '',
-                            strand: rec.strand || '',
-                            region: rec.region || '',
-                            designation: rec.designation || '',
-                            start_date: formatDateStr(rec.inclusive_date_start),
-                            end_date: formatDateStr(rec.inclusive_date_end),
-                            oic_positions: rec.oic_positions || [],
-                            status: rec.status || 'Inactive',
-                            oic: Boolean(rec.oic ?? false),
-                            is_oic: Boolean(rec.oic ?? false)
-                        }));
+                        resolvedPrevPositions = d.position_history.map(rec => {
+                            const startDate = formatDateStr(rec.inclusive_date_start);
+                            const endDate = formatDateStr(rec.inclusive_date_end);
+                            const isCurrent = Boolean(
+                                rec.is_current === true ||
+                                rec.is_current === 'true' ||
+                                rec.is_current === 1 ||
+                                rec.status === 'Active' ||
+                                (!endDate && Boolean(startDate))
+                            );
+                            return {
+                                id: rec.id,
+                                position_name: rec.position_name || '',
+                                office: rec.office || rec.division || '',
+                                division: rec.division || '',
+                                strand: rec.strand || '',
+                                region: rec.region || '',
+                                designation: rec.designation || '',
+                                start_date: startDate,
+                                end_date: isCurrent ? '' : endDate,
+                                is_current: isCurrent,
+                                oic_positions: (rec.oic_positions || []).map(o => {
+                                    const oicStart = formatDateStr(o.oic_start_date);
+                                    const oicEnd = formatDateStr(o.oic_end_date);
+                                    const oicIsCurrent = Boolean(
+                                        o.is_current === true ||
+                                        o.is_current === 'true' ||
+                                        o.is_current === 1 ||
+                                        (!oicEnd && Boolean(oicStart))
+                                    );
+                                    return {
+                                        ...o,
+                                        oic_start_date: oicStart,
+                                        oic_end_date: oicIsCurrent ? '' : oicEnd,
+                                        is_current: oicIsCurrent
+                                    };
+                                }),
+                                status: isCurrent ? 'Active' : (rec.status || 'Inactive'),
+                                oic: Boolean(rec.oic ?? false),
+                                is_oic: Boolean(rec.oic ?? false)
+                            };
+                        });
                     } else {
-                        resolvedPrevPositions = (d.previous_positions || []).map(p => ({
-                            ...p,
-                            office: p.office || p.division || '',
-                            region: p.region || '',
-                            designation: p.designation || '',
-                            status: p.status || 'Inactive',
-                            oic: Boolean(p.oic ?? p.is_oic ?? false),
-                            is_oic: Boolean(p.oic ?? p.is_oic ?? false)
-                        }));
+                        resolvedPrevPositions = (d.previous_positions || []).map(p => {
+                            const startDate = formatDateStr(p.start_date || p.inclusive_date_start);
+                            const endDate = formatDateStr(p.end_date || p.inclusive_date_end);
+                            const isCurrent = Boolean(
+                                p.is_current === true ||
+                                p.is_current === 'true' ||
+                                p.is_current === 1 ||
+                                p.status === 'Active' ||
+                                (!endDate && Boolean(startDate))
+                            );
+                            return {
+                                ...p,
+                                office: p.office || p.division || '',
+                                region: p.region || '',
+                                designation: p.designation || '',
+                                start_date: startDate,
+                                end_date: isCurrent ? '' : endDate,
+                                is_current: isCurrent,
+                                oic_positions: (p.oic_positions || []).map(o => {
+                                    const oicStart = formatDateStr(o.oic_start_date);
+                                    const oicEnd = formatDateStr(o.oic_end_date);
+                                    const oicIsCurrent = Boolean(
+                                        o.is_current === true ||
+                                        o.is_current === 'true' ||
+                                        o.is_current === 1 ||
+                                        (!oicEnd && Boolean(oicStart))
+                                    );
+                                    return {
+                                        ...o,
+                                        oic_start_date: oicStart,
+                                        oic_end_date: oicIsCurrent ? '' : oicEnd,
+                                        is_current: oicIsCurrent
+                                    };
+                                }),
+                                status: isCurrent ? 'Active' : (p.status || 'Inactive'),
+                                oic: Boolean(p.oic ?? p.is_oic ?? false),
+                                is_oic: Boolean(p.oic ?? p.is_oic ?? false)
+                            };
+                        });
                     }
 
                     // TRAININGS: Fallback chain
@@ -1655,10 +1712,22 @@ const OfficialProfiling = () => {
         setSaveSuccess(false);
         try {
             const targetVacancy = vacancies.find(v => v.TLOid === targetVacancyId);
-            const cleanOIC = (oics) => (oics || []).filter(o => o.oic_position_name?.trim() || o.oic_office?.trim() || o.oic_start_date?.trim() || o.oic_end_date?.trim());
+            const cleanOIC = (oics) => (oics || [])
+                .filter(o => o.oic_position_name?.trim() || o.oic_office?.trim() || o.oic_start_date?.trim() || o.oic_end_date?.trim() || o.is_current)
+                .map(o => ({
+                    ...o,
+                    is_current: Boolean(o.is_current),
+                    oic_end_date: o.is_current ? '' : (o.oic_end_date || '')
+                }));
             const cleanPrevPositions = prevPositions
-                .map(p => ({ ...p, oic_positions: cleanOIC(p.oic_positions) }))
-                .filter(p => p.position_name?.trim() || p.office?.trim() || p.start_date?.trim() || p.end_date?.trim() || p.oic_positions.length > 0);
+                .map(p => ({
+                    ...p,
+                    is_current: Boolean(p.is_current),
+                    status: p.is_current ? 'Active' : (p.status === 'Active' ? 'Inactive' : (p.status || 'Inactive')),
+                    end_date: p.is_current ? '' : (p.end_date || ''),
+                    oic_positions: cleanOIC(p.oic_positions)
+                }))
+                .filter(p => p.position_name?.trim() || p.office?.trim() || p.start_date?.trim() || p.end_date?.trim() || p.is_current || p.oic_positions.length > 0);
 
             const cleanTrainings = trainings.filter(t => t.training_name?.trim() || t.date_from?.trim() || t.date_to?.trim()).map(t => ({
                 ...t,
@@ -1740,21 +1809,48 @@ const OfficialProfiling = () => {
             if (data.success) {
                 setProfile(prev => ({ ...prev, education_degrees: degreesList }));
                 if (data.data && Array.isArray(data.data.position_history)) {
-                    const mapped = data.data.position_history.map(rec => ({
-                        id: rec.id,
-                        position_name: rec.position_name || '',
-                        office: rec.office || rec.division || '',
-                        division: rec.division || '',
-                        strand: rec.strand || '',
-                        region: rec.region || '',
-                        designation: rec.designation || '',
-                        start_date: formatDateStr(rec.inclusive_date_start),
-                        end_date: formatDateStr(rec.inclusive_date_end),
-                        oic_positions: rec.oic_positions || [],
-                        status: rec.status || 'Inactive',
-                        oic: Boolean(rec.oic ?? false),
-                        is_oic: Boolean(rec.oic ?? false)
-                    }));
+                    const mapped = data.data.position_history.map(rec => {
+                        const startDate = formatDateStr(rec.inclusive_date_start);
+                        const endDate = formatDateStr(rec.inclusive_date_end);
+                        const isCurrent = Boolean(
+                            rec.is_current === true ||
+                            rec.is_current === 'true' ||
+                            rec.is_current === 1 ||
+                            rec.status === 'Active' ||
+                            (!endDate && Boolean(startDate))
+                        );
+                        return {
+                            id: rec.id,
+                            position_name: rec.position_name || '',
+                            office: rec.office || rec.division || '',
+                            division: rec.division || '',
+                            strand: rec.strand || '',
+                            region: rec.region || '',
+                            designation: rec.designation || '',
+                            start_date: startDate,
+                            end_date: isCurrent ? '' : endDate,
+                            is_current: isCurrent,
+                            oic_positions: (rec.oic_positions || []).map(o => {
+                                const oicStart = formatDateStr(o.oic_start_date);
+                                const oicEnd = formatDateStr(o.oic_end_date);
+                                const oicIsCurrent = Boolean(
+                                    o.is_current === true ||
+                                    o.is_current === 'true' ||
+                                    o.is_current === 1 ||
+                                    (!oicEnd && Boolean(oicStart))
+                                );
+                                return {
+                                    ...o,
+                                    oic_start_date: oicStart,
+                                    oic_end_date: oicIsCurrent ? '' : oicEnd,
+                                    is_current: oicIsCurrent
+                                };
+                            }),
+                            status: isCurrent ? 'Active' : (rec.status || 'Inactive'),
+                            oic: Boolean(rec.oic ?? false),
+                            is_oic: Boolean(rec.oic ?? false)
+                        };
+                    });
                     setPrevPositions(mapped);
                 }
                 if (TLOid) {
@@ -3368,6 +3464,7 @@ const OfficialProfiling = () => {
                                                                                                                     return {
                                                                                                                         ...x,
                                                                                                                         is_current: checked,
+                                                                                                                        status: checked ? 'Active' : 'Inactive',
                                                                                                                         end_date: checked ? '' : (x.end_date || '')
                                                                                                                     };
                                                                                                                 }));
@@ -3389,7 +3486,7 @@ const OfficialProfiling = () => {
                                                                                                     disabled={!isEditing || Boolean(pos.is_current)}
                                                                                                     placeholder={pos.is_current ? "Present" : "Select a date"}
                                                                                                     value={pos.is_current ? '' : (pos.end_date ? pos.end_date.split('T')[0] : '')}
-                                                                                                    onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val, is_current: false } : x))}
+                                                                                                    onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, end_date: val, is_current: false, status: 'Inactive' } : x))}
                                                                                                     minDate={pos.start_date ? new Date(pos.start_date) : undefined}
                                                                                                     className={`bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm ${pos.is_current ? 'bg-blue-50/50 text-[#0038A8] font-bold' : ''}`}
                                                                                                 />

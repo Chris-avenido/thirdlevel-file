@@ -27,6 +27,7 @@ export async function findByTloId(client, sourceTable, tloId, altTloId = null) {
             strand, division, region,
             inclusive_date_start, inclusive_date_end, oic_positions, delete_flg,
             status, oic, designation,
+            (CASE WHEN status = 'Active' OR (inclusive_date_end IS NULL AND inclusive_date_start IS NOT NULL) THEN true ELSE false END) AS is_current,
             created_at, updated_at, created_by, updated_by
      FROM ${TABLE}
      WHERE source_table = $1 AND ${idClause}
@@ -61,15 +62,31 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
       const t = d.trim();
       return (t && t.toUpperCase() !== 'N/A' && t.toUpperCase() !== 'NONE') ? t : null;
     };
+    const isCurrent = Boolean(
+      item.is_current === true ||
+      item.is_current === 'true' ||
+      item.is_current === 1 ||
+      (item.status === 'Active' && !item.end_date && !item.inclusive_date_end)
+    );
     const dateStart = cleanDate(item.start_date || item.inclusive_date_start);
-    const dateEnd = cleanDate(item.end_date || item.inclusive_date_end);
+    const dateEnd = isCurrent ? null : cleanDate(item.end_date || item.inclusive_date_end);
     const oicPositions = item.oic_positions && Array.isArray(item.oic_positions) && item.oic_positions.length > 0
-      ? JSON.stringify(item.oic_positions)
+      ? JSON.stringify(item.oic_positions.map(o => {
+          const oicIsCurrent = Boolean(
+            o.is_current === true ||
+            o.is_current === 'true' ||
+            o.is_current === 1 ||
+            (!o.oic_end_date && Boolean(o.oic_start_date))
+          );
+          return {
+            ...o,
+            is_current: oicIsCurrent,
+            oic_end_date: oicIsCurrent ? '' : (o.oic_end_date || '')
+          };
+        }))
       : null;
 
-    const status = item.status && ['Active', 'Inactive'].includes(item.status)
-      ? item.status
-      : (dateEnd && new Date(dateEnd) < new Date() ? 'Inactive' : (item.status === 'Active' ? 'Active' : 'Inactive'));
+    const status = isCurrent ? 'Active' : (item.status === 'Active' ? 'Active' : 'Inactive');
     const oic = Boolean(item.oic ?? item.is_oic ?? (positionName && positionName.includes('OIC')));
 
     // Resolve target existing ID: by item.id, or candidate match by name + start_date
