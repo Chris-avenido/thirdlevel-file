@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2026-09-24 — Achievements Tab: Not Applicable (N/A) Toggle Button
+
+### Official Profiling (`OfficialProfiling.jsx`)
+- **N/A Toggle Button in Achievements Tab**:
+  - Added an interactive `N/A` button adjacent to the *Notable Achievements (If Any)* section header.
+  - When active (`isAchievementsNA = true`), the Achievements tab inputs are gracefully marked as Not Applicable, disabling manual entries and displaying clear informational status banners for both *Notable Achievements* and *Additional Accomplishments*.
+  - Toggling off re-enables full multi-layer achievement entry and award additions.
+- **Profile Completeness & Tab Satisfaction**:
+  - Updated `isTabCompleted('achievements')` to recognize the `isAchievementsNA` state as a completed section, allowing officials without external awards or recognitions to achieve 100% profile completeness and proceed to submission without blocking.
+- **Data Persistence & Round-trip Loading**:
+  - Enhanced `lookupByEmail` to automatically detect N/A state from loaded profile achievements via helper `isAchievementsPlaceholder`.
+  - Configured `handleSave` payload to cleanly record `[{ title: 'N/A', year: '' }]` when N/A is selected and clear additional accomplishment records.
+  - Updated Profile Summary and CSV exports to cleanly render `Not Applicable (N/A)` when marked.
+
+---
+
 ## 2026-09-24 — Identity Reconciliation Update: Retain & Activate Registration Record
 
 ### System Behavior Update ("Yes, This Is the Same Person — Proceed")

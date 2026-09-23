@@ -106,6 +106,28 @@ const isSuffixPlaceholder = (suffix) => {
     return s === '' || s === 'not applicable' || s === 'not apllicable' || s === 'na' || s === 'n/a' || s === 'none';
 };
 
+const isAchievementsPlaceholder = (achs) => {
+    if (!achs) return false;
+    if (typeof achs === 'string') {
+        const s = achs.trim().toLowerCase();
+        return s === 'n/a' || s === 'na' || s === 'not applicable' || s === 'not apllicable' || s === 'none';
+    }
+    if (Array.isArray(achs)) {
+        if (achs.length === 0) return false;
+        return achs.every(a => {
+            if (!a) return true;
+            const t = typeof a === 'object' ? (a.title || '') : String(a);
+            const s = t.trim().toLowerCase();
+            return s === 'n/a' || s === 'na' || s === 'not applicable' || s === 'not apllicable' || s === 'none' || s === '';
+        }) && achs.some(a => {
+            const t = typeof a === 'object' ? (a.title || '') : String(a);
+            const s = t.trim().toLowerCase();
+            return s === 'n/a' || s === 'na' || s === 'not applicable' || s === 'not apllicable' || s === 'none';
+        });
+    }
+    return false;
+};
+
 const sanitizeSuffix = (suffix) => {
     if (isSuffixPlaceholder(suffix)) return '';
     return String(suffix).trim();
@@ -459,6 +481,7 @@ const OfficialProfiling = () => {
     const [isEditing, setIsEditing] = useState(isTlo);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSuffixNA, setIsSuffixNA] = useState(false);
+    const [isAchievementsNA, setIsAchievementsNA] = useState(false);
 
     const [history, setHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -618,8 +641,9 @@ const OfficialProfiling = () => {
             return trainings.some(t => t && (t.training_name?.trim() || t.date_from?.trim()));
         }
         if (tabId === 'achievements') {
+            if (isAchievementsNA) return true;
             return !!(
-                (Array.isArray(profile.notable_achievements) && profile.notable_achievements.some(a => a && (a.title?.trim() || (typeof a === 'string' && a.trim())))) ||
+                (Array.isArray(profile.notable_achievements) && profile.notable_achievements.some(a => a && (a.title?.trim() || (typeof a === 'string' && a.trim())) && !isAchievementsPlaceholder(a.title || a))) ||
                 (Array.isArray(profile.individual_accomplishments) && profile.individual_accomplishments.some(a => a && (a.description?.trim() || a.title?.trim() || (typeof a === 'string' && a.trim()))))
             );
         }
@@ -656,7 +680,9 @@ const OfficialProfiling = () => {
                 'Latest Rating (1st)', 'Previous Rating (2nd)', 'CESPES 1st Sem', 'CESPES 2nd Sem', 'Total Managerial Experience',
                 'Notable Achievements', 'Previous Position 1', 'Documents 2x2 Photo', 'Administrative Cases', 'Ombudsman / CSC Cases'
             ];
-            const achFormatted = (Array.isArray(profile.notable_achievements) ? profile.notable_achievements : []).map(a => typeof a === 'object' && a !== null ? `${a.title || ''}${a.year ? ' (' + a.year + ')' : ''}` : String(a)).join(' | ');
+            const achFormatted = isAchievementsNA
+                ? 'N/A'
+                : (Array.isArray(profile.notable_achievements) ? profile.notable_achievements : []).map(a => typeof a === 'object' && a !== null ? `${a.title || ''}${a.year ? ' (' + a.year + ')' : ''}` : String(a)).join(' | ');
             const indAccFormatted = (Array.isArray(profile.individual_accomplishments) ? profile.individual_accomplishments : []).map(a => typeof a === 'object' && a !== null ? `${a.description || a.title || ''}${a.award_year ? ' (' + a.award_year + ')' : ''}` : String(a)).filter(Boolean).join(' | ');
             const row = [
                 profile.first_name, profile.last_name, profile.middle_name, sanitizeSuffix(profile.suffix), profile.gender, profile.date_of_birth, profile.age, profile.civil_status,
@@ -897,7 +923,7 @@ const OfficialProfiling = () => {
         const progressTabs = TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => t.id);
         const completedCount = progressTabs.filter(tabId => isTabCompleted(tabId)).length;
         setCompleteness(Math.round((completedCount / progressTabs.length) * 100));
-    }, [profile, prevPositions, trainings, dpaConsent, truthConsent, certified, dataSource]);
+    }, [profile, prevPositions, trainings, dpaConsent, truthConsent, certified, dataSource, isAchievementsNA, isSuffixNA]);
     useEffect(() => {
         if (completeness === 100 && profile.profiling_status !== 'profiling completed') {
             setP('profiling_status', 'profiling completed');
@@ -1274,6 +1300,21 @@ const OfficialProfiling = () => {
                     const isNA = isSuffixPlaceholder(rawSuffix);
                     setIsSuffixNA(isNA);
 
+                    const loadedNotableAchievements = (() => {
+                        if (Array.isArray(d.notable_achievements)) return d.notable_achievements;
+                        if (typeof d.notable_achievements === 'string' && d.notable_achievements.trim().startsWith('[')) {
+                            try { return JSON.parse(d.notable_achievements); } catch (e) { return []; }
+                        }
+                        if (typeof d.notable_achievements === 'string' && d.notable_achievements) {
+                            const titles = d.notable_achievements.split('\n');
+                            const years = (d.notable_achievements_year || '').split('\n');
+                            return titles.map((t, idx) => ({ title: t, year: years[idx] || '' }));
+                        }
+                        return [];
+                    })();
+                    const isAchNA = isAchievementsPlaceholder(loadedNotableAchievements);
+                    setIsAchievementsNA(isAchNA);
+
                     setProfile({
                         email: d.email || user?.email || '',
                         last_name: d.last_name || '',
@@ -1311,18 +1352,7 @@ const OfficialProfiling = () => {
                         doctorate_degree,
                         doctorate_year,
                         education_degrees: d.education_degrees || [],
-                        notable_achievements: (() => {
-                            if (Array.isArray(d.notable_achievements)) return d.notable_achievements;
-                            if (typeof d.notable_achievements === 'string' && d.notable_achievements.trim().startsWith('[')) {
-                                try { return JSON.parse(d.notable_achievements); } catch (e) { return []; }
-                            }
-                            if (typeof d.notable_achievements === 'string' && d.notable_achievements) {
-                                const titles = d.notable_achievements.split('\n');
-                                const years = (d.notable_achievements_year || '').split('\n');
-                                return titles.map((t, idx) => ({ title: t, year: years[idx] || '' }));
-                            }
-                            return [];
-                        })(),
+                        notable_achievements: loadedNotableAchievements,
                         // Fallback chain applied above: relational → JSONB
                         eligibilities: resolvedEligibilities,
                         other_courses: resolvedOtherCourses,
@@ -1784,9 +1814,15 @@ const OfficialProfiling = () => {
                 }
             }
 
+            const cleanNotableAchievements = isAchievementsNA
+                ? [{ title: 'N/A', year: '' }]
+                : (Array.isArray(profile.notable_achievements) ? profile.notable_achievements.filter(a => typeof a === 'object' ? (a.title?.trim() || a.year?.trim()) : String(a).trim()) : []);
+
             const payload = {
                 ...profile,
                 suffix: (isSuffixNA || isSuffixPlaceholder(profile.suffix)) ? '' : (profile.suffix || '').trim(),
+                notable_achievements: cleanNotableAchievements,
+                individual_accomplishments: isAchievementsNA ? [] : (profile.individual_accomplishments || []),
                 contact_details: profile.alt_contact_details_1 || profile.contact_details || '',
                 previous_positions: cleanPrevPositions,
                 relevant_trainings: cleanTrainings,
@@ -3910,164 +3946,201 @@ const OfficialProfiling = () => {
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
                                                             <div className="flex items-center justify-between">
                                                                 <SectionLabel color="#FCD116">Notable Achievements (If Any)</SectionLabel>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!isEditing}
+                                                                    onClick={() => {
+                                                                        const nextNA = !isAchievementsNA;
+                                                                        setIsAchievementsNA(nextNA);
+                                                                        if (nextNA) {
+                                                                            setP('notable_achievements', [{ title: 'N/A', year: '' }]);
+                                                                            setP('individual_accomplishments', []);
+                                                                        } else {
+                                                                            setP('notable_achievements', [{ title: '', year: '' }]);
+                                                                        }
+                                                                    }}
+                                                                    title={isAchievementsNA ? "Click to enable Achievements entry" : "Click to mark Achievements as Not Applicable"}
+                                                                    className={`h-[38px] px-3.5 rounded-lg text-[15px] font-black uppercase tracking-wider transition-all border-2 shrink-0 flex items-center justify-center select-none ${isAchievementsNA
+                                                                        ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-800'
+                                                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                                                >
+                                                                    N/A
+                                                                </button>
                                                             </div>
 
-                                                            {(() => {
-                                                                const achList = Array.isArray(profile.notable_achievements) ? profile.notable_achievements : [];
-                                                                const layerCount = Math.max(achList.length, 1);
+                                                            {isAchievementsNA ? (
+                                                                <div className="p-6 bg-slate-50/80 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center gap-3 text-slate-500">
+                                                                    <FiInfo size={18} className="text-slate-400" />
+                                                                    <span className="text-[16px] font-bold italic">Notable Achievements marked as Not Applicable (N/A).</span>
+                                                                </div>
+                                                            ) : (
+                                                                (() => {
+                                                                    const achList = Array.isArray(profile.notable_achievements) ? profile.notable_achievements : [];
+                                                                    const layerCount = Math.max(achList.length, 1);
 
-                                                                const updateAchievementEntry = (idx, newTitle, newYr) => {
-                                                                    const newAchs = achList.map(item => typeof item === 'object' && item !== null ? { ...item } : { title: String(item || ''), year: '' });
-                                                                    if (!newAchs[idx]) newAchs[idx] = { title: '', year: '' };
-                                                                    if (newTitle !== undefined) newAchs[idx].title = newTitle;
-                                                                    if (newYr !== undefined) newAchs[idx].year = newYr;
-                                                                    setP('notable_achievements', newAchs);
-                                                                };
+                                                                    const updateAchievementEntry = (idx, newTitle, newYr) => {
+                                                                        const newAchs = achList.map(item => typeof item === 'object' && item !== null ? { ...item } : { title: String(item || ''), year: '' });
+                                                                        if (!newAchs[idx]) newAchs[idx] = { title: '', year: '' };
+                                                                        if (newTitle !== undefined) newAchs[idx].title = newTitle;
+                                                                        if (newYr !== undefined) newAchs[idx].year = newYr;
+                                                                        setP('notable_achievements', newAchs);
+                                                                    };
 
-                                                                const removeAchievementEntry = (idx) => {
-                                                                    const newAchs = achList.filter((_, i) => i !== idx);
-                                                                    setP('notable_achievements', newAchs);
-                                                                };
+                                                                    const removeAchievementEntry = (idx) => {
+                                                                        const newAchs = achList.filter((_, i) => i !== idx);
+                                                                        setP('notable_achievements', newAchs);
+                                                                    };
 
-                                                                return (
-                                                                    <div className="space-y-6">
-                                                                        {Array.from({ length: layerCount }).map((_, idx) => {
-                                                                            const item = achList[idx] || { title: '', year: '' };
-                                                                            const valAch = typeof item === 'object' && item !== null ? (item.title || '') : String(item || '');
-                                                                            const valYr = typeof item === 'object' && item !== null ? (item.year || '') : '';
-                                                                            return (
-                                                                                <motion.div
-                                                                                    key={`ach-layer-${idx}`}
-                                                                                    initial={{ opacity: 0, y: 6 }}
-                                                                                    animate={{ opacity: 1, y: 0 }}
-                                                                                    className="p-5 bg-slate-50/60 rounded-2xl border-2 border-slate-200/80 relative space-y-4"
+                                                                    return (
+                                                                        <div className="space-y-6">
+                                                                            {Array.from({ length: layerCount }).map((_, idx) => {
+                                                                                const item = achList[idx] || { title: '', year: '' };
+                                                                                const valAch = typeof item === 'object' && item !== null ? (item.title || '') : String(item || '');
+                                                                                const valYr = typeof item === 'object' && item !== null ? (item.year || '') : '';
+                                                                                return (
+                                                                                    <motion.div
+                                                                                        key={`ach-layer-${idx}`}
+                                                                                        initial={{ opacity: 0, y: 6 }}
+                                                                                        animate={{ opacity: 1, y: 0 }}
+                                                                                        className="p-5 bg-slate-50/60 rounded-2xl border-2 border-slate-200/80 relative space-y-4"
+                                                                                    >
+                                                                                        <div className="flex items-center justify-between">
+                                                                                            <span className="text-[15px] font-black text-slate-400 uppercase tracking-widest">
+                                                                                                Achievement Entry {layerCount > 1 ? `#${idx + 1}` : ''}
+                                                                                            </span>
+                                                                                            {isEditing && layerCount > 1 && (
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    onClick={() => removeAchievementEntry(idx)}
+                                                                                                    className="text-amber-600 hover:text-amber-800 text-[15px] font-bold uppercase tracking-wider flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-lg border-2 border-amber-200 transition-colors cursor-pointer"
+                                                                                                    title="Remove Achievement Entry"
+                                                                                                >
+                                                                                                    <FiTrash2 size={14} /> Remove
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                                            <Field label="Awards / Recognitions / Notable Achievements (If Any)">
+                                                                                                <select
+                                                                                                    disabled={!isEditing}
+                                                                                                    value={valAch}
+                                                                                                    onChange={e => updateAchievementEntry(idx, e.target.value, undefined)}
+                                                                                                    className="w-full bg-white hover:bg-slate-100/30 border-2 border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-sm cursor-pointer"
+                                                                                                >
+                                                                                                    <option value="">-- Select Achievement --</option>
+                                                                                                    {notableAchievementsOptions.map((ach, i) => (
+                                                                                                        <option key={`opt-${idx}-${i}`} value={ach}>{ach}</option>
+                                                                                                    ))}
+                                                                                                    {valAch && !notableAchievementsOptions.includes(valAch) && (
+                                                                                                        <option value={valAch}>{valAch}</option>
+                                                                                                    )}
+                                                                                                </select>
+                                                                                            </Field>
+                                                                                            <Field label="Year Received">
+                                                                                                <YearInput
+                                                                                                    disabled={!isEditing}
+                                                                                                    value={valYr}
+                                                                                                    onChange={val => updateAchievementEntry(idx, undefined, val)}
+                                                                                                    placeholder="YYYY"
+                                                                                                />
+                                                                                            </Field>
+                                                                                        </div>
+                                                                                    </motion.div>
+                                                                                );
+                                                                            })}
+
+                                                                            {isEditing && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setP('notable_achievements', [...achList, { title: '', year: '' }])}
+                                                                                    className="w-full py-4 border-2 border-dashed border-amber-300 bg-amber-50/30 rounded-2xl text-amber-800 font-black text-[15px] uppercase tracking-widest hover:border-amber-500 hover:bg-amber-50 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
                                                                                 >
-                                                                                    <div className="flex items-center justify-between">
-                                                                                        <span className="text-[15px] font-black text-slate-400 uppercase tracking-widest">
-                                                                                            Achievement Entry {layerCount > 1 ? `#${idx + 1}` : ''}
-                                                                                        </span>
-                                                                                        {isEditing && layerCount > 1 && (
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={() => removeAchievementEntry(idx)}
-                                                                                                className="text-amber-600 hover:text-amber-800 text-[15px] font-bold uppercase tracking-wider flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-lg border-2 border-amber-200 transition-colors cursor-pointer"
-                                                                                                title="Remove Achievement Entry"
-                                                                                            >
-                                                                                                <FiTrash2 size={14} /> Remove
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                                        <Field label="Awards / Recognitions / Notable Achievements (If Any)">
-                                                                                            <select
-                                                                                                disabled={!isEditing}
-                                                                                                value={valAch}
-                                                                                                onChange={e => updateAchievementEntry(idx, e.target.value, undefined)}
-                                                                                                className="w-full bg-white hover:bg-slate-100/30 border-2 border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-sm cursor-pointer"
-                                                                                            >
-                                                                                                <option value="">-- Select Achievement --</option>
-                                                                                                {notableAchievementsOptions.map((ach, i) => (
-                                                                                                    <option key={`opt-${idx}-${i}`} value={ach}>{ach}</option>
-                                                                                                ))}
-                                                                                                {valAch && !notableAchievementsOptions.includes(valAch) && (
-                                                                                                    <option value={valAch}>{valAch}</option>
-                                                                                                )}
-                                                                                            </select>
-                                                                                        </Field>
-                                                                                        <Field label="Year Received">
-                                                                                            <YearInput
-                                                                                                disabled={!isEditing}
-                                                                                                value={valYr}
-                                                                                                onChange={val => updateAchievementEntry(idx, undefined, val)}
-                                                                                                placeholder="YYYY"
-                                                                                            />
-                                                                                        </Field>
-                                                                                    </div>
-                                                                                </motion.div>
-                                                                            );
-                                                                        })}
-
-                                                                        {isEditing && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => setP('notable_achievements', [...achList, { title: '', year: '' }])}
-                                                                                className="w-full py-4 border-2 border-dashed border-amber-300 bg-amber-50/30 rounded-2xl text-amber-800 font-black text-[15px] uppercase tracking-widest hover:border-amber-500 hover:bg-amber-50 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
-                                                                            >
-                                                                                <FiPlus size={14} /> Add Another Achievement Layer
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })()}
+                                                                                    <FiPlus size={14} /> Add Another Achievement Layer
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })()
+                                                            )}
                                                         </div>
 
                                                         {/* Individual Accomplishments & Additional Awards */}
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
-                                                            <SectionLabel color="#0038A8">Additional Awards &amp; Notable Accomplishments</SectionLabel>
+                                                            <div className="flex items-center justify-between">
+                                                                <SectionLabel color="#0038A8">Additional Awards &amp; Notable Accomplishments</SectionLabel>
+                                                            </div>
 
                                                             <div className="bg-[#F4F8FB]/40 rounded-[2rem] p-5 border-2 border-blue-100 flex items-center gap-3">
                                                                 <FiInfo size={16} className="text-blue-400 shrink-0" />
                                                                 <p className="text-[15px] font-bold text-[#075985]">List any additional awards, recognitions, or notable individual accomplishments (supports multiple awards with different years).</p>
                                                             </div>
 
-                                                            <div className="space-y-3">
-                                                                {(profile.individual_accomplishments || []).map((acc, idx) => {
-                                                                    // acc may be a plain string (legacy/new) or { id, description, award_year } (loaded from relational table)
-                                                                    const accText = typeof acc === 'object' && acc !== null ? (acc.description || '') : (acc || '');
-                                                                    const accYear = typeof acc === 'object' && acc !== null ? (acc.award_year || '') : '';
-                                                                    const accId = typeof acc === 'object' && acc !== null ? acc.id : undefined;
-                                                                    return (
-                                                                        <motion.div key={accId || `acc-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border-2 border-slate-200/50 transition-colors shadow-sm">
-                                                                            <input disabled={!isEditing}
-                                                                                type="text"
-                                                                                maxLength={150}
-                                                                                value={accText}
-                                                                                onChange={e => {
-                                                                                    const newAccs = [...(profile.individual_accomplishments || [])];
-                                                                                    const val = e.target.value;
-                                                                                    newAccs[idx] = typeof acc === 'object' && acc !== null
-                                                                                        ? { ...acc, description: val }
-                                                                                        : { description: val, award_year: accYear };
-                                                                                    setP('individual_accomplishments', newAccs);
-                                                                                }}
-                                                                                placeholder="Award / Recognition / Notable accomplishment title"
-                                                                                className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3.5 py-2 text-[15px] sm:text-[16px] font-semibold text-slate-800 outline-none transition-all flex-1 min-h-[44px] h-[44px] shadow-sm w-full"
-                                                                            />
-                                                                            <div className="w-full sm:w-44 md:w-52 shrink-0">
-                                                                                <YearInput disabled={!isEditing}
-                                                                                    value={accYear}
-                                                                                    onChange={val => {
+                                                            {isAchievementsNA ? (
+                                                                <div className="p-6 bg-slate-50/80 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center gap-3 text-slate-500">
+                                                                    <FiInfo size={18} className="text-slate-400" />
+                                                                    <span className="text-[16px] font-bold italic">Additional Accomplishments marked as Not Applicable (N/A).</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="space-y-3">
+                                                                    {(profile.individual_accomplishments || []).map((acc, idx) => {
+                                                                        // acc may be a plain string (legacy/new) or { id, description, award_year } (loaded from relational table)
+                                                                        const accText = typeof acc === 'object' && acc !== null ? (acc.description || '') : (acc || '');
+                                                                        const accYear = typeof acc === 'object' && acc !== null ? (acc.award_year || '') : '';
+                                                                        const accId = typeof acc === 'object' && acc !== null ? acc.id : undefined;
+                                                                        return (
+                                                                            <motion.div key={accId || `acc-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border-2 border-slate-200/50 transition-colors shadow-sm">
+                                                                                <input disabled={!isEditing}
+                                                                                    type="text"
+                                                                                    maxLength={150}
+                                                                                    value={accText}
+                                                                                    onChange={e => {
                                                                                         const newAccs = [...(profile.individual_accomplishments || [])];
+                                                                                        const val = e.target.value;
                                                                                         newAccs[idx] = typeof acc === 'object' && acc !== null
-                                                                                            ? { ...acc, award_year: val }
-                                                                                            : { description: accText, award_year: val };
+                                                                                            ? { ...acc, description: val }
+                                                                                            : { description: val, award_year: accYear };
                                                                                         setP('individual_accomplishments', newAccs);
                                                                                     }}
-                                                                                    placeholder="Year (YYYY)"
+                                                                                    placeholder="Award / Recognition / Notable accomplishment title"
+                                                                                    className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3.5 py-2 text-[15px] sm:text-[16px] font-semibold text-slate-800 outline-none transition-all flex-1 min-h-[44px] h-[44px] shadow-sm w-full"
                                                                                 />
-                                                                            </div>
-                                                                            {isEditing && <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
-                                                                                    setP('individual_accomplishments', newAccs);
-                                                                                }}
-                                                                                className="w-11 h-11 min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0 self-end sm:self-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all cursor-pointer"
-                                                                                title="Remove Award"
-                                                                            >
-                                                                                <FiTrash2 size={16} />
-                                                                            </button>}
-                                                                        </motion.div>
-                                                                    );
-                                                                })}
-                                                                {isEditing && <button disabled={!isEditing}
-                                                                    type="button"
-                                                                    onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), { description: '', award_year: '' }])}
-                                                                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-black text-[15px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2"
-                                                                >
-                                                                    <FiPlus size={14} /> Add Award / Notable Accomplishment
-                                                                </button>}
-                                                            </div>
+                                                                                <div className="w-full sm:w-44 md:w-52 shrink-0">
+                                                                                    <YearInput disabled={!isEditing}
+                                                                                        value={accYear}
+                                                                                        onChange={val => {
+                                                                                            const newAccs = [...(profile.individual_accomplishments || [])];
+                                                                                            newAccs[idx] = typeof acc === 'object' && acc !== null
+                                                                                                ? { ...acc, award_year: val }
+                                                                                                : { description: accText, award_year: val };
+                                                                                            setP('individual_accomplishments', newAccs);
+                                                                                        }}
+                                                                                        placeholder="Year (YYYY)"
+                                                                                    />
+                                                                                </div>
+                                                                                {isEditing && <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
+                                                                                        setP('individual_accomplishments', newAccs);
+                                                                                    }}
+                                                                                    className="w-11 h-11 min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0 self-end sm:self-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all cursor-pointer"
+                                                                                    title="Remove Award"
+                                                                                >
+                                                                                    <FiTrash2 size={16} />
+                                                                                </button>}
+                                                                            </motion.div>
+                                                                        );
+                                                                    })}
+                                                                    {isEditing && <button disabled={!isEditing}
+                                                                        type="button"
+                                                                        onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), { description: '', award_year: '' }])}
+                                                                        className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-black text-[15px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2"
+                                                                    >
+                                                                        <FiPlus size={14} /> Add Award / Notable Accomplishment
+                                                                    </button>}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -5047,7 +5120,9 @@ const OfficialProfiling = () => {
                                                                         <FiAward className="text-amber-500" size={18} />
                                                                         <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">Notable Achievements</h3>
                                                                     </div>
-                                                                    {Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0 ? (
+                                                                    {isAchievementsNA ? (
+                                                                        <p className="text-[18px] font-black text-slate-500 uppercase pl-6 italic">Not Applicable (N/A)</p>
+                                                                    ) : Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0 ? (
                                                                         <div className="pl-6 space-y-1">
                                                                             {profile.notable_achievements.map((item, i) => {
                                                                                 const title = typeof item === 'object' && item !== null ? item.title : String(item || '');
