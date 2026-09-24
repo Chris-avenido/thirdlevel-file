@@ -7,6 +7,8 @@
     "dev": "node dev.js",
     "dev:full": "node dev.js",
     "dev:turbo": "node dev.js",
+    "backup": "node database/export-backup.js",
+    "backup:export": "node database/export-backup.js",
     "backup:prod": "node database/backup-prod.js"
   },
   "dependencies": {
