@@ -50,9 +50,10 @@ async function main() {
   const archiveName = match[0];
   const remotePath = `/mnt/insighted-third-level-officials/backups/daily/${archiveName}`;
 
-  // Prepare local destination
+  // Prepare local destination by year and day
   const dateFolder = archiveName.replace('tlo_prod_backup_', '').replace('.sql.gz', '');
-  const localDestDir = path.join(__dirname, 'backups', `daily_prod_${dateFolder}`);
+  const year = archiveName.match(/\d{4}/)?.[0] || String(new Date().getFullYear());
+  const localDestDir = path.join(__dirname, 'backups', year, `daily_prod_${dateFolder}`);
   if (!fs.existsSync(localDestDir)) {
     fs.mkdirSync(localDestDir, { recursive: true });
   }
@@ -75,7 +76,7 @@ async function main() {
   const sizeMb = (stats.size / (1024 * 1024)).toFixed(2);
   console.log(`      Local Archive Size: ${sizeMb} MB (${stats.size.toLocaleString()} bytes)`);
 
-  // Step 4: Decompress archive to plain SQL file
+  // Step 5: Decompress archive to plain SQL file
   console.log(`\n[4/4] Extracting SQL dump to tlo_system_complete_dump.sql...`);
   const localSqlFile = path.join(localDestDir, 'tlo_system_complete_dump.sql');
   console.log(`      Extracting to: ${localSqlFile}`);
@@ -99,7 +100,8 @@ async function main() {
 
   console.log('\n================================================================');
   console.log('✅ PRODUCTION BACKUP & LOCAL SYNC COMPLETED SUCCESSFULLY!');
-  console.log(`   SQL File: ${localSqlFile}`);
+  console.log(`   Destination Folder: ${localDestDir}`);
+  console.log(`   SQL File:           ${localSqlFile}`);
   console.log('================================================================');
 }
 
