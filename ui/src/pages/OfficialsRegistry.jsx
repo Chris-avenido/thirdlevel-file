@@ -2661,10 +2661,10 @@ const OfficialsRegistry = () => {
                                                                 <option value="">Select a reason...</option>
                                                                 <option value="Resignation">Resignation</option>
                                                                 <option value="Retirement">Retirement</option>
-                                                                <option value="Reassignment">Reassignment</option>
                                                                 <option value="Promotion">Promotion</option>
                                                                 <option value="Demotion">Demotion</option>
                                                                 <option value="Dismissal">Dismissal</option>
+                                                                <option value="Other">Other</option>
                                                             </select>
                                                         </div>
                                                     )}

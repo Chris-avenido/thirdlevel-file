@@ -1420,23 +1420,11 @@ const PositionAssignments = () => {
             </div>
 
             {/* MAIN CONTENT AREA: TABLE & CARDS (Matching OfficialsRegistry) */}
-            <AnimatePresence mode="wait">
-              {filteredAssignments.length === 0 ? (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-20 text-center bg-white rounded-[30px] border-2 border-[#08315F]">
-                  <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FiBriefcase size={40} />
-                  </div>
-                  <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Assignment Records Found</h3>
-                  <p className="text-slate-400 font-medium mt-2">
-                    {searchTerm || Object.values(columnFilters).some(Boolean) ? 'Adjust your search query or reset column and status filters.' : 'Click "New Position Assignment" to deploy an official into an available plantilla post.'}
-                  </p>
-                </motion.div>
-              ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden bg-white shadow-sm">
-                  <div className="w-full">
-                    {/* Desktop Table View */}
-                    <table className="hidden md:table w-full text-left border-collapse table-fixed">
-                      <thead>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden bg-white shadow-sm">
+              <div className="w-full">
+                {/* Desktop Table View */}
+                <table className="hidden md:table w-full text-left border-collapse table-fixed">
+                  <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-200 select-none">
                           <th
                             onClick={() => handleSort('official_name')}
@@ -1576,7 +1564,24 @@ const PositionAssignments = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y-2 divide-slate-200/60 bg-white">
-                        {pagedRecords.map((item) => {
+                        {filteredAssignments.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-16 text-center">
+                              <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FiBriefcase size={32} />
+                              </div>
+                              <h3 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">
+                                No Assignment Records Found
+                              </h3>
+                              <p className="text-slate-400 font-medium text-sm mt-1 max-w-md mx-auto">
+                                {searchTerm || Object.values(columnFilters).some(Boolean)
+                                  ? 'Adjust your search query or reset column and status filters.'
+                                  : 'Click "New Position Assignment" to deploy an official into an available plantilla post.'}
+                              </p>
+                            </td>
+                          </tr>
+                        ) : (
+                          pagedRecords.map((item) => {
                           const isActive = item.status === 'Active' && !item.end_date;
 
                           return (
@@ -1700,13 +1705,28 @@ const PositionAssignments = () => {
                               </td>
                             </tr>
                           );
-                        })}
+                        }))}
                       </tbody>
                     </table>
 
                     {/* Mobile Card View (Matching OfficialsRegistry) */}
                     <div className="md:hidden flex flex-col divide-y-2 divide-slate-100">
-                      {pagedRecords.map((item) => {
+                      {filteredAssignments.length === 0 ? (
+                        <div className="p-12 text-center bg-white">
+                          <div className="w-14 h-14 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <FiBriefcase size={28} />
+                          </div>
+                          <h3 className="text-base font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">
+                            No Assignment Records Found
+                          </h3>
+                          <p className="text-slate-400 font-medium text-xs mt-1">
+                            {searchTerm || Object.values(columnFilters).some(Boolean)
+                              ? 'Adjust your search query or reset column and status filters.'
+                              : 'Click "New Position Assignment" to deploy an official into an available plantilla post.'}
+                          </p>
+                        </div>
+                      ) : (
+                        pagedRecords.map((item) => {
                         const isActive = item.status === 'Active' && !item.end_date;
                         return (
                           <div key={item.id} className="p-4 bg-white hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
@@ -1801,7 +1821,7 @@ const PositionAssignments = () => {
                             </div>
                           </div>
                         );
-                      })}
+                      }))}
                     </div>
 
                     {/* TABLE FOOTER / PAGINATION (Matching OfficialsRegistry) */}
@@ -1845,8 +1865,6 @@ const PositionAssignments = () => {
                     </div>
                   </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
           </main>
         </div>
       </div>
@@ -2555,6 +2573,7 @@ const PositionAssignments = () => {
         </AnimatePresence>,
         document.body
       )}
+
     </PageTransition>
   );
 };
