@@ -73,6 +73,32 @@ const calculateDuration = (start, end) => {
     return { years, months };
 };
 
+const formatExperienceDuration = (dur) => {
+    if (!dur) return '—';
+    const years = typeof dur === 'object' ? (dur.years || 0) : 0;
+    const months = typeof dur === 'object' ? (dur.months || 0) : 0;
+
+    if (years > 0 && months > 0) {
+        return `${years} yrs., ${months} mos.`;
+    }
+    if (years > 0 && months === 0) {
+        return `${years} yrs.`;
+    }
+    if (years === 0 && months > 0) {
+        return `${months} mos.`;
+    }
+    return '0 mos.';
+};
+
+const formatExperienceTotal = (totalStr) => {
+    if (!totalStr) return '';
+    const str = String(totalStr).trim();
+    const cleaned = str
+        .replace(/^0\s*years?,\s*/i, '')
+        .replace(/^0\s*yrs\.?,\s*/i, '');
+    return cleaned || '0 mos.';
+};
+
 const formatDateStr = (val) => {
     if (!val) return '';
     if (typeof val === 'string') return val.split('T')[0];
@@ -777,7 +803,7 @@ const OfficialProfiling = () => {
 
             // Managerial Experience Table
             let histRows = [
-                [{ text: `Managerial Experience${profile.managerial_experience_total ? ` — Total: ${profile.managerial_experience_total}` : ''}`, options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 13 } }]
+                [{ text: `Managerial Experience${profile.managerial_experience_total ? ` — Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}`, options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 13 } }]
             ];
             const displayHistory = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
             const filteredHistory = displayHistory.filter(h => h.position_title || h.position_name || h.office).slice(0, 4);
@@ -788,7 +814,7 @@ const OfficialProfiling = () => {
                 histRows.push([
                     { text: title, options: { fill: 'F8FAFC', fontSize: 10, color: '000000', bold: true } },
                     { text: officeName, options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } },
-                    { text: `${dur.years} yrs., ${dur.months} mos.`, options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } }
+                    { text: formatExperienceDuration(dur), options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } }
                 ]);
 
                 // Nested Child OIC positions under Parent
@@ -801,7 +827,7 @@ const OfficialProfiling = () => {
                             histRows.push([
                                 { text: oicTitle, options: { fill: 'FEF3C7', fontSize: 9, color: '08315F' } },
                                 { text: oicOffice, options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } },
-                                { text: `${oicDur.years} yrs., ${oicDur.months} mos.`, options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } }
+                                { text: formatExperienceDuration(oicDur), options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } }
                             ]);
                         }
                     });
@@ -812,7 +838,7 @@ const OfficialProfiling = () => {
                 const todayFormatted = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 histRows.push([
                     { text: `Total Managerial Experience (As of ${todayFormatted}):`, options: { colspan: 2, fill: 'E2E8F0', fontSize: 9, bold: true, align: 'right', color: '08315F' } },
-                    { text: profile.managerial_experience_total, options: { fill: 'E2E8F0', fontSize: 9, bold: true, align: 'center', color: '08315F' } }
+                    { text: formatExperienceTotal(profile.managerial_experience_total), options: { fill: 'E2E8F0', fontSize: 9, bold: true, align: 'center', color: '08315F' } }
                 ]);
             }
             slide.addTable(histRows, { x: 0.4, y: 1.6, w: 5.5, colW: [1.8, 2.3, 1.4], border: { pt: 1, color: '64748B' } });
@@ -1077,7 +1103,17 @@ const OfficialProfiling = () => {
         totalYears += Math.floor(totalMonths / 12);
         totalMonths = totalMonths % 12;
 
-        const resultStr = `${totalYears} Year${totalYears !== 1 ? 's' : ''}, ${totalMonths} Month${totalMonths !== 1 ? 's' : ''}`;
+        let resultStr = '';
+        if (totalYears > 0 && totalMonths > 0) {
+            resultStr = `${totalYears} Year${totalYears !== 1 ? 's' : ''}, ${totalMonths} Month${totalMonths !== 1 ? 's' : ''}`;
+        } else if (totalYears > 0 && totalMonths === 0) {
+            resultStr = `${totalYears} Year${totalYears !== 1 ? 's' : ''}`;
+        } else if (totalYears === 0 && totalMonths > 0) {
+            resultStr = `${totalMonths} Month${totalMonths !== 1 ? 's' : ''}`;
+        } else {
+            resultStr = '0 Months';
+        }
+
         if (profile.managerial_experience_total !== resultStr) {
             setProfile(prev => ({ ...prev, managerial_experience_total: resultStr }));
         }
@@ -3415,7 +3451,7 @@ const OfficialProfiling = () => {
                                                                         <p className="text-[13.5px] font-bold text-slate-400 italic leading-tight">Automatically computed based on supervisory & managerial positions (Salary Grade 18 and above) as of current date.</p>
                                                                     </div>
                                                                     <div className="bg-white px-6 py-3 rounded-2xl border-2 border-blue-200 shadow-sm">
-                                                                        <p className="text-[30px] font-black text-[#08315F] tracking-tight">{profile.managerial_experience_total || '0 Years, 0 Months'}</p>
+                                                                        <p className="text-[30px] font-black text-[#08315F] tracking-tight">{formatExperienceTotal(profile.managerial_experience_total) || '0 Months'}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -4650,7 +4686,7 @@ const OfficialProfiling = () => {
                                                                                                                     <div className="col-span-7 space-y-5">
                                                                                                                         <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
-                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${profile.managerial_experience_total}` : ''}</th></tr>
+                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}</th></tr>
                                                                                                                             </thead>
                                                                                                                             <tbody>
                                                                                                                                 {(() => {
@@ -4670,7 +4706,7 @@ const OfficialProfiling = () => {
                                                                                                                                             <tr key={`parent-${i}`} className="text-slate-800 bg-slate-50/30 font-semibold">
                                                                                                                                                 <td className="border-2 border-slate-400 px-3 py-1.5 font-bold w-1/3">{title}</td>
                                                                                                                                                 <td className="border-2 border-slate-400 px-3 py-1.5 w-1/3">{officeName}</td>
-                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-medium">{dur.years} yrs., {dur.months} mos.</td>
+                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-medium">{formatExperienceDuration(dur)}</td>
                                                                                                                                             </tr>
                                                                                                                                         );
                                                                                                                                         if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
@@ -4685,7 +4721,7 @@ const OfficialProfiling = () => {
                                                                                                                                                                 <span className="text-[#08315F] font-bold">└─ OIC:</span> {oicTitle}
                                                                                                                                                             </td>
                                                                                                                                                             <td className="border-2 border-slate-400 px-3 py-1.5 text-slate-600">{oicOffice}</td>
-                                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">{oicDur.years} yrs., {oicDur.months} mos.</td>
+                                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">{formatExperienceDuration(oicDur)}</td>
                                                                                                                                                         </tr>
                                                                                                                                                     );
                                                                                                                                                 }
@@ -4702,7 +4738,7 @@ const OfficialProfiling = () => {
                                                                                                                                             Total Managerial Experience (As of {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}):
                                                                                                                                         </td>
                                                                                                                                         <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black text-[#08315F] text-[11px]">
-                                                                                                                                            {profile.managerial_experience_total}
+                                                                                                                                            {formatExperienceTotal(profile.managerial_experience_total)}
                                                                                                                                         </td>
                                                                                                                                     </tr>
                                                                                                                                 </tfoot>
@@ -5108,7 +5144,7 @@ const OfficialProfiling = () => {
                                                                     <div className="pb-4 md:pb-0 md:-mt-4">
                                                                         <p className="text-[15px] text-slate-400 mb-1">Total Managerial Experience</p>
                                                                         <div className="flex items-center justify-between">
-                                                                            <p className="text-[21px] font-black text-slate-800">{profile.managerial_experience_total || '—'}</p>
+                                                                            <p className="text-[21px] font-black text-slate-800">{formatExperienceTotal(profile.managerial_experience_total) || '—'}</p>
                                                                             <FiBriefcase className="text-blue-500" size={18} />
                                                                         </div>
                                                                     </div>
