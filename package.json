@@ -9,7 +9,8 @@
     "dev:turbo": "node dev.js",
     "backup": "node database/export-backup.js",
     "backup:export": "node database/export-backup.js",
-    "backup:prod": "node database/backup-prod.js"
+    "backup:prod": "node database/backup-prod.js",
+    "deploy": "python deploy.py"
   },
   "dependencies": {
     "all": "^0.0.0",
