@@ -746,14 +746,42 @@ const OfficialProfiling = () => {
                 setExporting(false);
                 return;
             }
+
+            const elementWidth = element.offsetWidth || 1000;
+            const elementHeight = element.offsetHeight || 650;
+            const widthInInches = 13.33;
+            // Proportional height in inches with safety buffer so html2pdf NEVER creates a 2nd page split
+            const heightInInches = Number(((elementHeight / elementWidth) * widthInInches + 0.2).toFixed(2));
+
             const opt = {
                 margin: 0,
                 filename: `profile_${profile.last_name || 'export'}.pdf`,
-                image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: { scale: 3, useCORS: true, letterRendering: true },
-                jsPDF: { unit: 'in', format: [13.33, 7.5], orientation: 'landscape' }
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2.5,
+                    useCORS: true,
+                    allowTaint: true,
+                    letterRendering: true,
+                    logging: false,
+                    onclone: (clonedDoc) => {
+                        const clonedEl = clonedDoc.getElementById('pdf-preview-content');
+                        if (clonedEl && clonedEl.parentElement) {
+                            clonedEl.parentElement.style.transform = 'none';
+                            clonedEl.parentElement.style.marginBottom = '0px';
+                        }
+                    }
+                },
+                jsPDF: {
+                    unit: 'in',
+                    format: [widthInInches, heightInInches],
+                    orientation: 'landscape'
+                },
+                pagebreak: { mode: ['avoid-all'] }
             };
-            html2pdf().set(opt).from(element).save().then(() => setExporting(false));
+            html2pdf().set(opt).from(element).save().then(() => setExporting(false)).catch(err => {
+                console.error(err);
+                setExporting(false);
+            });
         } catch (err) {
             console.error(err);
             Swal.fire('Notice', "Failed to generate PDF", 'info');
@@ -761,17 +789,53 @@ const OfficialProfiling = () => {
         }
     };
 
-    const generatePPT = () => {
+    const generatePPT = async () => {
         setExporting(true);
         try {
             let pres = new PptxGenJS();
             pres.layout = 'LAYOUT_16x9';
             let slide = pres.addSlide();
 
-            // Header: Logo, Name and Position
-            slide.addImage({ path: depedLogo, x: 0.4, y: 0.2, w: 1.1, h: 1.1 });
+            // Top banner bar
+            slide.addShape(pres.ShapeType.rect, { x: 0.4, y: 0.1, w: 9.2, h: 0.06, fill: { color: '08315F' }, line: { color: '08315F' } });
+
+            // Helper to convert images to Base64 data URL so PowerPoint embeds them directly
+            const urlToBase64 = async (url) => {
+                if (!url) return null;
+                try {
+                    const response = await fetch(url, { mode: 'cors' });
+                    if (!response.ok) return null;
+                    const blob = await response.blob();
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = () => resolve(null);
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (e) {
+                    console.warn('Failed to convert image to base64 for PPT:', e);
+                    return null;
+                }
+            };
+
+            // Pre-fetch images as Base64 data URLs
+            const [logoData, photoData] = await Promise.all([
+                urlToBase64(depedLogo),
+                profile.photo_binary_id ? urlToBase64(apiUrl(`/api/binary/${profile.photo_binary_id}`)) : Promise.resolve(null)
+            ]);
+
+            // Header Left: Logo
+            if (logoData) {
+                slide.addImage({ data: logoData, x: 0.4, y: 0.22, w: 1.0, h: 1.0 });
+            } else {
+                slide.addImage({ path: depedLogo, x: 0.4, y: 0.22, w: 1.0, h: 1.0 });
+            }
+
+            // Header Left: Name and Position
             const pSuffix = sanitizeSuffix(profile.suffix);
-            slide.addText(`${profile.last_name?.toUpperCase() || ''}${pSuffix ? ' ' + pSuffix : ''}, ${profile.first_name?.toUpperCase() || ''} ${profile.middle_name?.toUpperCase() || ''}`.trim(), { x: 1.6, y: 0.3, w: 4.3, h: 0.6, fontSize: 32, bold: true, color: '000000' });
+            const fullName = `${profile.last_name?.toUpperCase() || ''}${pSuffix ? ' ' + pSuffix : ''}, ${profile.first_name?.toUpperCase() || ''} ${profile.middle_name?.toUpperCase() || ''}`.trim();
+            slide.addText(fullName, { x: 1.5, y: 0.25, w: 5.7, h: 0.35, fontSize: 18, bold: true, color: '08315F' });
+
             let posText = profile.position_title || '';
             if (profile.is_oic) {
                 posText += ' (OIC)';
@@ -787,23 +851,29 @@ const OfficialProfiling = () => {
                 profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase();
 
             if (hasCustomDesignation) {
-                slide.addText(posText, { x: 1.6, y: 0.85, w: 6.8, h: 0.35, fontSize: 18, bold: true, color: '000000' });
-                slide.addText(profile.designation, { x: 1.6, y: 1.2, w: 6.8, h: 0.3, fontSize: 13, italic: true, bold: true, color: '08315F' });
+                slide.addText(posText, { x: 1.5, y: 0.63, w: 5.7, h: 0.28, fontSize: 12, bold: true, color: '1E293B' });
+                slide.addText(profile.designation, { x: 1.5, y: 0.93, w: 5.7, h: 0.24, fontSize: 11, italic: true, bold: true, color: '08315F' });
             } else {
-                slide.addText(posText, { x: 1.6, y: 0.9, w: 6.8, h: 0.5, fontSize: 20, bold: true, color: '000000' });
+                slide.addText(posText, { x: 1.5, y: 0.68, w: 5.7, h: 0.35, fontSize: 13, bold: true, color: '1E293B' });
             }
 
-            // Top Right: Photo
-            if (profile.photo_binary_id) {
-                slide.addImage({ path: apiUrl(`/api/binary/${profile.photo_binary_id}`), x: 8.6, y: 0.2, w: 1.2, h: 1.2 });
+            // Header Right: Age Box
+            slide.addShape(pres.ShapeType.rect, { x: 7.35, y: 0.22, w: 0.85, h: 0.26, fill: { color: 'F59E0B' }, line: { color: 'F59E0B' } });
+            slide.addText('Age', { x: 7.35, y: 0.22, w: 0.85, h: 0.26, color: 'FFFFFF', bold: true, align: 'center', fontSize: 10 });
+            slide.addShape(pres.ShapeType.rect, { x: 7.35, y: 0.48, w: 0.85, h: 0.52, fill: { color: 'FFFFFF' }, line: { color: 'F59E0B', width: 1.5 } });
+            slide.addText(`${profile.age || '—'}`, { x: 7.35, y: 0.48, w: 0.85, h: 0.52, align: 'center', fontSize: 16, bold: true, color: '08315F' });
+
+            // Header Right: Photo Box
+            if (photoData) {
+                slide.addImage({ data: photoData, x: 8.35, y: 0.22, w: 1.15, h: 1.15 });
             } else {
-                slide.addShape(pres.ShapeType.rect, { x: 8.6, y: 0.2, w: 1.2, h: 1.2, fill: { color: 'E2E8F0' } });
-                slide.addText('2x2 Photo', { x: 8.6, y: 0.2, w: 1.2, h: 1.2, align: 'center', color: '64748B', fontSize: 10 });
+                slide.addShape(pres.ShapeType.rect, { x: 8.35, y: 0.22, w: 1.15, h: 1.15, fill: { color: 'F1F5F9' }, line: { color: 'CBD5E1', width: 1 } });
+                slide.addText('2x2 Photo', { x: 8.35, y: 0.22, w: 1.15, h: 1.15, align: 'center', color: '94A3B8', fontSize: 10, bold: true });
             }
 
-            // Managerial Experience Table
+            // --- Left Column: Managerial Experience ---
             let histRows = [
-                [{ text: `Managerial Experience${profile.managerial_experience_total ? ` — Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}`, options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 13 } }]
+                [{ text: `Managerial Experience${profile.managerial_experience_total ? ` — Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}`, options: { colspan: 3, fill: '08315F', color: 'FFFFFF', bold: true, align: 'center', fontSize: 10 } }]
             ];
             const displayHistory = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
             const filteredHistory = displayHistory.filter(h => h.position_title || h.position_name || h.office).slice(0, 4);
@@ -812,9 +882,9 @@ const OfficialProfiling = () => {
                 const officeName = h.office || '—';
                 const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
                 histRows.push([
-                    { text: title, options: { fill: 'F8FAFC', fontSize: 10, color: '000000', bold: true } },
-                    { text: officeName, options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } },
-                    { text: formatExperienceDuration(dur), options: { fill: 'F8FAFC', fontSize: 10, color: '000000' } }
+                    { text: title, options: { fill: 'F8FAFC', fontSize: 9, color: '000000', bold: true } },
+                    { text: officeName, options: { fill: 'F8FAFC', fontSize: 9, color: '000000' } },
+                    { text: formatExperienceDuration(dur), options: { fill: 'F8FAFC', fontSize: 9, color: '000000', align: 'center' } }
                 ]);
 
                 // Nested Child OIC positions under Parent
@@ -825,52 +895,50 @@ const OfficialProfiling = () => {
                             const oicOffice = oic.oic_office || '—';
                             const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
                             histRows.push([
-                                { text: oicTitle, options: { fill: 'FEF3C7', fontSize: 9, color: '08315F' } },
-                                { text: oicOffice, options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } },
-                                { text: formatExperienceDuration(oicDur), options: { fill: 'FEF3C7', fontSize: 9, color: '334155' } }
+                                { text: oicTitle, options: { fill: 'FEF3C7', fontSize: 8.5, color: '08315F' } },
+                                { text: oicOffice, options: { fill: 'FEF3C7', fontSize: 8.5, color: '334155' } },
+                                { text: formatExperienceDuration(oicDur), options: { fill: 'FEF3C7', fontSize: 8.5, color: '334155', align: 'center' } }
                             ]);
                         }
                     });
                 }
             });
-            if (filteredHistory.length === 0) histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 10, align: 'center' } }]);
+            if (filteredHistory.length === 0) histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 9, align: 'center' } }]);
             if (profile.managerial_experience_total) {
                 const todayFormatted = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 histRows.push([
-                    { text: `Total Managerial Experience (As of ${todayFormatted}):`, options: { colspan: 2, fill: 'E2E8F0', fontSize: 9, bold: true, align: 'right', color: '08315F' } },
-                    { text: formatExperienceTotal(profile.managerial_experience_total), options: { fill: 'E2E8F0', fontSize: 9, bold: true, align: 'center', color: '08315F' } }
+                    { text: `Total Managerial Experience (As of ${todayFormatted}):`, options: { colspan: 2, fill: 'E2E8F0', fontSize: 8.5, bold: true, align: 'right', color: '08315F' } },
+                    { text: formatExperienceTotal(profile.managerial_experience_total), options: { fill: 'E2E8F0', fontSize: 8.5, bold: true, align: 'center', color: '08315F' } }
                 ]);
             }
-            slide.addTable(histRows, { x: 0.4, y: 1.6, w: 5.5, colW: [1.8, 2.3, 1.4], border: { pt: 1, color: '64748B' } });
+            slide.addTable(histRows, { x: 0.4, y: 1.5, w: 5.2, colW: [1.7, 2.3, 1.2], border: { pt: 0.75, color: '94A3B8' }, autoPage: false });
 
-            // Educational Attainment Table
+            // Dynamic Y calculation for Educational Attainment based on Managerial Experience table height
+            const histTableHeight = 0.28 + (histRows.length - 1) * 0.23;
+            const eduY = 1.5 + histTableHeight + 0.12;
+
+            // --- Left Column: Educational Attainment ---
             let eduRows = [
-                [{ text: 'Educational Attainment', options: { colspan: 3, fill: '0038A8', color: 'FFFFFF', bold: true, align: 'center', fontSize: 14 } }]
+                [{ text: 'Educational Attainment', options: { colspan: 3, fill: '08315F', color: 'FFFFFF', bold: true, align: 'center', fontSize: 10 } }],
+                [
+                    { text: 'Doctorate', options: { fill: 'FFFFFF', fontSize: 9, color: '000000', bold: true } },
+                    { text: profile.doctorate_degree || '—', options: { fill: 'FFFFFF', fontSize: 9, color: '000000' } },
+                    { text: profile.doctorate_year || '—', options: { fill: 'FFFFFF', fontSize: 9, align: 'center', color: '000000' } }
+                ],
+                [
+                    { text: "Master's Degree", options: { fill: 'FFFFFF', fontSize: 9, color: '000000', bold: true } },
+                    { text: profile.master_degree || '—', options: { fill: 'FFFFFF', fontSize: 9, color: '000000' } },
+                    { text: profile.master_year || '—', options: { fill: 'FFFFFF', fontSize: 9, align: 'center', color: '000000' } }
+                ],
+                [
+                    { text: 'Baccalaureate', options: { fill: 'FFFFFF', fontSize: 9, color: '000000', bold: true } },
+                    { text: profile.bachelor_degree || '—', options: { fill: 'FFFFFF', fontSize: 9, color: '000000' } },
+                    { text: profile.bachelor_year || '—', options: { fill: 'FFFFFF', fontSize: 9, align: 'center', color: '000000' } }
+                ]
             ];
-            eduRows.push([
-                { text: 'Doctorate', options: { fill: 'FFFFFF', fontSize: 10, color: '000000', bold: true } },
-                { text: profile.doctorate_degree || '—', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                { text: profile.doctorate_year || '—', options: { fill: 'FFFFFF', fontSize: 10, align: 'center', color: '000000' } }
-            ]);
-            eduRows.push([
-                { text: "Master's Degree", options: { fill: 'FFFFFF', fontSize: 10, color: '000000', bold: true } },
-                { text: profile.master_degree || '—', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                { text: profile.master_year || '—', options: { fill: 'FFFFFF', fontSize: 10, align: 'center', color: '000000' } }
-            ]);
-            eduRows.push([
-                { text: 'Baccalaureate', options: { fill: 'FFFFFF', fontSize: 10, color: '000000', bold: true } },
-                { text: profile.bachelor_degree || '—', options: { fill: 'FFFFFF', fontSize: 10, color: '000000' } },
-                { text: profile.bachelor_year || '—', options: { fill: 'FFFFFF', fontSize: 10, align: 'center', color: '000000' } }
-            ]);
-            slide.addTable(eduRows, { x: 0.4, y: 3.8, w: 5.5, colW: [1.5, 3.0, 1.0], border: { pt: 1, color: '64748B' } });
+            slide.addTable(eduRows, { x: 0.4, y: eduY, w: 5.2, colW: [1.3, 2.8, 1.1], border: { pt: 0.75, color: '94A3B8' }, autoPage: false });
 
-            // Age Box
-            slide.addShape(pres.ShapeType.rect, { x: 6.2, y: 1.6, w: 1.0, h: 0.25, fill: { color: 'F59E0B' } });
-            slide.addText('Age', { x: 6.2, y: 1.6, w: 1.0, h: 0.25, color: 'FFFFFF', bold: true, align: 'center', fontSize: 12 });
-            slide.addShape(pres.ShapeType.rect, { x: 6.2, y: 1.85, w: 1.0, h: 0.4, fill: { color: 'FFFFFF' }, line: { color: '64748B' } });
-            slide.addText(`${profile.age || ''}`, { x: 6.2, y: 1.85, w: 1.0, h: 0.4, align: 'center', fontSize: 14, color: '000000' });
-
-            // Performance Rating Table
+            // --- Right Column: Performance Rating ---
             const extractPptYear = (period) => {
                 if (!period) return '—';
                 const match = String(period).match(/\b(19\d\d|20\d\d)\b/);
@@ -878,65 +946,64 @@ const OfficialProfiling = () => {
             };
 
             let perfRows = [
-                [{ text: 'Performance Rating', options: { colspan: 3, fill: 'B91C1C', color: 'FFFFFF', bold: true, align: 'center', fontSize: 12 } }],
+                [{ text: 'Performance Rating', options: { colspan: 3, fill: 'B91C1C', color: 'FFFFFF', bold: true, align: 'center', fontSize: 10 } }],
                 [
-                    { text: 'Period / Type', options: { fill: 'FEE2E2', fontSize: 9, bold: true, color: '991B1B' } },
-                    { text: 'Year', options: { fill: 'FEE2E2', fontSize: 9, bold: true, align: 'center', color: '991B1B' } },
-                    { text: 'Rating', options: { fill: 'FEE2E2', fontSize: 9, bold: true, align: 'center', color: '991B1B' } }
+                    { text: 'Period / Type', options: { fill: 'FEE2E2', fontSize: 8.5, bold: true, color: '991B1B' } },
+                    { text: 'Year', options: { fill: 'FEE2E2', fontSize: 8.5, bold: true, align: 'center', color: '991B1B' } },
+                    { text: 'Rating', options: { fill: 'FEE2E2', fontSize: 8.5, bold: true, align: 'center', color: '991B1B' } }
                 ]
             ];
 
             if (profile.cespes_1_rating) perfRows.push([
-                { text: `${profile.cespes_rating_1_period || ''} 1st sem (CESPES)`, options: { fontSize: 9, color: '000000' } },
-                { text: extractPptYear(profile.cespes_rating_1_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
-                { text: String(profile.cespes_1_rating), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+                { text: `${profile.cespes_rating_1_period || ''} 1st sem (CESPES)`, options: { fontSize: 8.5, color: '000000' } },
+                { text: extractPptYear(profile.cespes_rating_1_period), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.cespes_1_rating), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } }
             ]);
             if (profile.cespes_2_rating) perfRows.push([
-                { text: `${profile.cespes_rating_2_period || ''} 2nd sem (CESPES)`, options: { fontSize: 9, color: '000000' } },
-                { text: extractPptYear(profile.cespes_rating_2_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
-                { text: String(profile.cespes_2_rating), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+                { text: `${profile.cespes_rating_2_period || ''} 2nd sem (CESPES)`, options: { fontSize: 8.5, color: '000000' } },
+                { text: extractPptYear(profile.cespes_rating_2_period), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.cespes_2_rating), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } }
             ]);
             if (profile.performance_rating_1) perfRows.push([
-                { text: `${profile.performance_rating_1_period || ''} (OPCRF)`, options: { fontSize: 9, color: '000000' } },
-                { text: extractPptYear(profile.performance_rating_1_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
-                { text: String(profile.performance_rating_1), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+                { text: `${profile.performance_rating_1_period || ''} (OPCRF)`, options: { fontSize: 8.5, color: '000000' } },
+                { text: extractPptYear(profile.performance_rating_1_period), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.performance_rating_1), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } }
             ]);
             if (profile.performance_rating_2) perfRows.push([
-                { text: `${profile.performance_rating_2_period || ''} (OPCRF)`, options: { fontSize: 9, color: '000000' } },
-                { text: extractPptYear(profile.performance_rating_2_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
-                { text: String(profile.performance_rating_2), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+                { text: `${profile.performance_rating_2_period || ''} (OPCRF)`, options: { fontSize: 8.5, color: '000000' } },
+                { text: extractPptYear(profile.performance_rating_2_period), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.performance_rating_2), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } }
             ]);
             if (profile.performance_rating_3) perfRows.push([
-                { text: `${profile.performance_rating_3_period || ''} (OPCRF)`, options: { fontSize: 9, color: '000000' } },
-                { text: extractPptYear(profile.performance_rating_3_period), options: { fontSize: 9, align: 'center', color: '000000', bold: true } },
-                { text: String(profile.performance_rating_3), options: { fontSize: 9, align: 'center', color: '000000', bold: true } }
+                { text: `${profile.performance_rating_3_period || ''} (OPCRF)`, options: { fontSize: 8.5, color: '000000' } },
+                { text: extractPptYear(profile.performance_rating_3_period), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } },
+                { text: String(profile.performance_rating_3), options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } }
             ]);
 
-            if (perfRows.length === 2) perfRows.push([{ text: 'No ratings', options: { colspan: 3, fontSize: 10, align: 'center', color: '000000' } }]);
-            slide.addTable(perfRows, { x: 6.2, y: 2.4, w: 3.6, colW: [2.1, 0.7, 0.8], border: { pt: 1, color: 'B91C1C' }, fill: 'FFFFFF' });
+            if (perfRows.length === 2) perfRows.push([{ text: 'No ratings listed', options: { colspan: 3, fontSize: 9, align: 'center', color: '94A3B8' } }]);
+            slide.addTable(perfRows, { x: 5.8, y: 1.5, w: 3.8, colW: [2.2, 0.8, 0.8], border: { pt: 0.75, color: '94A3B8' }, fill: 'FFFFFF', autoPage: false });
 
-            // Eligibility Table
+            // Dynamic Y calculation for Eligibility based on Performance Rating table height
+            const perfTableHeight = 0.28 + 0.22 + (perfRows.length - 2) * 0.22;
+            const eligY = 1.5 + perfTableHeight + 0.12;
+
+            // --- Right Column: Eligibility ---
             let eligRows = [
-                [{ text: 'Eligibility', options: { colspan: 2, fill: 'B91C1C', color: 'FFFFFF', bold: true, align: 'center', fontSize: 12 } }]
+                [{ text: 'Eligibility', options: { colspan: 2, fill: 'B91C1C', color: 'FFFFFF', bold: true, align: 'center', fontSize: 10 } }],
+                [
+                    { text: `Career Executive Service (CES): ${profile.ces_stage || 'Not Applicable'}`, options: { fontSize: 8.5, color: '000000', bold: true } },
+                    { text: profile.ces_conferment_date || '—', options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } }
+                ],
+                [
+                    { text: `Educational Management Test (EMT): ${profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}`, options: { fontSize: 8.5, color: '000000', bold: true } },
+                    { text: profile.emt_date || '—', options: { fontSize: 8.5, align: 'center', color: '000000', bold: true } }
+                ]
             ];
-            eligRows.push([{ text: `CES: ${profile.ces_stage || 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.ces_conferment_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
-            eligRows.push([{ text: `EMT: ${profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}`, options: { fontSize: 10, color: '000000' } }, { text: profile.emt_date || '', options: { fontSize: 10, align: 'center', color: '000000' } }]);
 
-            if (profile.eligibilities && profile.eligibilities.length > 0) {
-                profile.eligibilities.forEach(elig => {
-                    const name = elig.eligibility || elig.title || 'Untitled';
-                    const meta = [
-                        elig.rating ? `Rating: ${elig.rating}` : '',
-                        elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
-                        elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
-                    ].filter(Boolean).join(' | ');
-                    const fallback = elig.details || '—';
-                    eligRows.push([{ text: name, options: { fontSize: 10, color: '000000' } }, { text: meta || fallback, options: { fontSize: 10, align: 'center', color: '000000' } }]);
-                });
-            }
+            slide.addTable(eligRows, { x: 5.8, y: eligY, w: 3.8, colW: [2.6, 1.2], border: { pt: 0.75, color: '94A3B8' }, fill: 'FFFFFF', autoPage: false });
 
-            slide.addTable(eligRows, { x: 6.2, y: 4.0, w: 3.6, colW: [2.0, 1.6], border: { pt: 1, color: 'B91C1C' }, fill: 'FFFFFF' });
-            pres.writeFile({ fileName: `profile_${profile.last_name || 'export'}.pptx` }).then(() => setExporting(false));
+            await pres.writeFile({ fileName: `profile_${profile.last_name || 'export'}.pptx` });
+            setExporting(false);
         } catch (err) {
             console.error(err);
             Swal.fire('Notice', "Failed to generate PPT", 'info');
@@ -4649,14 +4716,16 @@ const OfficialProfiling = () => {
                                                                                                 {(selectedExportType === 'pdf' || selectedExportType === 'ppt') && (
                                                                                                     <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border-2 border-slate-200 shadow-inner hide-scrollbar">
                                                                                                         <div className="bg-white shadow-2xl border-2 border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale * 0.5})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale * 0.5)}px` }}>
-                                                                                                            <div className="p-8 mx-auto w-[1000px] min-h-[700px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id={selectedExportType === 'pdf' ? "pdf-preview-content" : "ppt-preview-content"}>
+                                                                                                            <div className="p-8 mx-auto w-[1000px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id={selectedExportType === 'pdf' ? "pdf-preview-content" : "ppt-preview-content"}>
                                                                                                                 <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
                                                                                                                 <div className="flex justify-between items-start mb-5 pt-2">
-                                                                                                                    <div className="flex gap-5 items-center">
-                                                                                                                        <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain" />
-                                                                                                                        <div>
-                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
-                                                                                                                            <h2 className="text-lg font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap">
+                                                                                                                    <div className="flex gap-4 items-center flex-1 min-w-0 pr-4">
+                                                                                                                        <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain shrink-0" crossOrigin="anonymous" />
+                                                                                                                        <div className="min-w-0">
+                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F] leading-tight">
+                                                                                                                                {profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}
+                                                                                                                            </h1>
+                                                                                                                            <h2 className="text-base font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap leading-snug">
                                                                                                                                 <span>{profile.position_title || 'N/A'}</span>
                                                                                                                                 {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                                                                 {profile.office ? `, ${profile.office}` : ''}
@@ -4666,16 +4735,20 @@ const OfficialProfiling = () => {
                                                                                                                                 profile.designation.trim().toLowerCase() !== 'no designation' &&
                                                                                                                                 profile.designation.trim().toLowerCase() !== 'none' &&
                                                                                                                                 profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
-                                                                                                                                    <p className="text-sm font-semibold italic text-[#08315F] mt-0.5">
+                                                                                                                                    <p className="text-sm font-semibold italic text-[#08315F] mt-0.5 leading-snug">
                                                                                                                                         {profile.designation}
                                                                                                                                     </p>
                                                                                                                                 )}
                                                                                                                         </div>
                                                                                                                     </div>
-                                                                                                                    <div className="flex gap-6 items-start">
+                                                                                                                    <div className="flex gap-3 items-center shrink-0">
+                                                                                                                        <div className="w-20 text-center border-2 border-amber-500 overflow-hidden bg-white shadow-sm">
+                                                                                                                            <div className="bg-amber-500 text-white font-bold py-0.5 text-[10px] uppercase tracking-widest">Age</div>
+                                                                                                                            <div className="py-1 text-center font-bold text-base text-[#08315F] bg-white leading-none">{profile.age || '—'}</div>
+                                                                                                                        </div>
                                                                                                                         <div className="w-[84px] h-[84px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0 overflow-hidden">
                                                                                                                             {profile.photo_binary_id ? (
-                                                                                                                                <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Photo" className="w-full h-full object-cover" />
+                                                                                                                                <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                                                                                                             ) : (
                                                                                                                                 "2x2 Photo"
                                                                                                                             )}
@@ -4683,7 +4756,7 @@ const OfficialProfiling = () => {
                                                                                                                     </div>
                                                                                                                 </div>
                                                                                                                 <div className="grid grid-cols-12 gap-8">
-                                                                                                                    <div className="col-span-7 space-y-5">
+                                                                                                                    <div className="col-span-7 space-y-4">
                                                                                                                         <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
                                                                                                                                 <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}</th></tr>
@@ -4767,12 +4840,8 @@ const OfficialProfiling = () => {
                                                                                                                             </tbody>
                                                                                                                         </table>
                                                                                                                     </div>
-                                                                                                                    <div className="col-span-5 space-y-5 relative">
-                                                                                                                        <div className="absolute -top-12 left-0 w-20">
-                                                                                                                            <div className="bg-amber-500 text-white font-bold py-0.5 text-center text-[10px] uppercase tracking-widest">Age</div>
-                                                                                                                            <div className="border-2 border-amber-500 py-1 text-center font-bold text-base text-[#08315F] bg-white">{profile.age || '—'}</div>
-                                                                                                                        </div>
-                                                                                                                        <table className="w-full text-xs border-collapse mt-8">
+                                                                                                                    <div className="col-span-5 space-y-4">
+                                                                                                                        <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
                                                                                                                                 <tr><th colSpan={3} className="bg-red-700 text-white font-bold py-2 border-2 border-red-700 text-center uppercase tracking-widest text-[11px]">Performance Rating</th></tr>
                                                                                                                                 <tr className="bg-red-50 text-[10px] font-black text-red-900 border-2 border-slate-400">
