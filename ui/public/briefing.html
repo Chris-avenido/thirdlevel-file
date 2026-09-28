@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Weekly Briefing & Decision Log | DepEd InsightEd TLO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --bg-primary: #f8fafc;
@@ -16,6 +19,7 @@
       --border-subtle: #cbd5e1;
       --text-primary: #0f172a;
       --text-secondary: #475569;
+
       --text-muted: #64748b;
       --brand-navy: #08284d;
       --brand-blue: #0284c7;
@@ -530,15 +534,20 @@
         background: #ffffff;
         color: #000000;
       }
-      .top-bar, .btn, .toast {
+
+      .top-bar,
+      .btn,
+      .toast {
         display: none !important;
       }
+
       .header-card {
         background: #08284d !important;
         color: #ffffff !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+
       .card {
         box-shadow: none;
         border: 1px solid #ccc;
@@ -547,6 +556,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="container">
@@ -571,7 +581,8 @@
       <span class="header-pill">Executive Briefing &bull; Week 39</span>
       <h1 class="header-title">Weekly System Briefing & Action Decision Log</h1>
       <p class="header-subtitle">
-        Comprehensive overview of critical system implementations, database pipeline upgrades, identity reconciliation, and prioritized action points for next week.
+        Comprehensive overview of critical system implementations, database pipeline upgrades, identity reconciliation,
+        and prioritized action points for next week.
       </p>
       <div class="header-meta">
         <div class="meta-item">📅 <strong>Period:</strong> September 21 &ndash; 25, 2026</div>
@@ -608,7 +619,8 @@
     <!-- Quick Callout Notice -->
     <div class="callout">
       <strong>⚡ Monday Fast-Start Ready:</strong>
-      All database migration pipelines, multi-tab official profiling UI, dual SQLite + SQL backup workflows, and profile reconciliation endpoints are in a stable, fully functional state. No pending breaking migrations.
+      All database migration pipelines, multi-tab official profiling UI, dual SQLite + SQL backup workflows, and profile
+      reconciliation endpoints are in a stable, fully functional state. No pending breaking migrations.
     </div>
 
     <!-- Section 1: Major Accomplishments This Week -->
@@ -624,9 +636,13 @@
               <span class="status-badge badge-done">Completed</span>
             </div>
             <p class="item-desc">
-              Upgraded backup pipeline (<code>export-backup.js</code> and <code>backup-prod.js</code>) to automatically generate self-contained <code>tlo_system_complete_dump.db</code> (SQLite) alongside standard SQL dumps under Year/Day organized folders (<code>backups/YYYY/YYYY-MM-DD/</code>). The database can now be opened and inspected directly in any viewer without spinning up a PostgreSQL instance.
+              Upgraded backup pipeline (<code>export-backup.js</code> and <code>backup-prod.js</code>) to automatically
+              generate self-contained <code>tlo_system_complete_dump.db</code> (SQLite) alongside standard SQL dumps
+              under Year/Day organized folders (<code>backups/YYYY/YYYY-MM-DD/</code>). The database can now be opened
+              and inspected directly in any viewer without spinning up a PostgreSQL instance.
             </p>
-            <div class="item-meta">Files: database/export-backup.js, database/backup-prod.js &bull; Size: 13.77 MB SQLite / 15.42 MB SQL</div>
+            <div class="item-meta">Files: database/export-backup.js, database/backup-prod.js &bull; Size: 13.77 MB
+              SQLite / 15.42 MB SQL</div>
           </div>
         </li>
 
@@ -637,9 +653,13 @@
               <span class="status-badge badge-done">Completed</span>
             </div>
             <p class="item-desc">
-              Refined <code>OfficialProfiling.jsx</code> multi-tab data entry workflows covering Educational Background, Eligibility Records, Position History, Training Records, Notable Achievements, and CES status. Integrated N/A toggles to support 100% profile completeness validation for officials without certain optional history.
+              Refined <code>OfficialProfiling.jsx</code> multi-tab data entry workflows covering Educational Background,
+              Eligibility Records, Position History, Training Records, Notable Achievements, and CES status. Integrated
+              N/A toggles to support 100% profile completeness validation for officials without certain optional
+              history.
             </p>
-            <div class="item-meta">Files: ui/src/pages/OfficialProfiling.jsx, api/src/controllers/officialProfilingController.js</div>
+            <div class="item-meta">Files: ui/src/pages/OfficialProfiling.jsx,
+              api/src/controllers/officialProfilingController.js</div>
           </div>
         </li>
 
@@ -650,7 +670,9 @@
               <span class="status-badge badge-done">Completed</span>
             </div>
             <p class="item-desc">
-              Implemented account activation and profile matching workflows that automatically link newly registered applicant user accounts with existing masterlist entries based on DepEd email/TLOid, preventing duplicate records and enabling seamless dual-role profile transitions.
+              Implemented account activation and profile matching workflows that automatically link newly registered
+              applicant user accounts with existing masterlist entries based on DepEd email/TLOid, preventing duplicate
+              records and enabling seamless dual-role profile transitions.
             </p>
             <div class="item-meta">Controllers: identityReconciliationController.js, authController.js</div>
           </div>
@@ -663,7 +685,9 @@
               <span class="status-badge badge-done">Completed</span>
             </div>
             <p class="item-desc">
-              Extracted and structured all TLO attached document references (PDS, 201 File, Sandiganbayan, NBI, Ombudsman, and CES clearances) with their Azure Blob storage URLs and MIME types into clean metadata records without heavy binary payload bloat in local dev.
+              Extracted and structured all TLO attached document references (PDS, 201 File, Sandiganbayan, NBI,
+              Ombudsman, and CES clearances) with their Azure Blob storage URLs and MIME types into clean metadata
+              records without heavy binary payload bloat in local dev.
             </p>
             <div class="item-meta">Table: unified_binaries (698 metadata records verified)</div>
           </div>
@@ -676,7 +700,8 @@
               <span class="status-badge badge-done">Completed</span>
             </div>
             <p class="item-desc">
-              Added DBM Plantilla item number validation, position assignment logs, and CSV import reconciliation to handle reassignment orders and station tracking cleanly.
+              Added DBM Plantilla item number validation, position assignment logs, and CSV import reconciliation to
+              handle reassignment orders and station tracking cleanly.
             </p>
             <div class="item-meta">Files: ui/src/pages/CesPlantilla.jsx, database/migrations/</div>
           </div>
@@ -703,13 +728,15 @@
             <tr>
               <td><strong>Dual Backup Architecture</strong></td>
               <td>SQLite <code>.db</code> + PostgreSQL <code>.sql</code></td>
-              <td>Enables zero-friction local browsing and offline QA while preserving production-grade SQL restore capabilities.</td>
+              <td>Enables zero-friction local browsing and offline QA while preserving production-grade SQL restore
+                capabilities.</td>
               <td><span class="status-badge badge-decided">Adopted</span></td>
             </tr>
             <tr>
               <td><strong>Read-Only Dump Mode</strong></td>
               <td><code>BEGIN READ ONLY</code> transaction</td>
-              <td>Ensures 100% data extraction safety with zero risk of accidental server-side modifications or lock contention.</td>
+              <td>Ensures 100% data extraction safety with zero risk of accidental server-side modifications or lock
+                contention.</td>
               <td><span class="status-badge badge-decided">Standard</span></td>
             </tr>
             <tr>
@@ -721,13 +748,15 @@
             <tr>
               <td><strong>Case Conflict Resolution</strong></td>
               <td>Automatic column de-aliasing (e.g. <code>_case_2</code>)</td>
-              <td>Guarantees schema compatibility between PostgreSQL's case-sensitive columns and SQLite's case-insensitivity.</td>
+              <td>Guarantees schema compatibility between PostgreSQL's case-sensitive columns and SQLite's
+                case-insensitivity.</td>
               <td><span class="status-badge badge-decided">Implemented</span></td>
             </tr>
             <tr>
               <td><strong>Preservation Rule</strong></td>
               <td>Strict non-destructive refactoring (AGENTS.md)</td>
-              <td>Ensures all working functions, validation rules, and backward compatibility remain intact across iterations.</td>
+              <td>Ensures all working functions, validation rules, and backward compatibility remain intact across
+                iterations.</td>
               <td><span class="status-badge badge-decided">Strict Policy</span></td>
             </tr>
           </tbody>
@@ -748,7 +777,8 @@
               <span class="status-badge badge-action">High Priority</span>
             </div>
             <p class="item-desc">
-              Conduct an end-to-end user acceptance walkthrough with HR / Central Office coordinators. Validate multi-tab profiling form submissions, document upload flows, and PDF report exports.
+              Conduct an end-to-end user acceptance walkthrough with HR / Central Office coordinators. Validate
+              multi-tab profiling form submissions, document upload flows, and PDF report exports.
             </p>
             <div class="item-meta">Assigned: Dev Team &bull; Target Date: Sept 29, 2026</div>
           </div>
@@ -761,7 +791,9 @@
               <span class="status-badge badge-action">Infrastructure</span>
             </div>
             <p class="item-desc">
-              Verify that the scheduled daily cron script on Azure server (<code>/mnt/insighted-third-level-officials/scripts/backup_tlo_daily.sh</code>) creates valid nightly archives and downloads cleanly to staging.
+              Verify that the scheduled daily cron script on Azure server
+              (<code>/mnt/insighted-third-level-officials/scripts/backup_tlo_daily.sh</code>) creates valid nightly
+              archives and downloads cleanly to staging.
             </p>
             <div class="item-meta">Assigned: DevOps / Lead Dev &bull; Target Date: Sept 28, 2026</div>
           </div>
@@ -774,7 +806,8 @@
               <span class="status-badge badge-action">Security / Cloud</span>
             </div>
             <p class="item-desc">
-              Perform automated ping/validations on all 698 Azure Blob document URLs in <code>unified_binaries</code> to ensure SAS tokens or access permissions are up to date.
+              Perform automated ping/validations on all 698 Azure Blob document URLs in <code>unified_binaries</code> to
+              ensure SAS tokens or access permissions are up to date.
             </p>
             <div class="item-meta">Assigned: Backend Team &bull; Target Date: Sept 30, 2026</div>
           </div>
@@ -787,7 +820,8 @@
               <span class="status-badge badge-action">Feature</span>
             </div>
             <p class="item-desc">
-              Finalize exportable Excel/PDF generation for CES Plantilla vacancy tracking and regional distribution dashboards.
+              Finalize exportable Excel/PDF generation for CES Plantilla vacancy tracking and regional distribution
+              dashboards.
             </p>
             <div class="item-meta">Assigned: Frontend / Fullstack &bull; Target Date: Oct 01, 2026</div>
           </div>
@@ -808,7 +842,8 @@
           <input type="checkbox" id="chk-1" onchange="saveChecklistState()">
           <div class="check-text">
             <div class="check-title">1. Git Pull Latest Staging Branch</div>
-            <div class="check-desc">Ensure your local staging workspace is synced with remote: <code>git pull origin staging</code></div>
+            <div class="check-desc">Ensure your local staging workspace is synced with remote:
+              <code>git pull origin staging</code></div>
           </div>
         </label>
 
@@ -816,7 +851,8 @@
           <input type="checkbox" id="chk-2" onchange="saveChecklistState()">
           <div class="check-text">
             <div class="check-title">2. Run On-Demand Database Backup Check</div>
-            <div class="check-desc">Verify local dump generation: <code>npm run backup</code> & check output in <code>database/backups/2026/</code></div>
+            <div class="check-desc">Verify local dump generation: <code>npm run backup</code> & check output in
+              <code>database/backups/2026/</code></div>
           </div>
         </label>
 
@@ -824,7 +860,8 @@
           <input type="checkbox" id="chk-3" onchange="saveChecklistState()">
           <div class="check-text">
             <div class="check-title">3. Launch Staging Development Server</div>
-            <div class="check-desc">Start both API and UI services: <code>npm run dev</code> (API: Port 5000, UI: Port 3000 / Vite)</div>
+            <div class="check-desc">Start both API and UI services: <code>npm run dev</code> (API: Port 5000, UI: Port
+              3000 / Vite)</div>
           </div>
         </label>
 
@@ -832,7 +869,8 @@
           <input type="checkbox" id="chk-4" onchange="saveChecklistState()">
           <div class="check-text">
             <div class="check-title">4. Verify Official Profiling & Masterlist Table</div>
-            <div class="check-desc">Open browser and test navigation between Official Profiling, Masterlist, and CES Plantilla pages.</div>
+            <div class="check-desc">Open browser and test navigation between Official Profiling, Masterlist, and CES
+              Plantilla pages.</div>
           </div>
         </label>
 
@@ -850,7 +888,8 @@
     <footer class="footer">
       <p><strong>DepEd InsightEd &bull; Third Level Officials Information Management System</strong></p>
       <p>Prepared for Internal Executive Briefing & Engineering Continuity &bull; Confidential</p>
-      <p style="margin-top: 0.5rem; font-size: 0.75rem;">Document Generated: September 25, 2026 &bull; Staging Build v1.0.4</p>
+      <p style="margin-top: 0.5rem; font-size: 0.75rem;">Document Generated: September 25, 2026 &bull; Staging Build
+        v1.0.4</p>
     </footer>
   </div>
 
@@ -914,11 +953,12 @@ Status: Staging stable and ready for fast start on Monday morning.`;
             const cb = document.getElementById(id);
             if (cb) cb.checked = state[id];
           });
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
     window.addEventListener('DOMContentLoaded', loadChecklistState);
   </script>
 </body>
+
 </html>

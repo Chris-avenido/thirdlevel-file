@@ -176,10 +176,10 @@ export const bulkProcessDirectory = async (req, res) => {
 
       await client.query(`
         INSERT INTO tlo_masterlist (
-          tloid, first_name, last_name, created_at, updated_at
+          tloid, first_name, last_name, is_testaccount, created_at, updated_at
         )
         SELECT 
-          "TLOid", first_name, last_name, NOW(), NOW()
+          "TLOid", first_name, last_name, $2, NOW(), NOW()
         FROM json_to_recordset($1::json) AS c(
           "TLOid" text, first_name text, last_name text
         )
@@ -191,23 +191,24 @@ export const bulkProcessDirectory = async (req, res) => {
         ON CONFLICT (tloid) DO UPDATE SET
           first_name = EXCLUDED.first_name,
           last_name = EXCLUDED.last_name,
+          is_testaccount = EXCLUDED.is_testaccount,
           updated_at = NOW()
-      `, [JSON.stringify(toInsert)]);
+      `, [JSON.stringify(toInsert), isTest]);
     }
 
     if (toHistory.length > 0) {
       await client.query(`
         INSERT INTO third_level_officials_updates (
-          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, status, change_type, remarks, updated_at
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, status, change_type, remarks, is_testaccount, updated_at
         )
         SELECT 
-          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, 'Active', change_type, remarks, NOW()
+          "TLOid", first_name, last_name, position_title, office, division, strand, region, designation, email, contact_details, 'Active', change_type, remarks, $2, NOW()
         FROM json_to_recordset($1::json) AS c(
           "TLOid" text, first_name text, last_name text, position_title text,
           office text, division text, strand text, region text, designation text, email text, contact_details text,
           change_type text, remarks text
         )
-      `, [JSON.stringify(toHistory)]);
+      `, [JSON.stringify(toHistory), isTest]);
     }
 
     await client.query('COMMIT');
@@ -254,6 +255,7 @@ export const bulkProcessAchievements = async (req, res) => {
   try {
     await client.query('BEGIN');
 
+    const isTest = Boolean(req.user?.is_testaccount);
     const results = {
       summary: { total: records.length, inserted: 0, updated: 0, failed: 0 }
     };
@@ -267,13 +269,13 @@ export const bulkProcessAchievements = async (req, res) => {
           throw new Error('Missing index_number or achievement');
         }
 
-        const existingRes = await client.query('SELECT index_number FROM notable_achievements WHERE index_number = $1', [index_number]);
+        const existingRes = await client.query('SELECT index_number FROM notable_achievements WHERE index_number = $1 AND COALESCE(is_testaccount, FALSE) = $2', [index_number, isTest]);
         
         if (existingRes.rows.length > 0) {
-          await client.query('UPDATE notable_achievements SET achievement = $1, delete_flg = 0, edit_date = CURRENT_TIMESTAMP WHERE index_number = $2', [achievement, index_number]);
+          await client.query('UPDATE notable_achievements SET achievement = $1, delete_flg = 0, edit_date = CURRENT_TIMESTAMP WHERE index_number = $2 AND COALESCE(is_testaccount, FALSE) = $3', [achievement, index_number, isTest]);
           results.summary.updated++;
         } else {
-          await client.query('INSERT INTO notable_achievements (index_number, achievement, delete_flg, create_date, edit_date) VALUES ($1, $2, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [index_number, achievement]);
+          await client.query('INSERT INTO notable_achievements (index_number, achievement, delete_flg, is_testaccount, create_date, edit_date) VALUES ($1, $2, 0, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [index_number, achievement, isTest]);
           results.summary.inserted++;
         }
       } catch (err) {

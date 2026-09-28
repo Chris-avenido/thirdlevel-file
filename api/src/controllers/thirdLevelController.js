@@ -2382,7 +2382,7 @@ export const processScheduledVacancies = async (client, force = false) => {
                AND a.end_date IS NULL
              ORDER BY a.id DESC
              LIMIT 1
-             FOR UPDATE`,
+             FOR UPDATE OF a`,
             [lockedOfficial.TLOid]
           );
 
@@ -2568,7 +2568,7 @@ export const buildOfficialsFilterConditions = (query, user) => {
 
   if (search) {
     params.push(`%${search}%`);
-    conditions.push(`(first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR email ILIKE $${params.length} OR position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR strand ILIKE $${params.length} OR plantilla_item_no ILIKE $${params.length})`);
+    conditions.push(`("TLOid" ILIKE $${params.length} OR first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR email ILIKE $${params.length} OR position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR strand ILIKE $${params.length} OR plantilla_item_no ILIKE $${params.length})`);
   }
 
   const filterStatus = Array.isArray(status) ? status[status.length - 1] : status;
@@ -3187,8 +3187,9 @@ export const getLastVacateUpdate = async (req, res) => {
       SELECT vacate_reason, remarks 
       FROM third_level_officials_updates 
       WHERE "TLOid" = $1 AND status IN ('Vacating', 'Resigning', 'Inactive', 'Vacated', 'Reassigning', 'Pending Assignment')
+        AND COALESCE(is_testaccount, FALSE) = $2
       ORDER BY updated_at DESC LIMIT 1
-    `, [TLOid]);
+    `, [TLOid, isTest]);
     res.json({ success: true, data: result.rows[0] || null });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3216,17 +3217,18 @@ export const getCareerPath = async (req, res) => {
           FROM third_level_officials_updates prev
           WHERE prev.position_title = u.position_title
             AND prev."TLOid" != $1
+            AND COALESCE(prev.is_testaccount, FALSE) = $2
           ORDER BY prev.updated_at DESC
           LIMIT 1
         ) AS previous_incumbent
       FROM (
         SELECT DISTINCT ON (position_title) position_title, office, updated_at
         FROM third_level_officials_updates
-        WHERE "TLOid" = $1 AND position_title IS NOT NULL
+        WHERE "TLOid" = $1 AND position_title IS NOT NULL AND COALESCE(is_testaccount, FALSE) = $2
         ORDER BY position_title, updated_at DESC
       ) u
       ORDER BY u.updated_at DESC
-    `, [TLOid]);
+    `, [TLOid, isTest]);
     res.json({ success: true, data: result.rows.map(row => ({ ...row, position_title: displayPositionTitle(row.position_title) })) });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3767,7 +3769,7 @@ export const adminAction = async (req, res) => {
             AND a.end_date IS NULL
           ORDER BY a.id DESC
           LIMIT 1
-          FOR UPDATE
+          FOR UPDATE OF a
         `, [official.TLOid]);
 
         if (aRes.rows.length > 0) {
@@ -3909,7 +3911,8 @@ export const adminAction = async (req, res) => {
 
 export const getNotableAchievements = async (req, res) => {
   try {
-    const result = await pool.query('SELECT achievement FROM notable_achievements WHERE delete_flg = 0 ORDER BY index_number ASC');
+    const isTest = Boolean(req.user?.is_testaccount);
+    const result = await pool.query('SELECT achievement FROM notable_achievements WHERE delete_flg = 0 AND COALESCE(is_testaccount, FALSE) = $1 ORDER BY index_number ASC', [isTest]);
     res.json({ success: true, data: result.rows.map(r => r.achievement) });
   } catch (err) {
     res.status(500).json({ error: err.message });

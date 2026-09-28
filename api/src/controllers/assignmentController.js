@@ -9,6 +9,7 @@ import pool from '../config/db.js';
 export const getAssignments = async (req, res) => {
   try {
     const { status, search } = req.query;
+    const isTest = Boolean(req.user?.is_testaccount);
 
     let query = `
       SELECT 
@@ -98,10 +99,12 @@ export const getAssignments = async (req, res) => {
       INNER JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
       INNER JOIN tlo_positions p ON a.position_id = p.id
       LEFT JOIN third_level_official_masterlist tlo ON LOWER(tlo."TLOid") = LOWER(m.tloid)
-      WHERE 1=1 AND (tlo.status IS NULL OR (tlo.status != 'For Approval' AND tlo.status != 'Rejected'))
+      WHERE 1=1 
+        AND COALESCE(a.is_testaccount, m.is_testaccount, tlo.is_testaccount, FALSE) = $1
+        AND (tlo.status IS NULL OR (tlo.status != 'For Approval' AND tlo.status != 'Rejected'))
     `;
 
-    const params = [];
+    const params = [isTest];
 
     if (status && status.toLowerCase() !== 'all') {
       params.push(status);
@@ -135,8 +138,9 @@ export const getAssignments = async (req, res) => {
         COUNT(*) FILTER (WHERE status = 'Active' AND end_date IS NULL)::int AS active_assignments,
         COUNT(*) FILTER (WHERE status = 'Inactive' OR end_date IS NOT NULL)::int AS inactive_assignments
       FROM tlo_assignments
+      WHERE COALESCE(is_testaccount, FALSE) = $1
     `;
-    const statsRes = await pool.query(statsQuery);
+    const statsRes = await pool.query(statsQuery, [isTest]);
 
     const vacantPosRes = await pool.query(`
       SELECT COUNT(*)::int AS vacant_positions_count
@@ -145,11 +149,12 @@ export const getAssignments = async (req, res) => {
         SELECT 1 FROM tlo_assignments a 
         WHERE (a.position_id = p.id OR (a.position_id IS NULL AND a.tlo_position_id = p.id::text))
           AND a.status <> 'Inactive'
+          AND COALESCE(a.is_testaccount, FALSE) = $1
       )
-    `);
+    `, [isTest]);
 
     const totalPosRes = await pool.query(`SELECT COUNT(*)::int AS total_positions FROM tlo_positions`);
-    const totalOfficialsRes = await pool.query(`SELECT COUNT(*)::int AS total_officials FROM tlo_masterlist`);
+    const totalOfficialsRes = await pool.query(`SELECT COUNT(*)::int AS total_officials FROM tlo_masterlist WHERE COALESCE(is_testaccount, FALSE) = $1`, [isTest]);
 
     return res.status(200).json({
       success: true,
@@ -179,6 +184,7 @@ export const getVacantPositions = async (req, res) => {
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
 
+    const isTest = Boolean(req.user?.is_testaccount);
     const { include_position_id } = req.query;
 
     let query = `
@@ -197,10 +203,11 @@ export const getVacantPositions = async (req, res) => {
           FROM tlo_assignments a 
           WHERE (a.position_id = p.id OR (a.position_id IS NULL AND a.tlo_position_id = p.id::text))
             AND a.status <> 'Inactive'
+            AND COALESCE(a.is_testaccount, FALSE) = $1
         )
     `;
 
-    const params = [];
+    const params = [isTest];
     if (include_position_id && !isNaN(parseInt(include_position_id, 10))) {
       params.push(parseInt(include_position_id, 10));
       query += ` OR p.id = $${params.length}`;
@@ -230,6 +237,7 @@ export const getVacantPositions = async (req, res) => {
 // 3. Fetch Officials for Assignment Dropdown (From tlo_masterlist)
 export const getOfficialsForAssignment = async (req, res) => {
   try {
+    const isTest = Boolean(req.user?.is_testaccount);
     const query = `
       SELECT 
         m.id,
@@ -312,7 +320,7 @@ export const getOfficialsForAssignment = async (req, res) => {
             )
             FROM tlo_assignments a
             LEFT JOIN tlo_positions pos ON a.position_id = pos.id
-            WHERE a.tlo_masterlist_id = m.id AND a.status ILIKE 'Active' AND a.end_date IS NULL
+            WHERE a.tlo_masterlist_id = m.id AND a.status ILIKE 'Active' AND a.end_date IS NULL AND COALESCE(a.is_testaccount, FALSE) = $1
           ),
           '[]'::json
         ) AS active_designations,
@@ -336,7 +344,7 @@ export const getOfficialsForAssignment = async (req, res) => {
           ) ORDER BY a.created_at DESC, a.id DESC)
           FROM tlo_assignments a
           JOIN tlo_positions pos ON a.position_id = pos.id
-          WHERE a.tlo_masterlist_id = m.id
+          WHERE a.tlo_masterlist_id = m.id AND COALESCE(a.is_testaccount, FALSE) = $1
         ) AS existing_assignments,
         (
           SELECT json_agg(json_build_object(
@@ -358,15 +366,16 @@ export const getOfficialsForAssignment = async (req, res) => {
           ) ORDER BY a.created_at DESC, a.id DESC)
           FROM tlo_assignments a
           JOIN tlo_positions pos ON a.position_id = pos.id
-          WHERE a.tlo_masterlist_id = m.id AND a.status ILIKE 'Active' AND a.end_date IS NULL
+          WHERE a.tlo_masterlist_id = m.id AND a.status ILIKE 'Active' AND a.end_date IS NULL AND COALESCE(a.is_testaccount, FALSE) = $1
         ) AS active_assignments
       FROM tlo_masterlist m
-      INNER JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid))
+      INNER JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid)) AND tlo.is_testaccount = $1
       WHERE LOWER(TRIM(COALESCE(tlo.status, ''))) = 'active'
+        AND COALESCE(m.is_testaccount, FALSE) = $1
       ORDER BY m.last_name ASC, m.first_name ASC
     `;
 
-    const result = await pool.query(query);
+    const result = await pool.query(query, [isTest]);
 
     // Deduplicate officials by canonical normalized full name / identity
     // Consolidates multiple masterlist records for the same individual, merging existing & active assignments
@@ -464,6 +473,8 @@ export const createAssignment = async (req, res) => {
     vacate_position_ids = null
   } = req.body;
 
+  const isTest = Boolean(req.user?.is_testaccount);
+
   // Basic Validation
   if (!tlo_masterlist_id || !position_id) {
     return res.status(400).json({
@@ -513,8 +524,9 @@ export const createAssignment = async (req, res) => {
        LEFT JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
        WHERE (a.position_id = $1 OR (a.position_id IS NULL AND a.tlo_position_id = $1::text))
          AND a.status <> 'Inactive'
+         AND COALESCE(a.is_testaccount, FALSE) = $2
        LIMIT 1`,
-      [position_id]
+      [position_id, isTest]
     );
 
     if (activeAssignCheck.rowCount > 0) {
@@ -530,9 +542,9 @@ export const createAssignment = async (req, res) => {
     const officialCheck = await client.query(
       `SELECT m.id, m.tloid, m.first_name, m.last_name, tlo.status
        FROM tlo_masterlist m
-       LEFT JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid))
-       WHERE m.id = $1`,
-      [tlo_masterlist_id]
+       LEFT JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid)) AND tlo.is_testaccount = $2
+       WHERE m.id = $1 AND COALESCE(m.is_testaccount, FALSE) = $2`,
+      [tlo_masterlist_id, isTest]
     );
 
     if (officialCheck.rowCount === 0) {
@@ -576,19 +588,20 @@ export const createAssignment = async (req, res) => {
         WHERE a.tlo_masterlist_id = $1 
           AND a.status = 'Active' 
           AND a.end_date IS NULL
+          AND COALESCE(a.is_testaccount, FALSE) = $2
       `;
-      const selectParams = [tlo_masterlist_id];
+      const selectParams = [tlo_masterlist_id, isTest];
 
       if (hasSpecificVacates) {
         if (specificAssignIds.length > 0 && specificPosIds.length > 0) {
           selectParams.push(specificAssignIds, specificPosIds);
-          selectSql += ` AND (a.id = ANY($2::int[]) OR a.position_id = ANY($3::int[]))`;
+          selectSql += ` AND (a.id = ANY($3::int[]) OR a.position_id = ANY($4::int[]))`;
         } else if (specificAssignIds.length > 0) {
           selectParams.push(specificAssignIds);
-          selectSql += ` AND a.id = ANY($2::int[])`;
+          selectSql += ` AND a.id = ANY($3::int[])`;
         } else {
           selectParams.push(specificPosIds);
-          selectSql += ` AND a.position_id = ANY($2::int[])`;
+          selectSql += ` AND a.position_id = ANY($3::int[])`;
         }
       }
 
@@ -613,8 +626,8 @@ export const createAssignment = async (req, res) => {
              END,
              updated_at = CURRENT_TIMESTAMP,
              updated_by = $4
-           WHERE id = ANY($1::int[])`,
-          [vacatedIds, effectiveEndDate, positionRecord.position_title, createdBy]
+           WHERE id = ANY($1::int[]) AND COALESCE(is_testaccount, FALSE) = $5`,
+          [vacatedIds, effectiveEndDate, positionRecord.position_title, createdBy, isTest]
         );
       }
     }
@@ -631,7 +644,8 @@ export const createAssignment = async (req, res) => {
         end_date,
         designation,
         remarks,
-        created_by
+        created_by,
+        is_testaccount
       ) VALUES (
         $1,
         $2,
@@ -642,9 +656,10 @@ export const createAssignment = async (req, res) => {
         NULL,
         $5,
         $6,
-        $7
+        $7,
+        $8
       )
-      RETURNING id, status, capacity, start_date, created_at
+      RETURNING id, status, capacity, start_date, created_at, is_testaccount
     `;
 
     const insertRes = await client.query(insertQuery, [
@@ -654,7 +669,8 @@ export const createAssignment = async (req, res) => {
       start_date || null,
       designation || null,
       remarks || null,
-      createdBy
+      createdBy,
+      isTest
     ]);
 
     await client.query('COMMIT');
@@ -688,6 +704,7 @@ export const createAssignment = async (req, res) => {
 export const deactivateAssignment = async (req, res) => {
   const { id } = req.params;
   const { end_date, remarks } = req.body;
+  const isTest = Boolean(req.user?.is_testaccount);
 
   if (!id) {
     return res.status(400).json({
@@ -711,15 +728,16 @@ export const deactivateAssignment = async (req, res) => {
         END,
         updated_at = CURRENT_TIMESTAMP,
         updated_by = $4
-      WHERE id = $1 AND status = 'Active'
-      RETURNING id, status, capacity, start_date, end_date, position_id, tlo_masterlist_id
+      WHERE id = $1 AND status = 'Active' AND COALESCE(is_testaccount, FALSE) = $5
+      RETURNING id, status, capacity, start_date, end_date, position_id, tlo_masterlist_id, is_testaccount
     `;
 
     const result = await pool.query(updateQuery, [
       id,
       end_date || null,
       remarks || null,
-      updatedBy
+      updatedBy,
+      isTest
     ]);
 
     if (result.rowCount === 0) {
@@ -758,6 +776,8 @@ export const updateAssignment = async (req, res) => {
     vacate_assignment_ids
   } = req.body;
 
+  const isTest = Boolean(req.user?.is_testaccount);
+
   if (!id) {
     return res.status(400).json({ success: false, error: 'Assignment ID is required.' });
   }
@@ -768,8 +788,8 @@ export const updateAssignment = async (req, res) => {
 
     // 1. Lock and fetch current assignment
     const currRes = await client.query(
-      `SELECT * FROM tlo_assignments WHERE id = $1 FOR UPDATE`,
-      [id]
+      `SELECT * FROM tlo_assignments WHERE id = $1 AND COALESCE(is_testaccount, FALSE) = $2 FOR UPDATE`,
+      [id, isTest]
     );
 
     if (currRes.rowCount === 0) {
@@ -801,8 +821,9 @@ export const updateAssignment = async (req, res) => {
          WHERE (a.position_id = $1 OR (a.position_id IS NULL AND a.tlo_position_id = $1::text))
            AND a.status <> 'Inactive' 
            AND a.id <> $2
+           AND COALESCE(a.is_testaccount, FALSE) = $3
          LIMIT 1`,
-        [targetPosId, id]
+        [targetPosId, id, isTest]
       );
 
       if (occCheck.rowCount > 0) {
@@ -820,9 +841,9 @@ export const updateAssignment = async (req, res) => {
       const offCheck = await client.query(
         `SELECT m.id, tlo.status
          FROM tlo_masterlist m
-         LEFT JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid))
-         WHERE m.id = $1`,
-        [targetMasterlistId]
+         LEFT JOIN third_level_official_masterlist tlo ON LOWER(TRIM(tlo."TLOid")) = LOWER(TRIM(m.tloid)) AND tlo.is_testaccount = $2
+         WHERE m.id = $1 AND COALESCE(m.is_testaccount, FALSE) = $2`,
+        [targetMasterlistId, isTest]
       );
       if (offCheck.rowCount === 0) {
         await client.query('ROLLBACK');
@@ -881,8 +902,8 @@ export const updateAssignment = async (req, res) => {
              END,
              updated_at = CURRENT_TIMESTAMP,
              updated_by = $3
-           WHERE id = $1`,
-          [id, start_date || current.start_date || null, updatedBy]
+           WHERE id = $1 AND COALESCE(is_testaccount, FALSE) = $4`,
+          [id, start_date || current.start_date || null, updatedBy, isTest]
         );
       } else {
         // "NO — Retain": retain previous position as Active alongside new deployment
@@ -892,8 +913,8 @@ export const updateAssignment = async (req, res) => {
              status = 'Active',
              updated_at = CURRENT_TIMESTAMP,
              updated_by = $2
-           WHERE id = $1`,
-          [id, updatedBy]
+           WHERE id = $1 AND COALESCE(is_testaccount, FALSE) = $3`,
+          [id, updatedBy, isTest]
         );
       }
 
@@ -910,7 +931,8 @@ export const updateAssignment = async (req, res) => {
           designation,
           remarks,
           created_by,
-          updated_by
+          updated_by,
+          is_testaccount
         ) VALUES (
           $1,
           $2,
@@ -922,7 +944,8 @@ export const updateAssignment = async (req, res) => {
           $5,
           $6,
           $7,
-          $7
+          $7,
+          $8
         )
         RETURNING *
       `;
@@ -934,7 +957,8 @@ export const updateAssignment = async (req, res) => {
         start_date || current.start_date || null,
         designation !== undefined ? (designation || null) : null,
         remarks !== undefined ? (remarks || null) : null,
-        updatedBy
+        updatedBy,
+        isTest
       ]);
       resultRecord = insertRes.rows[0];
 
@@ -953,14 +977,15 @@ export const updateAssignment = async (req, res) => {
             END,
             updated_at = CURRENT_TIMESTAMP,
             updated_by = $3
-          WHERE id = $4
+          WHERE id = $4 AND COALESCE(is_testaccount, FALSE) = $5
           RETURNING *
         `;
         const res = await client.query(updateQuery, [
           start_date || end_date || null,
           remarks || null,
           updatedBy,
-          id
+          id,
+          isTest
         ]);
         resultRecord = res.rows[0];
       } else {
@@ -976,7 +1001,7 @@ export const updateAssignment = async (req, res) => {
             remarks = $5,
             updated_at = CURRENT_TIMESTAMP,
             updated_by = $6
-          WHERE id = $7
+          WHERE id = $7 AND COALESCE(is_testaccount, FALSE) = $8
           RETURNING *
         `;
         const res = await client.query(updateQuery, [
@@ -986,7 +1011,8 @@ export const updateAssignment = async (req, res) => {
           designation !== undefined ? (designation || null) : current.designation,
           remarks !== undefined ? (remarks || null) : current.remarks,
           updatedBy,
-          id
+          id,
+          isTest
         ]);
         resultRecord = res.rows[0];
       }
@@ -1012,8 +1038,8 @@ export const updateAssignment = async (req, res) => {
              END,
              updated_at = CURRENT_TIMESTAMP,
              updated_by = $3
-           WHERE id = ANY($1::int[]) AND status = 'Active'`,
-          [validVacateIds, effectiveEndDate, updatedBy]
+           WHERE id = ANY($1::int[]) AND status = 'Active' AND COALESCE(is_testaccount, FALSE) = $4`,
+          [validVacateIds, effectiveEndDate, updatedBy, isTest]
         );
       }
     }

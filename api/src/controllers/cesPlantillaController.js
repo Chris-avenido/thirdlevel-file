@@ -38,106 +38,93 @@ export const getPlantillaItems = async (req, res) => {
       return getPlantillaItemsLegacy(req, res);
     }
 
-    const params = [];
+    const isTest = Boolean(req.user?.is_testaccount);
+    const params = [isTest];
     const conditions = [];
 
-    // Base condition: exclude placeholders
-    conditions.push("UPPER(TRIM(COALESCE(p.permanent_item_no, a.tlo_position_id, ''))) NOT IN ('NEW ITEM', 'N/A (DETAILED)')");
+    // Base condition: exclude placeholders and isolate test vs prod
+    conditions.push("UPPER(TRIM(COALESCE(dbm_item_no, ''))) NOT IN ('NEW ITEM', 'N/A (DETAILED)')");
+    conditions.push("COALESCE(is_testaccount, FALSE) = $1");
 
     if (search && search.trim()) {
       const idx = params.length + 1;
       params.push(`%${search.trim()}%`);
       conditions.push(`(
-        COALESCE(p.permanent_item_no, a.tlo_position_id) ILIKE $${idx} OR 
-        COALESCE(pos.position_title, i.position_title) ILIKE $${idx} OR 
-        m.last_name ILIKE $${idx} OR 
-        m.first_name ILIKE $${idx} OR 
-        p.last_name ILIKE $${idx} OR 
-        p.first_name ILIKE $${idx} OR 
-        pos.bureau ILIKE $${idx} OR
-        pos.region ILIKE $${idx}
+        dbm_item_no ILIKE $${idx} OR 
+        position_title ILIKE $${idx} OR 
+        incumbent_name ILIKE $${idx} OR 
+        office_bureau_division ILIKE $${idx} OR
+        region ILIKE $${idx}
       )`);
     }
 
     if (region && region !== 'All') {
       params.push(region);
-      conditions.push(`pos.region = $${params.length}`);
+      conditions.push(`region = $${params.length}`);
     }
 
     if (office_bureau_division && office_bureau_division !== 'All') {
       params.push(office_bureau_division);
-      conditions.push(`(pos.bureau = $${params.length} OR pos.division = $${params.length})`);
+      conditions.push(`office_bureau_division = $${params.length}`);
     }
 
     if (position_title && position_title !== 'All') {
       params.push(position_title);
-      conditions.push(`COALESCE(pos.position_title, i.position_title) = $${params.length}`);
+      conditions.push(`position_title = $${params.length}`);
     }
 
     if (incumbent_name && incumbent_name !== 'All') {
       if (incumbent_name === 'VACANT POSITION' || incumbent_name.toUpperCase() === 'VACANT') {
-        conditions.push(`(a.tlo_masterlist_id IS NULL AND (p.last_name IS NULL AND p.first_name IS NULL))`);
+        conditions.push(`is_vacant = TRUE`);
       } else {
         params.push(`%${incumbent_name.trim()}%`);
-        conditions.push(`(m.last_name ILIKE $${params.length} OR CONCAT(m.last_name, ', ', m.first_name) ILIKE $${params.length} OR p.last_name ILIKE $${params.length} OR CONCAT(p.last_name, ', ', p.first_name) ILIKE $${params.length})`);
+        conditions.push(`incumbent_name ILIKE $${params.length}`);
       }
     }
 
     if (salary_grade && salary_grade !== 'All') {
       params.push(salary_grade);
-      conditions.push(`COALESCE(pos.salary_grade, i.salary_grade) = $${params.length}`);
+      conditions.push(`salary_grade = $${params.length}`);
     }
 
     if (status_of_appointment && status_of_appointment !== 'All') {
       params.push(status_of_appointment);
-      conditions.push(`(COALESCE(p.employment_type, a.capacity, 'Permanent') = $${params.length})`);
+      conditions.push(`status_of_appointment = $${params.length}`);
     }
 
     if (is_vacant !== undefined && is_vacant !== 'All' && is_vacant !== '') {
       const isVacantBool = is_vacant === 'true';
-      if (isVacantBool) {
-        conditions.push(`(a.tlo_masterlist_id IS NULL AND (p.last_name IS NULL AND p.first_name IS NULL))`);
-      } else {
-        conditions.push(`(a.tlo_masterlist_id IS NOT NULL OR (p.last_name IS NOT NULL OR p.first_name IS NOT NULL))`);
-      }
-    }
-
-    if (is_active !== undefined && is_active !== 'All' && is_active !== '') {
-      params.push(is_active === 'true' ? 'Active' : 'Inactive');
-      conditions.push(`a.status = $${params.length}`);
+      params.push(isVacantBool);
+      conditions.push(`is_vacant = $${params.length}`);
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const validSortColumns = {
-      id: 'a.id',
-      dbm_item_no: 'COALESCE(p.permanent_item_no, a.tlo_position_id)',
-      position_title: 'COALESCE(pos.position_title, i.position_title)',
-      office_bureau_division: 'COALESCE(pos.bureau, pos.division)',
-      region: 'pos.region',
-      salary_grade: 'COALESCE(pos.salary_grade, i.salary_grade)',
-      incumbent_name: 'COALESCE(m.last_name, p.last_name)',
-      status_of_appointment: 'COALESCE(p.employment_type, a.capacity)',
-      is_vacant: "CASE WHEN a.tlo_masterlist_id IS NULL AND (p.last_name IS NULL AND p.first_name IS NULL) THEN TRUE ELSE FALSE END",
-      is_active: "(a.status = 'Active')",
-      created_at: 'a.created_at'
+      id: 'id',
+      source_row_number: 'source_row_number',
+      dbm_item_no: 'dbm_item_no',
+      position_title: 'position_title',
+      office_bureau_division: 'office_bureau_division',
+      region: 'region',
+      salary_grade: 'salary_grade',
+      incumbent_name: 'incumbent_name',
+      status_of_appointment: 'status_of_appointment',
+      is_vacant: 'is_vacant',
+      created_at: 'created_at'
     };
 
-    const activeSortCol = validSortColumns[sortColumn] || 'a.id';
+    const activeSortCol = validSortColumns[sortColumn] || 'id';
     const activeSortDir = sortDirection?.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
 
-    // 1. KPI Counts dynamically from normalized architecture
+    // 1. KPI Counts dynamically from ces_plantilla
     const kpiQuery = `
       SELECT 
         COUNT(*) AS total_plantilla,
-        COUNT(*) FILTER (WHERE a.tlo_masterlist_id IS NOT NULL OR (p.last_name IS NOT NULL OR p.first_name IS NOT NULL)) AS total_filled,
-        COUNT(*) FILTER (WHERE a.tlo_masterlist_id IS NULL AND (p.last_name IS NULL AND p.first_name IS NULL)) AS total_vacant,
-        COUNT(DISTINCT pos.region) FILTER (WHERE pos.region IS NOT NULL AND pos.region != '') AS total_regions
-      FROM tlo_assignments a
-      LEFT JOIN tlo_positions pos ON pos.id = a.position_id
-      LEFT JOIN tlo_masterlist m ON m.id = a.tlo_masterlist_id
-      LEFT JOIN tlo_items i ON i.item_number = a.tlo_position_id
-      LEFT JOIN tlo_plantilla p ON p.permanent_item_no = a.tlo_position_id
+        COUNT(*) FILTER (WHERE is_vacant = FALSE) AS total_filled,
+        COUNT(*) FILTER (WHERE is_vacant = TRUE) AS total_vacant,
+        COUNT(DISTINCT region) FILTER (WHERE region IS NOT NULL AND region != '') AS total_regions
+      FROM ces_plantilla
       ${whereClause};
     `;
     const kpiResult = await pool.query(kpiQuery, params);
@@ -146,31 +133,21 @@ export const getPlantillaItems = async (req, res) => {
     // 2. Paged Data
     let dataQuery = `
       SELECT 
-        a.id,
-        p.id AS plantilla_id,
-        a.id AS source_row_number,
-        COALESCE(p.permanent_item_no, a.tlo_position_id) AS dbm_item_no,
-        COALESCE(pos.position_title, i.position_title) AS position_title,
-        COALESCE(pos.salary_grade, i.salary_grade) AS salary_grade,
-        COALESCE(pos.bureau, pos.division) AS office_bureau_division,
-        pos.region,
-        pos.division,
-        CASE 
-          WHEN a.tlo_masterlist_id IS NULL AND (p.last_name IS NULL AND p.first_name IS NULL) THEN 'VACANT'
-          WHEN m.last_name IS NOT NULL THEN TRIM(CONCAT(m.last_name, ', ', COALESCE(m.first_name, ''), ' ', COALESCE(m.middle_name, '')))
-          ELSE TRIM(CONCAT(p.last_name, ', ', COALESCE(p.first_name, ''), ' ', COALESCE(p.middle_name, '')))
-        END AS incumbent_name,
-        COALESCE(p.employment_type, a.capacity, 'Permanent') AS status_of_appointment,
-        CASE WHEN a.tlo_masterlist_id IS NULL AND (p.last_name IS NULL AND p.first_name IS NULL) THEN TRUE ELSE FALSE END AS is_vacant,
-        (a.status = 'Active') AS is_active,
-        p.salary,
-        a.created_at,
-        a.updated_at
-      FROM tlo_assignments a
-      LEFT JOIN tlo_positions pos ON pos.id = a.position_id
-      LEFT JOIN tlo_masterlist m ON m.id = a.tlo_masterlist_id
-      LEFT JOIN tlo_items i ON i.item_number = a.tlo_position_id
-      LEFT JOIN tlo_plantilla p ON p.permanent_item_no = a.tlo_position_id
+        id,
+        source_row_number,
+        office_bureau_division,
+        region,
+        position_title,
+        dbm_item_no,
+        salary_grade,
+        incumbent_name,
+        status_of_appointment,
+        is_vacant,
+        is_section_header,
+        is_testaccount,
+        created_at,
+        updated_at
+      FROM ces_plantilla
       ${whereClause}
       ORDER BY ${activeSortCol} ${activeSortDir}
     `;
@@ -190,27 +167,25 @@ export const getPlantillaItems = async (req, res) => {
     // 3. Distinct Filter Options
     const optionsQuery = `
       SELECT 
-        ARRAY_AGG(DISTINCT pos.region) FILTER (WHERE pos.region IS NOT NULL AND pos.region != '') AS regions,
-        ARRAY_AGG(DISTINCT COALESCE(pos.bureau, pos.division)) FILTER (WHERE COALESCE(pos.bureau, pos.division) IS NOT NULL AND COALESCE(pos.bureau, pos.division) != '') AS offices,
-        ARRAY_AGG(DISTINCT COALESCE(pos.position_title, i.position_title)) FILTER (WHERE COALESCE(pos.position_title, i.position_title) IS NOT NULL AND COALESCE(pos.position_title, i.position_title) != '') AS positions,
-        ARRAY_AGG(DISTINCT COALESCE(pos.salary_grade, i.salary_grade)) FILTER (WHERE COALESCE(pos.salary_grade, i.salary_grade) IS NOT NULL AND COALESCE(pos.salary_grade, i.salary_grade) != '') AS salary_grades,
-        ARRAY_AGG(DISTINCT COALESCE(p.employment_type, a.capacity)) FILTER (WHERE COALESCE(p.employment_type, a.capacity) IS NOT NULL AND COALESCE(p.employment_type, a.capacity) != '') AS appointment_statuses,
+        ARRAY_AGG(DISTINCT region) FILTER (WHERE region IS NOT NULL AND region != '') AS regions,
+        ARRAY_AGG(DISTINCT office_bureau_division) FILTER (WHERE office_bureau_division IS NOT NULL AND office_bureau_division != '') AS offices,
+        ARRAY_AGG(DISTINCT position_title) FILTER (WHERE position_title IS NOT NULL AND position_title != '') AS positions,
+        ARRAY_AGG(DISTINCT salary_grade) FILTER (WHERE salary_grade IS NOT NULL AND salary_grade != '') AS salary_grades,
+        ARRAY_AGG(DISTINCT status_of_appointment) FILTER (WHERE status_of_appointment IS NOT NULL AND status_of_appointment != '') AS appointment_statuses,
         (
           SELECT json_object_agg(sub.region, sub.offices) FROM (
-            SELECT pos2.region, array_agg(DISTINCT COALESCE(pos2.bureau, pos2.division) ORDER BY COALESCE(pos2.bureau, pos2.division)) as offices
-            FROM tlo_assignments a2
-            JOIN tlo_positions pos2 ON pos2.id = a2.position_id
-            WHERE pos2.region IS NOT NULL AND pos2.region != ''
-              AND COALESCE(pos2.bureau, pos2.division) IS NOT NULL AND COALESCE(pos2.bureau, pos2.division) != ''
-            GROUP BY pos2.region
+            SELECT region, array_agg(DISTINCT office_bureau_division ORDER BY office_bureau_division) as offices
+            FROM ces_plantilla
+            WHERE region IS NOT NULL AND region != ''
+              AND office_bureau_division IS NOT NULL AND office_bureau_division != ''
+              AND COALESCE(is_testaccount, FALSE) = $1
+            GROUP BY region
           ) sub
         ) AS region_offices
-      FROM tlo_assignments a
-      LEFT JOIN tlo_positions pos ON pos.id = a.position_id
-      LEFT JOIN tlo_items i ON i.item_number = a.tlo_position_id
-      LEFT JOIN tlo_plantilla p ON p.permanent_item_no = a.tlo_position_id;
+      FROM ces_plantilla
+      WHERE COALESCE(is_testaccount, FALSE) = $1;
     `;
-    const optionsResult = await pool.query(optionsQuery);
+    const optionsResult = await pool.query(optionsQuery, [isTest]);
 
     const pageSize = limit === 'all' ? totalCount : parseInt(limit, 10) || 20;
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -251,7 +226,8 @@ export const getPlantillaItems = async (req, res) => {
  */
 const getPlantillaItemsLegacy = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM ces_plantilla LIMIT 50');
+    const isTest = Boolean(req.user?.is_testaccount);
+    const result = await pool.query('SELECT * FROM ces_plantilla WHERE COALESCE(is_testaccount, FALSE) = $1 LIMIT 50', [isTest]);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -304,6 +280,7 @@ export const createPlantillaItem = async (req, res) => {
     const nextRowNumber = parseInt(rowNumRes.rows[0].next_row, 10);
 
     const isVacantVal = is_vacant === true || is_vacant === 'true' || (incumbent_name && incumbent_name.trim().toUpperCase() === 'VACANT');
+    const isTest = Boolean(req.user?.is_testaccount);
 
     const insertQuery = `
       INSERT INTO ces_plantilla (
@@ -317,9 +294,10 @@ export const createPlantillaItem = async (req, res) => {
         status_of_appointment,
         is_vacant,
         is_section_header,
+        is_testaccount,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE, $10, NOW(), NOW())
       RETURNING *;
     `;
 
@@ -332,7 +310,8 @@ export const createPlantillaItem = async (req, res) => {
       salary_grade ? String(salary_grade).trim() : null,
       incumbent_name ? incumbent_name.trim() : (isVacantVal ? 'VACANT' : null),
       status_of_appointment ? status_of_appointment.trim() : null,
-      Boolean(isVacantVal)
+      Boolean(isVacantVal),
+      isTest
     ]);
 
     await client.query('COMMIT');
@@ -388,6 +367,7 @@ export const updatePlantillaItem = async (req, res) => {
 
   try {
     const isVacantVal = is_vacant === true || is_vacant === 'true' || (incumbent_name && incumbent_name.trim().toUpperCase() === 'VACANT');
+    const isTest = Boolean(req.user?.is_testaccount);
 
     const updateQuery = `
       UPDATE ces_plantilla
@@ -401,7 +381,7 @@ export const updatePlantillaItem = async (req, res) => {
         status_of_appointment = $7,
         is_vacant = $8,
         updated_at = NOW()
-      WHERE id = $9
+      WHERE id = $9 AND COALESCE(is_testaccount, FALSE) = $10
       RETURNING *;
     `;
 
@@ -414,7 +394,8 @@ export const updatePlantillaItem = async (req, res) => {
       incumbent_name ? incumbent_name.trim() : (isVacantVal ? 'VACANT' : null),
       status_of_appointment ? status_of_appointment.trim() : null,
       Boolean(isVacantVal),
-      numId
+      numId,
+      isTest
     ]);
 
     if (result.rows.length === 0) {
@@ -444,7 +425,8 @@ export const deletePlantillaItem = async (req, res) => {
   }
 
   try {
-    const result = await pool.query('DELETE FROM ces_plantilla WHERE id = $1 RETURNING id, dbm_item_no', [numId]);
+    const isTest = Boolean(req.user?.is_testaccount);
+    const result = await pool.query('DELETE FROM ces_plantilla WHERE id = $1 AND COALESCE(is_testaccount, FALSE) = $2 RETURNING id, dbm_item_no', [numId, isTest]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Plantilla record not found.' });
     }
