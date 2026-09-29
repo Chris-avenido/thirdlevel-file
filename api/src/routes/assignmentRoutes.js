@@ -6,7 +6,8 @@ import {
   getOfficialsForAssignment,
   createAssignment,
   deactivateAssignment,
-  updateAssignment
+  updateAssignment,
+  deleteAssignment
 } from '../controllers/assignmentController.js';
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.get('/officials', authMiddleware, getOfficialsForAssignment);
 router.post('/', authMiddleware, createAssignment);
 router.put('/:id', authMiddleware, updateAssignment);
 router.patch('/:id/deactivate', authMiddleware, deactivateAssignment);
+router.delete('/:id', authMiddleware, deleteAssignment);
 
 export default router;

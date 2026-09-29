@@ -132,9 +132,13 @@ export const getAssignments = async (req, res) => {
     const statsQuery = `
       SELECT 
         COUNT(*)::int AS total_assignments,
-        COUNT(*) FILTER (WHERE status = 'Active' AND end_date IS NULL)::int AS active_assignments,
-        COUNT(*) FILTER (WHERE status = 'Inactive' OR end_date IS NOT NULL)::int AS inactive_assignments
-      FROM tlo_assignments
+        COUNT(*) FILTER (WHERE a.status = 'Active' AND a.end_date IS NULL)::int AS active_assignments,
+        COUNT(*) FILTER (WHERE a.status = 'Inactive' OR a.end_date IS NOT NULL)::int AS inactive_assignments
+      FROM tlo_assignments a
+      INNER JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
+      INNER JOIN tlo_positions p ON a.position_id = p.id
+      LEFT JOIN third_level_official_masterlist tlo ON LOWER(tlo."TLOid") = LOWER(m.tloid)
+      WHERE 1=1 AND (tlo.status IS NULL OR (tlo.status != 'For Approval' AND tlo.status != 'Rejected'))
     `;
     const statsRes = await pool.query(statsQuery);
 
@@ -1044,3 +1048,46 @@ export const updateAssignment = async (req, res) => {
     client.release();
   }
 };
+
+// 6. Delete Assignment (Removes record from tlo_assignments, frees position)
+export const deleteAssignment = async (req, res) => {
+  const { id } = req.params;
+  const assignmentId = parseInt(id, 10);
+
+  if (isNaN(assignmentId)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid assignment ID.'
+    });
+  }
+
+  try {
+    const existing = await pool.query(
+      `SELECT a.id, a.position_id, a.tlo_masterlist_id, a.status
+       FROM tlo_assignments a
+       WHERE a.id = $1`,
+      [assignmentId]
+    );
+
+    if (existing.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Assignment record not found.'
+      });
+    }
+
+    await pool.query('DELETE FROM tlo_assignments WHERE id = $1', [assignmentId]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Position assignment deleted successfully.'
+    });
+  } catch (error) {
+    console.error('Error in deleteAssignment:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to delete assignment.'
+    });
+  }
+};
+

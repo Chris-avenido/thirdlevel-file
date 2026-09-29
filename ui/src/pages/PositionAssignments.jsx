@@ -20,6 +20,7 @@ import {
   FiUsers,
   FiLayers,
   FiEdit2,
+  FiTrash2,
   FiCheck,
   FiInfo,
   FiAward,
@@ -1275,6 +1276,50 @@ const PositionAssignments = () => {
     }
   };
 
+  // Delete Assignment Handler
+  const handleDeleteAssignment = async (assignment) => {
+    if (!assignment || !assignment.id) return;
+
+    const officialName = assignment.official_name || `${assignment.first_name || ''} ${assignment.last_name || ''}`.trim() || 'this official';
+    const positionTitle = assignment.position_title || 'this position';
+
+    const result = await Swal.fire({
+      title: 'Delete Position Assignment?',
+      html: `Are you sure you want to delete the assignment of <strong class="text-[#08315F]">${officialName}</strong> as <strong class="text-[#08315F]">${positionTitle}</strong>?<br/><br/><span class="text-xs text-rose-600 font-bold">This will remove the assignment record and free the position.</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, Delete Assignment',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const res = await fetch(apiUrl(`/api/third-level/assignments/${assignment.id}`), {
+          method: 'DELETE',
+          headers: authHeaders
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to delete assignment');
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Assignment Deleted',
+          text: 'The position assignment has been deleted successfully and the position is now available.',
+          confirmButtonColor: '#08315F',
+          timer: 2000
+        });
+
+        handleRefresh();
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Failed to delete assignment.', 'error');
+      }
+    }
+  };
+
   if (loading) return <LoadingScreen />;
 
   return (
@@ -1684,23 +1729,13 @@ const PositionAssignments = () => {
                                 {/* Group Hover Action Toolbar (Matching OfficialsRegistry) */}
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-md border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">
                                   <button
-                                    onClick={() => handleOpenEditModal(item)}
-                                    title="Edit assignment details or reassign"
-                                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-sky-50 text-[#08315F] rounded-lg text-[13px] font-black uppercase tracking-widest hover:bg-[#08315F] hover:text-white transition-all border-2 border-sky-200 shadow-2xs shrink-0"
+                                    onClick={() => handleDeleteAssignment(item)}
+                                    title="Delete position assignment"
+                                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[13px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all border-2 border-rose-200 shadow-2xs shrink-0 cursor-pointer"
                                   >
-                                    <FiEdit2 size={13} />
-                                    <span>Edit</span>
+                                    <FiTrash2 size={13} />
+                                    <span>Delete</span>
                                   </button>
-                                  {isActive && (
-                                    <button
-                                      onClick={() => handleOpenDeactivateModal(item)}
-                                      title="End assignment to free this position"
-                                      className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[13px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-200 shadow-2xs shrink-0"
-                                    >
-                                      <FiX size={13} />
-                                      <span>End</span>
-                                    </button>
-                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -1805,19 +1840,11 @@ const PositionAssignments = () => {
 
                             <div className="flex items-center gap-2 mt-1">
                               <button
-                                onClick={() => handleOpenEditModal(item)}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-50 text-[#08315F] rounded-xl text-[13px] font-black uppercase tracking-widest border-2 border-sky-200 hover:bg-[#08315F] hover:text-white transition-all shadow-2xs"
+                                onClick={() => handleDeleteAssignment(item)}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-xl text-[13px] font-black uppercase tracking-widest border-2 border-rose-200 hover:bg-rose-600 hover:text-white transition-all shadow-2xs cursor-pointer"
                               >
-                                <FiEdit2 size={13} /> Edit
+                                <FiTrash2 size={13} /> Delete
                               </button>
-                              {isActive && (
-                                <button
-                                  onClick={() => handleOpenDeactivateModal(item)}
-                                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-xl text-[13px] font-black uppercase tracking-widest border-2 border-rose-200 hover:bg-rose-500 hover:text-white transition-all shadow-2xs"
-                                >
-                                  <FiX size={13} /> End
-                                </button>
-                              )}
                             </div>
                           </div>
                         );
