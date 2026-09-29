@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## 2026-09-29 — Documents Portal & Legal Portal: Additional Document Requirements
+
+### Documents Portal (`OfficialProfiling.jsx`)
+- **Accomplished Work Experience Sheet (WES) notarized**:
+  - Added document checklist card for uploading, viewing, and replacing the notarized Work Experience Sheet (`wes_binary_id`).
+  - Accepts PDF and Word document formats (`.pdf, .doc, .docx`).
+- **Comprehensive Curriculum Vitae**:
+  - Added document checklist card for uploading, viewing, and replacing the Comprehensive Curriculum Vitae (`cv_binary_id`).
+  - Accepts PDF and Word document formats (`.pdf, .doc, .docx`).
+
+### Legal Portal (`OfficialProfiling.jsx`)
+- **Certificate of No Pending Case issued by the DepEd Regional Office**:
+  - Added dedicated upload component in the Legal Portal section (`deped_clearance_binary_id`).
+  - Includes document state indicators, instant preview/view in new tab, and file download support (`.pdf, .doc, .docx`).
+- **Executive Summary of Pending Cases**:
+  - Maintained full support for optional confidential case executive summaries and counter-affidavit uploads (`executive_summary_binary_id`).
+
+### Summary Tab & System Updates
+- **Summary Overview Grid**:
+  - Updated the Document Checklist card grid in the Summary & Certify tab to render 2x2 Photo, PDS, WES, CV, Service Records, DepEd RO Clearance, and Executive Summary.
+- **Backend & Database Schema**:
+  - Created migration `20260929_051_add_wes_cv_and_deped_clearance_documents.sql` adding `wes_binary_id UUID`, `cv_binary_id UUID`, and `deped_clearance_binary_id UUID` across masterlist, applications, and auxiliary tables.
+  - Updated controller upload routing in `thirdLevelController.js`, profile persistence handling, and data backup metadata definitions in `export-backup.js`.
+
+---
+
 ## 2026-09-24 — Achievements Tab: Not Applicable (N/A) Toggle Button
 
 ### Official Profiling (`OfficialProfiling.jsx`)

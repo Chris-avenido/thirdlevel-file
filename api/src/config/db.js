@@ -33,6 +33,12 @@ export const initDB = async () => {
     await pool.query('ALTER TABLE tlo_users ADD COLUMN IF NOT EXISTS assigned_division TEXT;');
     await pool.query('ALTER TABLE third_level_official_masterlist ADD COLUMN IF NOT EXISTS designation TEXT;');
     await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS designation TEXT;');
+    await pool.query('ALTER TABLE third_level_official_masterlist ADD COLUMN IF NOT EXISTS wes_binary_id UUID;');
+    await pool.query('ALTER TABLE third_level_official_masterlist ADD COLUMN IF NOT EXISTS cv_binary_id UUID;');
+    await pool.query('ALTER TABLE third_level_official_masterlist ADD COLUMN IF NOT EXISTS deped_clearance_binary_id UUID;');
+    await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS wes_binary_id UUID;');
+    await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS cv_binary_id UUID;');
+    await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS deped_clearance_binary_id UUID;');
     await pool.query('ALTER TABLE unified_binaries ADD COLUMN IF NOT EXISTS content BYTEA;');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS authorization_codes (

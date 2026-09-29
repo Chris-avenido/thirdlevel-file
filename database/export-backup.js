@@ -296,34 +296,51 @@ async function runBackup() {
 
     // Extract TLO subset of unified_binaries (with Azure Blob URLs and metadata, without raw bytea)
     console.log('[Backup] Extracting TLO referenced unified_binaries metadata...');
-    const binCols = [
-      'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id',
-      'service_records_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id',
+    
+    // Dynamic filter: Only query columns that actually exist in the target database schema
+    const getExistingCols = async (tableName, targetCols) => {
+      const res = await client.query(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = $1`,
+        [tableName]
+      );
+      const existing = new Set(res.rows.map(r => r.column_name.toLowerCase()));
+      return targetCols.filter(c => existing.has(c.toLowerCase()));
+    };
+
+    const targetBinCols = [
+      'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id',
+      'service_records_binary_id', 'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id',
       'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
       'reassignment_order_binary_id'
     ];
-    const mlSelects = binCols.map(c => `SELECT "${c}"::text AS bid FROM third_level_official_masterlist WHERE "${c}" IS NOT NULL`);
-    const appCols = binCols.filter(c => c !== 'reassignment_order_binary_id');
-    const appSelects = appCols.map(c => `SELECT "${c}"::text AS bid FROM third_level_officials_profiling_application WHERE "${c}" IS NOT NULL`);
-    const updCols = ['photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id'];
-    const updSelects = updCols.map(c => `SELECT "${c}"::text AS bid FROM third_level_officials_updates WHERE "${c}" IS NOT NULL`);
 
-    const binaryMetaRes = await client.query(`
-      WITH all_bids AS (
-        ${[...mlSelects, ...appSelects, ...updSelects].join(' UNION ')}
-      )
-      SELECT 
-        u.id, 
-        u.hash, 
-        u.mime_type, 
-        u.size_bytes, 
-        u.azure_blob_url, 
-        u.created_at
-      FROM all_bids b
-      JOIN unified_binaries u ON u.id::text = b.bid;
-    `);
+    const mlExisting = await getExistingCols('third_level_official_masterlist', targetBinCols);
+    const appExisting = await getExistingCols('third_level_officials_profiling_application', targetBinCols.filter(c => c !== 'reassignment_order_binary_id'));
+    const updExisting = await getExistingCols('third_level_officials_updates', ['photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id']);
 
-    const tloBinaries = binaryMetaRes.rows;
+    const mlSelects = mlExisting.map(c => `SELECT "${c}"::text AS bid FROM third_level_official_masterlist WHERE "${c}" IS NOT NULL`);
+    const appSelects = appExisting.map(c => `SELECT "${c}"::text AS bid FROM third_level_officials_profiling_application WHERE "${c}" IS NOT NULL`);
+    const updSelects = updExisting.map(c => `SELECT "${c}"::text AS bid FROM third_level_officials_updates WHERE "${c}" IS NOT NULL`);
+
+    const allSelects = [...mlSelects, ...appSelects, ...updSelects];
+    let tloBinaries = [];
+    if (allSelects.length > 0) {
+      const binaryMetaRes = await client.query(`
+        WITH all_bids AS (
+          ${allSelects.join(' UNION ')}
+        )
+        SELECT 
+          u.id, 
+          u.hash, 
+          u.mime_type, 
+          u.size_bytes, 
+          u.azure_blob_url, 
+          u.created_at
+        FROM all_bids b
+        JOIN unified_binaries u ON u.id::text = b.bid;
+      `);
+      tloBinaries = binaryMetaRes.rows;
+    }
     manifest.tables['unified_binaries'] = tloBinaries.length;
     manifest.totalRows += tloBinaries.length;
 

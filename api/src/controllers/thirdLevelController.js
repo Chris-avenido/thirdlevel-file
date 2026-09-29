@@ -636,6 +636,9 @@ export const uploadDocument = async (req, res) => {
       'profile_word': 'profile_word_binary_id',
       'profile_ppt': 'profile_ppt_binary_id',
       'service_records': 'service_records_binary_id',
+      'wes': 'wes_binary_id',
+      'cv': 'cv_binary_id',
+      'deped_clearance': 'deped_clearance_binary_id',
       'sandiganbayan_clearance': 'sandiganbayan_clearance_binary_id',
       'nbi_clearance': 'nbi_clearance_binary_id',
       'csc_clearance': 'csc_clearance_binary_id',
@@ -916,8 +919,8 @@ export const updateProfile = async (req, res) => {
       'cespes_1_rating', 'cespes_2_rating', 'cespes_rating_1_period', 'cespes_rating_2_period',
       'performance_rating_ipcrf', 'performance_rating_cespes',
       'is_oic', 'unique_number', 'employment_status',
-      'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-      'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
+      'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
+      'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
       'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for'
     ];
 
@@ -937,8 +940,8 @@ export const updateProfile = async (req, res) => {
 
     const DO_NOT_UPPERCASE = new Set([
       'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
-      'password', 'password_hash', 'photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-      'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
+      'password', 'password_hash', 'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
+      'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
       'target_tloid', 'application_status', 'profiling_status', 'designation', 'suffix'
     ]);
 
@@ -1963,6 +1966,9 @@ export const processRegistration = async (req, res) => {
           profile_word_binary_id = COALESCE(cand.profile_word_binary_id, target.profile_word_binary_id),
           profile_ppt_binary_id = COALESCE(cand.profile_ppt_binary_id, target.profile_ppt_binary_id),
           service_records_binary_id = COALESCE(cand.service_records_binary_id, target.service_records_binary_id),
+          wes_binary_id = COALESCE(cand.wes_binary_id, target.wes_binary_id),
+          cv_binary_id = COALESCE(cand.cv_binary_id, target.cv_binary_id),
+          deped_clearance_binary_id = COALESCE(NULLIF(cand.deped_clearance_binary_id, ''), target.deped_clearance_binary_id),
           executive_summary_binary_id = COALESCE(NULLIF(cand.executive_summary_binary_id, ''), target.executive_summary_binary_id),
           reassignment_order_binary_id = COALESCE(cand.reassignment_order_binary_id, target.reassignment_order_binary_id),
           sandiganbayan_clearance_binary_id = COALESCE(NULLIF(cand.sandiganbayan_clearance_binary_id, ''), target.sandiganbayan_clearance_binary_id),
