@@ -647,34 +647,14 @@ const TloPositions = () => {
             </div>
 
             {/* MAIN DATA TABLE CARD (Exact Match to PositionAssignments) */}
-            <AnimatePresence mode="wait">
-              {positions.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="card p-20 text-center bg-white rounded-[30px] border-2 border-[#08315F]"
-                >
-                  <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FiLayers size={40} />
-                  </div>
-                  <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">
-                    No Positions Found
-                  </h3>
-                  <p className="text-slate-400 font-medium mt-2">
-                    {searchTerm || regionFilter !== 'All' || salaryGradeFilter !== 'All'
-                      ? 'Adjust your search query or reset your region and grade filters.'
-                      : 'Click "Add Plantilla Position" to add an official position entry.'}
-                  </p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden bg-white shadow-sm"
-                >
-                  <div className="w-full">
-                    {/* Desktop Table View */}
-                    <table className="hidden md:table w-full text-left border-collapse table-fixed">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden bg-white shadow-sm"
+            >
+              <div className="w-full">
+                {/* Desktop Table View */}
+                <table className="hidden md:table w-full text-left border-collapse table-fixed">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-200 select-none">
                           {/* ID Column */}
@@ -759,7 +739,24 @@ const TloPositions = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {positions.map((item) => {
+                        {positions.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-16 text-center">
+                              <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FiLayers size={32} />
+                              </div>
+                              <h3 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">
+                                No Positions Found
+                              </h3>
+                              <p className="text-slate-400 font-medium text-sm mt-1 max-w-md mx-auto">
+                                {searchTerm || regionFilter !== 'All' || salaryGradeFilter !== 'All'
+                                  ? 'Adjust your search query or reset your region and grade filters.'
+                                  : 'Click "Add Plantilla Position" to add an official position entry.'}
+                              </p>
+                            </td>
+                          </tr>
+                        ) : (
+                          positions.map((item) => {
                           const sgNum = parseInt(item.salary_grade, 10);
                           const isHighSg = !isNaN(sgNum) && sgNum >= 28;
 
@@ -857,13 +854,28 @@ const TloPositions = () => {
                               </td>
                             </tr>
                           );
-                        })}
+                        }))}
                       </tbody>
                     </table>
 
                     {/* Mobile Card View (Matching PositionAssignments) */}
                     <div className="md:hidden flex flex-col divide-y-2 divide-slate-100">
-                      {positions.map((item) => (
+                      {positions.length === 0 ? (
+                        <div className="p-12 text-center">
+                          <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FiLayers size={32} />
+                          </div>
+                          <h3 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">
+                            No Positions Found
+                          </h3>
+                          <p className="text-slate-400 font-medium text-sm mt-1 max-w-md mx-auto">
+                            {searchTerm || regionFilter !== 'All' || salaryGradeFilter !== 'All'
+                              ? 'Adjust your search query or reset your region and grade filters.'
+                              : 'Click "Add Plantilla Position" to add an official position entry.'}
+                          </p>
+                        </div>
+                      ) : (
+                        positions.map((item) => (
                         <div key={item.id} className="p-4 bg-white hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-3 min-w-0">
@@ -917,7 +929,7 @@ const TloPositions = () => {
                             </button>
                           </div>
                         </div>
-                      ))}
+                      )))}
                     </div>
 
                     {/* TABLE FOOTER / PAGINATION (Exact Match to PositionAssignments) */}
@@ -967,8 +979,6 @@ const TloPositions = () => {
                     </div>
                   </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
           </main>
         </div>
       </div>

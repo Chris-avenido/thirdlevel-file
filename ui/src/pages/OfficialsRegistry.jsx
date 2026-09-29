@@ -1862,12 +1862,6 @@ const OfficialsRegistry = () => {
                                 <div className="h-96 flex items-center justify-center">
                                     <div className="w-12 h-12 border-4 border-[var(--navy)]/10 border-t-[var(--navy)] rounded-full animate-spin"></div>
                                 </div>
-                            ) : officials.length === 0 ? (
-                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-20 text-center">
-                                    <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
-                                    <h3 className="text-xl font-[var(--font-heading)] font-black text-[var(--navy)] uppercase italic tracking-tight">No Records Found</h3>
-                                    <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
-                                </motion.div>
                             ) : viewMode === 'table' ? (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden">
                                     <div className="w-full">
@@ -1906,7 +1900,16 @@ const OfficialsRegistry = () => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y-2 divide-slate-200/60 bg-white">
-                                                {pagedRecords.map((item) => (
+                                                {pagedRecords.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={tableColumns.length} className="p-20 text-center">
+                                                            <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
+                                                            <h3 className="text-xl font-[var(--font-heading)] font-black text-[var(--navy)] uppercase italic tracking-tight">No Records Found</h3>
+                                                            <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    pagedRecords.map((item) => (
                                                     <React.Fragment key={item.TLOid}>
                                                     <tr className="group transition-colors relative hover:bg-slate-50/80">
                                                         <td className="px-3 py-4 align-middle max-w-[120px]">
@@ -2070,13 +2073,20 @@ const OfficialsRegistry = () => {
                                                         </td>
                                                     </tr>
                                                 </React.Fragment>
-                                            ))}
-                                        </tbody>
+                                                )))}
+                                            </tbody>
                                         </table>
 
                                         {/* MOBILE CARD VIEW */}
                                         <div className="md:hidden flex flex-col divide-y-2 divide-slate-100">
-                                            {pagedRecords.map((item) => (
+                                            {pagedRecords.length === 0 ? (
+                                                <div className="p-12 text-center">
+                                                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4"><FiSearch size={32} /></div>
+                                                    <h3 className="text-lg font-[var(--font-heading)] font-black text-[var(--navy)] uppercase italic tracking-tight">No Records Found</h3>
+                                                    <p className="text-slate-400 font-medium mt-2 text-sm">Adjust your filters or try a different search term.</p>
+                                                </div>
+                                            ) : (
+                                                pagedRecords.map((item) => (
                                                 <div key={item.TLOid} className="p-4 bg-white hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="flex items-center gap-3 min-w-0">
@@ -2187,7 +2197,7 @@ const OfficialsRegistry = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                            ))}
+                                            )))}
                                         </div>
 
                                         {/* TABLE FOOTER / PAGINATION */}
@@ -2216,8 +2226,16 @@ const OfficialsRegistry = () => {
                                 </motion.div>
                             ) : viewMode === 'grid' ? (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                        {pagedRecords.map((item) => (
+                                    {pagedRecords.length === 0 ? (
+                                        <div className="card p-20 text-center bg-white rounded-[30px] border-2 border-[#08315F]">
+                                            <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
+                                            <h3 className="text-xl font-[var(--font-heading)] font-black text-[var(--navy)] uppercase italic tracking-tight">No Records Found</h3>
+                                            <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                                {pagedRecords.map((item) => (
                                             <motion.div
                                                 key={item.TLOid}
                                                 whileHover={{ y: -4 }}
@@ -2360,6 +2378,8 @@ const OfficialsRegistry = () => {
                                             <button disabled={currentPage === pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="px-4 py-2 bg-slate-50 border-2 border-slate-200 text-slate-500 rounded-xl text-[15px] font-black uppercase tracking-widest disabled:opacity-40">Next</button>
                                         </div>
                                     </div>
+                                    </>
+                                    )}
                                 </motion.div>
                             ) : (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">

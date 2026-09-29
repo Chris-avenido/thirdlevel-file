@@ -283,12 +283,6 @@ const NotableAchievements = () => {
                                 <div className="h-64 flex items-center justify-center">
                                     <div className="w-12 h-12 border-4 border-[#08315F]/10 border-t-[#08315F] rounded-full animate-spin"></div>
                                 </div>
-                            ) : sortedRecords.length === 0 ? (
-                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
-                                    <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
-                                    <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
-                                    <p className="text-slate-400 font-medium mt-2">Adjust your filters or add a new record.</p>
-                                </motion.div>
                             ) : (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-[#08315F]">
                                     <div className="w-full overflow-x-auto">
@@ -311,7 +305,16 @@ const NotableAchievements = () => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-50">
-                                                {pagedRecords.map((item) => (
+                                                {pagedRecords.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={3} className="p-20 text-center">
+                                                            <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
+                                                            <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
+                                                            <p className="text-slate-400 font-medium mt-2">Adjust your filters or add a new record.</p>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    pagedRecords.map((item) => (
                                                     <motion.tr key={item.index_number} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors relative">
                                                         <td className="px-6 py-4">
                                                             <div className="w-12 h-10 rounded-[1rem] bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center font-black text-blue-400 text-xs border border-white shadow-sm tracking-widest">
@@ -334,7 +337,7 @@ const NotableAchievements = () => {
                                                             </div>
                                                         </td>
                                                     </motion.tr>
-                                                ))}
+                                                )))}
                                             </tbody>
                                         </table>
                                     </div>

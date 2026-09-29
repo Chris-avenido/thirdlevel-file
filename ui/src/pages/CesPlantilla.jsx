@@ -735,20 +735,6 @@ const CesPlantilla = () => {
                                 <div className="h-96 flex items-center justify-center">
                                     <div className="w-12 h-12 border-4 border-[#08315F]/10 border-t-[#08315F] rounded-full animate-spin"></div>
                                 </div>
-                            ) : items.length === 0 ? (
-                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[30px] border-2 border-[#08315F] p-20 text-center shadow-sm">
-                                    <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                                        <FiSearch size={40} />
-                                    </div>
-                                    <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Plantilla Positions Found</h3>
-                                    <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
-                                    <button
-                                        onClick={handleResetFilters}
-                                        className="mt-6 px-6 py-2.5 bg-[#08315F] text-white rounded-full font-black text-[15px] uppercase tracking-wider hover:bg-[#004A99] transition-all"
-                                    >
-                                        Reset Filters
-                                    </button>
-                                </motion.div>
                             ) : viewMode === 'table' ? (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden bg-white shadow-sm">
                                     <div className="w-full">
@@ -805,7 +791,24 @@ const CesPlantilla = () => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y-2 divide-slate-200/60 bg-white">
-                                                {items.map((item) => (
+                                                {items.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={tableColumns.length + (canManagePlantilla ? 1 : 0)} className="p-20 text-center">
+                                                            <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                                <FiSearch size={40} />
+                                                            </div>
+                                                            <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Plantilla Positions Found</h3>
+                                                            <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
+                                                            <button
+                                                                onClick={handleResetFilters}
+                                                                className="mt-6 px-6 py-2.5 bg-[#08315F] text-white rounded-full font-black text-[15px] uppercase tracking-wider hover:bg-[#004A99] transition-all"
+                                                            >
+                                                                Reset Filters
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    items.map((item) => (
                                                     <tr key={item.id} className="group transition-colors relative hover:bg-slate-50/80">
                                                         {/* Region */}
                                                         <td className="px-3 py-4 align-middle max-w-[120px]">
@@ -914,13 +917,28 @@ const CesPlantilla = () => {
                                                             </td>
                                                         )}
                                                     </tr>
-                                                ))}
+                                                )))}
                                             </tbody>
                                         </table>
 
                                         {/* Mobile View Cards (md:hidden) */}
                                         <div className="md:hidden divide-y-2 divide-slate-200/60 bg-white">
-                                            {items.map((item) => (
+                                            {items.length === 0 ? (
+                                                <div className="p-12 text-center">
+                                                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <FiSearch size={32} />
+                                                    </div>
+                                                    <h3 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Plantilla Positions Found</h3>
+                                                    <p className="text-slate-400 font-medium mt-2 text-sm">Adjust your filters or try a different search term.</p>
+                                                    <button
+                                                        onClick={handleResetFilters}
+                                                        className="mt-4 px-5 py-2 bg-[#08315F] text-white rounded-full font-black text-[13.5px] uppercase tracking-wider hover:bg-[#004A99] transition-all"
+                                                    >
+                                                        Reset Filters
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                items.map((item) => (
                                                 <div key={item.id} className="p-4 hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="flex items-center gap-3 min-w-0">
@@ -977,7 +995,7 @@ const CesPlantilla = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                            ))}
+                                            )))}
                                         </div>
 
                                         {/* TABLE FOOTER / PAGINATION (IDENTICAL TO OFFICIALS REGISTRY) */}
@@ -1021,8 +1039,24 @@ const CesPlantilla = () => {
                             ) : (
                                 /* GRID VIEW (IDENTICAL CARD DESIGN SYSTEM) */
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                        {items.map((item) => (
+                                    {items.length === 0 ? (
+                                        <div className="bg-white rounded-[30px] border-2 border-[#08315F] p-20 text-center shadow-sm">
+                                            <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                <FiSearch size={40} />
+                                            </div>
+                                            <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Plantilla Positions Found</h3>
+                                            <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
+                                            <button
+                                                onClick={handleResetFilters}
+                                                className="mt-6 px-6 py-2.5 bg-[#08315F] text-white rounded-full font-black text-[15px] uppercase tracking-wider hover:bg-[#004A99] transition-all"
+                                            >
+                                                Reset Filters
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                {items.map((item) => (
                                             <motion.div
                                                 key={item.id}
                                                 whileHover={{ y: -4 }}
@@ -1125,6 +1159,8 @@ const CesPlantilla = () => {
                                             </button>
                                         </div>
                                     </div>
+                                    </>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>
