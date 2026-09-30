@@ -16,7 +16,8 @@ import {
   FiAward,
   FiCheckCircle,
   FiAlertCircle,
-  FiCheck
+  FiCheck,
+  FiFilter
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import AdminSidebar from '../components/AdminSidebar';
@@ -47,9 +48,6 @@ const TloPositions = () => {
     salaryGrades: [],
     titles: []
   });
-
-  // Category Quick Pill State
-  const [categoryPill, setCategoryPill] = useState('ALL');
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -170,29 +168,96 @@ const TloPositions = () => {
     fetchPositions();
   }, [fetchPositions]);
 
-  // Quick Category Pill Change
-  const handleCategoryPillChange = (pill) => {
-    setCategoryPill(pill);
-    setCurrentPage(1);
+  // Popover search queries
+  const [popoverRegionSearch, setPopoverRegionSearch] = useState('');
+  const [popoverTitleSearch, setPopoverTitleSearch] = useState('');
 
-    if (pill === 'ALL') {
-      setRegionFilter('All');
-      setSalaryGradeFilter('All');
-      setSearchTerm('');
-    } else if (pill === 'CENTRAL') {
-      setRegionFilter('CENTRAL OFFICE');
-      setSalaryGradeFilter('All');
-    } else if (pill === 'REGIONAL') {
-      setRegionFilter('All');
-      setSearchTerm('Region');
-    } else if (pill === 'EXEC_SG') {
-      setRegionFilter('All');
-      setSalaryGradeFilter('28');
-    } else if (pill === 'SDS_ASDS') {
-      setRegionFilter('All');
-      setSalaryGradeFilter('26');
-    }
+  // Interactive Card Click Handlers
+  const handleCardClickTotal = () => {
+    setRegionFilter('All');
+    setSalaryGradeFilter('All');
+    setSearchTerm('');
+    setSortBy('id');
+    setSortOrder('ASC');
+    setCurrentPage(1);
   };
+
+  const handleCardClickTitles = () => {
+    if (sortBy === 'position_title') {
+      setSortOrder(prev => (prev === 'ASC' ? 'DESC' : 'ASC'));
+    } else {
+      setSortBy('position_title');
+      setSortOrder('ASC');
+    }
+    setCurrentPage(1);
+  };
+
+  const handleCardClickRegions = () => {
+    if (regionFilter !== 'All') {
+      setRegionFilter('All');
+    }
+    setCurrentPage(1);
+  };
+
+  const handleCardClickHighestSg = () => {
+    const highestSg = String(kpis.highest_salary_grade || '31');
+    if (salaryGradeFilter === highestSg) {
+      setSalaryGradeFilter('All');
+    } else {
+      setSalaryGradeFilter(highestSg);
+    }
+    setCurrentPage(1);
+  };
+
+  // Selection handlers from card hover popovers
+  const handleSelectRegionFromPopover = (reg) => {
+    setRegionFilter(reg);
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
+  const handleSelectSalaryGradeFromPopover = (sg) => {
+    setSalaryGradeFilter(String(sg));
+    setCurrentPage(1);
+  };
+
+  const handleSelectTitleFromPopover = (title) => {
+    setSearchTerm(title);
+    setRegionFilter('All');
+    setSalaryGradeFilter('All');
+    setCurrentPage(1);
+  };
+
+  // Memoized card breakdown lists for hover popovers
+  const filteredRegionsBreakdown = useMemo(() => {
+    const list = (kpis.region_breakdown && kpis.region_breakdown.length > 0)
+      ? kpis.region_breakdown
+      : (filterOptions.regions || []).map(r => ({ region: r, count: positions.filter(p => p.region === r).length }));
+
+    if (!popoverRegionSearch.trim()) return list;
+    return list.filter(item => item.region && item.region.toLowerCase().includes(popoverRegionSearch.toLowerCase().trim()));
+  }, [kpis.region_breakdown, filterOptions.regions, positions, popoverRegionSearch]);
+
+  const filteredTitlesBreakdown = useMemo(() => {
+    const list = (kpis.title_breakdown && kpis.title_breakdown.length > 0)
+      ? kpis.title_breakdown
+      : (filterOptions.titles || []).map(t => ({ position_title: t, count: positions.filter(p => p.position_title === t).length }));
+
+    if (!popoverTitleSearch.trim()) return list;
+    return list.filter(item => item.position_title && item.position_title.toLowerCase().includes(popoverTitleSearch.toLowerCase().trim()));
+  }, [kpis.title_breakdown, filterOptions.titles, positions, popoverTitleSearch]);
+
+  const filteredSalaryGradesBreakdown = useMemo(() => {
+    return (kpis.salary_grade_breakdown && kpis.salary_grade_breakdown.length > 0)
+      ? kpis.salary_grade_breakdown
+      : (filterOptions.salaryGrades || []).map(sg => ({ salary_grade: sg, count: positions.filter(p => p.salary_grade === sg).length }));
+  }, [kpis.salary_grade_breakdown, filterOptions.salaryGrades, positions]);
+
+  // Card active states
+  const isTotalActive = regionFilter === 'All' && salaryGradeFilter === 'All' && !searchTerm && sortBy === 'id';
+  const isTitlesActive = sortBy === 'position_title' || (Boolean(searchTerm) && (kpis.title_breakdown || []).some(t => t.position_title.toLowerCase() === searchTerm.toLowerCase()));
+  const isRegionsActive = regionFilter !== 'All';
+  const isHighestSgActive = salaryGradeFilter === String(kpis.highest_salary_grade);
 
   // Sorting Handler (Strict default: id ASC)
   const handleSort = (column) => {
@@ -455,57 +520,10 @@ const TloPositions = () => {
 
           {/* MAIN CONTAINER */}
           <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
-            {/* UNIFIED DATA CONTROLS TAB (Exact Match to PositionAssignments) */}
-            <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
-              {/* TOP ROW: CATEGORY PILL SWITCHER & ACTION BUTTONS */}
-              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 w-full">
-                {/* Category Quick Pills */}
-                <div className="flex items-center gap-1.5 p-1 bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full overflow-x-auto custom-scrollbar">
-                  {[
-                    { id: 'ALL', label: 'All Positions' },
-                    { id: 'CENTRAL', label: 'Central Office' },
-                    { id: 'REGIONAL', label: 'Regional' },
-                    { id: 'EXEC_SG', label: 'Executive (SG 28-31)' },
-                    { id: 'SDS_ASDS', label: 'Superintendents (SG 26-27)' }
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleCategoryPillChange(tab.id)}
-                      className={`h-[36px] px-4 rounded-full text-[12.5px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
-                        categoryPill === tab.id
-                          ? 'bg-[#08315F] text-white shadow-sm'
-                          : 'text-[#08315F] hover:bg-sky-100'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Buttons: Refresh & Add Plantilla Position */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => fetchPositions(true)}
-                    disabled={refreshing}
-                    className="h-[44px] px-5 bg-[#F0F9FF] hover:bg-sky-100 text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[13.5px] tracking-widest uppercase transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 active:scale-95 cursor-pointer"
-                    title="Refresh data"
-                  >
-                    <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-sky-600' : ''}`} />
-                    <span>Refresh</span>
-                  </button>
-
-                  <button
-                    onClick={handleOpenCreate}
-                    className="h-[44px] px-6 bg-[#08315F] hover:bg-[#004A99] text-white rounded-full font-black text-[13.5px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-md active:scale-95 border-2 border-transparent cursor-pointer"
-                  >
-                    <FiPlus className="w-4 h-4 stroke-[3]" />
-                    <span>Add Plantilla Position</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* BOTTOM ROW: SEARCH BAR & DROPDOWN FILTERS */}
-              <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
+            {/* UNIFIED DATA CONTROLS TAB */}
+            <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-3 w-full">
+              {/* Left/Center: Search Bar & Dropdown Filters */}
+              <div className="flex flex-col md:flex-row items-center gap-2.5 flex-1 w-full min-w-0">
                 {/* Search Bar */}
                 <div className="relative flex-1 w-full h-[44px]">
                   <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
@@ -514,7 +532,7 @@ const TloPositions = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search by position title, code, region, division, bureau, or salary grade..."
-                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-10 text-[14.5px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-10 text-[14px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                   />
                   {searchTerm && (
                     <button
@@ -528,7 +546,7 @@ const TloPositions = () => {
                 </div>
 
                 {/* Region Filter */}
-                <div className="relative w-full md:w-64 h-[44px]">
+                <div className="relative w-full md:w-56 h-[44px] shrink-0">
                   <select
                     value={regionFilter}
                     onChange={(e) => {
@@ -546,7 +564,7 @@ const TloPositions = () => {
                 </div>
 
                 {/* Salary Grade Filter */}
-                <div className="relative w-full md:w-48 h-[44px]">
+                <div className="relative w-full md:w-44 h-[44px] shrink-0">
                   <select
                     value={salaryGradeFilter}
                     onChange={(e) => {
@@ -564,16 +582,17 @@ const TloPositions = () => {
                 </div>
 
                 {/* Reset Filters */}
-                {(searchTerm || regionFilter !== 'All' || salaryGradeFilter !== 'All' || categoryPill !== 'ALL') && (
+                {(searchTerm || regionFilter !== 'All' || salaryGradeFilter !== 'All' || sortBy !== 'id') && (
                   <button
                     onClick={() => {
                       setSearchTerm('');
                       setRegionFilter('All');
                       setSalaryGradeFilter('All');
-                      setCategoryPill('ALL');
+                      setSortBy('id');
+                      setSortOrder('ASC');
                       setCurrentPage(1);
                     }}
-                    className="h-[44px] px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full border-2 border-slate-200 font-black text-[12px] uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shrink-0"
+                    className="h-[44px] px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full border-2 border-slate-200 font-black text-[12px] uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                     title="Reset all filters"
                   >
                     <FiX size={14} />
@@ -581,67 +600,378 @@ const TloPositions = () => {
                   </button>
                 )}
               </div>
+
+              {/* Right Side: Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+                <button
+                  onClick={() => fetchPositions(true)}
+                  disabled={refreshing}
+                  className="h-[44px] px-5 bg-[#F0F9FF] hover:bg-sky-100 text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[13.5px] tracking-widest uppercase transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 active:scale-95 cursor-pointer"
+                  title="Refresh data"
+                >
+                  <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-sky-600' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+
+                <button
+                  onClick={handleOpenCreate}
+                  className="h-[44px] px-6 bg-[#08315F] hover:bg-[#004A99] text-white rounded-full font-black text-[13.5px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-md active:scale-95 border-2 border-transparent cursor-pointer"
+                >
+                  <FiPlus className="w-4 h-4 stroke-[3]" />
+                  <span>Add Plantilla Position</span>
+                </button>
+              </div>
             </div>
 
-            {/* STATS CARDS (Exact Match to PositionAssignments & OfficialsRegistry) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full">
-              {/* Card 1: Total Positions */}
-              <div
-                className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] border-l-sky-500 overflow-hidden transition-all flex flex-col justify-between hover:shadow-sm"
-              >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">
-                  Total Plantilla Positions
+            {/* STATS CARDS (with interactive filter functions and rich hover popovers) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full relative z-30">
+              {/* Card 1: Total Plantilla Positions */}
+              <div className="relative group">
+                <div
+                  onClick={handleCardClickTotal}
+                  className={`min-h-[108px] p-5 bg-white rounded-[18px] border-2 border-[#BAE6FD] border-l-[6px] transition-all flex flex-col justify-between cursor-pointer select-none ${
+                    isTotalActive
+                      ? 'border-l-sky-500 shadow-md ring-2 ring-sky-200 bg-sky-50/20'
+                      : 'border-l-sky-400 hover:shadow-md hover:-translate-y-0.5'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-[13.5px] text-slate-500 uppercase tracking-widest font-black">
+                      Total Plantilla Positions
+                    </div>
+                    {isTotalActive && (
+                      <span className="flex items-center gap-1 text-[10px] font-black text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full border border-sky-200 uppercase tracking-wider">
+                        <FiCheck className="w-3 h-3" /> Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[44px] text-[#08315F] font-normal leading-none my-1 font-['Plus_Jakarta_Sans']">
+                    {(kpis.total_positions || totalRecords).toLocaleString()}
+                  </div>
+                  <div className="text-[12px] text-slate-400 uppercase tracking-widest font-bold leading-none flex items-center justify-between">
+                    <span>Authorized catalog inventory</span>
+                    <span className="text-sky-600 font-black text-[11px] opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to Reset →
+                    </span>
+                  </div>
                 </div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">
-                  {(kpis.total_positions || totalRecords).toLocaleString()}
-                </div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">
-                  Authorized catalog inventory
+
+                {/* Hover Popover: Total Positions Overview */}
+                <div className="absolute top-[calc(100%+6px)] left-0 w-full sm:w-[320px] opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border-2 border-[#BAE6FD] shadow-[0_20px_40px_-10px_rgba(8,49,95,0.25)] p-4 text-left">
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs">
+                          <FiLayers size={13} />
+                        </div>
+                        <span className="text-[13px] font-black text-[#08315F] uppercase tracking-wider">Inventory Summary</span>
+                      </div>
+                      <span className="text-[11px] font-black text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                        {kpis.total_positions || totalRecords} Total
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-slate-600 font-bold">Distinct Executive Titles</span>
+                        <span className="font-black text-[#08315F] bg-white px-2 py-0.5 rounded-md border border-slate-200">{kpis.unique_titles || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-slate-600 font-bold">Covered Regions</span>
+                        <span className="font-black text-[#08315F] bg-white px-2 py-0.5 rounded-md border border-slate-200">{kpis.total_regions || 0} Regions</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-slate-600 font-bold">Highest Salary Grade</span>
+                        <span className="font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">SG {kpis.highest_salary_grade || '31'}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] font-black text-sky-700 uppercase tracking-wider text-center">
+                      ⚡ Click card to show all positions & reset filters
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Card 2: Distinct Titles */}
-              <div
-                className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] border-l-rose-400 overflow-hidden transition-all flex flex-col justify-between hover:shadow-sm"
-              >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">
-                  Distinct Leadership Titles
+              {/* Card 2: Distinct Leadership Titles */}
+              <div className="relative group">
+                <div
+                  onClick={handleCardClickTitles}
+                  className={`min-h-[108px] p-5 bg-white rounded-[18px] border-2 border-[#BAE6FD] border-l-[6px] transition-all flex flex-col justify-between cursor-pointer select-none ${
+                    isTitlesActive
+                      ? 'border-l-rose-500 shadow-md ring-2 ring-rose-200 bg-rose-50/20'
+                      : 'border-l-rose-400 hover:shadow-md hover:-translate-y-0.5'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-[13.5px] text-slate-500 uppercase tracking-widest font-black">
+                      Distinct Leadership Titles
+                    </div>
+                    {isTitlesActive && (
+                      <span className="flex items-center gap-1 text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200 uppercase tracking-wider">
+                        <FiCheck className="w-3 h-3" /> Sorted
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[44px] text-[#08315F] font-normal leading-none my-1 font-['Plus_Jakarta_Sans']">
+                    {(kpis.unique_titles || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[12px] text-slate-400 uppercase tracking-widest font-bold leading-none flex items-center justify-between">
+                    <span>Unique executive designations</span>
+                    <span className="text-rose-600 font-black text-[11px] opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to Sort →
+                    </span>
+                  </div>
                 </div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">
-                  {(kpis.unique_titles || 0).toLocaleString()}
-                </div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">
-                  Unique executive designations
+
+                {/* Hover Popover: Distinct Titles Breakdown */}
+                <div className="absolute top-[calc(100%+6px)] left-0 sm:left-auto sm:right-0 md:left-0 w-full sm:w-[340px] opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border-2 border-[#BAE6FD] shadow-[0_20px_40px_-10px_rgba(8,49,95,0.25)] p-4 text-left">
+                    <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs">
+                          <FiAward size={13} />
+                        </div>
+                        <span className="text-[13px] font-black text-[#08315F] uppercase tracking-wider">Leadership Designations</span>
+                      </div>
+                      <span className="text-[11px] font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                        {filteredTitlesBreakdown.length} Titles
+                      </span>
+                    </div>
+
+                    {/* Quick Search inside titles popover */}
+                    <div className="relative mb-2">
+                      <FiSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                      <input
+                        type="text"
+                        value={popoverTitleSearch}
+                        onChange={(e) => setPopoverTitleSearch(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        placeholder="Search designation title..."
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-rose-400 rounded-xl py-1 pl-7 pr-3 text-[11.5px] font-bold text-slate-700 outline-none placeholder:text-slate-400 transition-colors"
+                      />
+                    </div>
+
+                    {/* List of titles with counts */}
+                    <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+                      {filteredTitlesBreakdown.length === 0 ? (
+                        <div className="py-4 text-center text-xs text-slate-400 font-bold">No designations found</div>
+                      ) : (
+                        filteredTitlesBreakdown.map((t, idx) => {
+                          const isSelected = searchTerm.toLowerCase() === t.position_title.toLowerCase();
+                          return (
+                            <button
+                              key={t.position_title || idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectTitleFromPopover(t.position_title);
+                              }}
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-rose-100 text-rose-900 font-black border border-rose-300'
+                                  : 'hover:bg-rose-50 text-slate-700 hover:text-rose-900 font-bold'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate pr-2">
+                                <span className="text-[10px] font-mono text-slate-400 shrink-0">#{idx + 1}</span>
+                                <span className="truncate" title={t.position_title}>{t.position_title}</span>
+                              </div>
+                              <span className="text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full shrink-0">
+                                {t.count}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] font-black text-rose-700 uppercase tracking-wider text-center">
+                      💡 Click any title to filter • Click card to sort
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Card 3: Covered Regions */}
-              <div
-                className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] border-l-amber-400 overflow-hidden transition-all flex flex-col justify-between hover:shadow-sm"
-              >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">
-                  Covered Regions
+              {/* Card 3: Covered Regions (Hover per region & Quick Filter) */}
+              <div className="relative group">
+                <div
+                  onClick={handleCardClickRegions}
+                  className={`min-h-[108px] p-5 bg-white rounded-[18px] border-2 border-[#BAE6FD] border-l-[6px] transition-all flex flex-col justify-between cursor-pointer select-none ${
+                    isRegionsActive
+                      ? 'border-l-amber-500 shadow-md ring-2 ring-amber-200 bg-amber-50/20'
+                      : 'border-l-amber-400 hover:shadow-md hover:-translate-y-0.5'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-[13.5px] text-slate-500 uppercase tracking-widest font-black">
+                      Covered Regions
+                    </div>
+                    {isRegionsActive && (
+                      <span className="flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 uppercase tracking-wider truncate max-w-[120px]">
+                        <FiCheck className="w-3 h-3 shrink-0" /> {regionFilter !== 'All' ? regionFilter : 'Regional'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[44px] text-[#08315F] font-normal leading-none my-1 font-['Plus_Jakarta_Sans']">
+                    {(kpis.total_regions || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[12px] text-slate-400 uppercase tracking-widest font-bold leading-none flex items-center justify-between">
+                    <span>DepEd nationwide coverage</span>
+                    <span className="text-amber-600 font-black text-[11px] opacity-0 group-hover:opacity-100 transition-opacity">
+                      Hover for Regions →
+                    </span>
+                  </div>
                 </div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">
-                  {(kpis.total_regions || 0).toLocaleString()}
-                </div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">
-                  DepEd nationwide coverage
+
+                {/* Hover Popover: Region Breakdown (Hover per region list with position counts) */}
+                <div className="absolute top-[calc(100%+6px)] left-0 sm:left-auto sm:right-0 w-full sm:w-[350px] opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border-2 border-[#BAE6FD] shadow-[0_20px_40px_-10px_rgba(8,49,95,0.25)] p-4 text-left">
+                    <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                          <FiMapPin size={13} />
+                        </div>
+                        <span className="text-[13px] font-black text-[#08315F] uppercase tracking-wider">Region Breakdown</span>
+                      </div>
+                      <span className="text-[11px] font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        {filteredRegionsBreakdown.length} Regions
+                      </span>
+                    </div>
+
+                    {/* Search bar inside region popover */}
+                    <div className="relative mb-2">
+                      <FiSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                      <input
+                        type="text"
+                        value={popoverRegionSearch}
+                        onChange={(e) => setPopoverRegionSearch(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        placeholder="Search region name..."
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-amber-400 rounded-xl py-1 pl-7 pr-3 text-[11.5px] font-bold text-slate-700 outline-none placeholder:text-slate-400 transition-colors"
+                      />
+                    </div>
+
+                    {/* Scrollable list of covered regions with counts */}
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+                      {filteredRegionsBreakdown.length === 0 ? (
+                        <div className="py-4 text-center text-xs text-slate-400 font-bold">No matching regions found</div>
+                      ) : (
+                        filteredRegionsBreakdown.map((r, idx) => {
+                          const isSelected = regionFilter === r.region;
+                          return (
+                            <button
+                              key={r.region || idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectRegionFromPopover(r.region);
+                              }}
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-amber-100 text-amber-950 font-black border border-amber-300'
+                                  : 'hover:bg-amber-50 text-slate-700 hover:text-amber-900 font-bold'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate pr-2">
+                                <span className="text-[10px] font-mono text-slate-400 shrink-0">#{idx + 1}</span>
+                                <span className="truncate" title={r.region}>{r.region}</span>
+                              </div>
+                              <span className="text-[11px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                                {r.count} items
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] font-black text-amber-800 uppercase tracking-wider text-center">
+                      💡 Click any region to filter • Click card to toggle
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Card 4: Highest Salary Grade */}
-              <div
-                className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] border-l-indigo-400 overflow-hidden transition-all flex flex-col justify-between hover:shadow-sm"
-              >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">
-                  Highest Salary Grade
+              <div className="relative group">
+                <div
+                  onClick={handleCardClickHighestSg}
+                  className={`min-h-[108px] p-5 bg-white rounded-[18px] border-2 border-[#BAE6FD] border-l-[6px] transition-all flex flex-col justify-between cursor-pointer select-none ${
+                    isHighestSgActive
+                      ? 'border-l-indigo-500 shadow-md ring-2 ring-indigo-200 bg-indigo-50/20'
+                      : 'border-l-indigo-400 hover:shadow-md hover:-translate-y-0.5'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-[13.5px] text-slate-500 uppercase tracking-widest font-black">
+                      Highest Salary Grade
+                    </div>
+                    {isHighestSgActive && (
+                      <span className="flex items-center gap-1 text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200 uppercase tracking-wider">
+                        <FiCheck className="w-3 h-3" /> SG {salaryGradeFilter !== 'All' ? salaryGradeFilter : (kpis.highest_salary_grade || '31')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[44px] text-[#08315F] font-normal leading-none my-1 font-['Plus_Jakarta_Sans']">
+                    {kpis.highest_salary_grade ? `SG ${kpis.highest_salary_grade}` : 'SG 31'}
+                  </div>
+                  <div className="text-[12px] text-slate-400 uppercase tracking-widest font-bold leading-none flex items-center justify-between">
+                    <span>Executive ceiling grade</span>
+                    <span className="text-indigo-600 font-black text-[11px] opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to Filter SG →
+                    </span>
+                  </div>
                 </div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">
-                  {kpis.highest_salary_grade ? `SG ${kpis.highest_salary_grade}` : 'SG 31'}
-                </div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">
-                  Executive ceiling grade
+
+                {/* Hover Popover: Salary Grades Breakdown */}
+                <div className="absolute top-[calc(100%+6px)] right-0 w-full sm:w-[320px] opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                  <div className="bg-white/95 backdrop-blur-md rounded-2xl border-2 border-[#BAE6FD] shadow-[0_20px_40px_-10px_rgba(8,49,95,0.25)] p-4 text-left">
+                    <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                          <FiBriefcase size={13} />
+                        </div>
+                        <span className="text-[13px] font-black text-[#08315F] uppercase tracking-wider">Salary Grade Breakdown</span>
+                      </div>
+                      <span className="text-[11px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                        {filteredSalaryGradesBreakdown.length} Grades
+                      </span>
+                    </div>
+
+                    {/* List of salary grades with counts */}
+                    <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+                      {filteredSalaryGradesBreakdown.length === 0 ? (
+                        <div className="py-4 text-center text-xs text-slate-400 font-bold">No salary grades found</div>
+                      ) : (
+                        filteredSalaryGradesBreakdown.map((sg, idx) => {
+                          const isSelected = salaryGradeFilter === String(sg.salary_grade);
+                          return (
+                            <button
+                              key={sg.salary_grade || idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectSalaryGradeFromPopover(sg.salary_grade);
+                              }}
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-indigo-100 text-indigo-900 font-black border border-indigo-300'
+                                  : 'hover:bg-indigo-50 text-slate-700 hover:text-indigo-900 font-bold'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-slate-400 text-[10px]">#{idx + 1}</span>
+                                <span className="font-black text-[#08315F]">Salary Grade {sg.salary_grade}</span>
+                              </div>
+                              <span className="text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                {sg.count} positions
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] font-black text-indigo-700 uppercase tracking-wider text-center">
+                      💡 Click any grade to filter • Click card for highest
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -814,9 +1144,21 @@ const TloPositions = () => {
 
                               {/* Region */}
                               <td className="px-4 py-4 whitespace-nowrap">
-                                <span className="text-[13px] font-bold text-slate-700">
-                                  {item.region || <span className="text-slate-300">—</span>}
-                                </span>
+                                {item.region ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelectRegionFromPopover(item.region);
+                                    }}
+                                    title={`Click to filter table by ${item.region}`}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[12.5px] font-bold text-slate-700 bg-slate-100 hover:bg-[#08315F] hover:text-white border-2 border-slate-200 hover:border-[#08315F] transition-all cursor-pointer shadow-2xs group/reg"
+                                  >
+                                    <FiMapPin className="w-3.5 h-3.5 text-slate-400 group-hover/reg:text-amber-300 transition-colors" />
+                                    <span>{item.region}</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-300 font-mono text-[12px]">—</span>
+                                )}
                               </td>
 
                               {/* Division / Bureau & Action Overlay */}
@@ -902,9 +1244,22 @@ const TloPositions = () => {
                           <div className="flex flex-col gap-2 mt-1 bg-slate-50/70 rounded-2xl p-3.5 border-2 border-slate-200 text-[13px]">
                             <div className="flex justify-between items-center gap-2">
                               <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Region</span>
-                              <span className="font-bold text-slate-700 text-right truncate">
-                                {item.region || '—'}
-                              </span>
+                              <div className="text-right truncate">
+                                {item.region ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelectRegionFromPopover(item.region);
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11.5px] font-bold text-slate-700 bg-slate-100 hover:bg-[#08315F] hover:text-white border border-slate-200 transition-all cursor-pointer"
+                                  >
+                                    <FiMapPin size={11} className="text-slate-400" />
+                                    <span className="truncate">{item.region}</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex justify-between items-center gap-2">
                               <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Division / Bureau</span>

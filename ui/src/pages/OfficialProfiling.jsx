@@ -4507,6 +4507,30 @@ const OfficialProfiling = () => {
                                                             <div className="pt-6 border-t-2 border-slate-100 mt-6 space-y-6">
                                                                 {[
                                                                     {
+                                                                        id: 'ombudsman_clearance',
+                                                                        binaryKey: 'ombudsman_clearance_binary_id',
+                                                                        label: 'Clearance from the Office of the Ombudsman',
+                                                                        accept: '.pdf,.doc,.docx'
+                                                                    },
+                                                                    {
+                                                                        id: 'sandiganbayan_clearance',
+                                                                        binaryKey: 'sandiganbayan_clearance_binary_id',
+                                                                        label: 'Clearance from Sandiganbayan',
+                                                                        accept: '.pdf,.doc,.docx'
+                                                                    },
+                                                                    {
+                                                                        id: 'csc_clearance',
+                                                                        binaryKey: 'csc_clearance_binary_id',
+                                                                        label: 'Clearance from Civil Service Commission',
+                                                                        accept: '.pdf,.doc,.docx'
+                                                                    },
+                                                                    {
+                                                                        id: 'nbi_clearance',
+                                                                        binaryKey: 'nbi_clearance_binary_id',
+                                                                        label: 'Clearance from National Bureau of Investigation',
+                                                                        accept: '.pdf,.doc,.docx'
+                                                                    },
+                                                                    {
                                                                         id: 'deped_clearance',
                                                                         binaryKey: 'deped_clearance_binary_id',
                                                                         label: 'Certificate of No Pending Case issued by the DepEd Regional Office',
@@ -5315,6 +5339,10 @@ const OfficialProfiling = () => {
                                                                         { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf,.doc,.docx' },
                                                                         { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf,.doc,.docx' },
                                                                         { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },
+                                                                        { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf,.doc,.docx' },
+                                                                        { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf,.doc,.docx' },
+                                                                        { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf,.doc,.docx' },
+                                                                        { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf,.doc,.docx' },
                                                                         { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf,.doc,.docx' },
                                                                         { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf,.doc,.docx' },
                                                                     ].map(d => (

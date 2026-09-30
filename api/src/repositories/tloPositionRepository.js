@@ -365,11 +365,42 @@ export async function getPositionKpis(client) {
       MAX(NULLIF(regexp_replace(salary_grade, '[^0-9]', '', 'g'), '')::int) AS highest_salary_grade
     FROM tlo_positions
   `);
-  return result.rows[0] || {
-    total_positions: 0,
-    unique_titles: 0,
-    total_regions: 0,
-    highest_salary_grade: null
+
+  const regionsBreakdownRes = await client.query(`
+    SELECT region, COUNT(*)::int AS count
+    FROM tlo_positions
+    WHERE region IS NOT NULL AND TRIM(region) <> ''
+    GROUP BY region
+    ORDER BY count DESC, region ASC
+  `);
+
+  const salaryGradesBreakdownRes = await client.query(`
+    SELECT salary_grade, COUNT(*)::int AS count
+    FROM tlo_positions
+    WHERE salary_grade IS NOT NULL AND TRIM(salary_grade) <> ''
+    GROUP BY salary_grade
+    ORDER BY NULLIF(regexp_replace(salary_grade, '[^0-9]', '', 'g'), '')::int DESC NULLS LAST, count DESC
+  `);
+
+  const titlesBreakdownRes = await client.query(`
+    SELECT position_title, COUNT(*)::int AS count
+    FROM tlo_positions
+    WHERE position_title IS NOT NULL AND TRIM(position_title) <> ''
+    GROUP BY position_title
+    ORDER BY count DESC, position_title ASC
+    LIMIT 20
+  `);
+
+  return {
+    ...(result.rows[0] || {
+      total_positions: 0,
+      unique_titles: 0,
+      total_regions: 0,
+      highest_salary_grade: null
+    }),
+    region_breakdown: regionsBreakdownRes.rows || [],
+    salary_grade_breakdown: salaryGradesBreakdownRes.rows || [],
+    title_breakdown: titlesBreakdownRes.rows || []
   };
 }
 
