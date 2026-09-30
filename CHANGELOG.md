@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## 2026-09-30 — Legal Portal (`OfficialProfiling.jsx`): Conditional Executive Summary & "Applying for a Position" Toggle
+
+### Legal Portal (`OfficialProfiling.jsx`)
+- **"Applying for a Position" Toggle**:
+  - Added a stylized toggle switch card labeled **"Applying for a Position"** in the **Legal** tab.
+  - **When Toggle is OFF (Not Applying / Profile Maintenance)**: Legal clearance documents (Ombudsman Clearance, Sandiganbayan Clearance, CSC Clearance, NBI Clearance, DepEd RO Clearance, and Executive Summary) are hidden / removed for third level officials who are not applying for a position.
+  - **When Toggle is ON (Applying for a Position)**: Legal clearance upload cards are displayed.
+  - Linked to the Summary & Certify tab document checklist to dynamically display legal clearance requirements only when Applying for a Position is active.
+- **Conditional Executive Summary Upload & Progress Calculation**:
+  - The Executive Summary upload card (`executive_summary_binary_id`) is **hidden by default** and only rendered if at least one of the pending / legal case disclosure questions is answered **YES** (`pending_admin_case`, `guilty_admin_details`, `criminally_charged_details`, or `convicted_crime_details`).
+  - In the Legal tab completion check (`isTabCompleted`), if any question is answered **YES**, the Legal tab is marked complete only after the Executive Summary is uploaded.
+  - If questions are answered **YES** but the Executive Summary has not yet been uploaded, the Legal tab remains incomplete, keeping total profile progress at **90%** (9/10 tabs completed). Once uploaded, progress reaches **100%**.
+  - In the Summary & Certify tab, Executive Summary is similarly hidden from the document checklist when no pending or legal cases are declared.
+
+### Documents Portal (`OfficialProfiling.jsx`)
+- Maintains the standard 201 profile documents (PDS, WES, CV, and Service Records) intact.
+
+### Backend & Database Schema
+- **Database Migration**:
+  - Created migration `20260930_052_add_is_applying_for_position_column.sql` adding `is_applying_for_position BOOLEAN DEFAULT FALSE` across `third_level_official_masterlist`, `third_level_officials_profiling_application`, `tlo_personnel`, and `tlo_profile`.
+- **API & Schema Updates**:
+  - Updated `thirdLevelController.js` whitelist and case-sensitivity sets.
+  - Updated `schema.ts` and `schema.js` definitions.
+
+---
+
 ## 2026-09-29 — Documents Portal & Legal Portal: Additional Document Requirements
 
 ### Documents Portal (`OfficialProfiling.jsx`)

@@ -508,6 +508,7 @@ const OfficialProfiling = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSuffixNA, setIsSuffixNA] = useState(false);
     const [isAchievementsNA, setIsAchievementsNA] = useState(false);
+    const [isApplyingForPosition, setIsApplyingForPosition] = useState(false);
 
     const [history, setHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -530,6 +531,7 @@ const OfficialProfiling = () => {
         cespes_1_rating: '', cespes_2_rating: '',
         cespes_rating_1_period: '', cespes_rating_2_period: '',
         managerial_experience_total: '',
+        is_applying_for_position: false,
         photo_binary_id: null,
         pds_binary_id: null,
         wes_binary_id: null,
@@ -636,6 +638,21 @@ const OfficialProfiling = () => {
         };
     }, [exportModalOpen, selectedExportType]);
     const fullName = buildFullName(profile) || 'Official Profiling';
+    const isCaseYes = (val) => {
+        if (val === true) return true;
+        if (typeof val === 'string') {
+            const s = val.trim().toUpperCase();
+            return s === 'YES' || s === 'TRUE' || s === '1';
+        }
+        if (typeof val === 'number') return val === 1;
+        return false;
+    };
+    const hasPendingCases = Boolean(
+        isCaseYes(profile.pending_admin_case) ||
+        isCaseYes(profile.guilty_admin_details) ||
+        isCaseYes(profile.criminally_charged_details) ||
+        isCaseYes(profile.convicted_crime_details)
+    );
     // completedTabs: how many of the 9 content tabs satisfy isTabCompleted
     // (isTabCompleted is defined below, so we compute this after it is defined)
 
@@ -688,12 +705,17 @@ const OfficialProfiling = () => {
             return !!(profile.pds_binary_id && profile.service_records_binary_id);
         }
         if (tabId === 'legal') {
-            return !!(
+            const hasLegalQuestions = !!(
                 profile.pending_admin_case?.trim() &&
                 profile.guilty_admin_details?.trim() &&
                 profile.criminally_charged_details?.trim() &&
                 profile.convicted_crime_details?.trim()
             );
+            if (!hasLegalQuestions) return false;
+            if (hasPendingCases) {
+                return !!profile.executive_summary_binary_id;
+            }
+            return true;
         }
         if (tabId === 'application') {
             return !!targetVacancyId;
@@ -1504,9 +1526,17 @@ const OfficialProfiling = () => {
                         csc_clearance_binary_id: d.csc_clearance_binary_id || null,
                         ombudsman_clearance_binary_id: d.ombudsman_clearance_binary_id || null,
                         executive_summary_binary_id: d.executive_summary_binary_id || null,
+                        is_applying_for_position: d.is_applying_for_position !== undefined && d.is_applying_for_position !== null
+                            ? Boolean(d.is_applying_for_position)
+                            : Boolean(d.target_TLOid || d.wes_binary_id || d.cv_binary_id),
                         dpa_consented_at: d.dpa_consented_at || null,
                         updated_at: d.updated_at || null,
                     });
+
+                    const loadedApplying = d.is_applying_for_position !== undefined && d.is_applying_for_position !== null
+                        ? Boolean(d.is_applying_for_position)
+                        : Boolean(d.target_TLOid || d.wes_binary_id || d.cv_binary_id);
+                    setIsApplyingForPosition(loadedApplying);
 
                     // POSITIONS: Fallback chain
                     // Priority 1: d.position_history (relational)
@@ -1715,7 +1745,7 @@ const OfficialProfiling = () => {
             'email', 'alt_email_1', 'alt_email_2', 'suffix',
             'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
             'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
-            'target_TLOid', 'application_status', 'profiling_status', 'is_oic',
+            'target_TLOid', 'application_status', 'profiling_status', 'is_oic', 'is_applying_for_position',
             'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'ces_stage', 'gender', 'civil_status', 'employment_status'
         ]);
         let finalValue = value;
@@ -1945,6 +1975,7 @@ const OfficialProfiling = () => {
                 relevant_trainings: cleanTrainings,
                 education_degrees: degreesList,
                 target_TLOid: targetVacancyId,
+                is_applying_for_position: Boolean(isApplyingForPosition),
                 position_applied_for: targetVacancy ? targetVacancy.position_title : profile.position_applied_for,
                 profiling_status: completeness === 100 ? 'profiling completed' : 'profiling',
                 applyToVerifiedRoles: Boolean(applyToVerifiedRoles)
@@ -4328,6 +4359,7 @@ const OfficialProfiling = () => {
                                                                 Document uploads are processed by the Personnel Division. Files will be stored securely in the system once upload integration is completed. The reference IDs below track which documents have been linked to your profile.
                                                             </p>
                                                         </div>
+
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
                                                                 { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx' },
@@ -4504,62 +4536,27 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                 </Field>
                                                             </div>
-                                                            <div className="pt-6 border-t-2 border-slate-100 mt-6 space-y-6">
-                                                                {[
-                                                                    {
-                                                                        id: 'ombudsman_clearance',
-                                                                        binaryKey: 'ombudsman_clearance_binary_id',
-                                                                        label: 'Clearance from the Office of the Ombudsman',
-                                                                        accept: '.pdf,.doc,.docx'
-                                                                    },
-                                                                    {
-                                                                        id: 'sandiganbayan_clearance',
-                                                                        binaryKey: 'sandiganbayan_clearance_binary_id',
-                                                                        label: 'Clearance from Sandiganbayan',
-                                                                        accept: '.pdf,.doc,.docx'
-                                                                    },
-                                                                    {
-                                                                        id: 'csc_clearance',
-                                                                        binaryKey: 'csc_clearance_binary_id',
-                                                                        label: 'Clearance from Civil Service Commission',
-                                                                        accept: '.pdf,.doc,.docx'
-                                                                    },
-                                                                    {
-                                                                        id: 'nbi_clearance',
-                                                                        binaryKey: 'nbi_clearance_binary_id',
-                                                                        label: 'Clearance from National Bureau of Investigation',
-                                                                        accept: '.pdf,.doc,.docx'
-                                                                    },
-                                                                    {
-                                                                        id: 'deped_clearance',
-                                                                        binaryKey: 'deped_clearance_binary_id',
-                                                                        label: 'Certificate of No Pending Case issued by the DepEd Regional Office',
-                                                                        accept: '.pdf,.doc,.docx'
-                                                                    },
-                                                                    {
-                                                                        id: 'executive_summary',
-                                                                        binaryKey: 'executive_summary_binary_id',
-                                                                        label: 'Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents',
-                                                                        accept: '.pdf,.doc,.docx'
-                                                                    }
-                                                                ].map(({ id, binaryKey, label, accept }) => (
-                                                                    <Field key={id} label={label}>
+
+                                                            {/* Executive Summary Upload — Visible ONLY when hasPendingCases is TRUE */}
+                                                            {hasPendingCases && (
+                                                                <div className="pt-6 border-t-2 border-slate-100 space-y-4">
+                                                                    <Field label="Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents">
                                                                         <div className="flex flex-col gap-3 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl min-w-0 overflow-hidden">
-                                                                            {!profile[binaryKey] ? (
+                                                                            {!profile.executive_summary_binary_id ? (
                                                                                 <div className="relative group/upload w-full h-11">
                                                                                     <input disabled={!isEditing}
                                                                                         type="file"
-                                                                                        accept={accept}
+                                                                                        accept=".pdf,.doc,.docx"
                                                                                         onChange={(e) => {
                                                                                             const file = e.target.files[0];
-                                                                                            if (file) handleFileUpload(file, id);
+                                                                                            if (file) handleFileUpload(file, 'executive_summary');
                                                                                         }}
                                                                                         className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
                                                                                     />
                                                                                     <div className="h-full w-full flex items-center justify-center gap-2.5 border-2 border-dashed border-slate-300 rounded-xl px-4 py-2.5 text-slate-500 bg-white group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F] group-hover/upload:bg-blue-50/20 transition-all duration-200 shadow-xs group-hover/upload:shadow-sm">
-                                                                                        <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce text-[#0038A8]' : 'transition-transform group-hover/upload:-translate-y-0.5'} />
+                                                                                        <FiUpload size={14} className={uploadingDocs['executive_summary'] ? 'animate-bounce text-[#0038A8]' : 'transition-transform group-hover/upload:-translate-y-0.5'} />
                                                                                         <span className="text-[14px] font-black uppercase tracking-wider truncate">
-                                                                                            {uploadingDocs[id] ? 'Processing...' : 'Upload Document'}
+                                                                                            {uploadingDocs['executive_summary'] ? 'Processing...' : 'Upload Document'}
                                                                                         </span>
                                                                                     </div>
                                                                                 </div>
@@ -4568,19 +4565,19 @@ const OfficialProfiling = () => {
                                                                                     <div className="relative group/upload flex-1 min-w-0 h-10">
                                                                                         <input disabled={!isEditing}
                                                                                             type="file"
-                                                                                            accept={accept}
+                                                                                            accept=".pdf,.doc,.docx"
                                                                                             onChange={(e) => {
                                                                                                 const file = e.target.files[0];
-                                                                                                if (file) handleFileUpload(file, id);
+                                                                                                if (file) handleFileUpload(file, 'executive_summary');
                                                                                             }}
                                                                                             className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
                                                                                             title={isEditing ? 'Click to replace document' : 'Document uploaded (editing disabled)'}
                                                                                         />
                                                                                         <div className="h-full w-full flex items-center justify-between gap-2 border-2 border-dashed border-emerald-300/80 bg-emerald-50/50 group-hover/upload:bg-emerald-50/80 group-hover/upload:border-emerald-400 rounded-xl px-3 transition-all duration-200 shadow-xs">
                                                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                                                <FiUpload size={14} className={`text-emerald-700 shrink-0 ${uploadingDocs[id] ? 'animate-bounce' : 'transition-transform group-hover/upload:-translate-y-0.5'}`} />
+                                                                                                <FiUpload size={14} className={`text-emerald-700 shrink-0 ${uploadingDocs['executive_summary'] ? 'animate-bounce' : 'transition-transform group-hover/upload:-translate-y-0.5'}`} />
                                                                                                 <span className="text-[13px] font-black uppercase tracking-wider text-emerald-800 truncate">
-                                                                                                    {uploadingDocs[id] ? 'Processing...' : (uploadedFileNames[id] ? `Saved ✓ — ${uploadedFileNames[id]}` : 'Document on file ✓')}
+                                                                                                    {uploadingDocs['executive_summary'] ? 'Processing...' : (uploadedFileNames['executive_summary'] ? `Saved ✓ — ${uploadedFileNames['executive_summary']}` : 'Document on file ✓')}
                                                                                                 </span>
                                                                                             </div>
                                                                                             {isEditing && (
@@ -4593,7 +4590,7 @@ const OfficialProfiling = () => {
                                                                                     <div className="grid grid-cols-2 xl:flex items-center gap-2 shrink-0">
                                                                                         <button
                                                                                             type="button"
-                                                                                            onClick={() => handleViewDocument(profile[binaryKey])}
+                                                                                            onClick={() => handleViewDocument(profile.executive_summary_binary_id)}
                                                                                             className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/view active:scale-[0.98]"
                                                                                             title="View Document"
                                                                                         >
@@ -4602,7 +4599,7 @@ const OfficialProfiling = () => {
                                                                                         </button>
                                                                                         <button
                                                                                             type="button"
-                                                                                            onClick={() => handleDownloadDocument(profile[binaryKey], label)}
+                                                                                            onClick={() => handleDownloadDocument(profile.executive_summary_binary_id, 'Executive Summary')}
                                                                                             className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/download active:scale-[0.98]"
                                                                                             title="Download Document"
                                                                                         >
@@ -4614,8 +4611,155 @@ const OfficialProfiling = () => {
                                                                             )}
                                                                         </div>
                                                                     </Field>
-                                                                ))}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Applying for a Position Toggle Card */}
+                                                            <div className="pt-6 border-t-2 border-slate-100 mt-6">
+                                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-50 border-2 border-slate-200/80 rounded-2xl">
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <FiBriefcase className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[17px] font-black text-[#08315F] uppercase tracking-wider">Applying for a Position</h3>
+                                                                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${isApplyingForPosition ? 'bg-blue-100 text-[#08315F] border border-blue-200' : 'bg-slate-200/70 text-slate-600 border border-slate-300'}`}>
+                                                                                {isApplyingForPosition ? 'Applying' : 'Not Applying'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className="text-[14.5px] font-bold text-slate-500 leading-relaxed">
+                                                                            {isApplyingForPosition
+                                                                                ? 'Toggle is ON. Clearance documents (Ombudsman, Sandiganbayan, CSC, NBI, and DepEd RO Clearances) are required and displayed below.'
+                                                                                : 'Toggle is OFF. Other legal clearance documents are removed for third level officials not applying for a position (Profile Maintenance).'}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3 shrink-0">
+                                                                        <span className={`text-[15px] font-bold ${isApplyingForPosition ? 'text-[#08315F]' : 'text-slate-400'}`}>
+                                                                            {isApplyingForPosition ? 'Yes' : 'No'}
+                                                                        </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={!isEditing}
+                                                                            onClick={() => {
+                                                                                const nextVal = !isApplyingForPosition;
+                                                                                setIsApplyingForPosition(nextVal);
+                                                                                setP('is_applying_for_position', nextVal);
+                                                                            }}
+                                                                            title={isApplyingForPosition ? "Click to set Not Applying for a Position" : "Click to set Applying for a Position"}
+                                                                            className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${isApplyingForPosition ? 'bg-[#08315F]' : 'bg-slate-300'}`}
+                                                                        >
+                                                                            <div className={`bg-white w-5 h-5 rounded-full shadow-sm transform transition-transform duration-200 ${isApplyingForPosition ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
                                                             </div>
+
+                                                            {isApplyingForPosition && (
+                                                                <div className="pt-2 space-y-6">
+                                                                    {[
+                                                                        {
+                                                                            id: 'ombudsman_clearance',
+                                                                            binaryKey: 'ombudsman_clearance_binary_id',
+                                                                            label: 'Clearance from the Office of the Ombudsman',
+                                                                            accept: '.pdf,.doc,.docx'
+                                                                        },
+                                                                        {
+                                                                            id: 'sandiganbayan_clearance',
+                                                                            binaryKey: 'sandiganbayan_clearance_binary_id',
+                                                                            label: 'Clearance from Sandiganbayan',
+                                                                            accept: '.pdf,.doc,.docx'
+                                                                        },
+                                                                        {
+                                                                            id: 'csc_clearance',
+                                                                            binaryKey: 'csc_clearance_binary_id',
+                                                                            label: 'Clearance from Civil Service Commission',
+                                                                            accept: '.pdf,.doc,.docx'
+                                                                        },
+                                                                        {
+                                                                            id: 'nbi_clearance',
+                                                                            binaryKey: 'nbi_clearance_binary_id',
+                                                                            label: 'Clearance from National Bureau of Investigation',
+                                                                            accept: '.pdf,.doc,.docx'
+                                                                        },
+                                                                        {
+                                                                            id: 'deped_clearance',
+                                                                            binaryKey: 'deped_clearance_binary_id',
+                                                                            label: 'Certificate of No Pending Case issued by the DepEd Regional Office',
+                                                                            accept: '.pdf,.doc,.docx'
+                                                                        }
+                                                                    ].map(({ id, binaryKey, label, accept }) => (
+                                                                        <Field key={id} label={label}>
+                                                                            <div className="flex flex-col gap-3 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl min-w-0 overflow-hidden">
+                                                                                {!profile[binaryKey] ? (
+                                                                                    <div className="relative group/upload w-full h-11">
+                                                                                        <input disabled={!isEditing}
+                                                                                            type="file"
+                                                                                            accept={accept}
+                                                                                            onChange={(e) => {
+                                                                                                const file = e.target.files[0];
+                                                                                                if (file) handleFileUpload(file, id);
+                                                                                            }}
+                                                                                            className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
+                                                                                        />
+                                                                                        <div className="h-full w-full flex items-center justify-center gap-2.5 border-2 border-dashed border-slate-300 rounded-xl px-4 py-2.5 text-slate-500 bg-white group-hover/upload:border-[#0038A8] group-hover/upload:text-[#08315F] group-hover/upload:bg-blue-50/20 transition-all duration-200 shadow-xs group-hover/upload:shadow-sm">
+                                                                                            <FiUpload size={14} className={uploadingDocs[id] ? 'animate-bounce text-[#0038A8]' : 'transition-transform group-hover/upload:-translate-y-0.5'} />
+                                                                                            <span className="text-[14px] font-black uppercase tracking-wider truncate">
+                                                                                                {uploadingDocs[id] ? 'Processing...' : 'Upload Document'}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full min-w-0">
+                                                                                        <div className="relative group/upload flex-1 min-w-0 h-10">
+                                                                                            <input disabled={!isEditing}
+                                                                                                type="file"
+                                                                                                accept={accept}
+                                                                                                onChange={(e) => {
+                                                                                                    const file = e.target.files[0];
+                                                                                                    if (file) handleFileUpload(file, id);
+                                                                                                }}
+                                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full disabled:cursor-not-allowed"
+                                                                                                title={isEditing ? 'Click to replace document' : 'Document uploaded (editing disabled)'}
+                                                                                            />
+                                                                                            <div className="h-full w-full flex items-center justify-between gap-2 border-2 border-dashed border-emerald-300/80 bg-emerald-50/50 group-hover/upload:bg-emerald-50/80 group-hover/upload:border-emerald-400 rounded-xl px-3 transition-all duration-200 shadow-xs">
+                                                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                                                    <FiUpload size={14} className={`text-emerald-700 shrink-0 ${uploadingDocs[id] ? 'animate-bounce' : 'transition-transform group-hover/upload:-translate-y-0.5'}`} />
+                                                                                                    <span className="text-[13px] font-black uppercase tracking-wider text-emerald-800 truncate">
+                                                                                                        {uploadingDocs[id] ? 'Processing...' : (uploadedFileNames[id] ? `Saved ✓ — ${uploadedFileNames[id]}` : 'Document on file ✓')}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                {isEditing && (
+                                                                                                    <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-100/90 hover:bg-emerald-200/80 px-2 py-0.5 rounded-md shrink-0 border border-emerald-300/60 transition-colors">
+                                                                                                        Replace
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="grid grid-cols-2 xl:flex items-center gap-2 shrink-0">
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => handleViewDocument(profile[binaryKey])}
+                                                                                                className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/view active:scale-[0.98]"
+                                                                                                title="View Document"
+                                                                                            >
+                                                                                                <FiEye size={14} className="group-hover/view:scale-110 transition-transform text-[#0038A8]" />
+                                                                                                <span>View</span>
+                                                                                            </button>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => handleDownloadDocument(profile[binaryKey], label)}
+                                                                                                className="h-10 flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-[#08315F] rounded-xl px-4 text-[13px] font-black uppercase tracking-wider text-[#08315F] bg-white hover:bg-slate-50 transition-all duration-200 shadow-xs hover:shadow-sm group/download active:scale-[0.98]"
+                                                                                                title="Download Document"
+                                                                                            >
+                                                                                                <FiDownload size={14} className="group-hover/download:-translate-y-0.5 transition-transform text-[#0038A8]" />
+                                                                                                <span>Download</span>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </Field>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -5339,12 +5483,16 @@ const OfficialProfiling = () => {
                                                                         { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf,.doc,.docx' },
                                                                         { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf,.doc,.docx' },
                                                                         { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },
-                                                                        { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf,.doc,.docx' },
+                                                                        ...(hasPendingCases ? [
+                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf,.doc,.docx' }
+                                                                        ] : []),
+                                                                        ...(isApplyingForPosition ? [
+                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf,.doc,.docx' },
+                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf,.doc,.docx' },
+                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf,.doc,.docx' },
+                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf,.doc,.docx' },
+                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf,.doc,.docx' },
+                                                                        ] : []),
                                                                     ].map(d => (
                                                                         <div key={d.key} className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 ${profile[d.dbKey] ? 'bg-emerald-50/30 border-emerald-200' : 'bg-transparent border-slate-200'}`}>
                                                                             {d.key === 'photo' ? <FiCamera size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} /> : <FiFileText size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} />}
