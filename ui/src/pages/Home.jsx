@@ -190,9 +190,9 @@ const Home = () => {
 
         if (appsData.success) setApplications(appsData.data);
         if (offData.success) {
-          const approvedOfficials = (offData.data || []).filter(o => o.status !== 'For Approval' && o.status !== 'Rejected');
-          setAllOfficials(approvedOfficials);
-          setOfficials(approvedOfficials.filter(o => o.status === 'Active'));
+          const validOfficials = (offData.data || []).filter(o => o.status !== 'Rejected');
+          setAllOfficials(validOfficials);
+          setOfficials(validOfficials.filter(o => o.status === 'Active' || o.status === 'For Approval'));
         }
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
@@ -527,6 +527,21 @@ const Home = () => {
       });
     });
 
+    // Masterlist officials awaiting approval
+    officials.filter(o => o.status === 'For Approval').forEach(o => {
+      queue.push({
+        id: o.TLOid,
+        email: o.email,
+        name: `${o.first_name || ''} ${o.last_name || ''}`.trim() || 'Pending Official',
+        desc: `Masterlist Profile · ${formatPositionTitle(o.position_title) || o.position_title || 'Unassigned'} · ${o.office || 'Unassigned'}`,
+        status: 'For Approval',
+        badgeClass: 'warn',
+        type: 'pending',
+        region: getOfficialRegion(o),
+        level: getOfficialLevel(o)
+      });
+    });
+
     // Incomplete active profiles
     officials.filter(o => !isProfileComplete(o)).forEach(o => {
       queue.push({
@@ -622,13 +637,14 @@ const Home = () => {
     // Third Level Officials (Only show when explicitly filtered so it doesn't flood the 'All' queue)
     if (activeQueueFilter === 'thirdLevel') {
       officials.filter(o => isThirdLevelPosition(o.position_title)).forEach(o => {
+        const isPending = o.status === 'For Approval';
         queue.push({
           id: o.TLOid,
           email: o.email,
           name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
           desc: `${formatPositionTitle(o.position_title) || o.position_title || 'Unassigned'} · ${o.office || 'Unassigned'}`,
-          status: 'Active',
-          badgeClass: 'neutral',
+          status: isPending ? 'For Approval' : 'Active',
+          badgeClass: isPending ? 'warn' : 'neutral',
           type: 'thirdLevel',
           region: getOfficialRegion(o),
           level: getOfficialLevel(o)
@@ -763,11 +779,29 @@ const Home = () => {
           }
         }
 
+        let actionText = 'Profile Updated';
+        let actionClass = 'updated';
+        if (o.isApp) {
+          actionText = 'Application Submitted';
+          actionClass = 'created';
+        } else if (o.status === 'For Approval') {
+          actionText = 'For Approval';
+          actionClass = 'for-approval';
+        } else if (o.status === 'Vacated') {
+          actionText = 'Position Vacated';
+          actionClass = 'vacated';
+        } else if (isNew) {
+          actionText = 'Profile Created';
+          actionClass = 'created';
+        }
+
         return {
           id: o.TLOid,
           email: o.email,
           name: logName,
-          action: o.isApp ? 'Application Submitted' : (o.status === 'Vacated' ? 'Position Vacated' : (isNew ? 'Profile Created' : 'Profile Updated')),
+          status: o.status,
+          action: actionText,
+          actionClass: actionClass,
           date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
         };
@@ -909,6 +943,8 @@ const Home = () => {
           .log-row .action { font-size:11px; padding:4px 8px; border-radius:6px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; }
           .log-row .action.updated { background:#e0f2fe; color:#0284c7; }
           .log-row .action.created { background:#dcfce7; color:#166534; }
+          .log-row .action.for-approval { background:#fef3c7; color:#92400e; }
+          .log-row .action.vacated { background:#fee2e2; color:#991b1b; }
           @media(max-width:1024px){
             .grid-layout { grid-template-columns:1fr 1fr; }
             .grid-layout > aside { grid-column: span 2; }
@@ -1176,9 +1212,14 @@ const Home = () => {
                   ) : activityLogs.length > 0 ? (
                     activityLogs.map((log, idx) => (
                       <div key={idx} className="log-row" onClick={() => navigate(log.email ? `/official-profiling?email=${encodeURIComponent(log.email)}` : '/officials-registry')}>
-                        <strong>{log.name}</strong>
+                        <div className="flex items-center justify-between gap-2">
+                          <strong>{log.name}</strong>
+                          {log.status === 'For Approval' && (
+                            <span className="queue-badge warn text-[10px] py-0.5 px-2">For Approval</span>
+                          )}
+                        </div>
                         <div className="meta">
-                          <span className={`action ${log.action === 'Profile Created' ? 'created' : 'updated'}`}>{log.action}</span>
+                          <span className={`action ${log.actionClass || 'updated'}`}>{log.action}</span>
                           <span className="time"><FiClock /> {log.date} at {log.time}</span>
                         </div>
                       </div>

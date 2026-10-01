@@ -2990,12 +2990,15 @@ export const getKpiSummary = async (req, res) => {
 
     // Also fetch masterlist rows for filter dropdowns / directory compatibility
     const allRowsParams = [isTest];
-    let allRowsStatusCondition = `AND m.status != 'For Approval' AND m.status != 'Rejected'`;
+    let allRowsStatusCondition = `AND m.status != 'Rejected'`;
     if (req.query.status === 'For Approval') {
       allRowsParams.push('For Approval');
       allRowsStatusCondition = `AND m.status = $${allRowsParams.length}`;
     } else if (req.query.status === 'Rejected') {
       allRowsParams.push('Rejected');
+      allRowsStatusCondition = `AND m.status = $${allRowsParams.length}`;
+    } else if (req.query.status && req.query.status !== 'All' && req.query.status !== 'all') {
+      allRowsParams.push(req.query.status);
       allRowsStatusCondition = `AND m.status = $${allRowsParams.length}`;
     }
 
