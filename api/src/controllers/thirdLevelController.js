@@ -616,6 +616,18 @@ export const uploadDocument = async (req, res) => {
   const { TLOid, docType } = req.params;
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
+  const pdfOnlyTypes = [
+    'wes', 'cv', 'service_records', 'executive_summary',
+    'ombudsman_clearance', 'sandiganbayan_clearance', 'csc_clearance',
+    'nbi_clearance', 'deped_clearance'
+  ];
+  if (pdfOnlyTypes.includes(docType)) {
+    const isPdf = req.file.mimetype === 'application/pdf' || (req.file.originalname && req.file.originalname.toLowerCase().endsWith('.pdf'));
+    if (!isPdf) {
+      return res.status(400).json({ error: 'Only PDF documents (.pdf) are allowed for this upload.' });
+    }
+  }
+
   console.log(`[Upload] Start ${docType} for ${TLOid}`);
   const isMasterlist = !TLOid.startsWith('APP-') && !(TLOid.startsWith('TLO-') && TLOid.split('-').length > 2);
   const client = await pool.connect();

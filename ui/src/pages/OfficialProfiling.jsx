@@ -2269,8 +2269,19 @@ const OfficialProfiling = () => {
                 Swal.fire('Notice', 'Please upload a valid image file (PNG, JPG) for the ID Picture.', 'info');
                 return;
             }
+        }
 
-
+        const pdfOnlyDocs = [
+            'wes', 'cv', 'service_records', 'executive_summary',
+            'ombudsman_clearance', 'sandiganbayan_clearance', 'csc_clearance',
+            'nbi_clearance', 'deped_clearance'
+        ];
+        if (pdfOnlyDocs.includes(docType)) {
+            const isPdf = file.type === 'application/pdf' || (file.name && file.name.toLowerCase().endsWith('.pdf'));
+            if (!isPdf) {
+                Swal.fire('PDF Only', 'Only PDF files (.pdf) are allowed for this document.', 'info');
+                return;
+            }
         }
 
         setUploadingDocs(prev => ({ ...prev, [docType]: true }));
@@ -4363,8 +4374,8 @@ const OfficialProfiling = () => {
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
                                                                 { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx' },
-                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx' },
-                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF/Word format', accept: '.pdf,.doc,.docx' },
+                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf' },
+                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf' },
                                                                 { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf' },
                                                             ].map(({ id, label, note, accept }) => (
                                                                 <div key={id} className="flex flex-col justify-between gap-4 p-6 bg-slate-50/40 hover:bg-slate-50/70 border-2 border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md min-w-0 overflow-hidden">
@@ -4546,7 +4557,7 @@ const OfficialProfiling = () => {
                                                                                 <div className="relative group/upload w-full h-11">
                                                                                     <input disabled={!isEditing}
                                                                                         type="file"
-                                                                                        accept=".pdf,.doc,.docx"
+                                                                                        accept=".pdf"
                                                                                         onChange={(e) => {
                                                                                             const file = e.target.files[0];
                                                                                             if (file) handleFileUpload(file, 'executive_summary');
@@ -4565,7 +4576,7 @@ const OfficialProfiling = () => {
                                                                                     <div className="relative group/upload flex-1 min-w-0 h-10">
                                                                                         <input disabled={!isEditing}
                                                                                             type="file"
-                                                                                            accept=".pdf,.doc,.docx"
+                                                                                            accept=".pdf"
                                                                                             onChange={(e) => {
                                                                                                 const file = e.target.files[0];
                                                                                                 if (file) handleFileUpload(file, 'executive_summary');
@@ -4659,31 +4670,31 @@ const OfficialProfiling = () => {
                                                                             id: 'ombudsman_clearance',
                                                                             binaryKey: 'ombudsman_clearance_binary_id',
                                                                             label: 'Clearance from the Office of the Ombudsman',
-                                                                            accept: '.pdf,.doc,.docx'
+                                                                            accept: '.pdf'
                                                                         },
                                                                         {
                                                                             id: 'sandiganbayan_clearance',
                                                                             binaryKey: 'sandiganbayan_clearance_binary_id',
                                                                             label: 'Clearance from Sandiganbayan',
-                                                                            accept: '.pdf,.doc,.docx'
+                                                                            accept: '.pdf'
                                                                         },
                                                                         {
                                                                             id: 'csc_clearance',
                                                                             binaryKey: 'csc_clearance_binary_id',
                                                                             label: 'Clearance from Civil Service Commission',
-                                                                            accept: '.pdf,.doc,.docx'
+                                                                            accept: '.pdf'
                                                                         },
                                                                         {
                                                                             id: 'nbi_clearance',
                                                                             binaryKey: 'nbi_clearance_binary_id',
                                                                             label: 'Clearance from National Bureau of Investigation',
-                                                                            accept: '.pdf,.doc,.docx'
+                                                                            accept: '.pdf'
                                                                         },
                                                                         {
                                                                             id: 'deped_clearance',
                                                                             binaryKey: 'deped_clearance_binary_id',
                                                                             label: 'Certificate of No Pending Case issued by the DepEd Regional Office',
-                                                                            accept: '.pdf,.doc,.docx'
+                                                                            accept: '.pdf'
                                                                         }
                                                                     ].map(({ id, binaryKey, label, accept }) => (
                                                                         <Field key={id} label={label}>
@@ -5480,18 +5491,18 @@ const OfficialProfiling = () => {
                                                                     {[
                                                                         { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*' },
                                                                         { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf,.doc,.docx' },
+                                                                        { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf' },
+                                                                        { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf' },
                                                                         { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },
                                                                         ...(hasPendingCases ? [
-                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf,.doc,.docx' }
+                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf' }
                                                                         ] : []),
                                                                         ...(isApplyingForPosition ? [
-                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf,.doc,.docx' },
-                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf,.doc,.docx' },
-                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf,.doc,.docx' },
-                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf,.doc,.docx' },
-                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf,.doc,.docx' },
+                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf' },
+                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf' },
+                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf' },
+                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf' },
+                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf' },
                                                                         ] : []),
                                                                     ].map(d => (
                                                                         <div key={d.key} className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 ${profile[d.dbKey] ? 'bg-emerald-50/30 border-emerald-200' : 'bg-transparent border-slate-200'}`}>
