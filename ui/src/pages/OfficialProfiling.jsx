@@ -5137,17 +5137,21 @@ const OfficialProfiling = () => {
                                                         <div className="space-y-6">
 
                                                             {/* PROFILE SUMMARY */}
-                                                            <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8 relative">
-                                                                <div className="absolute top-8 right-8 z-[51]">
-                                                                    <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#004a99] border-2 border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[16.5px] transition-all shadow-sm relative z-[51]">
-                                                                        <FiDownload size={18} /> Export Profile
-                                                                    </button>
-                                                                    <AnimatePresence>
-                                                                        {/* Reusing existing exportModalOpen block logic but keeping it hidden inside this div */}
-                                                                        {exportModalOpen && (
-                                                                            /* existing export modal code will go here - I will retain the original modal code */
-                                                                            <AnimatePresence>
-                                                                                {exportModalOpen && (
+                                                            <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-4 sm:p-8 relative">
+                                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <FiUser className="text-[#08315F] shrink-0" size={24} />
+                                                                        <h2 className="text-[19px] sm:text-[21px] font-black text-[#08315F] uppercase tracking-widest">Profile Summary</h2>
+                                                                    </div>
+                                                                    <div>
+                                                                        <button type="button" onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center justify-center gap-2 bg-[#004a99] border-2 border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[16.5px] transition-all shadow-sm w-full sm:w-auto">
+                                                                            <FiDownload size={18} /> Export Profile
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                <AnimatePresence>
+                                                                    {exportModalOpen && (
                                                                                     <motion.div
                                                                                         initial={{ opacity: 0 }}
                                                                                         animate={{ opacity: 1 }}
@@ -5472,15 +5476,7 @@ const OfficialProfiling = () => {
                                                                                         </motion.div>
                                                                                     </motion.div>
                                                                                 )}
-                                                                            </AnimatePresence>
-                                                                        )}
-                                                                    </AnimatePresence>
-                                                                </div>
-
-                                                                <div className="flex items-center gap-3 mb-8">
-                                                                    <FiUser className="text-[#08315F]" size={24} />
-                                                                    <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Profile Summary</h2>
-                                                                </div>
+                                                                </AnimatePresence>
 
                                                                 {/* Personal Information */}
                                                                 <div className="mb-8">
@@ -5558,25 +5554,37 @@ const OfficialProfiling = () => {
                                                                 {/* Eligibility */}
                                                                 <div>
                                                                     <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest mb-4">Eligibility</h3>
-                                                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
-                                                                        <div className="col-span-2"><p className="text-[15px] text-slate-400 mb-1">Career Executive Service (CES)</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.ces_stage || '—'}</p></div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">CES Conferment Date</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.ces_conferment_date || '—'}</p></div>
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                                                        <div>
+                                                                            <p className="text-[15px] text-slate-400 mb-1">Career Executive Service (CES)</p>
+                                                                            <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.ces_stage || '—'}</p>
                                                                         </div>
                                                                         <div className="flex items-start gap-2">
-                                                                            <FiBookOpen size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Educational Management Test (EMT)</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '—'}</p></div>
+                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5 shrink-0" />
+                                                                            <div>
+                                                                                <p className="text-[15px] text-slate-400 mb-1">CES Conferment Date</p>
+                                                                                <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.ces_conferment_date || '—'}</p>
+                                                                            </div>
                                                                         </div>
                                                                         <div className="flex items-start gap-2">
-                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">EMT Date</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.emt_date || '—'}</p></div>
+                                                                            <FiBookOpen size={18} className="text-blue-500 mt-0.5 shrink-0" />
+                                                                            <div>
+                                                                                <p className="text-[15px] text-slate-400 mb-1">Educational Management Test (EMT)</p>
+                                                                                <p className="text-[18px] font-black text-slate-800 uppercase">{profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '—'}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-start gap-2">
+                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5 shrink-0" />
+                                                                            <div>
+                                                                                <p className="text-[15px] text-slate-400 mb-1">EMT Date</p>
+                                                                                <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.emt_date || '—'}</p>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
 
                                                                     {/* Eligibilities List */}
                                                                     {profile.eligibilities && profile.eligibilities.length > 0 && (
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3">
+                                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                                             {profile.eligibilities.map((elig, idx) => {
                                                                                 const name = elig.eligibility || elig.title || 'Untitled';
                                                                                 const meta = [
@@ -5586,13 +5594,13 @@ const OfficialProfiling = () => {
                                                                                 ].filter(Boolean).join(' | ');
 
                                                                                 return (
-                                                                                    <div key={idx} className="flex items-center justify-between">
-                                                                                        <div className="flex items-center gap-2 text-[16.5px]">
-                                                                                            <span className="font-black text-blue-600 uppercase w-24">{name}:</span>
-                                                                                            <span className="text-slate-600">{meta || '—'}</span>
+                                                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                                                                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
+                                                                                            <span className="font-black text-blue-600 uppercase text-[15px] sm:text-[16px] tracking-tight">{name}:</span>
+                                                                                            <span className="text-slate-600 text-[14px] sm:text-[15px] font-medium break-words">{meta || '—'}</span>
                                                                                         </div>
-                                                                                        {/* Star Rating Visualization (dummy logic if not real rating format, but image shows stars) */}
-                                                                                        <div className="flex text-yellow-400 gap-0.5">
+                                                                                        {/* Star Rating Visualization */}
+                                                                                        <div className="flex text-yellow-400 gap-0.5 shrink-0 self-start sm:self-center">
                                                                                             {[1, 2, 3, 4, 5].map(star => (
                                                                                                 <FiStar key={star} size={14} fill={(elig.rating && parseInt(elig.rating) >= star) ? 'currentColor' : 'none'} className={(elig.rating && parseInt(elig.rating) >= star) ? '' : 'text-slate-200'} />
                                                                                             ))}
