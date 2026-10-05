@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -5150,106 +5151,113 @@ const OfficialProfiling = () => {
                                                                     </div>
                                                                 </div>
 
-                                                                <AnimatePresence>
-                                                                    {exportModalOpen && (
-                                                                                    <motion.div
-                                                                                        initial={{ opacity: 0 }}
-                                                                                        animate={{ opacity: 1 }}
-                                                                                        exit={{ opacity: 0 }}
-                                                                                        className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-slate-900/60 backdrop-blur-sm"
-                                                                                    >
-                                                                                        <motion.div
-                                                                                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                                                                            className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border-2 border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
-                                                                                            onClick={e => e.stopPropagation()}
-                                                                                        >
-                                                                                            {/* Sidebar Options */}
-                                                                                            <div className="w-full lg:w-64 bg-transparent border-r-2 border-slate-200 p-6 flex flex-col gap-3 shrink-0">
-                                                                                                <div className="flex items-center justify-between mb-4">
-                                                                                                    <div>
-                                                                                                        <h2 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
-                                                                                                    </div>
-                                                                                                    <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm border-2 border-slate-200">
-                                                                                                        <FiX size={18} />
-                                                                                                    </button>
-                                                                                                </div>
-                                                                                                {[
-                                                                                                    { id: 'csv', label: 'Data Export (CSV)', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-                                                                                                    { id: 'pdf', label: 'Document (PDF)', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
-                                                                                                    { id: 'ppt', label: 'Presentation (PPT)', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-                                                                                                ].map(opt => (
-                                                                                                    <button
-                                                                                                        key={opt.id}
-                                                                                                        onClick={() => setSelectedExportType(opt.id)}
-                                                                                                        className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                                                                                                    >
-                                                                                                        <opt.icon size={18} className={selectedExportType === opt.id ? opt.color : 'text-slate-400'} />
-                                                                                                        <div>
-                                                                                                            <p className={`text-[15px] font-black uppercase tracking-tight ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
-                                                                                                        </div>
-                                                                                                    </button>
-                                                                                                ))}
-
-                                                                                                <div className="mt-auto pt-6 flex flex-col gap-3">
-                                                                                                    {selectedExportType === 'pdf' && (
-                                                                                                        <button
-                                                                                                            onClick={() => {
-                                                                                                                const printContent = document.getElementById('pdf-preview-content').outerHTML;
-                                                                                                                const printWindow = window.open('', '_blank');
-                                                                                                                printWindow.document.write(`
-                                                                                                                                                            <html>
-                                                                                                                                                            <head>
-                                                                                                                                                                <title>Print Profile</title>
-                                                                                                                                                                <script src="https://cdn.tailwindcss.com"></script>
-                                                                                                                                                                <style>
-                                                                                                                                                                    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
-                                                                                                                                                                    body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                                                                                                                                                    @page { size: landscape; margin: 10mm; }
-                                                                                                                                                                </style>
-                                                                                                                                                            </head>
-                                                                                                                                                            <body>
-                                                                                                                                                                <div class="flex justify-center items-start w-full h-full">
-                                                                                                                                                                    ${printContent}
-                                                                                                                                                                </div>
-                                                                                                                                                                <script>
-                                                                                                                                                                    window.onload = function() {
-                                                                                                                                                                        setTimeout(function() {
-                                                                                                                                                                            window.print();
-                                                                                                                                                                            window.close();
-                                                                                                                                                                        }, 800);
-                                                                                                                                                                    };
-                                                                                                                                                                </script>
-                                                                                                                                                            </body>
-                                                                                                                                                            </html>
-                                                                                                                                                        `);
-                                                                                                                printWindow.document.close();
-                                                                                                            }}
-                                                                                                            disabled={exporting}
-                                                                                                            className="w-full py-4 bg-emerald-600 text-white font-black text-[15px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                                                                        >
-                                                                                                            <FiPrinter size={18} />
-                                                                                                            Print Document
-                                                                                                        </button>
-                                                                                                    )}
-                                                                                                    <button
-                                                                                                        onClick={() => {
-                                                                                                            if (selectedExportType === 'csv') generateCSV();
-                                                                                                            if (selectedExportType === 'pdf') generatePDF();
-                                                                                                            if (selectedExportType === 'ppt') generatePPT();
-                                                                                                        }}
-                                                                                                        disabled={exporting}
-                                                                                                        className="w-full py-4 bg-[#08315F] text-white font-black text-[15px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                                                                    >
-                                                                                                        {exporting ? <FiLoader className="animate-spin" size={18} /> : <FiDownload size={18} />}
-                                                                                                        {exporting ? 'Generating...' : `Download`}
-                                                                                                    </button>
-                                                                                                </div>
+                                                                {typeof document !== 'undefined' && createPortal(
+                                                                    <AnimatePresence>
+                                                                        {exportModalOpen && (
+                                                                            <motion.div
+                                                                                initial={{ opacity: 0 }}
+                                                                                animate={{ opacity: 1 }}
+                                                                                exit={{ opacity: 0 }}
+                                                                                className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 lg:p-10 bg-slate-900/60 backdrop-blur-sm"
+                                                                                onClick={() => setExportModalOpen(false)}
+                                                                            >
+                                                                                <motion.div
+                                                                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                                                                    className="relative w-full max-w-[1200px] bg-white rounded-2xl sm:rounded-[2rem] shadow-2xl border-2 border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-[92vh] sm:max-h-[85vh]"
+                                                                                    onClick={e => e.stopPropagation()}
+                                                                                >
+                                                                                    {/* Sidebar Options */}
+                                                                                    <div className="w-full lg:w-72 bg-white lg:bg-transparent border-b-2 lg:border-b-0 lg:border-r-2 border-slate-200 p-4 sm:p-6 flex flex-col gap-2.5 sm:gap-3 shrink-0 z-10">
+                                                                                        <div className="flex items-center justify-between mb-1 sm:mb-4">
+                                                                                            <div>
+                                                                                                <h2 className="text-[18px] sm:text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
                                                                                             </div>
+                                                                                            <button type="button" onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm border-2 border-slate-200">
+                                                                                                <FiX size={18} />
+                                                                                            </button>
+                                                                                        </div>
+                                                                                        <div className="grid grid-cols-3 lg:grid-cols-1 gap-2 sm:gap-3">
+                                                                                            {[
+                                                                                                { id: 'csv', label: 'Data Export (CSV)', shortLabel: 'CSV Export', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+                                                                                                { id: 'pdf', label: 'Document (PDF)', shortLabel: 'PDF Document', icon: FiFile, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
+                                                                                                { id: 'ppt', label: 'Presentation (PPT)', shortLabel: 'PPT Slide', icon: FiMonitor, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+                                                                                            ].map(opt => (
+                                                                                                <button
+                                                                                                    key={opt.id}
+                                                                                                    type="button"
+                                                                                                    onClick={() => setSelectedExportType(opt.id)}
+                                                                                                    className={`flex items-center justify-center lg:justify-start gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 transition-all text-left ${selectedExportType === opt.id ? `${opt.border} ${opt.bg} shadow-sm` : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                                                                                                >
+                                                                                                    <opt.icon size={18} className={`shrink-0 ${selectedExportType === opt.id ? opt.color : 'text-slate-400'}`} />
+                                                                                                    <div>
+                                                                                                        <p className={`text-[12.5px] sm:text-[15px] font-black uppercase tracking-tight hidden sm:block ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</p>
+                                                                                                        <p className={`text-[12px] font-black uppercase tracking-tight sm:hidden ${selectedExportType === opt.id ? opt.color : 'text-slate-600'}`}>{opt.shortLabel}</p>
+                                                                                                    </div>
+                                                                                                </button>
+                                                                                            ))}
+                                                                                        </div>
 
-                                                                                            {/* Preview Area */}
-                                                                                            <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 flex flex-col items-center bg-slate-100/50">
+                                                                                        <div className="mt-auto pt-2 sm:pt-6 flex flex-row lg:flex-col gap-2 sm:gap-3">
+                                                                                            {selectedExportType === 'pdf' && (
+                                                                                                <button
+                                                                                                    onClick={() => {
+                                                                                                        const printContent = document.getElementById('pdf-preview-content').outerHTML;
+                                                                                                        const printWindow = window.open('', '_blank');
+                                                                                                        printWindow.document.write(`
+                                                                                                                                                    <html>
+                                                                                                                                                    <head>
+                                                                                                                                                        <title>Print Profile</title>
+                                                                                                                                                        <script src="https://cdn.tailwindcss.com"></script>
+                                                                                                                                                        <style>
+                                                                                                                                                            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+                                                                                                                                                            body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                                                                                                                                            @page { size: landscape; margin: 10mm; }
+                                                                                                                                                        </style>
+                                                                                                                                                    </head>
+                                                                                                                                                    <body>
+                                                                                                                                                        <div class="flex justify-center items-start w-full h-full">
+                                                                                                                                                            ${printContent}
+                                                                                                                                                        </div>
+                                                                                                                                                        <script>
+                                                                                                                                                            window.onload = function() {
+                                                                                                                                                                setTimeout(function() {
+                                                                                                                                                                    window.print();
+                                                                                                                                                                    window.close();
+                                                                                                                                                                }, 800);
+                                                                                                                                                            };
+                                                                                                                                                        </script>
+                                                                                                                                                    </body>
+                                                                                                                                                    </html>
+                                                                                                                                                `);
+                                                                                                        printWindow.document.close();
+                                                                                                    }}
+                                                                                                    disabled={exporting}
+                                                                                                    className="flex-1 lg:w-full py-2.5 sm:py-4 bg-emerald-600 text-white font-black text-[13px] sm:text-[15px] uppercase tracking-widest rounded-xl shadow-md sm:shadow-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                                >
+                                                                                                    <FiPrinter size={18} />
+                                                                                                    <span className="hidden sm:inline">Print Document</span>
+                                                                                                    <span className="sm:hidden">Print</span>
+                                                                                                </button>
+                                                                                            )}
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    if (selectedExportType === 'csv') generateCSV();
+                                                                                                    if (selectedExportType === 'pdf') generatePDF();
+                                                                                                    if (selectedExportType === 'ppt') generatePPT();
+                                                                                                }}
+                                                                                                disabled={exporting}
+                                                                                                className="flex-1 lg:w-full py-2.5 sm:py-4 bg-[#08315F] text-white font-black text-[13px] sm:text-[15px] uppercase tracking-widest rounded-xl shadow-md sm:shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                            >
+                                                                                                {exporting ? <FiLoader className="animate-spin" size={18} /> : <FiDownload size={18} />}
+                                                                                                {exporting ? 'Generating...' : `Download`}
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {/* Preview Area */}
+                                                                                    <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6 lg:p-10 flex flex-col items-center bg-slate-100/50 min-h-0">
                                                                                                 {selectedExportType === 'csv' && (
                                                                                                     <div className="w-full max-w-4xl bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                                                                                                         <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
@@ -5476,7 +5484,9 @@ const OfficialProfiling = () => {
                                                                                         </motion.div>
                                                                                     </motion.div>
                                                                                 )}
-                                                                </AnimatePresence>
+                                                                </AnimatePresence>,
+                                                                document.body
+                                                            )}
 
                                                                 {/* Personal Information */}
                                                                 <div className="mb-8">
