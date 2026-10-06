@@ -1165,10 +1165,39 @@ const OfficialProfiling = () => {
         }
         if (tabId === 'achievements') {
             if (isAchievementsNA) return true;
-            return !!(
-                (Array.isArray(profile.notable_achievements) && profile.notable_achievements.some(a => a && (a.title?.trim() || (typeof a === 'string' && a.trim())) && !isAchievementsPlaceholder(a.title || a))) ||
-                (Array.isArray(profile.individual_accomplishments) && profile.individual_accomplishments.some(a => a && (a.description?.trim() || a.title?.trim() || (typeof a === 'string' && a.trim()))))
-            );
+
+            const notableList = Array.isArray(profile.notable_achievements) ? profile.notable_achievements : [];
+            const accomplishmentsList = Array.isArray(profile.individual_accomplishments) ? profile.individual_accomplishments : [];
+
+            const activeNotable = notableList.filter(a => {
+                if (!a) return false;
+                const title = String(typeof a === 'object' && a !== null ? (a.title ?? '') : (a ?? '')).trim();
+                const year = String(typeof a === 'object' && a !== null ? (a.year ?? '') : '').trim();
+                return (title && !isAchievementsPlaceholder(title)) || year;
+            });
+
+            const activeAccomplishments = accomplishmentsList.filter(acc => {
+                if (!acc) return false;
+                const desc = String(typeof acc === 'object' && acc !== null ? (acc.description ?? acc.title ?? '') : (acc ?? '')).trim();
+                const year = String(typeof acc === 'object' && acc !== null ? (acc.award_year ?? '') : '').trim();
+                return desc || year;
+            });
+
+            if (activeNotable.length === 0 && activeAccomplishments.length === 0) return false;
+
+            const allNotableComplete = activeNotable.every(a => {
+                const title = String(typeof a === 'object' && a !== null ? (a.title ?? '') : (a ?? '')).trim();
+                const year = String(typeof a === 'object' && a !== null ? (a.year ?? '') : '').trim();
+                return !!(title && !isAchievementsPlaceholder(title) && year);
+            });
+
+            const allAccomplishmentsComplete = activeAccomplishments.every(acc => {
+                const desc = String(typeof acc === 'object' && acc !== null ? (acc.description ?? acc.title ?? '') : (acc ?? '')).trim();
+                const year = String(typeof acc === 'object' && acc !== null ? (acc.award_year ?? '') : '').trim();
+                return !!(desc && year);
+            });
+
+            return allNotableComplete && allAccomplishmentsComplete;
         }
         if (tabId === 'documents') {
             return !!(profile.pds_binary_id && profile.service_records_binary_id);
@@ -2678,6 +2707,100 @@ const OfficialProfiling = () => {
             for (let i = 0; i < profile.other_courses.length; i++) {
                 const c = profile.other_courses[i];
                 if (!validateRange(c.date_from, c.date_to, `Other Training/Course #${i + 1}`)) return false;
+            }
+        }
+
+        // 6. Notable Achievements & Accomplishments Validation
+        if (!isAchievementsNA) {
+            if (Array.isArray(profile.notable_achievements)) {
+                for (let i = 0; i < profile.notable_achievements.length; i++) {
+                    const a = profile.notable_achievements[i];
+                    if (!a) continue;
+                    const title = String(typeof a === 'object' && a !== null ? (a.title ?? '') : (a ?? '')).trim();
+                    const year = String(typeof a === 'object' && a !== null ? (a.year ?? '') : '').trim();
+                    const isPlaceholder = isAchievementsPlaceholder(title);
+
+                    if ((title && !isPlaceholder) || year) {
+                        const missing = [];
+                        if (!title || isPlaceholder) missing.push('Awards / Recognitions / Notable Achievements Title');
+                        if (!year) missing.push('Year Received (YYYY)');
+
+                        if (missing.length > 0) {
+                            setTab('achievements');
+                            const rowHeader = (title && !isPlaceholder)
+                                ? `Notable Achievement #${i + 1} — "${title}"`
+                                : `Notable Achievement #${i + 1}`;
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Incomplete Notable Achievement',
+                                html: `
+                                    <div style="text-align: left; font-size: 14.5px; line-height: 1.5;">
+                                        <p style="color: #334155; margin-bottom: 8px;">
+                                            <strong>${rowHeader}</strong> is missing the following required field${missing.length > 1 ? 's' : ''}:
+                                        </p>
+                                        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 16px; margin: 10px 0;">
+                                            <ul style="list-style-type: disc; padding-left: 18px; margin: 0; color: #b91c1c; font-weight: 700;">
+                                                ${missing.map(m => `<li style="margin-bottom: 4px;">${m}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        <p style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px;">
+                                            Please fill in the Year Received for this achievement before saving your progress.
+                                        </p>
+                                    </div>
+                                `,
+                                confirmButtonColor: '#08315F',
+                                confirmButtonText: 'Got it, let me fill in'
+                            });
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            if (Array.isArray(profile.individual_accomplishments)) {
+                for (let i = 0; i < profile.individual_accomplishments.length; i++) {
+                    const acc = profile.individual_accomplishments[i];
+                    if (!acc) continue;
+                    const desc = String(typeof acc === 'object' && acc !== null ? (acc.description ?? acc.title ?? '') : (acc ?? '')).trim();
+                    const year = String(typeof acc === 'object' && acc !== null ? (acc.award_year ?? '') : '').trim();
+
+                    if (desc || year) {
+                        const missing = [];
+                        if (!desc) missing.push('Accomplishment Title / Description');
+                        if (!year) missing.push('Year (YYYY)');
+
+                        if (missing.length > 0) {
+                            setTab('achievements');
+                            const rowHeader = desc
+                                ? `Additional Accomplishment #${i + 1} — "${desc}"`
+                                : `Additional Accomplishment #${i + 1}`;
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Incomplete Additional Accomplishment',
+                                html: `
+                                    <div style="text-align: left; font-size: 14.5px; line-height: 1.5;">
+                                        <p style="color: #334155; margin-bottom: 8px;">
+                                            <strong>${rowHeader}</strong> is missing the following required field${missing.length > 1 ? 's' : ''}:
+                                        </p>
+                                        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 16px; margin: 10px 0;">
+                                            <ul style="list-style-type: disc; padding-left: 18px; margin: 0; color: #b91c1c; font-weight: 700;">
+                                                ${missing.map(m => `<li style="margin-bottom: 4px;">${m}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        <p style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px;">
+                                            Please fill in all required fields for this accomplishment before saving your progress.
+                                        </p>
+                                    </div>
+                                `,
+                                confirmButtonColor: '#08315F',
+                                confirmButtonText: 'Got it, let me fill in'
+                            });
+                            return false;
+                        }
+                    }
+                }
             }
         }
 
