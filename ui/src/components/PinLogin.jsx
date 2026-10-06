@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
@@ -26,6 +26,21 @@ const PinLogin = ({ rememberedUser, onSwitchAccount, onUsePassword }) => {
     if (error) setError('');
     setPin(prev => prev.slice(0, -1));
   }, [error]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (loading) return;
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        handleKeyPress(e.key);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        handleDelete();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyPress, handleDelete, loading]);
   
   // Need wrapper mapping logic for dashboards
   const getDashboardPath = (role, accountCategory) => {

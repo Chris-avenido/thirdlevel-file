@@ -110,11 +110,12 @@ const formatDateStr = (val) => {
 const inp = 'w-full bg-white hover:bg-transparent border-2 border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-[18px] font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400/80 shadow-none';
 const sel = 'w-full bg-white hover:bg-transparent border-2 border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-none';
 
-const Field = ({ label, children, className = '' }) => (
+const Field = ({ label, required = false, children, className = '' }) => (
     <div className={`flex flex-col justify-end gap-1.5 group h-full ${className}`}>
         {label && (
             <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest transition-colors duration-200 group-focus-within:text-[#08315F] min-h-[26px] flex items-end">
-                {label}
+                <span>{label}</span>
+                {required && <span className="text-red-500 ml-1 text-base leading-none font-bold select-none">*</span>}
             </label>
         )}
         <div className="w-full">
@@ -998,11 +999,7 @@ const OfficialProfiling = () => {
             );
         }
         if (tabId === 'eligibility') {
-            return !!(
-                profile.ces_stage?.trim() ||
-                (profile.emt_passer === true && profile.emt_date) ||
-                (Array.isArray(profile.eligibilities) && profile.eligibilities.some(e => e && (e.eligibility?.trim() || e.title?.trim())))
-            );
+            return (profile.emt_passer === false || (profile.emt_passer === true && !!profile.emt_date));
         }
         if (tabId === 'experience') {
             return prevPositions.some(p => p && (p.position_name?.trim() || p.office?.trim()));
@@ -3417,7 +3414,7 @@ const OfficialProfiling = () => {
                                                                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
                                                                     {/* CSC ID Upload */}
                                                                     <div className="w-full lg:w-[150px] shrink-0">
-                                                                        <Field label="CSC Format ID Picture">
+                                                                        <Field label="CSC Format ID Picture" required>
                                                                             <div className="relative group/upload w-full aspect-[3.5/4.5] max-w-[150px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
                                                                                 <input disabled={!isEditing}
                                                                                     type="file"
@@ -3451,8 +3448,8 @@ const OfficialProfiling = () => {
 
                                                                     <div className="flex-1 w-full space-y-4">
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                                                            <Field label="First Name"><input disabled={!isEditing} type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
-                                                                            <Field label="Last Name"><input disabled={!isEditing} type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="First Name" required><input disabled={!isEditing} type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
+                                                                            <Field label="Last Name" required><input disabled={!isEditing} type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
                                                                             <Field label="Middle Name"><input disabled={!isEditing} type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
                                                                             <Field label="Suffix">
                                                                                 <div className="flex items-center gap-1.5">
@@ -3489,14 +3486,14 @@ const OfficialProfiling = () => {
                                                                             </Field>
                                                                         </div>
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                                                            <Field label="Gender">
+                                                                            <Field label="Gender" required>
                                                                                 <select disabled={!isEditing} value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
                                                                                     <option value="">Select</option>
                                                                                     <option value="MALE">Male</option>
                                                                                     <option value="FEMALE">Female</option>
                                                                                 </select>
                                                                             </Field>
-                                                                            <Field label="Date of Birth">
+                                                                            <Field label="Date of Birth" required>
                                                                                 <div className="relative">
                                                                                     <ModernDatePicker disabled={!isEditing} maxDate={new Date()} value={profile.date_of_birth} onChange={val => setProfile(p => ({ ...p, date_of_birth: val, age: computeAge(val) }))} className={inp} />
                                                                                 </div>
@@ -3506,7 +3503,7 @@ const OfficialProfiling = () => {
                                                                                     {profile.age || '—'}
                                                                                 </div>
                                                                             </Field>
-                                                                            <Field label="Civil Status">
+                                                                            <Field label="Civil Status" required>
                                                                                 <select disabled={!isEditing} value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
                                                                                     <option value="">Select</option>
                                                                                     {['SINGLE', 'MARRIED', 'WIDOWED', 'SEPARATED'].map(o => <option key={o} value={o}>{o.charAt(0) + o.slice(1).toLowerCase()}</option>)}
@@ -3695,14 +3692,14 @@ const OfficialProfiling = () => {
                                                             <div className="border-t-2 border-slate-100 pt-8">
                                                                 <SectionLabel>Contact Details</SectionLabel>
                                                                 <div className="space-y-4">
-                                                                    <Field label="Permanent Address">
+                                                                    <Field label="Permanent Address" required>
                                                                         <input disabled={!isEditing} type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
                                                                     <Field label="Temporary Address">
                                                                         <input disabled={!isEditing} type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                        <Field label="Phone Number">
+                                                                        <Field label="Phone Number" required>
                                                                             <input
                                                                                 disabled={!isEditing}
                                                                                 type="text"
@@ -3715,7 +3712,7 @@ const OfficialProfiling = () => {
                                                                                 className={inp}
                                                                             />
                                                                         </Field>
-                                                                        <Field label="DepEd Email">
+                                                                        <Field label="DepEd Email" required>
                                                                             <input
                                                                                 disabled={!isEditing}
                                                                                 type="email"
@@ -3786,7 +3783,7 @@ const OfficialProfiling = () => {
 
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel>Educational Management Test (EMT)</SectionLabel>
-                                                            <Field label="Are you an EMT Passer?">
+                                                            <Field label="Are you an EMT Passer?" required>
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border-2 border-slate-200/40">
                                                                     {[{ val: true, label: 'Yes' }, { val: false, label: 'No' }].map(opt => (
                                                                         <button disabled={!isEditing}
@@ -3801,15 +3798,16 @@ const OfficialProfiling = () => {
                                                                         </button>
                                                                     ))}
                                                                     <button
+                                                                        disabled={!isEditing}
                                                                         onClick={() => setProfile(p => ({ ...p, emt_passer: null, emt_date: '' }))}
-                                                                        className="px-3 py-2 rounded-lg text-[13.5px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 hover:bg-transparent transition-all"
+                                                                        className="px-3 py-2 rounded-lg text-[13.5px] font-black uppercase tracking-wider text-slate-400 hover:text-slate-600 hover:bg-transparent transition-all disabled:opacity-50"
                                                                     >
                                                                         Clear
                                                                     </button>
                                                                 </div>
                                                             </Field>
                                                             {profile.emt_passer === true && (
-                                                                <Field label="Date passed EMT">
+                                                                <Field label="Date passed EMT" required>
                                                                     <div className="relative">
                                                                         <ModernDatePicker disabled={!isEditing} value={profile.emt_date} onChange={val => setP('emt_date', val)} className={inp} />
 
@@ -4340,10 +4338,10 @@ const OfficialProfiling = () => {
                                                                 <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border-2 border-[#0038A8]/10 space-y-4">
                                                                     <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest">Latest Rating (1st)</p>
                                                                     <div className="space-y-3">
-                                                                        <Field label="Rating (Max 5.000)">
+                                                                        <Field label="Rating (Max 5.000)" required>
                                                                             <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" className={inp} />
                                                                         </Field>
-                                                                        <Field label="Rating Period">
+                                                                        <Field label="Rating Period" required>
                                                                             <div className="relative">
                                                                                 <ModernDatePicker disabled={!isEditing} isMonthPicker value={profile.performance_rating_1_period} onChange={val => setP('performance_rating_1_period', val)} maxDate={new Date()} minDate={profile.performance_rating_2_period ? new Date(profile.performance_rating_2_period + "-01") : undefined} className={inp} />
 
@@ -4729,17 +4727,20 @@ const OfficialProfiling = () => {
 
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
-                                                                { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx', isApplication: false },
-                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf', isApplication: true },
-                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf', isApplication: true },
-                                                                { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf', isApplication: false },
-                                                            ].map(({ id, label, note, accept, isApplication }) => (
+                                                                { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx', isApplication: false, isRequired: true },
+                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf', isApplication: true, isRequired: false },
+                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf', isApplication: true, isRequired: false },
+                                                                { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf', isApplication: false, isRequired: true },
+                                                            ].map(({ id, label, note, accept, isApplication, isRequired }) => (
                                                                 <div key={id} className="flex flex-col justify-between gap-4 p-6 bg-slate-50/40 hover:bg-slate-50/70 border-2 border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md min-w-0 overflow-hidden">
                                                                     <div className="flex items-center gap-3 min-w-0">
                                                                         <div className="w-10 h-10 bg-white border border-slate-200/80 rounded-xl flex items-center justify-center text-[#08315F] shadow-xs shrink-0"><FiFileText size={18} /></div>
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center gap-2 flex-wrap">
-                                                                                <p className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight truncate">{label}</p>
+                                                                                <p className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight truncate">
+                                                                                    {label}
+                                                                                    {isRequired && <span className="text-red-500 ml-1 text-base leading-none font-bold select-none">*</span>}
+                                                                                </p>
                                                                                 {isApplication && (
                                                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs shrink-0">
                                                                                         Application
@@ -4840,7 +4841,7 @@ const OfficialProfiling = () => {
                                                             </div>
                                                         </div>
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
-                                                            <Field label="Pending Administrative Case/s?">
+                                                            <Field label="Pending Administrative Case/s?" required>
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border-2 border-slate-200/40">
                                                                     {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
                                                                         <button disabled={!isEditing}
@@ -4858,7 +4859,7 @@ const OfficialProfiling = () => {
                                                                 </div>
                                                             </Field>
                                                             <div className="space-y-6">
-                                                                <Field label="Have you ever been found guilty of any administrative offense?">
+                                                                <Field label="Have you ever been found guilty of any administrative offense?" required>
                                                                     <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border-2 border-slate-200/40">
                                                                         {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
                                                                             <button disabled={!isEditing}
@@ -4875,7 +4876,7 @@ const OfficialProfiling = () => {
                                                                         ))}
                                                                     </div>
                                                                 </Field>
-                                                                <Field label="Have you been criminally charged before any court?">
+                                                                <Field label="Have you been criminally charged before any court?" required>
                                                                     <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border-2 border-slate-200/40">
                                                                         {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
                                                                             <button disabled={!isEditing}
@@ -4892,7 +4893,7 @@ const OfficialProfiling = () => {
                                                                         ))}
                                                                     </div>
                                                                 </Field>
-                                                                <Field label="Have you ever been convicted of any crime or violation of any law?">
+                                                                <Field label="Have you ever been convicted of any crime or violation of any law?" required>
                                                                     <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border-2 border-slate-200/40">
                                                                         {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (
                                                                             <button disabled={!isEditing}
@@ -4914,7 +4915,7 @@ const OfficialProfiling = () => {
                                                             {/* Executive Summary Upload — Visible ONLY when hasPendingCases is TRUE */}
                                                             {hasPendingCases && (
                                                                 <div className="pt-6 border-t-2 border-slate-100 space-y-4">
-                                                                    <Field label="Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents">
+                                                                    <Field label="Executive Summary of Pending Case/s, Copies of Complaints, Counter-Affidavits, and Other Supporting Documents" required>
                                                                         <div className="flex flex-col gap-3 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl min-w-0 overflow-hidden">
                                                                             {!profile.executive_summary_binary_id ? (
                                                                                 <div className="relative group/upload w-full h-11">

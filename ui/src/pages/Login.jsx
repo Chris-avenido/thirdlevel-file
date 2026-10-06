@@ -87,6 +87,30 @@ const Login = () => {
         return true;
     });
 
+    // Handle keyboard input for passcode dialpad modal
+    useEffect(() => {
+        if (!showDialpadModal) return;
+
+        const handleKeyDown = (e) => {
+            if (/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+                setPasscode(prev => (prev.length < 6 ? prev + e.key : prev));
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
+                setPasscode(prev => prev.slice(0, -1));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                setShowDialpadModal(false);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setShowDialpadModal(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showDialpadModal]);
+
     // Populate login identifier from remembered user if available
     useEffect(() => {
         if (rememberedUser?.email && !loginId) {
@@ -348,27 +372,34 @@ const Login = () => {
                                                     required
                                                 />
                                             ) : (
-                                                <input
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    value={passcode}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                                                        setPasscode(val);
-                                                    }}
-                                                    onFocus={() => {
-                                                        setFocusedInput('secret');
-                                                        setShowDialpadModal(true);
-                                                    }}
-                                                    onBlur={() => setFocusedInput(null)}
-                                                    placeholder="••••••"
-                                                    maxLength={6}
-                                                    inputMode="numeric"
-                                                    pattern="[0-9]*"
-                                                    readOnly
-                                                    autoComplete="off"
-                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm cursor-pointer"
-                                                    required
-                                                />
+                                                <>
+                                                    <input
+                                                        type={showPassword ? 'text' : 'password'}
+                                                        value={passcode}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                            setPasscode(val);
+                                                        }}
+                                                        onFocus={() => setFocusedInput('secret')}
+                                                        onBlur={() => setFocusedInput(null)}
+                                                        placeholder="••••••"
+                                                        maxLength={6}
+                                                        inputMode="numeric"
+                                                        pattern="[0-9]*"
+                                                        autoComplete="off"
+                                                        className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-20 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
+                                                        required
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowDialpadModal(true)}
+                                                        className="absolute right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#08315F] transition-colors p-1"
+                                                        title="Open Keypad"
+                                                        aria-label="Open Keypad"
+                                                    >
+                                                        <FiSmartphone className="w-5 h-5" />
+                                                    </button>
+                                                </>
                                             )}
                                             <button
                                                 type="button"
@@ -429,6 +460,20 @@ const Login = () => {
                             >
                                 <div className="text-center mb-6">
                                     <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2 uppercase italic">Enter Passcode</h2>
+                                    <input
+                                        type="tel"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        maxLength={6}
+                                        value={passcode}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                            setPasscode(val);
+                                        }}
+                                        className="sr-only"
+                                        autoFocus
+                                        aria-label="Passcode digits"
+                                    />
                                     <div className="flex justify-center gap-3 mb-8 mt-6">
                                         {[...Array(6)].map((_, i) => (
                                             <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${passcode.length > i ? 'bg-[#08315F] border-blue-600 scale-110' : 'bg-slate-200 border-transparent'}`} />
