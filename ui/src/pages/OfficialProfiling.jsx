@@ -1200,7 +1200,12 @@ const OfficialProfiling = () => {
             return allNotableComplete && allAccomplishmentsComplete;
         }
         if (tabId === 'documents') {
-            return !!(profile.pds_binary_id && profile.service_records_binary_id);
+            const hasBaseDocs = !!(profile.pds_binary_id && profile.service_records_binary_id);
+            if (!hasBaseDocs) return false;
+            if (isApplyingForPosition) {
+                return !!(profile.wes_binary_id && profile.cv_binary_id);
+            }
+            return true;
         }
         if (tabId === 'legal') {
             const hasLegalQuestions = !!(
@@ -1210,8 +1215,17 @@ const OfficialProfiling = () => {
                 profile.convicted_crime_details?.trim()
             );
             if (!hasLegalQuestions) return false;
-            if (hasPendingCases) {
-                return !!profile.executive_summary_binary_id;
+            if (hasPendingCases && !profile.executive_summary_binary_id) {
+                return false;
+            }
+            if (isApplyingForPosition) {
+                return !!(
+                    profile.ombudsman_clearance_binary_id &&
+                    profile.sandiganbayan_clearance_binary_id &&
+                    profile.csc_clearance_binary_id &&
+                    profile.nbi_clearance_binary_id &&
+                    profile.deped_clearance_binary_id
+                );
             }
             return true;
         }
@@ -1672,7 +1686,7 @@ const OfficialProfiling = () => {
         const progressTabs = TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map(t => t.id);
         const completedCount = progressTabs.filter(tabId => isTabCompleted(tabId)).length;
         setCompleteness(Math.round((completedCount / progressTabs.length) * 100));
-    }, [profile, prevPositions, trainings, dpaConsent, truthConsent, certified, dataSource, isAchievementsNA, isSuffixNA]);
+    }, [profile, prevPositions, trainings, dpaConsent, truthConsent, certified, dataSource, isAchievementsNA, isSuffixNA, isApplyingForPosition]);
     useEffect(() => {
         if (completeness === 100 && profile.profiling_status !== 'profiling completed') {
             setP('profiling_status', 'profiling completed');
@@ -5339,13 +5353,49 @@ const OfficialProfiling = () => {
                                                             </p>
                                                         </div>
 
+                                                        {/* Applying for a Position Toggle Card */}
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-50 border-2 border-slate-200/80 rounded-2xl">
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <FiBriefcase className="text-[#08315F]" size={20} />
+                                                                    <h3 className="text-[17px] font-black text-[#08315F] uppercase tracking-wider">Applying for a Position</h3>
+                                                                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${isApplyingForPosition ? 'bg-blue-100 text-[#08315F] border border-blue-200' : 'bg-slate-200/70 text-slate-600 border border-slate-300'}`}>
+                                                                        {isApplyingForPosition ? 'Applying' : 'Not Applying'}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[14.5px] font-bold text-slate-500 leading-relaxed">
+                                                                    {isApplyingForPosition
+                                                                        ? 'Toggle is ON. Additional application documents (Work Experience Sheet - WES, Curriculum Vitae - CV) are required and displayed below.'
+                                                                        : 'Toggle is OFF. Other application documents are removed for third level officials not applying for a position (Profile Maintenance).'}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 shrink-0">
+                                                                <span className={`text-[15px] font-bold ${isApplyingForPosition ? 'text-[#08315F]' : 'text-slate-400'}`}>
+                                                                    {isApplyingForPosition ? 'Yes' : 'No'}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={!isEditing}
+                                                                    onClick={() => {
+                                                                        const nextVal = !isApplyingForPosition;
+                                                                        setIsApplyingForPosition(nextVal);
+                                                                        setP('is_applying_for_position', nextVal);
+                                                                    }}
+                                                                    title={isApplyingForPosition ? "Click to set Not Applying for a Position" : "Click to set Applying for a Position"}
+                                                                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${isApplyingForPosition ? 'bg-[#08315F]' : 'bg-slate-300'}`}
+                                                                >
+                                                                    <div className={`bg-white w-5 h-5 rounded-full shadow-sm transform transition-transform duration-200 ${isApplyingForPosition ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
                                                                 { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx', isApplication: false, isRequired: true },
-                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf', isApplication: true, isRequired: false },
-                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf', isApplication: true, isRequired: false },
+                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf', isApplication: true, isRequired: true },
+                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf', isApplication: true, isRequired: true },
                                                                 { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf', isApplication: false, isRequired: true },
-                                                            ].map(({ id, label, note, accept, isApplication, isRequired }) => (
+                                                            ].filter(doc => !doc.isApplication || isApplyingForPosition).map(({ id, label, note, accept, isApplication, isRequired }) => (
                                                                 <div key={id} className="flex flex-col justify-between gap-4 p-6 bg-slate-50/40 hover:bg-slate-50/70 border-2 border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md min-w-0 overflow-hidden">
                                                                     <div className="flex items-center gap-3 min-w-0">
                                                                         <div className="w-10 h-10 bg-white border border-slate-200/80 rounded-xl flex items-center justify-center text-[#08315F] shadow-xs shrink-0"><FiFileText size={18} /></div>
@@ -5678,6 +5728,7 @@ const OfficialProfiling = () => {
                                                                         <Field key={id} label={
                                                                             <span className="inline-flex items-center gap-2 flex-wrap">
                                                                                 <span>{label}</span>
+                                                                                <span className="text-red-500 ml-1 text-base leading-none font-bold select-none">*</span>
                                                                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs shrink-0">
                                                                                     Application
                                                                                 </span>
