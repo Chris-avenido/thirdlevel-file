@@ -8,12 +8,14 @@ import {
     FiAlertTriangle, FiInfo, FiUpload, FiToggleLeft, FiToggleRight,
     FiSearch, FiLoader, FiList, FiLock, FiUnlock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
     FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye, FiGrid,
-    FiEdit2, FiHeart, FiBookOpen, FiRotateCcw, FiCamera, FiBarChart2, FiChevronDown, FiHome, FiMapPin, FiLayers
+    FiEdit2, FiHeart, FiBookOpen, FiRotateCcw, FiCamera, FiBarChart2, FiChevronDown, FiHome, FiMapPin, FiLayers,
+    FiArchive
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import html2pdf from 'html2pdf.js';
 import PptxGenJS from 'pptxgenjs';
+import JSZip from 'jszip';
 import newLogo from '../assets/modern_logo.png';
 import depedLogo from '../assets/DepED-Logo.png';
 import { apiUrl } from '../utils/api';
@@ -1028,6 +1030,7 @@ const OfficialProfiling = () => {
     const [exportModalOpen, setExportModalOpen] = useState(false);
     const [selectedExportType, setSelectedExportType] = useState('csv');
     const [exporting, setExporting] = useState(false);
+    const [exportingDocs, setExportingDocs] = useState(false);
     const [previewScale, setPreviewScale] = useState(1);
     const [selectedEducationType, setSelectedEducationType] = useState('');
     const [uploadedFileNames, setUploadedFileNames] = useState({});
@@ -1096,16 +1099,46 @@ const OfficialProfiling = () => {
             return (profile.emt_passer === false || (profile.emt_passer === true && !!profile.emt_date));
         }
         if (tabId === 'experience') {
-            return prevPositions.some(p => p && (p.position_name?.trim() || p.office?.trim()));
+            if (!Array.isArray(prevPositions) || prevPositions.length === 0) return false;
+            return prevPositions.every(p => {
+                const hasBase = p && p.position_name?.trim() && p.office?.trim() && p.start_date?.trim() && (p.is_current || p.end_date?.trim());
+                if (!hasBase) return false;
+                if (Array.isArray(p.oic_positions) && p.oic_positions.length > 0) {
+                    return p.oic_positions.every(oic =>
+                        oic && oic.oic_position_name?.trim() && oic.oic_office?.trim() && oic.oic_start_date?.trim() && (oic.is_current || oic.oic_end_date?.trim())
+                    );
+                }
+                return true;
+            });
         }
         if (tabId === 'education') {
-            return !!(
+            const hasAnyDegree = !!(
                 profile.bachelor_degree?.trim() ||
                 profile.master_degree?.trim() ||
                 profile.doctorate_degree?.trim() ||
                 profile.highest_education?.trim() ||
                 (Array.isArray(profile.education_degrees) && profile.education_degrees.some(d => d && (d.specific_degree?.trim() || d.education_program?.trim())))
             );
+            if (!hasAnyDegree) return false;
+
+            // Ensure that for every entered degree, a graduation year (or N/A) is also specified
+            const checkDegrees = (degStr, yrStr) => {
+                const degs = (degStr || '').split('\n');
+                const yrs = (yrStr || '').split('\n');
+                const maxCount = Math.max(degs.length, yrs.length);
+                for (let i = 0; i < maxCount; i++) {
+                    const d = (degs[i] || '').trim();
+                    const y = (yrs[i] || '').trim();
+                    if (d && !y) return false;
+                }
+                return true;
+            };
+
+            if (!checkDegrees(profile.bachelor_degree, profile.bachelor_year)) return false;
+            if (!checkDegrees(profile.master_degree, profile.master_year)) return false;
+            if (!checkDegrees(profile.doctorate_degree, profile.doctorate_year)) return false;
+
+            return true;
         }
         if (tabId === 'performance') {
             return !!(profile.performance_rating_1 && profile.performance_rating_1_period);
@@ -1460,6 +1493,131 @@ const OfficialProfiling = () => {
             console.error(err);
             Swal.fire('Notice', "Failed to generate PPT", 'info');
             setExporting(false);
+        }
+    };
+
+    const handleExportAllDocs = async () => {
+        const documentDefinitions = [
+            { key: 'wes_binary_id', label: 'Work_Experience_Sheet_WES', defaultExt: '.pdf' },
+            { key: 'service_records_binary_id', label: 'Service_Records', defaultExt: '.pdf' },
+            { key: 'cv_binary_id', label: 'Curriculum_Vitae_CV', defaultExt: '.pdf' },
+            { key: 'pds_binary_id', label: 'Personal_Data_Sheet_PDS', defaultExt: '.pdf' }
+        ];
+
+        const uploadedDocs = documentDefinitions.filter(d => profile[d.key]);
+
+        if (uploadedDocs.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'No Work Experience Documents',
+                text: 'There are no uploaded work experience documents available in the blob for this official.',
+                confirmButtonColor: '#08315F'
+            });
+            return;
+        }
+
+        setExportingDocs(true);
+
+        Swal.fire({
+            title: 'Exporting Work Experience Documents',
+            html: `Packaging <b>${uploadedDocs.length}</b> work experience document(s) from the blob into RAR archive...<br><span class="text-xs text-slate-500 font-semibold mt-2 inline-block">Please wait while files are being retrieved and compressed...</span>`,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const zip = new JSZip();
+            let successCount = 0;
+
+            const getDocExtension = (mimeType, defaultExt = '.pdf') => {
+                if (!mimeType) return defaultExt;
+                const lower = mimeType.toLowerCase();
+                if (lower.includes('jpeg') || lower.includes('jpg')) return '.jpg';
+                if (lower.includes('png')) return '.png';
+                if (lower.includes('gif')) return '.gif';
+                if (lower.includes('webp')) return '.webp';
+                if (lower.includes('svg')) return '.svg';
+                if (lower.includes('pdf')) return '.pdf';
+                if (lower.includes('wordprocessingml') || lower.includes('docx')) return '.docx';
+                if (lower.includes('msword') || lower.includes('doc')) return '.doc';
+                if (lower.includes('presentationml') || lower.includes('pptx')) return '.pptx';
+                if (lower.includes('powerpoint') || lower.includes('ppt')) return '.ppt';
+                if (lower.includes('spreadsheetml') || lower.includes('xlsx')) return '.xlsx';
+                if (lower.includes('ms-excel') || lower.includes('csv')) return '.csv';
+                return defaultExt;
+            };
+
+            const activeToken = token || localStorage.getItem('token');
+            const headers = activeToken ? { 'Authorization': `Bearer ${activeToken}` } : {};
+
+            await Promise.all(
+                uploadedDocs.map(async (doc) => {
+                    const binaryId = profile[doc.key];
+                    try {
+                        const response = await fetch(apiUrl(`/api/binary/${binaryId}`), { headers });
+                        if (!response.ok) {
+                            console.warn(`Failed to fetch binary for ${doc.label} (${binaryId}): status ${response.status}`);
+                            return;
+                        }
+                        const blob = await response.blob();
+                        const contentType = response.headers.get('Content-Type') || blob.type || '';
+                        const ext = getDocExtension(contentType, doc.defaultExt);
+                        const fileName = `${doc.label}${ext}`;
+                        zip.file(fileName, blob);
+                        successCount++;
+                    } catch (err) {
+                        console.error(`Error fetching document ${doc.label}:`, err);
+                    }
+                })
+            );
+
+            if (successCount === 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Export Failed',
+                    text: 'Could not fetch document files from the blob storage server.',
+                    confirmButtonColor: '#08315F'
+                });
+                return;
+            }
+
+            const archiveBlob = await zip.generateAsync({ type: 'blob' });
+
+            const cleanPart = (str) => (str || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const lName = cleanPart(profile.last_name) || 'Official';
+            const fName = cleanPart(profile.first_name) || '';
+            const tloTag = cleanPart(TLOid || profile.TLOid) || 'TLO';
+            const rarFileName = `${lName}${fName ? '_' + fName : ''}_${tloTag}_Work_Experience_Documents.rar`;
+
+            const downloadUrl = URL.createObjectURL(archiveBlob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = rarFileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Export Complete',
+                text: `Successfully exported ${successCount} work experience document(s) as ${rarFileName}`,
+                timer: 2500,
+                showConfirmButton: false
+            });
+        } catch (err) {
+            console.error('Export work experience docs error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Export Error',
+                text: err.message || 'An error occurred while packaging work experience documents.',
+                confirmButtonColor: '#08315F'
+            });
+        } finally {
+            setExportingDocs(false);
         }
     };
 
@@ -2200,13 +2358,59 @@ const OfficialProfiling = () => {
             }
         }
 
-        // 3. Year Graduated
+        // 3. Degree & Year Graduated Validation
+        const degreeCategories = [
+            { title: "Baccalaureate / Bachelor's Degree", degField: 'bachelor_degree', yrField: 'bachelor_year' },
+            { title: "Master's Degree", degField: 'master_degree', yrField: 'master_year' },
+            { title: "Doctorate", degField: 'doctorate_degree', yrField: 'doctorate_year' }
+        ];
+
+        for (const cat of degreeCategories) {
+            const degs = (profile[cat.degField] || '').split('\n');
+            const yrs = (profile[cat.yrField] || '').split('\n');
+            const maxCount = Math.max(degs.length, yrs.length);
+
+            for (let i = 0; i < maxCount; i++) {
+                const deg = (degs[i] || '').trim();
+                const yr = (yrs[i] || '').trim();
+
+                if (deg && !yr) {
+                    setTab('education');
+                    const itemHeader = maxCount > 1 ? `${cat.title} #${i + 1}` : cat.title;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Year Graduated Required',
+                        html: `
+                            <div style="text-align: left; font-size: 14.5px; line-height: 1.5;">
+                                <p style="color: #334155; margin-bottom: 8px;">
+                                    <strong>${itemHeader}</strong> (<em>"${deg}"</em>) has a degree entered but is missing its Year Graduated:
+                                </p>
+                                <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 16px; margin: 10px 0;">
+                                    <ul style="list-style-type: disc; padding-left: 18px; margin: 0; color: #b91c1c; font-weight: 700;">
+                                        <li>Year Graduated (or select "Not Applicable (if currently ongoing)")</li>
+                                    </ul>
+                                </div>
+                                <p style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px;">
+                                    Please select a Year Graduated (or mark as "Not Applicable (if currently ongoing)") for this degree before saving your progress.
+                                </p>
+                            </div>
+                        `,
+                        confirmButtonColor: '#08315F',
+                        confirmButtonText: 'Got it, let me fill in'
+                    });
+                    return false;
+                }
+            }
+        }
+
+        // 3a. Year Graduated bounds check
         if (profile.education_year_graduated) {
             const rawYr = String(profile.education_year_graduated).trim().toLowerCase();
             const isNaYear = ['not applicable', 'n/a', 'na', 'none'].includes(rawYr) || rawYr.startsWith('not applicable');
             if (!isNaYear) {
                 const yr = Number(profile.education_year_graduated);
                 if (isNaN(yr) || yr < 1900) {
+                    setTab('education');
                     Swal.fire('Validation Error', 'Year Graduated must be 1900 or later.', 'error');
                     return false;
                 }
@@ -2266,13 +2470,26 @@ const OfficialProfiling = () => {
             return false;
         }
 
-        // 4. Date Ranges
+        // 4. Employment History (Held Positions) Validation
         const validateRange = (from, to, ctx) => {
             if (from && to) {
                 const d1 = new Date(from);
                 const d2 = new Date(to);
                 if (d2 <= d1) {
-                    Swal.fire('Validation Error', `In ${ctx}: To Date must be after From Date.`, 'error');
+                    setTab('experience');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Date Range',
+                        html: `
+                            <div style="text-align: left; font-size: 14.5px;">
+                                <p style="color: #334155;">In <strong>${ctx}</strong>:</p>
+                                <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px; margin-top: 8px; color: #b91c1c; font-weight: 700;">
+                                    To Date (${to}) must be later than From Date (${from}).
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonColor: '#08315F'
+                    });
                     return false;
                 }
             }
@@ -2281,11 +2498,108 @@ const OfficialProfiling = () => {
 
         for (let i = 0; i < prevPositions.length; i++) {
             const p = prevPositions[i];
-            if (!validateRange(p.start_date, p.end_date, `Managerial Experience #${i + 1}`)) return false;
-            if (p.oic_positions) {
+            const posNum = i + 1;
+            const posTitle = p.position_name?.trim() && p.position_name !== 'Others' ? p.position_name.trim() : '';
+            const posOffice = p.office?.trim() || '';
+            const missing = [];
+
+            if (!p.position_name?.trim() || p.position_name === 'Others') {
+                missing.push('Position Title');
+            }
+            if (!p.office?.trim()) {
+                missing.push('Office / Division');
+            }
+            if (!p.start_date?.trim()) {
+                missing.push('From Date (Start Date)');
+            }
+            if (!p.is_current && !p.end_date?.trim()) {
+                missing.push('To Date (End Date — or mark as "Current")');
+            }
+
+            if (missing.length > 0) {
+                setTab('experience');
+                const rowHeader = posTitle
+                    ? `Employment History #${posNum} — ${posTitle}${posOffice ? ` (${posOffice})` : ''}`
+                    : `Employment History #${posNum}`;
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Incomplete Employment History',
+                    html: `
+                        <div style="text-align: left; font-size: 14.5px; line-height: 1.5;">
+                            <p style="color: #334155; margin-bottom: 8px;">
+                                <strong>${rowHeader}</strong> is missing the following required field${missing.length > 1 ? 's' : ''}:
+                            </p>
+                            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 16px; margin: 10px 0;">
+                                <ul style="list-style-type: disc; padding-left: 18px; margin: 0; color: #b91c1c; font-weight: 700;">
+                                    ${missing.map(m => `<li style="margin-bottom: 4px;">${m}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <p style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px;">
+                                Please fill in the required field${missing.length > 1 ? 's' : ''} for this held position before saving your progress.
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#08315F',
+                    confirmButtonText: 'Got it, let me fill in'
+                });
+                return false;
+            }
+
+            if (!validateRange(p.start_date, p.end_date, `Employment History #${posNum}${posTitle ? ` (${posTitle})` : ''}`)) return false;
+
+            if (p.oic_positions && Array.isArray(p.oic_positions)) {
                 for (let j = 0; j < p.oic_positions.length; j++) {
                     const oic = p.oic_positions[j];
-                    if (!validateRange(oic.oic_start_date, oic.oic_end_date, `Managerial Experience #${i + 1} (OIC #${j + 1})`)) return false;
+                    const oicNum = j + 1;
+                    const oicTitle = oic.oic_position_name?.trim() && oic.oic_position_name !== 'Others' ? oic.oic_position_name.trim() : '';
+                    const oicOffice = oic.oic_office?.trim() || '';
+                    const oicMissing = [];
+
+                    if (!oic.oic_position_name?.trim() || oic.oic_position_name === 'Others') {
+                        oicMissing.push('OIC Position Title');
+                    }
+                    if (!oic.oic_office?.trim()) {
+                        oicMissing.push('OIC Office / Division');
+                    }
+                    if (!oic.oic_start_date?.trim()) {
+                        oicMissing.push('From Date (Start Date)');
+                    }
+                    if (!oic.is_current && !oic.oic_end_date?.trim()) {
+                        oicMissing.push('To Date (End Date — or mark as "Current")');
+                    }
+
+                    if (oicMissing.length > 0) {
+                        setTab('experience');
+                        const oicHeader = oicTitle
+                            ? `Employment History #${posNum} (OIC #${oicNum}) — ${oicTitle}${oicOffice ? ` (${oicOffice})` : ''}`
+                            : `Employment History #${posNum} (OIC #${oicNum})`;
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Incomplete OIC Assignment',
+                            html: `
+                                <div style="text-align: left; font-size: 14.5px; line-height: 1.5;">
+                                    <p style="color: #334155; margin-bottom: 8px;">
+                                        <strong>${oicHeader}</strong> is missing the following required field${oicMissing.length > 1 ? 's' : ''}:
+                                    </p>
+                                    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 16px; margin: 10px 0;">
+                                        <ul style="list-style-type: disc; padding-left: 18px; margin: 0; color: #b91c1c; font-weight: 700;">
+                                            ${oicMissing.map(m => `<li style="margin-bottom: 4px;">${m}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <p style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px;">
+                                        Please fill in the required field${oicMissing.length > 1 ? 's' : ''} for this OIC assignment before saving your progress.
+                                    </p>
+                                </div>
+                            `,
+                            confirmButtonColor: '#08315F',
+                            confirmButtonText: 'Got it, let me fill in'
+                        });
+                        return false;
+                    }
+
+                    if (!validateRange(oic.oic_start_date, oic.oic_end_date, `Employment History #${posNum} (OIC #${oicNum}${oicTitle ? ` - ${oicTitle}` : ''})`)) return false;
                 }
             }
         }
@@ -4008,7 +4322,21 @@ const OfficialProfiling = () => {
                                                         </div>
 
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
-                                                            <SectionLabel color="#08315F">Employment History</SectionLabel>
+                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                                                <SectionLabel color="#08315F">Employment History</SectionLabel>
+                                                                {!isTlo && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={handleExportAllDocs}
+                                                                        disabled={exportingDocs}
+                                                                        className="flex items-center justify-center gap-2 bg-[#08315F] border-2 border-amber-400/50 hover:border-amber-400 px-4 py-2 rounded-xl text-white hover:bg-[#0A4A8A] font-bold text-[14.5px] transition-all shadow-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                                        title="Export all work experience documents from the blob into a RAR archive"
+                                                                    >
+                                                                        <FiArchive size={16} className="text-amber-300" />
+                                                                        <span>{exportingDocs ? 'Exporting...' : 'Export Work Experience Docs'}</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                             <div className="space-y-3">
                                                                 <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-3 px-2">
                                                                     {['Position', 'Office / Division', 'From', 'To', 'OIC?', ''].map(h => <span key={h} className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest">{h}</span>)}
@@ -5253,44 +5581,62 @@ const OfficialProfiling = () => {
 
                                                             {/* PROFILE SUMMARY */}
                                                             <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-4 sm:p-8 relative">
-                                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                                                                    <div className="flex items-center gap-3">
+                                                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 sm:mb-8">
+                                                                    <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
                                                                         <FiUser className="text-[#08315F] shrink-0" size={24} />
-                                                                        <h2 className="text-[19px] sm:text-[21px] font-black text-[#08315F] uppercase tracking-widest">Profile Summary</h2>
+                                                                        <h2 className="text-[18px] sm:text-[20px] font-black text-[#08315F] uppercase tracking-widest whitespace-nowrap">Profile Summary</h2>
                                                                     </div>
-                                                                    <div className="flex flex-wrap items-center gap-3">
+                                                                    <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 overflow-x-auto pb-1 sm:pb-0">
                                                                         {/* Toggle View: Card / Table */}
-                                                                        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+                                                                        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => setSummaryViewMode('card')}
-                                                                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                                                                                className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
                                                                                     summaryViewMode === 'card'
                                                                                         ? 'bg-white text-[#08315F] shadow-sm'
                                                                                         : 'text-slate-500 hover:text-slate-800'
                                                                                 }`}
                                                                                 title="Card View"
                                                                             >
-                                                                                <FiGrid size={15} />
+                                                                                <FiGrid size={14} />
                                                                                 <span>Card View</span>
                                                                             </button>
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => setSummaryViewMode('table')}
-                                                                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                                                                                className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
                                                                                     summaryViewMode === 'table'
                                                                                         ? 'bg-[#08315F] text-white shadow-sm'
                                                                                         : 'text-slate-500 hover:text-slate-800'
                                                                                 }`}
                                                                                 title="Table View"
                                                                             >
-                                                                                <FiList size={15} />
+                                                                                <FiList size={14} />
                                                                                 <span>Table View</span>
                                                                             </button>
                                                                         </div>
 
-                                                                        <button type="button" onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center justify-center gap-2 bg-[#004a99] border-2 border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[16.5px] transition-all shadow-sm w-full sm:w-auto">
-                                                                            <FiDownload size={18} /> Export Profile
+                                                                        {!isTlo && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={handleExportAllDocs}
+                                                                                disabled={exportingDocs}
+                                                                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#08315F] border-2 border-amber-400/50 hover:border-amber-400 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-white hover:bg-[#0A4A8A] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-sm shrink-0 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                                                title="Export all work experience documents from the blob into a RAR archive"
+                                                                            >
+                                                                                <FiArchive size={16} className="text-amber-300 shrink-0" />
+                                                                                <span>{exportingDocs ? 'Exporting...' : 'Export Work Experience Docs'}</span>
+                                                                            </button>
+                                                                        )}
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setExportModalOpen(!exportModalOpen)}
+                                                                            className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#004a99] border-2 border-blue-400/30 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-white hover:bg-blue-700 font-bold text-xs sm:text-sm tracking-wide transition-all shadow-sm shrink-0 whitespace-nowrap cursor-pointer"
+                                                                        >
+                                                                            <FiDownload size={16} className="shrink-0" />
+                                                                            <span>Export Profile</span>
                                                                         </button>
                                                                     </div>
                                                                 </div>

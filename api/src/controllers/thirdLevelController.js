@@ -842,6 +842,24 @@ export const updateProfile = async (req, res) => {
     validateYear(req.body.master_year, currentYear);
     validateYear(req.body.doctorate_year, currentYear);
 
+    const checkDegreeYearMatch = (degField, yrField, levelName) => {
+      if (!req.body[degField]) return;
+      const degs = String(req.body[degField]).split('\n');
+      const yrs = (req.body[yrField] !== undefined && req.body[yrField] !== null) ? String(req.body[yrField]).split('\n') : [];
+      const maxCount = Math.max(degs.length, yrs.length);
+      for (let i = 0; i < maxCount; i++) {
+        const d = (degs[i] || '').trim();
+        const y = (yrs[i] || '').trim();
+        if (d && !y) {
+          throw new Error(`Year Graduated is required for ${levelName}${maxCount > 1 ? ` #${i + 1}` : ''} ("${d}").`);
+        }
+      }
+    };
+
+    checkDegreeYearMatch('bachelor_degree', 'bachelor_year', "Bachelor's Degree");
+    checkDegreeYearMatch('master_degree', 'master_year', "Master's Degree");
+    checkDegreeYearMatch('doctorate_degree', 'doctorate_year', "Doctorate");
+
     const bYrNum = parseInt(req.body.bachelor_year);
     const mYrNum = parseInt(req.body.master_year);
     const dYrNum = parseInt(req.body.doctorate_year);
