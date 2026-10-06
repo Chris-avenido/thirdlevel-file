@@ -7,7 +7,7 @@ import {
     FiChevronLeft, FiChevronRight, FiSave, FiPlus, FiTrash2, FiCheckCircle,
     FiAlertTriangle, FiInfo, FiUpload, FiToggleLeft, FiToggleRight,
     FiSearch, FiLoader, FiList, FiLock, FiUnlock, FiTrendingUp, FiClock, FiActivity, FiStar, FiArrowRight, FiCalendar,
-    FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye,
+    FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye, FiGrid,
     FiEdit2, FiHeart, FiBookOpen, FiRotateCcw, FiCamera, FiBarChart2, FiChevronDown, FiHome, FiMapPin, FiLayers
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
@@ -832,6 +832,7 @@ const OfficialProfiling = () => {
     const [saved, setSaved] = useState(false);
     const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
     const [isEditing, setIsEditing] = useState(isTlo);
+    const [summaryViewMode, setSummaryViewMode] = useState('card'); // 'card' | 'table'
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSuffixNA, setIsSuffixNA] = useState(false);
     const [isAchievementsNA, setIsAchievementsNA] = useState(false);
@@ -5158,7 +5159,37 @@ const OfficialProfiling = () => {
                                                                         <FiUser className="text-[#08315F] shrink-0" size={24} />
                                                                         <h2 className="text-[19px] sm:text-[21px] font-black text-[#08315F] uppercase tracking-widest">Profile Summary</h2>
                                                                     </div>
-                                                                    <div>
+                                                                    <div className="flex flex-wrap items-center gap-3">
+                                                                        {/* Toggle View: Card / Table */}
+                                                                        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setSummaryViewMode('card')}
+                                                                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                                                                                    summaryViewMode === 'card'
+                                                                                        ? 'bg-white text-[#08315F] shadow-sm'
+                                                                                        : 'text-slate-500 hover:text-slate-800'
+                                                                                }`}
+                                                                                title="Card View"
+                                                                            >
+                                                                                <FiGrid size={15} />
+                                                                                <span>Card View</span>
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setSummaryViewMode('table')}
+                                                                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                                                                                    summaryViewMode === 'table'
+                                                                                        ? 'bg-[#08315F] text-white shadow-sm'
+                                                                                        : 'text-slate-500 hover:text-slate-800'
+                                                                                }`}
+                                                                                title="Table View"
+                                                                            >
+                                                                                <FiList size={15} />
+                                                                                <span>Table View</span>
+                                                                            </button>
+                                                                        </div>
+
                                                                         <button type="button" onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center justify-center gap-2 bg-[#004a99] border-2 border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[16.5px] transition-all shadow-sm w-full sm:w-auto">
                                                                             <FiDownload size={18} /> Export Profile
                                                                         </button>
@@ -5502,453 +5533,1022 @@ const OfficialProfiling = () => {
                                                                 document.body
                                                             )}
 
-                                                                {/* Personal Information */}
-                                                                <div className="mb-8">
-                                                                    <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest mb-4">Personal Information</h3>
-                                                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                                                                        <div><p className="text-[15px] text-slate-400 mb-1">First Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.first_name || '—'}</p></div>
-                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Last Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.last_name || '—'}</p></div>
-                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Middle Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.middle_name || '—'}</p></div>
-                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Suffix</p><p className="text-[18px] font-black text-slate-800 uppercase">{sanitizeSuffix(profile.suffix) || '—'}</p></div>
-                                                                        <div>
-                                                                            <p className="text-[15px] text-slate-400 mb-1">DepEd Email</p>
-                                                                            <p className="text-[18px] font-black text-slate-800 lowercase break-all">{profile.email || user?.email || '—'}</p>
-                                                                        </div>
-
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiUser size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Gender</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.gender || '—'}</p></div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Date of Birth</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.date_of_birth || '—'}</p></div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiUser size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Age</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.age || '—'}</p></div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiHeart size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Civil Status</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.civil_status || '—'}</p></div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiStar size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Target Vacancy</p>
-                                                                                <p className="text-[18px] font-black text-slate-800 uppercase">
-                                                                                    {(() => {
-                                                                                        const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
-                                                                                        return vac ? vac.position_title : '—';
-                                                                                    })()}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="w-full h-0.5 bg-slate-200 my-8"></div>
-
-                                                                {/* Designation & Appointment */}
-                                                                <div className="mb-8">
-                                                                    <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest mb-4">Designation & Appointment</h3>
-                                                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                                                                        <div className="col-span-2">
-                                                                            <p className="text-[15px] text-slate-400 mb-1">Position Title</p>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <p className="text-[18px] font-black text-slate-800 uppercase">{profile.position_title || '—'}</p>
-                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[13.5px] font-black uppercase">OIC</span>}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Date of Present Position</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.appointment_date || '—'}</p></div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiHome size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Permanent Address</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.permanent_address || '—'}</p></div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiMapPin size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Temporary Address</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.temporary_address || '—'}</p></div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="w-full h-0.5 bg-slate-200 my-8"></div>
-
-                                                                {/* Eligibility */}
-                                                                <div>
-                                                                    <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest mb-4">Eligibility</h3>
-                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                                                                        <div>
-                                                                            <p className="text-[15px] text-slate-400 mb-1">Career Executive Service (CES)</p>
-                                                                            <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.ces_stage || '—'}</p>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5 shrink-0" />
-                                                                            <div>
-                                                                                <p className="text-[15px] text-slate-400 mb-1">CES Conferment Date</p>
-                                                                                <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.ces_conferment_date || '—'}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiBookOpen size={18} className="text-blue-500 mt-0.5 shrink-0" />
-                                                                            <div>
-                                                                                <p className="text-[15px] text-slate-400 mb-1">Educational Management Test (EMT)</p>
-                                                                                <p className="text-[18px] font-black text-slate-800 uppercase">{profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '—'}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-start gap-2">
-                                                                            <FiCalendar size={18} className="text-blue-500 mt-0.5 shrink-0" />
-                                                                            <div>
-                                                                                <p className="text-[15px] text-slate-400 mb-1">EMT Date</p>
-                                                                                <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.emt_date || '—'}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Eligibilities List */}
-                                                                    {profile.eligibilities && profile.eligibilities.length > 0 && (
-                                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                                            {profile.eligibilities.map((elig, idx) => {
-                                                                                const name = elig.eligibility || elig.title || 'Untitled';
-                                                                                const meta = [
-                                                                                    elig.rating ? `Rating: ${elig.rating}` : '',
-                                                                                    elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
-                                                                                    elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
-                                                                                ].filter(Boolean).join(' | ');
-
-                                                                                return (
-                                                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                                                                                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
-                                                                                            <span className="font-black text-blue-600 uppercase text-[15px] sm:text-[16px] tracking-tight">{name}:</span>
-                                                                                            <span className="text-slate-600 text-[14px] sm:text-[15px] font-medium break-words">{meta || '—'}</span>
+                                                                {/* Summary Content: Card View vs Table View */}
+                                                                {summaryViewMode === 'card' ? (
+                                                                    <>
+                                                                        {/* Personal Information */}
+                                                                        <div className="mb-8">
+                                                                            <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest mb-4">Personal Information</h3>
+                                                                            <div className="flex flex-col sm:flex-row items-start gap-6">
+                                                                                {/* Left 2x2 Photo */}
+                                                                                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-2 border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                                                                                    {profile.photo_binary_id ? (
+                                                                                        <img
+                                                                                            src={apiUrl(`/api/binary/${profile.photo_binary_id}`)}
+                                                                                            alt="Profile Photo"
+                                                                                            className="w-full h-full object-cover"
+                                                                                            crossOrigin="anonymous"
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <div className="flex flex-col items-center justify-center text-slate-400 gap-1 p-2 text-center">
+                                                                                            <FiCamera size={26} className="text-slate-300" />
+                                                                                            <span className="text-[11px] font-black uppercase tracking-wider">2x2 Photo</span>
                                                                                         </div>
-                                                                                        {/* Star Rating Visualization */}
-                                                                                        <div className="flex text-yellow-400 gap-0.5 shrink-0 self-start sm:self-center">
-                                                                                            {[1, 2, 3, 4, 5].map(star => (
-                                                                                                <FiStar key={star} size={14} fill={(elig.rating && parseInt(elig.rating) >= star) ? 'currentColor' : 'none'} className={(elig.rating && parseInt(elig.rating) >= star) ? '' : 'text-slate-200'} />
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* EDUCATION */}
-                                                            <div className="mb-10">
-                                                                <div className="flex items-center gap-4 mb-6 px-2">
-                                                                    <div className="w-12 h-12 bg-blue-50 text-[#0038A8] rounded-full flex items-center justify-center shadow-sm border-2 border-blue-100/50">
-                                                                        <FiAward size={22} />
-                                                                    </div>
-                                                                    <div>
-                                                                        <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest leading-tight">Education</h2>
-                                                                        <p className="text-[18px] font-medium text-slate-400 mt-0.5">Your academic background and qualifications</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-6 lg:p-8">
-                                                                    {(!profile.education_degrees || profile.education_degrees.length === 0) ? (
-                                                                        (profile.highest_education || profile.education_program) ? (
-                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
-                                                                                <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                        <FiAward size={18} />
-                                                                                    </div>
-                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                        <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Highest Education</span>
-                                                                                        <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.highest_education || '—'}</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                        <FiFileText size={18} />
-                                                                                    </div>
-                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                        <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Specific Degree</span>
-                                                                                        <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.specific_degree || '—'}</span>
-                                                                                    </div>
+                                                                                    )}
                                                                                 </div>
 
-                                                                                <div className="col-span-1 lg:col-span-2 border-t-2 border-slate-200 my-[-1rem] hidden lg:block" />
-
-                                                                                <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                        <FiBookOpen size={18} />
-                                                                                    </div>
-                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                        <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Program / Course</span>
-                                                                                        <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.education_program || '—'}</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                        <FiCalendar size={18} />
-                                                                                    </div>
-                                                                                    <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                        <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Year Graduated</span>
-                                                                                        <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.education_year_graduated || '—'}</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <p className="text-[21px] font-bold text-slate-400 text-center py-4">No degrees added</p>
-                                                                        )
-                                                                    ) : (
-                                                                        <div className="space-y-12">
-                                                                            {profile.education_degrees.map((deg, idx) => (
-                                                                                <div key={idx} className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
-                                                                                    <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                            <FiAward size={18} />
-                                                                                        </div>
-                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                            <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Highest Education</span>
-                                                                                            <span className="text-[18px] font-black text-slate-800 uppercase break-words">{deg.highest_education || '—'}</span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                            <FiFileText size={18} />
-                                                                                        </div>
-                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                            <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Specific Degree</span>
-                                                                                            <span className="text-[18px] font-black text-slate-800 uppercase break-words">{deg.specific_degree || '—'}</span>
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    <div className="col-span-1 lg:col-span-2 border-t-2 border-slate-200 my-[-1rem] hidden lg:block" />
-
-                                                                                    <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                            <FiBookOpen size={18} />
-                                                                                        </div>
-                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                            <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Program / Course</span>
-                                                                                            <span className="text-[18px] font-black text-slate-800 uppercase break-words">{deg.education_program || '—'}</span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
-                                                                                            <FiCalendar size={18} />
-                                                                                        </div>
-                                                                                        <div className="flex flex-col gap-1 min-w-0 mt-0.5">
-                                                                                            <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Year Graduated</span>
-                                                                                            <span className="text-[18px] font-black text-slate-800 uppercase break-words">{deg.education_year_graduated || '—'}</span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-
-                                                                    {profile.other_courses && profile.other_courses.length > 0 && (
-                                                                        <div className="mt-8 bg-[#F8FAFC] rounded-2xl p-6 lg:p-8 border-2 border-slate-200">
-                                                                            <div className="flex items-center gap-3 mb-6">
-                                                                                <div className="w-8 h-8 bg-blue-100/70 text-[#004a99] rounded-full flex items-center justify-center shrink-0">
-                                                                                    <FiLayers size={16} />
-                                                                                </div>
-                                                                                <h3 className="text-[16.5px] font-black text-[#004a99] uppercase tracking-widest">Other Courses</h3>
-                                                                            </div>
-
-                                                                            <div className="space-y-4">
-                                                                                {profile.other_courses.map((course, idx) => (
-                                                                                    <div key={idx} className={`flex items-start gap-5 ${idx !== profile.other_courses.length - 1 ? 'pb-4 border-b-2 border-dashed border-slate-200' : ''}`}>
-                                                                                        <div className="bg-blue-50/80 text-[#004a99] px-3 py-2 rounded-xl text-[16.5px] font-black shrink-0 min-w-[70px] text-center uppercase tracking-wider border-2 border-blue-100/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                                                                                            {course.course ? (course.course.length > 8 ? course.course.substring(0, 8) + '...' : course.course) + ':' : '—:'}
-                                                                                        </div>
-                                                                                        <div className="flex flex-col gap-0.5 mt-1">
-                                                                                            <span className="text-[18px] font-black text-[#08315F]">
-                                                                                                {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
-                                                                                            </span>
-                                                                                            {course.details && <span className="text-[16.5px] font-bold text-slate-500">{course.details}</span>}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            {/* PERFORMANCE HISTORY */}
-                                                            <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
-                                                                <div className="flex items-center gap-3 mb-6">
-                                                                    <FiBarChart2 className="text-[#08315F]" size={24} />
-                                                                    <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Performance History</h2>
-                                                                </div>
-
-                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                                                    {/* Ratings */}
-                                                                    <div className="border-b-2 md:border-b-0 md:border-r-2 border-slate-200 pb-4 md:pb-0 md:pr-4">
-                                                                        <p className="text-[15px] text-slate-400 mb-1">Latest Rating (1st)</p>
-                                                                        <div className="flex items-center justify-between">
-                                                                            <p className="text-[21px] font-black text-slate-800">{profile.performance_rating_1 ? `${profile.performance_rating_1} (${profile.performance_rating_1_period})` : '—'}</p>
-                                                                            <FiTrendingUp className="text-emerald-500" size={18} />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="border-b-2 md:border-b-0 md:border-r-2 border-slate-200 pb-4 md:pb-0 md:pr-4">
-                                                                        <p className="text-[15px] text-slate-400 mb-1">Previous Rating (2nd)</p>
-                                                                        <div className="flex items-center justify-between">
-                                                                            <p className="text-[21px] font-black text-slate-800">{profile.performance_rating_2 ? `${profile.performance_rating_2} (${profile.performance_rating_2_period})` : '—'}</p>
-                                                                            <FiTrendingUp className="text-emerald-500" size={18} />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="pb-4 md:pb-0">
-                                                                        <p className="text-[15px] text-slate-400 mb-1">Oldest Rating (3rd)</p>
-                                                                        <div className="flex items-center justify-between">
-                                                                            <p className="text-[21px] font-black text-slate-800">{profile.performance_rating_3 ? `${profile.performance_rating_3} (${profile.performance_rating_3_period})` : '—'}</p>
-                                                                            <FiTrendingUp className="text-emerald-500" size={18} />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="border-b-2 md:border-b-0 md:border-r-2 border-slate-200 pb-4 md:pb-0 md:pr-4 md:-mt-4">
-                                                                        <p className="text-[15px] text-slate-400 mb-1">CSPMS 2nd Sem</p>
-                                                                        <div className="flex items-center justify-between">
-                                                                            <p className="text-[21px] font-black text-slate-800">{profile.cespes_2_rating ? `${profile.cespes_2_rating} (${profile.cespes_rating_2_period})` : '—'}</p>
-                                                                            <FiTrendingUp className="text-emerald-500" size={18} />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="pb-4 md:pb-0 md:-mt-4">
-                                                                        <p className="text-[15px] text-slate-400 mb-1">Total Managerial Experience</p>
-                                                                        <div className="flex items-center justify-between">
-                                                                            <p className="text-[21px] font-black text-slate-800">{formatExperienceTotal(profile.managerial_experience_total) || '—'}</p>
-                                                                            <FiBriefcase className="text-blue-500" size={18} />
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Achievements */}
-                                                                <div className="mt-8">
-                                                                    <div className="flex items-center gap-2 mb-3">
-                                                                        <FiAward className="text-amber-500" size={18} />
-                                                                        <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">Notable Achievements</h3>
-                                                                    </div>
-                                                                    {isAchievementsNA ? (
-                                                                        <p className="text-[18px] font-black text-slate-500 uppercase pl-6 italic">Not Applicable (N/A)</p>
-                                                                    ) : Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0 ? (
-                                                                        <div className="pl-6 space-y-1">
-                                                                            {profile.notable_achievements.map((item, i) => {
-                                                                                const title = typeof item === 'object' && item !== null ? item.title : String(item || '');
-                                                                                const year = typeof item === 'object' && item !== null ? item.year : '';
-                                                                                if (!title) return null;
-                                                                                return (
-                                                                                    <p key={i} className="text-[18px] font-black text-slate-800 uppercase">
-                                                                                        • {title} {year ? `(${year})` : ''}
-                                                                                    </p>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <p className="text-[18px] font-black text-slate-800 uppercase pl-6">—</p>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Previous Positions */}
-                                                                {prevPositions.length > 0 && (
-                                                                    <div className="mt-8">
-                                                                        <div className="flex items-center gap-2 mb-3">
-                                                                            <FiRotateCcw className="text-blue-500" size={18} />
-                                                                            <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">Previous Position ({prevPositions.length})</h3>
-                                                                        </div>
-                                                                        <div className="pl-6 space-y-2">
-                                                                            {prevPositions.map((p, i) => (
-                                                                                <div key={i} className="bg-slate-50 border-2 border-slate-200 rounded-lg p-4 flex gap-4">
-                                                                                    <span className="text-[18px] font-black text-slate-800">{i + 1}.</span>
+                                                                                <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 w-full">
+                                                                                    <div><p className="text-[15px] text-slate-400 mb-1">First Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.first_name || '—'}</p></div>
+                                                                                    <div><p className="text-[15px] text-slate-400 mb-1">Last Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.last_name || '—'}</p></div>
+                                                                                    <div><p className="text-[15px] text-slate-400 mb-1">Middle Name</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.middle_name || '—'}</p></div>
+                                                                                    <div><p className="text-[15px] text-slate-400 mb-1">Suffix</p><p className="text-[18px] font-black text-slate-800 uppercase">{sanitizeSuffix(profile.suffix) || '—'}</p></div>
                                                                                     <div>
-                                                                                        <p className="text-[18px] font-black text-slate-800 uppercase">{p.position_name || '—'}</p>
-                                                                                        <p className="text-[15px] text-slate-500 uppercase mt-0.5">{p.office} | {p.start_date ? `${p.start_date} - ${p.end_date || 'Present'}` : ''}</p>
+                                                                                        <p className="text-[15px] text-slate-400 mb-1">DepEd Email</p>
+                                                                                        <p className="text-[18px] font-black text-slate-800 lowercase break-all">{profile.email || user?.email || '—'}</p>
+                                                                                    </div>
+
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <FiUser size={18} className="text-blue-500 mt-0.5" />
+                                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Gender</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.gender || '—'}</p></div>
+                                                                                    </div>
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <FiCalendar size={18} className="text-blue-500 mt-0.5" />
+                                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Date of Birth</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.date_of_birth || '—'}</p></div>
+                                                                                    </div>
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <FiUser size={18} className="text-blue-500 mt-0.5" />
+                                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Age</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.age || '—'}</p></div>
+                                                                                    </div>
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <FiHeart size={18} className="text-blue-500 mt-0.5" />
+                                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Civil Status</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.civil_status || '—'}</p></div>
+                                                                                    </div>
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <FiStar size={18} className="text-blue-500 mt-0.5" />
+                                                                                        <div><p className="text-[15px] text-slate-400 mb-1">Target Vacancy</p>
+                                                                                            <p className="text-[18px] font-black text-slate-800 uppercase">
+                                                                                                {(() => {
+                                                                                                    const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
+                                                                                                    return vac ? vac.position_title : '—';
+                                                                                                })()}
+                                                                                            </p>
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
-                                                                            ))}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="w-full h-0.5 bg-slate-200 my-8"></div>
+
+                                                                        {/* Designation & Appointment */}
+                                                                        <div className="mb-8">
+                                                                            <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest mb-4">Designation & Appointment</h3>
+                                                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                                                                                <div className="col-span-2">
+                                                                                    <p className="text-[15px] text-slate-400 mb-1">Position Title</p>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <p className="text-[18px] font-black text-slate-800 uppercase">{profile.position_title || '—'}</p>
+                                                                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[13.5px] font-black uppercase">OIC</span>}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <FiCalendar size={18} className="text-blue-500 mt-0.5" />
+                                                                                    <div><p className="text-[15px] text-slate-400 mb-1">Date of Present Position</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.appointment_date || '—'}</p></div>
+                                                                                </div>
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <FiHome size={18} className="text-blue-500 mt-0.5" />
+                                                                                    <div><p className="text-[15px] text-slate-400 mb-1">Permanent Address</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.permanent_address || '—'}</p></div>
+                                                                                </div>
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <FiMapPin size={18} className="text-blue-500 mt-0.5" />
+                                                                                    <div><p className="text-[15px] text-slate-400 mb-1">Temporary Address</p><p className="text-[18px] font-black text-slate-800 uppercase">{profile.temporary_address || '—'}</p></div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="w-full h-0.5 bg-slate-200 my-8"></div>
+
+                                                                        {/* Eligibility */}
+                                                                        <div>
+                                                                            <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest mb-4">Eligibility</h3>
+                                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                                                                <div>
+                                                                                    <p className="text-[15px] text-slate-400 mb-1">Career Executive Service (CES)</p>
+                                                                                    <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.ces_stage || '—'}</p>
+                                                                                </div>
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <FiCalendar size={18} className="text-blue-500 mt-0.5 shrink-0" />
+                                                                                    <div>
+                                                                                        <p className="text-[15px] text-slate-400 mb-1">CES Conferment Date</p>
+                                                                                        <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.ces_conment_date || profile.ces_conferment_date || '—'}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <FiBookOpen size={18} className="text-blue-500 mt-0.5 shrink-0" />
+                                                                                    <div>
+                                                                                        <p className="text-[15px] text-slate-400 mb-1">Educational Management Test (EMT)</p>
+                                                                                        <p className="text-[18px] font-black text-slate-800 uppercase">{profile.emt_passer === true ? 'Yes' : profile.emt_passer === false ? 'No' : '—'}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <FiCalendar size={18} className="text-blue-500 mt-0.5 shrink-0" />
+                                                                                    <div>
+                                                                                        <p className="text-[15px] text-slate-400 mb-1">EMT Date</p>
+                                                                                        <p className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.emt_date || '—'}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Eligibilities List */}
+                                                                            {profile.eligibilities && profile.eligibilities.length > 0 && (
+                                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                                                    {profile.eligibilities.map((elig, idx) => {
+                                                                                        const name = elig.eligibility || elig.title || 'Untitled';
+                                                                                        const meta = [
+                                                                                            elig.rating ? `Rating: ${elig.rating}` : '',
+                                                                                            elig.date ? `Date: ${new Date(elig.date).toLocaleDateString()}` : '',
+                                                                                            elig.place_of_assignment ? `Place: ${elig.place_of_assignment}` : ''
+                                                                                        ].filter(Boolean).join(' | ');
+
+                                                                                        return (
+                                                                                            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                                                                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
+                                                                                                    <span className="font-black text-blue-600 uppercase text-[15px] sm:text-[16px] tracking-tight">{name}:</span>
+                                                                                                    <span className="text-slate-600 text-[14px] sm:text-[15px] font-medium break-words">{meta || '—'}</span>
+                                                                                                </div>
+                                                                                                {/* Star Rating Visualization */}
+                                                                                                <div className="flex text-yellow-400 gap-0.5 shrink-0 self-start sm:self-center">
+                                                                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                                                                        <FiStar key={star} size={14} fill={(elig.rating && parseInt(elig.rating) >= star) ? 'currentColor' : 'none'} className={(elig.rating && parseInt(elig.rating) >= star) ? '' : 'text-slate-200'} />
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="space-y-6">
+                                                                        {/* 1. PERSONAL INFORMATION TABLE */}
+                                                                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                            <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                                <FiUser className="text-[#08315F]" size={20} />
+                                                                                <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Personal Information</h3>
+                                                                            </div>
+                                                                            <div className="p-6 flex flex-col sm:flex-row items-start gap-6">
+                                                                                {/* Left 2x2 Photo */}
+                                                                                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-2 border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                                                                                    {profile.photo_binary_id ? (
+                                                                                        <img
+                                                                                            src={apiUrl(`/api/binary/${profile.photo_binary_id}`)}
+                                                                                            alt="Profile Photo"
+                                                                                            className="w-full h-full object-cover"
+                                                                                            crossOrigin="anonymous"
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <div className="flex flex-col items-center justify-center text-slate-400 gap-1 p-2 text-center">
+                                                                                            <FiCamera size={26} className="text-slate-300" />
+                                                                                            <span className="text-[11px] font-black uppercase tracking-wider">2x2 Photo</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                <div className="flex-1 w-full overflow-x-auto">
+                                                                                    <table className="w-full text-left border-collapse">
+                                                                                        <tbody>
+                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                                <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Full Name</td>
+                                                                                                <td className="w-1/4 px-6 py-3.5 text-[15px] font-black uppercase text-slate-800 border-r border-slate-100">{buildFullName(profile) || '—'}</td>
+                                                                                                <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">DepEd Email</td>
+                                                                                                <td className="w-1/4 px-6 py-3.5 text-[15px] font-black lowercase text-slate-800 break-all">{profile.email || user?.email || '—'}</td>
+                                                                                            </tr>
+                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">First Name</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.first_name || '—'}</td>
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Last Name</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.last_name || '—'}</td>
+                                                                                            </tr>
+                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Middle Name</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.middle_name || '—'}</td>
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Suffix</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{sanitizeSuffix(profile.suffix) || '—'}</td>
+                                                                                            </tr>
+                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Gender</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.gender || '—'}</td>
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Civil Status</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.civil_status || '—'}</td>
+                                                                                            </tr>
+                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Date of Birth</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.date_of_birth || '—'}</td>
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Age</td>
+                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.age || '—'}</td>
+                                                                                            </tr>
+                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Target Vacancy</td>
+                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">
+                                                                                                    {(() => {
+                                                                                                        const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
+                                                                                                        return vac ? vac.position_title : '—';
+                                                                                                    })()}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Permanent Address</td>
+                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.permanent_address || '—'}</td>
+                                                                                            </tr>
+                                                                                            <tr className="hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Temporary Address</td>
+                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.temporary_address || '—'}</td>
+                                                                                            </tr>
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* 2. DESIGNATION & APPOINTMENT TABLE */}
+                                                                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                            <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                                <FiBriefcase className="text-[#08315F]" size={20} />
+                                                                                <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Designation & Appointment</h3>
+                                                                            </div>
+                                                                            <div className="overflow-x-auto">
+                                                                                <table className="w-full text-left border-collapse">
+                                                                                    <tbody>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Position Title</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-black uppercase text-slate-800 border-r border-slate-100">
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <span>{profile.position_title || '—'}</span>
+                                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[11px] font-black uppercase">OIC</span>}
+                                                                                                </div>
+                                                                                            </td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Date of Present Position</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.appointment_date || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Office / Station</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.office || '—'}</td>
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Division / Region</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">
+                                                                                                {[profile.division, profile.region].filter(Boolean).join(', ') || '—'}
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                        {profile.strand && (
+                                                                                            <tr className="hover:bg-slate-50/50">
+                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Strand</td>
+                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.strand}</td>
+                                                                                            </tr>
+                                                                                        )}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* 3. ELIGIBILITY TABLE */}
+                                                                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                            <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                                <FiAward className="text-[#08315F]" size={20} />
+                                                                                <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Eligibility & Qualifications</h3>
+                                                                            </div>
+                                                                            <div className="overflow-x-auto">
+                                                                                <table className="w-full text-left border-collapse">
+                                                                                    <tbody>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Career Executive Service (CES)</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.ces_stage || '—'}</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">CES Conferment Date</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.ces_conferment_date || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Educational Management Test (EMT)</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">
+                                                                                                {profile.emt_passer === true ? 'Passed / Yes' : profile.emt_passer === false ? 'No' : '—'}
+                                                                                            </td>
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">EMT Date</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.emt_date || '—'}</td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+
+                                                                            {/* Eligibilities Sub-table */}
+                                                                            {profile.eligibilities && profile.eligibilities.length > 0 && (
+                                                                                <div className="border-t-2 border-slate-200">
+                                                                                    <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
+                                                                                        Other Civil Service Eligibilities ({profile.eligibilities.length})
+                                                                                    </div>
+                                                                                    <div className="overflow-x-auto">
+                                                                                        <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                            <thead>
+                                                                                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                                    <th className="px-6 py-3">Eligibility / Examination Title</th>
+                                                                                                    <th className="px-4 py-3 text-center">Rating</th>
+                                                                                                    <th className="px-4 py-3 text-center">Date Conferred</th>
+                                                                                                    <th className="px-6 py-3">Place of Examination / Assignment</th>
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody className="divide-y divide-slate-100">
+                                                                                                {profile.eligibilities.map((elig, idx) => (
+                                                                                                    <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                                        <td className="px-6 py-3.5 font-black text-blue-700 uppercase text-[14px]">
+                                                                                                            {elig.eligibility || elig.title || 'Untitled'}
+                                                                                                        </td>
+                                                                                                        <td className="px-4 py-3.5 text-center">
+                                                                                                            <div className="flex flex-col items-center gap-1">
+                                                                                                                <span className="font-black text-slate-800 text-[14px]">{elig.rating || '—'}</span>
+                                                                                                                {elig.rating && parseInt(elig.rating) > 0 && (
+                                                                                                                    <div className="flex text-yellow-400 gap-0.5">
+                                                                                                                        {[1, 2, 3, 4, 5].map(star => (
+                                                                                                                            <FiStar key={star} size={11} fill={parseInt(elig.rating) >= star ? 'currentColor' : 'none'} className={parseInt(elig.rating) >= star ? '' : 'text-slate-200'} />
+                                                                                                                        ))}
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        </td>
+                                                                                                        <td className="px-4 py-3.5 text-center font-bold text-slate-700 text-[14px]">
+                                                                                                            {elig.date ? new Date(elig.date).toLocaleDateString() : '—'}
+                                                                                                        </td>
+                                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
+                                                                                                            {elig.place_of_assignment || '—'}
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                ))}
+                                                             
+                                                               </tbody>
+                                                                                        </table>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 )}
                                                             </div>
 
-                                                            {/* DOCUMENTS */}
-                                                            <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
-                                                                <div className="flex items-center gap-3 mb-6">
-                                                                    <FiFileText className="text-[#08315F]" size={24} />
-                                                                    <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Documents</h2>
-                                                                </div>
-
-                                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                                                    {[
-                                                                        { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*', isApplication: false },
-                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx', isApplication: false },
-                                                                        { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf', isApplication: true },
-                                                                        { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf', isApplication: true },
-                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf', isApplication: false },
-                                                                        ...(hasPendingCases ? [
-                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf', isApplication: false }
-                                                                        ] : []),
-                                                                        ...(isApplyingForPosition ? [
-                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf', isApplication: true },
-                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf', isApplication: true },
-                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf', isApplication: true },
-                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf', isApplication: true },
-                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf', isApplication: true },
-                                                                        ] : []),
-                                                                    ].map(d => (
-                                                                        <div key={d.key} className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 ${profile[d.dbKey] ? 'bg-emerald-50/30 border-emerald-200' : 'bg-transparent border-slate-200'}`}>
-                                                                            {d.key === 'photo' ? <FiCamera size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} /> : <FiFileText size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} />}
-                                                                            <div className="text-center">
-                                                                                <p className={`text-[18px] font-black uppercase tracking-wider ${profile[d.dbKey] ? 'text-emerald-700' : 'text-slate-500'}`}>{d.label}</p>
-                                                                                {d.isApplication && (
-                                                                                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
-                                                                                        Application
-                                                                                    </span>
-                                                                                )}
-                                                                                <p className={`text-[13.5px] font-bold uppercase tracking-widest mt-1 ${profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-400'}`}>{profile[d.dbKey] ? 'Uploaded' : 'Missing'}</p>
+                                                            {/* Remaining sections: Card View vs Table View */}
+                                                            {summaryViewMode === 'card' ? (
+                                                                <>
+                                                                    {/* EDUCATION */}
+                                                                    <div className="mb-10">
+                                                                        <div className="flex items-center gap-4 mb-6 px-2">
+                                                                            <div className="w-12 h-12 bg-blue-50 text-[#0038A8] rounded-full flex items-center justify-center shadow-sm border-2 border-blue-100/50">
+                                                                                <FiAward size={22} />
                                                                             </div>
+                                                                            <div>
+                                                                                <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest leading-tight">Education</h2>
+                                                                                <p className="text-[18px] font-medium text-slate-400 mt-0.5">Your academic background and qualifications</p>
+                                                                            </div>
+                                                                        </div>
 
-                                                                            <div className="flex gap-2 w-full mt-4">
-                                                                                <div className="relative group/upload flex-1">
-                                                                                    <input disabled={!isEditing} type="file" accept={d.accept} onChange={(e) => { const file = e.target.files[0]; if (file) handleFileUpload(file, d.key); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full" />
-                                                                                    <div className="flex items-center justify-center gap-1.5 border-2 border-slate-200 rounded-lg px-2 py-2 text-[15px] font-bold transition-all bg-white text-blue-700 hover:border-blue-300 w-full">
-                                                                                        <FiUpload size={14} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
-                                                                                        <span>{uploadingDocs[d.key] ? '...' : 'Upload'}</span>
+                                                                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-6 lg:p-8">
+                                                                            {(!profile.education_degrees || profile.education_degrees.length === 0) ? (
+                                                                                (profile.highest_education || profile.education_program) ? (
+                                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
+                                                                                        <div className="flex gap-4 items-start">
+                                                                                            <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                <FiAward size={18} />
+                                                                                            </div>
+                                                                                            <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Highest Education</span>
+                                                                                                <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.highest_education || '—'}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="flex gap-4 items-start">
+                                                                                            <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                <FiFileText size={18} />
+                                                                                            </div>
+                                                                                            <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Specific Degree</span>
+                                                                                                <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.specific_degree || '—'}</span>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <div className="col-span-1 lg:col-span-2 border-t-2 border-slate-200 my-[-1rem] hidden lg:block" />
+
+                                                                                        <div className="flex gap-4 items-start">
+                                                                                            <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                <FiBookOpen size={18} />
+                                                                                            </div>
+                                                                                            <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Program / Course</span>
+                                                                                                <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.education_program || '—'}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="flex gap-4 items-start">
+                                                                                            <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                <FiCalendar size={18} />
+                                                                                            </div>
+                                                                                            <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Year Graduated</span>
+                                                                                                <span className="text-[18px] font-black text-slate-800 uppercase break-words">{profile.education_year_graduated || '—'}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <p className="text-[21px] font-bold text-slate-400 text-center py-4">No degrees added</p>
+                                                                                )
+                                                                            ) : (
+                                                                                <div className="space-y-12">
+                                                                                    {profile.education_degrees.map((deg, idx) => (
+                                                                                        <div key={idx} className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
+                                                                                            <div className="flex gap-4 items-start">
+                                                                                                <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                    <FiAward size={18} />
+                                                                                                </div>
+                                                                                                <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                                    <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Highest Education</span>
+                                                                                                    <span className="text-[18px] font-black text-slate-800 uppercase break-words">{deg.highest_education || '—'}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="flex gap-4 items-start">
+                                                                                                <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                    <FiFileText size={18} />
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            <div className="col-span-1 lg:col-span-2 border-t-2 border-slate-200 my-[-1rem] hidden lg:block" />
+
+                                                                                            <div className="flex gap-4 items-start">
+                                                                                                <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                    <FiBookOpen size={18} />
+                                                                                                </div>
+                                                                                                <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                                    <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Program / Course</span>
+                                                                                                    <span className="text-[18px] font-black text-slate-800 uppercase break-words">{deg.education_program || '—'}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="flex gap-4 items-start">
+                                                                                                <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                                    <FiCalendar size={18} />
+                                                                                                </div>
+                                                                                                <div className="flex flex-col gap-1 min-w-0 mt-0.5">
+                                                                                                    <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest truncate">Year Graduated</span>
+                                                                                                    <span className="text-[18px] font-black text-slate-800 uppercase break-words">{deg.education_year_graduated || '—'}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
+
+                                                                            {profile.other_courses && profile.other_courses.length > 0 && (
+                                                                                <div className="mt-8 bg-[#F8FAFC] rounded-2xl p-6 lg:p-8 border-2 border-slate-200">
+                                                                                    <div className="flex items-center gap-3 mb-6">
+                                                                                        <div className="w-8 h-8 bg-blue-100/70 text-[#004a99] rounded-full flex items-center justify-center shrink-0">
+                                                                                            <FiLayers size={16} />
+                                                                                        </div>
+                                                                                        <h3 className="text-[16.5px] font-black text-[#004a99] uppercase tracking-widest">Other Courses</h3>
+                                                                                    </div>
+
+                                                                                    <div className="space-y-4">
+                                                                                        {profile.other_courses.map((course, idx) => (
+                                                                                            <div key={idx} className={`flex items-start gap-5 ${idx !== profile.other_courses.length - 1 ? 'pb-4 border-b-2 border-dashed border-slate-200' : ''}`}>
+                                                                                                <div className="bg-blue-50/80 text-[#004a99] px-3 py-2 rounded-xl text-[16.5px] font-black shrink-0 min-w-[70px] text-center uppercase tracking-wider border-2 border-blue-100/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                                                                                    {course.course ? (course.course.length > 8 ? course.course.substring(0, 8) + '...' : course.course) + ':' : '—:'}
+                                                                                                </div>
+                                                                                                <div className="flex flex-col gap-0.5 mt-1">
+                                                                                                    <span className="text-[18px] font-black text-[#08315F]">
+                                                                                                        {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
+                                                                                                    </span>
+                                                                                                    {course.details && <span className="text-[16.5px] font-bold text-slate-500">{course.details}</span>}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        ))}
                                                                                     </div>
                                                                                 </div>
-                                                                                {profile[d.dbKey] && (
-                                                                                    <button onClick={() => handleViewDocument(profile[d.dbKey])} className="flex-1 flex items-center justify-center gap-1.5 border-2 border-slate-200 rounded-lg px-2 py-2 text-[15px] font-bold transition-all bg-white hover:border-blue-300 text-blue-700">
-                                                                                        <FiEye size={14} />
-                                                                                        <span>View</span>
-                                                                                    </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* PERFORMANCE HISTORY */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
+                                                                        <div className="flex items-center gap-3 mb-6">
+                                                                            <FiBarChart2 className="text-[#08315F]" size={24} />
+                                                                            <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Performance History</h2>
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                                            {/* Ratings */}
+                                                                            <div className="border-b-2 md:border-b-0 md:border-r-2 border-slate-200 pb-4 md:pb-0 md:pr-4">
+                                                                                <p className="text-[15px] text-slate-400 mb-1">Latest Rating (1st)</p>
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <p className="text-[21px] font-black text-slate-800">{profile.performance_rating_1 ? `${profile.performance_rating_1} (${profile.performance_rating_1_period})` : '—'}</p>
+                                                                                    <FiTrendingUp className="text-emerald-500" size={18} />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="border-b-2 md:border-b-0 md:border-r-2 border-slate-200 pb-4 md:pb-0 md:pr-4">
+                                                                                <p className="text-[15px] text-slate-400 mb-1">Previous Rating (2nd)</p>
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <p className="text-[21px] font-black text-slate-800">{profile.performance_rating_2 ? `${profile.performance_rating_2} (${profile.performance_rating_2_period})` : '—'}</p>
+                                                                                    <FiTrendingUp className="text-emerald-500" size={18} />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="pb-4 md:pb-0">
+                                                                                <p className="text-[15px] text-slate-400 mb-1">Oldest Rating (3rd)</p>
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <p className="text-[21px] font-black text-slate-800">{profile.performance_rating_3 ? `${profile.performance_rating_3} (${profile.performance_rating_3_period})` : '—'}</p>
+                                                                                    <FiTrendingUp className="text-emerald-500" size={18} />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="border-b-2 md:border-b-0 md:border-r-2 border-slate-200 pb-4 md:pb-0 md:pr-4 md:-mt-4">
+                                                                                <p className="text-[15px] text-slate-400 mb-1">CSPMS 2nd Sem</p>
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <p className="text-[21px] font-black text-slate-800">{profile.cespes_2_rating ? `${profile.cespes_2_rating} (${profile.cespes_rating_2_period})` : '—'}</p>
+                                                                                    <FiTrendingUp className="text-emerald-500" size={18} />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="pb-4 md:pb-0 md:-mt-4">
+                                                                                <p className="text-[15px] text-slate-400 mb-1">Total Managerial Experience</p>
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <p className="text-[21px] font-black text-slate-800">{formatExperienceTotal(profile.managerial_experience_total) || '—'}</p>
+                                                                                    <FiBriefcase className="text-blue-500" size={18} />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Achievements */}
+                                                                        <div className="mt-8">
+                                                                            <div className="flex items-center gap-2 mb-3">
+                                                                                <FiAward className="text-amber-500" size={18} />
+                                                                                <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">Notable Achievements</h3>
+                                                                            </div>
+                                                                            {isAchievementsNA ? (
+                                                                                <p className="text-[18px] font-black text-slate-500 uppercase pl-6 italic">Not Applicable (N/A)</p>
+                                                                            ) : Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0 ? (
+                                                                                <div className="pl-6 space-y-1">
+                                                                                    {profile.notable_achievements.map((item, i) => {
+                                                                                        const title = typeof item === 'object' && item !== null ? item.title : String(item || '');
+                                                                                        const year = typeof item === 'object' && item !== null ? item.year : '';
+                                                                                        if (!title) return null;
+                                                                                        return (
+                                                                                            <p key={i} className="text-[18px] font-black text-slate-800 uppercase">
+                                                                                                • {title} {year ? `(${year})` : ''}
+                                                                                            </p>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <p className="text-[18px] font-black text-slate-800 uppercase pl-6">—</p>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {/* Previous Positions */}
+                                                                        {prevPositions.length > 0 && (
+                                                                            <div className="mt-8">
+                                                                                <div className="flex items-center gap-2 mb-3">
+                                                                                    <FiRotateCcw className="text-blue-500" size={18} />
+                                                                                    <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">Previous Position ({prevPositions.length})</h3>
+                                                                                </div>
+                                                                                <div className="pl-6 space-y-2">
+                                                                                    {prevPositions.map((p, i) => (
+                                                                                        <div key={i} className="bg-slate-50 border-2 border-slate-200 rounded-lg p-4 flex gap-4">
+                                                                                            <span className="text-[18px] font-black text-slate-800">{i + 1}.</span>
+                                                                                            <div>
+                                                                                                <p className="text-[18px] font-black text-slate-800 uppercase">{p.position_name || '—'}</p>
+                                                                                                <p className="text-[15px] text-slate-500 uppercase mt-0.5">{p.office} | {p.start_date ? `${p.start_date} - ${p.end_date || 'Present'}` : ''}</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* DOCUMENTS */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
+                                                                        <div className="flex items-center gap-3 mb-6">
+                                                                            <FiFileText className="text-[#08315F]" size={24} />
+                                                                            <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Documents</h2>
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                                                            {[
+                                                                                { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*', isApplication: false },
+                                                                                { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx', isApplication: false },
+                                                                                { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf', isApplication: true },
+                                                                                { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf', isApplication: true },
+                                                                                { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf', isApplication: false },
+                                                                                ...(hasPendingCases ? [
+                                                                                    { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf', isApplication: false }
+                                                                                ] : []),
+                                                                                ...(isApplyingForPosition ? [
+                                                                                    { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf', isApplication: true },
+                                                                                    { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf', isApplication: true },
+                                                                                    { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf', isApplication: true },
+                                                                                    { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf', isApplication: true },
+                                                                                    { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf', isApplication: true },
+                                                                                ] : []),
+                                                                            ].map(d => (
+                                                                                <div key={d.key} className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 ${profile[d.dbKey] ? 'bg-emerald-50/30 border-emerald-200' : 'bg-transparent border-slate-200'}`}>
+                                                                                    {d.key === 'photo' ? <FiCamera size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} /> : <FiFileText size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} />}
+                                                                                    <div className="text-center">
+                                                                                        <p className={`text-[18px] font-black uppercase tracking-wider ${profile[d.dbKey] ? 'text-emerald-700' : 'text-slate-500'}`}>{d.label}</p>
+                                                                                        {d.isApplication && (
+                                                                                            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                                                                                                Application
+                                                                                            </span>
+                                                                                        )}
+                                                                                        <p className={`text-[13.5px] font-bold uppercase tracking-widest mt-1 ${profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-400'}`}>{profile[d.dbKey] ? 'Uploaded' : 'Missing'}</p>
+                                                                                    </div>
+
+                                                                                    <div className="flex gap-2 w-full mt-4">
+                                                                                        <div className="relative group/upload flex-1">
+                                                                                            <input disabled={!isEditing} type="file" accept={d.accept} onChange={(e) => { const file = e.target.files[0]; if (file) handleFileUpload(file, d.key); }} className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full" />
+                                                                                            <div className="flex items-center justify-center gap-1.5 border-2 border-slate-200 rounded-lg px-2 py-2 text-[15px] font-bold transition-all bg-white text-blue-700 hover:border-blue-300 w-full">
+                                                                                                <FiUpload size={14} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
+                                                                                                <span>{uploadingDocs[d.key] ? '...' : 'Upload'}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        {profile[d.dbKey] && (
+                                                                                            <button onClick={() => handleViewDocument(profile[d.dbKey])} className="flex-1 flex items-center justify-center gap-1.5 border-2 border-slate-200 rounded-lg px-2 py-2 text-[15px] font-bold transition-all bg-white hover:border-blue-300 text-blue-700">
+                                                                                                <FiEye size={14} />
+                                                                                                <span>View</span>
+                                                                                            </button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* LEGAL DISCLOSURES */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
+                                                                        <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => {
+                                                                            const el = document.getElementById('legal-collapse');
+                                                                            if (el) {
+                                                                                el.classList.toggle('hidden');
+                                                                                document.getElementById('legal-chevron').classList.toggle('rotate-180');
+                                                                            }
+                                                                        }}>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <FiShield className="text-blue-600" size={24} />
+                                                                                <h2 className="text-[21px] font-black text-slate-800 uppercase tracking-widest">Legal Disclosures</h2>
+                                                                            </div>
+                                                                            <FiChevronDown id="legal-chevron" className="text-slate-400 transition-transform" size={24} />
+                                                                        </div>
+
+                                                                        <div id="legal-collapse" className="hidden border-t-2 border-slate-100 pt-6 mt-4">
+                                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                                                                <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case === 'Yes' ? 'Yes' : 'No'} />
+                                                                                <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                                <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                                <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="space-y-6">
+                                                                    {/* 4. EDUCATION TABLE */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                            <FiBook className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Education & Academic Background</h3>
+                                                                        </div>
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                <thead>
+                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                        <th className="px-6 py-3">Degree Level / Category</th>
+                                                                                        <th className="px-6 py-3">Specific Degree</th>
+                                                                                        <th className="px-6 py-3">Program / Major</th>
+                                                                                        <th className="px-4 py-3 text-center">Year Graduated</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="divide-y divide-slate-100">
+                                                                                    {profile.education_degrees && profile.education_degrees.length > 0 ? (
+                                                                                        profile.education_degrees.map((deg, idx) => (
+                                                                                            <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                                <td className="px-6 py-3.5 font-black uppercase text-[#08315F] text-[14px] bg-slate-50/50">
+                                                                                                    {deg.highest_education || '—'}
+                                                                                                </td>
+                                                                                                <td className="px-6 py-3.5 font-bold uppercase text-slate-800 text-[14px]">
+                                                                                                    {deg.specific_degree || '—'}
+                                                                                                </td>
+                                                                                                <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
+                                                                                                    {deg.education_program || '—'}
+                                                                                                </td>
+                                                                                                <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[14px]">
+                                                                                                    {deg.education_year_graduated || '—'}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        ))
+                                                                                    ) : (profile.highest_education || profile.education_program) ? (
+                                                                                        <tr className="hover:bg-slate-50/70">
+                                                                                            <td className="px-6 py-3.5 font-black uppercase text-[#08315F] text-[14px] bg-slate-50/50">
+                                                                                                {profile.highest_education || '—'}
+                                                                                            </td>
+                                                                                            <td className="px-6 py-3.5 font-bold uppercase text-slate-800 text-[14px]">
+                                                                                                {profile.specific_degree || '—'}
+                                                                                            </td>
+                                                                                            <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
+                                                                                                {profile.education_program || '—'}
+                                                                                            </td>
+                                                                                            <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[14px]">
+                                                                                                {profile.education_year_graduated || '—'}
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    ) : (
+                                                                                        <tr>
+                                                                                            <td colSpan={4} className="px-6 py-4 text-center text-slate-400 font-bold uppercase tracking-wider">
+                                                                                                No degrees listed
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    )}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+
+                                                                        {profile.other_courses && profile.other_courses.length > 0 && (
+                                                                            <div className="border-t-2 border-slate-200">
+                                                                                <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
+                                                                                    Other Courses & Executive Programs ({profile.other_courses.length})
+                                                                                </div>
+                                                                                <div className="overflow-x-auto">
+                                                                                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                        <thead>
+                                                                                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                                <th className="px-6 py-3">Course Title</th>
+                                                                                                <th className="px-6 py-3">Inclusive Dates</th>
+                                                                                                <th className="px-6 py-3">Details / Agency</th>
+                                                                                            </tr>
+                                                                                        </thead>
+                                                                                        <tbody className="divide-y divide-slate-100">
+                                                                                            {profile.other_courses.map((course, idx) => (
+                                                                                                <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                                    <td className="px-6 py-3.5 font-black uppercase text-blue-700 text-[14px]">
+                                                                                                        {course.course || '—'}
+                                                                                                    </td>
+                                                                                                    <td className="px-6 py-3.5 font-bold text-slate-700 text-[14px]">
+                                                                                                        {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
+                                                                                                    </td>
+                                                                                                    <td className="px-6 py-3.5 font-medium text-slate-600 text-[14px]">
+                                                                                                        {course.details || '—'}
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            ))}
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* 5. PERFORMANCE HISTORY & EXPERIENCE TABLE */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                            <FiBarChart2 className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Performance History & Experience</h3>
+                                                                        </div>
+                                                                        
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                <thead>
+                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                        <th className="px-6 py-3">Rating Type / Evaluation Period</th>
+                                                                                        <th className="px-6 py-3">Performance Period</th>
+                                                                                        <th className="px-4 py-3 text-center">Numerical Rating</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="divide-y divide-slate-100">
+                                                                                    <tr className="hover:bg-slate-50/70">
+                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Latest Rating (1st)</td>
+                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_1_period || '—'}</td>
+                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_1 || '—'}</td>
+                                                                                    </tr>
+                                                                                    <tr className="hover:bg-slate-50/70">
+                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Previous Rating (2nd)</td>
+                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_2_period || '—'}</td>
+                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_2 || '—'}</td>
+                                                                                    </tr>
+                                                                                    <tr className="hover:bg-slate-50/70">
+                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Oldest Rating (3rd)</td>
+                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_3_period || '—'}</td>
+                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_3 || '—'}</td>
+                                                                                    </tr>
+                                                                                    <tr className="hover:bg-slate-50/70">
+                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">CSPMS 2nd Sem</td>
+                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.cespes_rating_2_period || '—'}</td>
+                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.cespes_2_rating || '—'}</td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+
+                                                                        <div className="border-t-2 border-slate-200 p-6 bg-slate-50/30 space-y-4">
+                                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-xl border border-slate-200">
+                                                                                <span className="text-[13.5px] font-black text-slate-500 uppercase tracking-wider">Total Managerial Experience</span>
+                                                                                <span className="text-[18px] font-black text-[#08315F]">{formatExperienceTotal(profile.managerial_experience_total) || '0 mos.'}</span>
+                                                                            </div>
+                                                                            
+                                                                            <div>
+                                                                                <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest block mb-2">Notable Achievements</span>
+                                                                                {isAchievementsNA ? (
+                                                                                    <p className="text-[15px] font-bold text-slate-500 uppercase italic">Not Applicable (N/A)</p>
+                                                                                ) : Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0 ? (
+                                                                                    <div className="space-y-1 bg-white p-4 rounded-xl border border-slate-200">
+                                                                                        {profile.notable_achievements.map((item, i) => {
+                                                                                            const title = typeof item === 'object' && item !== null ? item.title : String(item || '');
+                                                                                            const year = typeof item === 'object' && item !== null ? item.year : '';
+                                                                                            if (!title) return null;
+                                                                                            return (
+                                                                                                <p key={i} className="text-[15px] font-bold text-slate-800 uppercase">
+                                                                                                    • {title} {year ? `(${year})` : ''}
+                                                                                                </p>
+                                                                                            );
+                                                                                        })}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <p className="text-[15px] font-bold text-slate-400 uppercase">—</p>
                                                                                 )}
                                                                             </div>
                                                                         </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
 
-                                                            {/* LEGAL DISCLOSURES */}
-                                                            <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
-                                                                <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => {
-                                                                    // Let's implement an inline toggle state for Legal Disclosures
-                                                                    const el = document.getElementById('legal-collapse');
-                                                                    if (el) {
-                                                                        el.classList.toggle('hidden');
-                                                                        document.getElementById('legal-chevron').classList.toggle('rotate-180');
-                                                                    }
-                                                                }}>
-                                                                    <div className="flex items-center gap-3">
-                                                                        <FiShield className="text-blue-600" size={24} />
-                                                                        <h2 className="text-[21px] font-black text-slate-800 uppercase tracking-widest">Legal Disclosures</h2>
+                                                                        {prevPositions.length > 0 && (
+                                                                            <div className="border-t-2 border-slate-200">
+                                                                                <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
+                                                                                    Previous Positions Held ({prevPositions.length})
+                                                                                </div>
+                                                                                <div className="overflow-x-auto">
+                                                                                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                        <thead>
+                                                                                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                                <th className="px-4 py-3 text-center w-12">#</th>
+                                                                                                <th className="px-6 py-3">Position Title</th>
+                                                                                                <th className="px-6 py-3">Office / Station</th>
+                                                                                                <th className="px-6 py-3">Inclusive Dates</th>
+                                                                                            </tr>
+                                                                                        </thead>
+                                                                                        <tbody className="divide-y divide-slate-100">
+                                                                                            {prevPositions.map((p, idx) => (
+                                                                                                <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                                    <td className="px-4 py-3.5 text-center font-black text-slate-500">{idx + 1}</td>
+                                                                                                    <td className="px-6 py-3.5 font-black uppercase text-slate-800 text-[14px]">{p.position_name || '—'}</td>
+                                                                                                    <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{p.office || '—'}</td>
+                                                                                                    <td className="px-6 py-3.5 font-bold text-slate-700 text-[14px]">
+                                                                                                        {p.start_date ? `${p.start_date} - ${p.end_date || 'Present'}` : '—'}
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            ))}
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                    <FiChevronDown id="legal-chevron" className="text-slate-400 transition-transform" size={24} />
-                                                                </div>
 
-                                                                <div id="legal-collapse" className="hidden border-t-2 border-slate-100 pt-6 mt-4">
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                        <SummaryRow label="Pending Administrative Cases" value={profile.pending_admin_case === 'Yes' ? 'Yes' : 'No'} />
-                                                                        <SummaryRow label="Guilty of Admin Offense" value={profile.guilty_admin_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                        <SummaryRow label="Criminally Charged" value={profile.criminally_charged_details === 'Yes' ? 'Yes' : 'No'} />
-                                                                        <SummaryRow label="Convicted of Crime" value={profile.convicted_crime_details === 'Yes' ? 'Yes' : 'No'} />
+                                                                    {/* 6. DOCUMENTS TABLE */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                            <FiFileText className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Uploaded Documents</h3>
+                                                                        </div>
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                <thead>
+                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                        <th className="px-6 py-3">Document Name</th>
+                                                                                        <th className="px-4 py-3 text-center">Type</th>
+                                                                                        <th className="px-4 py-3 text-center">Status</th>
+                                                                                        <th className="px-6 py-3 text-right">Actions</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="divide-y divide-slate-100">
+                                                                                    {[
+                                                                                        { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*', isApplication: false },
+                                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'Personal Data Sheet (PDS)', accept: '.pdf,.doc,.docx', isApplication: false },
+                                                                                        { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf', isApplication: true },
+                                                                                        { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf', isApplication: true },
+                                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf', isApplication: false },
+                                                                                        ...(hasPendingCases ? [
+                                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf', isApplication: false }
+                                                                                        ] : []),
+                                                                                        ...(isApplyingForPosition ? [
+                                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf', isApplication: true },
+                                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf', isApplication: true },
+                                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf', isApplication: true },
+                                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf', isApplication: true },
+                                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf', isApplication: true },
+                                                                                        ] : []),
+                                                                                    ].map(d => {
+                                                                                        const isUploaded = Boolean(profile[d.dbKey]);
+                                                                                        return (
+                                                                                            <tr key={d.key} className="hover:bg-slate-50/70">
+                                                                                                <td className="px-6 py-3.5 font-black uppercase text-slate-800 text-[14px]">
+                                                                                                    {d.label}
+                                                                                                </td>
+                                                                                                <td className="px-4 py-3.5 text-center">
+                                                                                                    {d.isApplication ? (
+                                                                                                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                                                                                                            Application
+                                                                                                        </span>
+                                                                                                    ) : (
+                                                                                                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                                                                                                            Standard
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                </td>
+                                                                                                <td className="px-4 py-3.5 text-center">
+                                                                                                    {isUploaded ? (
+                                                                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                                                            <FiCheckCircle size={12} /> Uploaded
+                                                                                                        </span>
+                                                                                                    ) : (
+                                                                                                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-400 border border-slate-200">
+                                                                                                            Missing
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                </td>
+                                                                                                <td className="px-6 py-3.5 text-right">
+                                                                                                    <div className="flex items-center justify-end gap-2">
+                                                                                                        <div className="relative group/upload">
+                                                                                                            <input
+                                                                                                                disabled={!isEditing}
+                                                                                                                type="file"
+                                                                                                                accept={d.accept}
+                                                                                                                onChange={(e) => {
+                                                                                                                    const file = e.target.files[0];
+                                                                                                                    if (file) handleFileUpload(file, d.key);
+                                                                                                                }}
+                                                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full"
+                                                                                                            />
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                disabled={!isEditing}
+                                                                                                                className="flex items-center gap-1.5 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-[13px] font-bold transition-all bg-white text-blue-700 hover:border-blue-300 disabled:opacity-50"
+                                                                                                            >
+                                                                                                                <FiUpload size={13} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
+                                                                                                                <span>{uploadingDocs[d.key] ? '...' : 'Upload'}</span>
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                        {isUploaded && (
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                onClick={() => handleViewDocument(profile[d.dbKey])}
+                                                                                                                className="flex items-center gap-1.5 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-[13px] font-bold transition-all bg-white hover:border-blue-300 text-blue-700"
+                                                                                                            >
+                                                                                                                <FiEye size={13} />
+                                                                                                                <span>View</span>
+                                                                                                            </button>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        );
+                                                                                    })}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* 7. LEGAL DISCLOSURES TABLE */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                            <FiShield className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Legal Disclosures</h3>
+                                                                        </div>
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                <thead>
+                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                        <th className="px-6 py-3">Legal Disclosure Item</th>
+                                                                                        <th className="px-6 py-3 text-right">Declared Status</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="divide-y divide-slate-100">
+                                                                                    {[
+                                                                                        { label: 'Pending Administrative Cases', value: profile.pending_admin_case },
+                                                                                        { label: 'Guilty of Admin Offense', value: profile.guilty_admin_details },
+                                                                                        { label: 'Criminally Charged', value: profile.criminally_charged_details },
+                                                                                        { label: 'Convicted of Crime', value: profile.convicted_crime_details },
+                                                                                    ].map((item, idx) => {
+                                                                                        const isYes = item.value === 'Yes' || item.value === true || item.value === '1';
+                                                                                        return (
+                                                                                            <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                                <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">
+                                                                                                    {item.label}
+                                                                                                </td>
+                                                                                                <td className="px-6 py-3.5 text-right">
+                                                                                                    <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-wider ${
+                                                                                                        isYes ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                                                    }`}>
+                                                                                                        {isYes ? 'Yes' : 'No'}
+                                                                                                    </span>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        );
+                                                                                    })}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
+                                                            )}
 
 
                                                             {/* DATA PRIVACY & CERTIFICATION */}
