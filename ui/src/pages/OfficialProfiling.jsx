@@ -4333,7 +4333,7 @@ const OfficialProfiling = () => {
                                                                         title="Export all work experience documents from the blob into a RAR archive"
                                                                     >
                                                                         <FiArchive size={16} className="text-amber-300" />
-                                                                        <span>{exportingDocs ? 'Exporting...' : 'Export Work Experience Docs'}</span>
+                                                                        <span>{exportingDocs ? 'Exporting...' : 'Export Docs'}</span>
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -5626,7 +5626,7 @@ const OfficialProfiling = () => {
                                                                                 title="Export all work experience documents from the blob into a RAR archive"
                                                                             >
                                                                                 <FiArchive size={16} className="text-amber-300 shrink-0" />
-                                                                                <span>{exportingDocs ? 'Exporting...' : 'Export Work Experience Docs'}</span>
+                                                                                <span>{exportingDocs ? 'Exporting...' : 'Export Docs'}</span>
                                                                             </button>
                                                                         )}
 
