@@ -1144,7 +1144,24 @@ const OfficialProfiling = () => {
             return !!(profile.performance_rating_1 && profile.performance_rating_1_period);
         }
         if (tabId === 'trainings') {
-            return trainings.some(t => t && (t.training_name?.trim() || t.date_from?.trim()));
+            if (!Array.isArray(trainings) || trainings.length === 0) return false;
+            const activeTrainings = trainings.filter(t => t && (
+                (t.training_name && t.training_name.trim()) ||
+                (t.date_from && t.date_from.trim()) ||
+                (t.date_to && t.date_to.trim()) ||
+                (t.date_completed && t.date_completed.trim()) ||
+                (t.hours !== undefined && t.hours !== null && String(t.hours).trim() !== '')
+            ));
+            if (activeTrainings.length === 0) return false;
+
+            return activeTrainings.every(t => {
+                const name = (t.training_name || '').trim();
+                const from = (t.date_from || t.date_completed || '').trim();
+                const to = (t.date_to || t.date_completed || '').trim();
+                const hrs = (t.hours !== undefined && t.hours !== null && String(t.hours).trim() !== '') ? String(t.hours).trim() : '';
+
+                return !!(name && from && to && hrs);
+            });
         }
         if (tabId === 'achievements') {
             if (isAchievementsNA) return true;
@@ -2471,12 +2488,12 @@ const OfficialProfiling = () => {
         }
 
         // 4. Employment History (Held Positions) Validation
-        const validateRange = (from, to, ctx) => {
+        const validateRange = (from, to, ctx, targetTab = 'experience') => {
             if (from && to) {
                 const d1 = new Date(from);
                 const d2 = new Date(to);
                 if (d2 <= d1) {
-                    setTab('experience');
+                    setTab(targetTab);
                     Swal.fire({
                         icon: 'error',
                         title: 'Invalid Date Range',
@@ -2604,9 +2621,57 @@ const OfficialProfiling = () => {
             }
         }
 
-        for (let i = 0; i < trainings.length; i++) {
-            const t = trainings[i];
-            if (!validateRange(t.date_from, t.date_to, `Relevant Training #${i + 1}`)) return false;
+        // 5. Professional Development Trainings Validation
+        if (Array.isArray(trainings)) {
+            for (let i = 0; i < trainings.length; i++) {
+                const t = trainings[i];
+                if (!t) continue;
+                const name = (t.training_name || '').trim();
+                const from = (t.date_from || t.date_completed || '').trim();
+                const to = (t.date_to || t.date_completed || '').trim();
+                const hrs = (t.hours !== undefined && t.hours !== null && String(t.hours).trim() !== '') ? String(t.hours).trim() : '';
+
+                // If any field in this training row is entered
+                if (name || from || to || hrs) {
+                    const missing = [];
+                    if (!name) missing.push('Training / Seminar Name');
+                    if (!from) missing.push('Date From');
+                    if (!to) missing.push('Date To');
+                    if (!hrs) missing.push('Total Hours');
+
+                    if (missing.length > 0) {
+                        setTab('trainings');
+                        const rowHeader = name
+                            ? `Training #${i + 1} — "${name}"`
+                            : `Training #${i + 1}`;
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Incomplete Training Record',
+                            html: `
+                                <div style="text-align: left; font-size: 14.5px; line-height: 1.5;">
+                                    <p style="color: #334155; margin-bottom: 8px;">
+                                        <strong>${rowHeader}</strong> is missing the following required field${missing.length > 1 ? 's' : ''}:
+                                    </p>
+                                    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 16px; margin: 10px 0;">
+                                        <ul style="list-style-type: disc; padding-left: 18px; margin: 0; color: #b91c1c; font-weight: 700;">
+                                            ${missing.map(m => `<li style="margin-bottom: 4px;">${m}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <p style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px;">
+                                        Please fill in all required fields for this training before saving your progress.
+                                    </p>
+                                </div>
+                            `,
+                            confirmButtonColor: '#08315F',
+                            confirmButtonText: 'Got it, let me fill in'
+                        });
+                        return false;
+                    }
+
+                    if (!validateRange(from, to, `Relevant Training #${i + 1}${name ? ` (${name})` : ''}`, 'trainings')) return false;
+                }
+            }
         }
 
         if (profile.other_courses && profile.other_courses.length > 0) {

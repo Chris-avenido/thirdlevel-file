@@ -12,16 +12,30 @@ const currentYear = new Date().getFullYear();
 const startYear = 1900;
 const YEARS = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
 
-const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, className, isMonthPicker, isYearPicker, disabled, todayButton }) => {
+const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, openToDate, className, isMonthPicker, isYearPicker, disabled, todayButton }) => {
     // Convert string to Date object
     let selectedDate = null;
     if (value) {
         if (isYearPicker) {
             selectedDate = new Date(value.toString(), 0, 1);
+        } else if (isMonthPicker) {
+            selectedDate = new Date(value + '-01T00:00:00');
         } else {
-            // If it's just YYYY-MM, we append -01 to make it a valid date object
-            selectedDate = isMonthPicker ? new Date(value + '-01') : new Date(value);
+            const valStr = value.toString();
+            selectedDate = new Date(valStr.includes('-') && !valStr.includes('T') ? valStr + 'T00:00:00' : valStr);
         }
+        if (!(selectedDate instanceof Date) || isNaN(selectedDate.getTime())) {
+            selectedDate = null;
+        }
+    }
+
+    let initialOpenDate = undefined;
+    if (openToDate) {
+        const d = typeof openToDate === 'string' ? new Date(openToDate.includes('-') && !openToDate.includes('T') ? openToDate + 'T00:00:00' : openToDate) : openToDate;
+        if (d instanceof Date && !isNaN(d.getTime())) initialOpenDate = d;
+    } else if (!selectedDate && minDate) {
+        const d = typeof minDate === 'string' ? new Date(minDate.includes('-') && !minDate.includes('T') ? minDate + 'T00:00:00' : minDate) : minDate;
+        if (d instanceof Date && !isNaN(d.getTime())) initialOpenDate = d;
     }
 
     // Handle date change
@@ -66,6 +80,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, clas
                 onChange={handleChange}
                 minDate={minDate}
                 maxDate={maxDate}
+                openToDate={initialOpenDate}
                 todayButton={todayButton}
                 placeholderText={placeholder || "Select a date"}
                 showMonthDropdown={!(isMonthPicker || isYearPicker)}
