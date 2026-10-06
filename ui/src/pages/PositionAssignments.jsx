@@ -26,6 +26,7 @@ import {
   FiAward,
   FiArrowRight,
   FiUser,
+  FiUserMinus,
   FiHelpCircle
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
@@ -1276,23 +1277,105 @@ const PositionAssignments = () => {
     }
   };
 
-  // Delete Assignment Handler
-  const handleDeleteAssignment = async (assignment) => {
+  // Vacate Assignment Handler (Sets tlo_assignments.status = 'Inactive' and end_date = NOW())
+  const handleVacateAssignment = async (assignment) => {
     if (!assignment || !assignment.id) return;
 
     const officialName = assignment.official_name || `${assignment.first_name || ''} ${assignment.last_name || ''}`.trim() || 'this official';
     const positionTitle = assignment.position_title || 'this position';
 
     const result = await Swal.fire({
+      title: 'Vacate Position Assignment?',
+      html: `Are you sure you want to vacate the position of <strong class="text-[#08315F]">${officialName}</strong> as <strong class="text-[#08315F]">${positionTitle}</strong>?<br/><br/><span class="text-xs text-amber-700 font-bold">This will set status to Inactive, record today as the end date, and free the position for assignment.</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d97706',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, Vacate Position',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const res = await fetch(apiUrl(`/api/third-level/assignments/${assignment.id}/vacate`), {
+          method: 'PATCH',
+          headers: authHeaders,
+          body: JSON.stringify({ end_date: todayStr, remarks: 'Vacated via Position Assignments' })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to vacate assignment');
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Position Vacated',
+          text: 'The position assignment has been set to Inactive with end date recorded. The position is now available.',
+          confirmButtonColor: '#08315F',
+          timer: 2000
+        });
+
+        handleRefresh();
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Failed to vacate assignment.', 'error');
+      }
+    }
+  };
+
+  // Delete Assignment Handler (with 15-second timer safety lock)
+  const handleDeleteAssignment = async (assignment) => {
+    if (!assignment || !assignment.id) return;
+
+    const officialName = assignment.official_name || `${assignment.first_name || ''} ${assignment.last_name || ''}`.trim() || 'this official';
+    const positionTitle = assignment.position_title || 'this position';
+
+    let timerInterval;
+    const result = await Swal.fire({
       title: 'Delete Position Assignment?',
-      html: `Are you sure you want to delete the assignment of <strong class="text-[#08315F]">${officialName}</strong> as <strong class="text-[#08315F]">${positionTitle}</strong>?<br/><br/><span class="text-xs text-rose-600 font-bold">This will remove the assignment record and free the position.</span>`,
+      html: `
+        <div style="text-align: left; font-size: 0.9rem; color: #334155; line-height: 1.5;">
+          <p>Are you sure you want to delete the assignment of <strong style="color: #08315F;">${officialName}</strong> as <strong style="color: #08315F;">${positionTitle}</strong>?</p>
+          <div style="margin-top: 12px; margin-bottom: 12px; padding: 12px 14px; background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 10px; color: #BE123C; font-weight: 700; font-size: 0.82rem;">
+            ⚠️ This action will permanently delete this assignment record from the database.
+          </div>
+          <p style="font-size: 0.78rem; color: #64748B;">
+            Please wait 15 seconds before the delete confirmation button becomes active.
+          </p>
+        </div>
+      `,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e11d48',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Yes, Delete Assignment',
+      confirmButtonText: 'Yes, Delete Assignment (15s)',
       cancelButtonText: 'Cancel',
-      reverseButtons: true
+      reverseButtons: true,
+      allowOutsideClick: false,
+      didOpen: () => {
+        const confirmBtn = Swal.getConfirmButton();
+        if (confirmBtn) {
+          confirmBtn.disabled = true;
+          confirmBtn.style.opacity = '0.45';
+          confirmBtn.style.cursor = 'not-allowed';
+          let timeLeft = 15;
+          timerInterval = setInterval(() => {
+            timeLeft -= 1;
+            if (timeLeft > 0) {
+              confirmBtn.textContent = `Yes, Delete Assignment (${timeLeft}s)`;
+            } else {
+              clearInterval(timerInterval);
+              confirmBtn.disabled = false;
+              confirmBtn.style.opacity = '1';
+              confirmBtn.style.cursor = 'pointer';
+              confirmBtn.textContent = 'Yes, Delete Assignment';
+            }
+          }, 1000);
+        }
+      },
+      willClose: () => {
+        if (timerInterval) clearInterval(timerInterval);
+      }
     });
 
     if (result.isConfirmed) {
@@ -1728,6 +1811,16 @@ const PositionAssignments = () => {
 
                                 {/* Group Hover Action Toolbar (Matching OfficialsRegistry) */}
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-md border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">
+                                  {isActive && (
+                                    <button
+                                      onClick={() => handleVacateAssignment(item)}
+                                      title="Vacate position assignment"
+                                      className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-[13px] font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all border-2 border-amber-200 shadow-2xs shrink-0 cursor-pointer"
+                                    >
+                                      <FiUserMinus size={13} />
+                                      <span>Vacate</span>
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => handleDeleteAssignment(item)}
                                     title="Delete position assignment"
@@ -1839,6 +1932,14 @@ const PositionAssignments = () => {
                             </div>
 
                             <div className="flex items-center gap-2 mt-1">
+                              {isActive && (
+                                <button
+                                  onClick={() => handleVacateAssignment(item)}
+                                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-700 rounded-xl text-[13px] font-black uppercase tracking-widest border-2 border-amber-200 hover:bg-amber-600 hover:text-white transition-all shadow-2xs cursor-pointer"
+                                >
+                                  <FiUserMinus size={13} /> Vacate
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleDeleteAssignment(item)}
                                 className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-xl text-[13px] font-black uppercase tracking-widest border-2 border-rose-200 hover:bg-rose-600 hover:text-white transition-all shadow-2xs cursor-pointer"

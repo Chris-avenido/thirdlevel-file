@@ -987,10 +987,10 @@ const TloPositions = () => {
                 <table className="hidden md:table w-full text-left border-collapse table-fixed">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-200 select-none">
-                          {/* ID Column */}
+                          {/* 1. ID Column */}
                           <th
                             onClick={() => handleSort('id')}
-                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[10%]"
+                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[8%]"
                           >
                             <div className="flex items-center gap-1.5">
                               <span>ID</span>
@@ -1002,7 +1002,27 @@ const TloPositions = () => {
                             </div>
                           </th>
 
-                          {/* Position Title Column */}
+                          {/* 2. Region Column */}
+                          <th
+                            onClick={() => handleSort('region')}
+                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[14%]"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Region</span>
+                              {sortBy === 'region' ? (
+                                sortOrder === 'ASC' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
+                          </th>
+
+                          {/* 3. Division / Bureau Column */}
+                          <th className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider w-[16%]">
+                            Division
+                          </th>
+
+                          {/* 4. Position Title Column */}
                           <th
                             onClick={() => handleSort('position_title')}
                             className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[32%]"
@@ -1017,10 +1037,25 @@ const TloPositions = () => {
                             </div>
                           </th>
 
-                          {/* Position Code Column */}
+                          {/* 5. Salary Grade Column */}
+                          <th
+                            onClick={() => handleSort('salary_grade')}
+                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[14%]"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Salary Grade</span>
+                              {sortBy === 'salary_grade' ? (
+                                sortOrder === 'ASC' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
+                              ) : (
+                                <span className="text-slate-300 text-xs">↕</span>
+                              )}
+                            </div>
+                          </th>
+
+                          {/* 6. Position Code Column */}
                           <th
                             onClick={() => handleSort('position_code')}
-                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[14%]"
+                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[16%]"
                           >
                             <div className="flex items-center gap-1.5">
                               <span>Code</span>
@@ -1030,41 +1065,6 @@ const TloPositions = () => {
                                 <span className="text-slate-300 text-xs">↕</span>
                               )}
                             </div>
-                          </th>
-
-                          {/* Salary Grade Column */}
-                          <th
-                            onClick={() => handleSort('salary_grade')}
-                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[12%]"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span>Grade</span>
-                              {sortBy === 'salary_grade' ? (
-                                sortOrder === 'ASC' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
-                              ) : (
-                                <span className="text-slate-300 text-xs">↕</span>
-                              )}
-                            </div>
-                          </th>
-
-                          {/* Region Column */}
-                          <th
-                            onClick={() => handleSort('region')}
-                            className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 hover:text-[#08315F] transition-colors w-[16%]"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span>Region</span>
-                              {sortBy === 'region' ? (
-                                sortOrder === 'ASC' ? <FiChevronUp className="text-[#08315F]" size={14} /> : <FiChevronDown className="text-[#08315F]" size={14} />
-                              ) : (
-                                <span className="text-slate-300 text-xs">↕</span>
-                              )}
-                            </div>
-                          </th>
-
-                          {/* Division / Bureau Column */}
-                          <th className="px-4 py-3.5 text-left text-[12px] font-black text-slate-500 uppercase tracking-wider w-[16%]">
-                            Division / Bureau
                           </th>
                         </tr>
                       </thead>
@@ -1095,54 +1095,14 @@ const TloPositions = () => {
                               key={item.id}
                               className="hover:bg-sky-50/50 transition-colors relative group border-b border-slate-100"
                             >
-                              {/* ID Badge */}
+                              {/* 1. ID Badge */}
                               <td className="px-4 py-4 whitespace-nowrap">
                                 <span className="px-2.5 py-1 rounded-lg font-mono font-bold text-[12px] bg-sky-50 text-[#08315F] border border-sky-200">
                                   #{item.id}
                                 </span>
                               </td>
 
-                              {/* Position Title */}
-                              <td className="px-4 py-4">
-                                <div className="font-['Plus_Jakarta_Sans'] font-black text-[15px] text-[#08315F] leading-snug truncate" title={item.position_title}>
-                                  {item.position_title}
-                                </div>
-                                {item.description && (
-                                  <div className="text-[12px] font-medium text-slate-400 truncate mt-0.5" title={item.description}>
-                                    {item.description}
-                                  </div>
-                                )}
-                              </td>
-
-                              {/* Position Code */}
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                {item.position_code ? (
-                                  <span className="font-mono text-[11px] font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
-                                    {item.position_code}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 font-mono text-[12px]">—</span>
-                                )}
-                              </td>
-
-                              {/* Salary Grade */}
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                {item.salary_grade ? (
-                                  <span
-                                    className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border-2 ${
-                                      isHighSg
-                                        ? 'bg-amber-50 text-amber-800 border-amber-300'
-                                        : 'bg-blue-50 text-[#075985] border-blue-200'
-                                    }`}
-                                  >
-                                    SG {item.salary_grade}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 text-[12px]">—</span>
-                                )}
-                              </td>
-
-                              {/* Region */}
+                              {/* 2. Region */}
                               <td className="px-4 py-4 whitespace-nowrap">
                                 {item.region ? (
                                   <button
@@ -1161,8 +1121,8 @@ const TloPositions = () => {
                                 )}
                               </td>
 
-                              {/* Division / Bureau & Action Overlay */}
-                              <td className="px-4 py-4 relative">
+                              {/* 3. Division / Bureau */}
+                              <td className="px-4 py-4">
                                 <div className="truncate">
                                   <div className="text-[13px] font-bold text-slate-700 truncate">
                                     {item.division || item.bureau || <span className="text-slate-300">—</span>}
@@ -1173,6 +1133,46 @@ const TloPositions = () => {
                                     </div>
                                   )}
                                 </div>
+                              </td>
+
+                              {/* 4. Position Title */}
+                              <td className="px-4 py-4">
+                                <div className="font-['Plus_Jakarta_Sans'] font-black text-[15px] text-[#08315F] leading-snug truncate" title={item.position_title}>
+                                  {item.position_title}
+                                </div>
+                                {item.description && (
+                                  <div className="text-[12px] font-medium text-slate-400 truncate mt-0.5" title={item.description}>
+                                    {item.description}
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* 5. Salary Grade */}
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                {item.salary_grade ? (
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border-2 ${
+                                      isHighSg
+                                        ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                        : 'bg-blue-50 text-[#075985] border-blue-200'
+                                    }`}
+                                  >
+                                    SG {item.salary_grade}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 text-[12px]">—</span>
+                                )}
+                              </td>
+
+                              {/* 6. Position Code & Action Overlay */}
+                              <td className="px-4 py-4 whitespace-nowrap relative">
+                                {item.position_code ? (
+                                  <span className="font-mono text-[11px] font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+                                    {item.position_code}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 font-mono text-[12px]">—</span>
+                                )}
 
                                 {/* Group Hover Action Toolbar (Matching PositionAssignments) */}
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-md border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">

@@ -18,6 +18,7 @@ router.get('/officials', authMiddleware, getOfficialsForAssignment);
 router.post('/', authMiddleware, createAssignment);
 router.put('/:id', authMiddleware, updateAssignment);
 router.patch('/:id/deactivate', authMiddleware, deactivateAssignment);
+router.patch('/:id/vacate', authMiddleware, deactivateAssignment);
 router.delete('/:id', authMiddleware, deleteAssignment);
 
 export default router;
