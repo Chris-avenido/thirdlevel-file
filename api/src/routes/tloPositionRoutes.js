@@ -4,6 +4,7 @@ import {
   getPositions,
   getFilterOptions,
   getPositionDetails,
+  getPositionAssignments,
   checkReferences,
   createPosition,
   updatePosition,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.get('/', authMiddleware, getPositions);
 router.get('/options', authMiddleware, getFilterOptions);
 router.get('/:id', authMiddleware, getPositionDetails);
+router.get('/:id/assignments', authMiddleware, getPositionAssignments);
 router.get('/:id/references', authMiddleware, checkReferences);
 router.post('/', authMiddleware, createPosition);
 router.put('/:id', authMiddleware, updatePosition);

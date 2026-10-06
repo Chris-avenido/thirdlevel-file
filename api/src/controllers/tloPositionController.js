@@ -7,7 +7,8 @@ import {
   createPosition as repoCreatePosition,
   updatePosition as repoUpdatePosition,
   countPositionAssignments,
-  deletePosition as repoDeletePosition
+  deletePosition as repoDeletePosition,
+  findAssignmentsByPositionId
 } from '../repositories/tloPositionRepository.js';
 
 /**
@@ -139,7 +140,37 @@ export const checkReferences = async (req, res) => {
   }
 };
 
-// 5. Create new position
+// 5. Fetch full assignment history for a position
+export const getPositionAssignments = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const positionId = parseInt(id, 10);
+    if (isNaN(positionId)) {
+      return res.status(400).json({ success: false, error: 'Invalid position ID.' });
+    }
+
+    const position = await getPositionById(pool, positionId);
+    if (!position) {
+      return res.status(404).json({ success: false, error: 'Position not found.' });
+    }
+
+    const assignments = await findAssignmentsByPositionId(pool, positionId);
+
+    return res.status(200).json({
+      success: true,
+      position,
+      data: assignments
+    });
+  } catch (error) {
+    console.error('[tloPositionController] Error in getPositionAssignments:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve position assignment history.'
+    });
+  }
+};
+
+// 6. Create new position
 export const createPosition = async (req, res) => {
   try {
     const {

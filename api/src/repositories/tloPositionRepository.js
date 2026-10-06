@@ -253,14 +253,19 @@ export async function findAssignmentsByPositionId(client, positionItemOrId) {
            a.start_date, a.end_date, a.created_at, a.updated_at,
            COALESCE(pos.position_title, i.position_title) AS position_title,
            COALESCE(pos.salary_grade, i.salary_grade) AS salary_grade,
+           COALESCE(pos.position_code, i.item_number) AS position_code,
            pos.region, pos.division, pos.bureau,
-           m.tloid, m.first_name, m.last_name
+           m.tloid, m.first_name, m.last_name, m.email,
+           CONCAT_WS(' ', m.first_name, m.last_name) AS official_name
     FROM tlo_assignments a
     LEFT JOIN tlo_positions pos ON a.position_id = pos.id
     LEFT JOIN tlo_items i ON a.tlo_position_id = i.item_number
     LEFT JOIN tlo_masterlist m ON a.tlo_masterlist_id = m.id
     WHERE ${isNumeric ? '(a.position_id = $1 OR a.tlo_position_id = $1)' : 'a.tlo_position_id = $1'}
-    ORDER BY a.start_date DESC NULLS LAST, a.id DESC
+    ORDER BY 
+      CASE WHEN a.status = 'Active' AND a.end_date IS NULL THEN 0 ELSE 1 END,
+      a.start_date DESC NULLS LAST, 
+      a.id DESC
   `;
   const res = await client.query(query, [String(positionItemOrId).trim()]);
   return res.rows;

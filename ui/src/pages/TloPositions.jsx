@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiBriefcase,
@@ -17,7 +18,14 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiCheck,
-  FiFilter
+  FiFilter,
+  FiUser,
+  FiUserCheck,
+  FiCalendar,
+  FiClock,
+  FiExternalLink,
+  FiInfo,
+  FiTag
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import AdminSidebar from '../components/AdminSidebar';
@@ -28,6 +36,7 @@ import { apiUrl } from '../utils/api';
 
 const TloPositions = () => {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
 
   // Positions Data State
   const [positions, setPositions] = useState([]);
@@ -78,6 +87,12 @@ const TloPositions = () => {
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Position Assignment History Modal State
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [selectedPositionForHistory, setSelectedPositionForHistory] = useState(null);
+  const [positionHistory, setPositionHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -285,6 +300,33 @@ const TloPositions = () => {
     });
     setFormErrors({});
     setIsModalOpen(true);
+  };
+
+  // View Assignment History for Position
+  const handleViewHistory = async (position) => {
+    if (!position || !position.id) return;
+    setSelectedPositionForHistory(position);
+    setPositionHistory([]);
+    setIsHistoryModalOpen(true);
+    setLoadingHistory(true);
+
+    try {
+      const res = await fetch(apiUrl(`/api/third-level/tlo-positions/${position.id}/assignments`), {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPositionHistory(data.data || []);
+      } else {
+        console.error('[TloPositions] Failed to fetch position assignments:', data.error);
+      }
+    } catch (err) {
+      console.error('[TloPositions] Error fetching assignment history:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   // Open Edit Modal
@@ -1093,7 +1135,9 @@ const TloPositions = () => {
                           return (
                             <tr
                               key={item.id}
-                              className="hover:bg-sky-50/50 transition-colors relative group border-b border-slate-100"
+                              onClick={() => handleViewHistory(item)}
+                              className="hover:bg-sky-50/70 transition-colors relative group border-b border-slate-100 cursor-pointer"
+                              title="Click to view position assignment history"
                             >
                               {/* 1. ID Badge */}
                               <td className="px-4 py-4 whitespace-nowrap">
@@ -1177,7 +1221,10 @@ const TloPositions = () => {
                                 {/* Group Hover Action Toolbar (Matching PositionAssignments) */}
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-md border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">
                                   <button
-                                    onClick={() => handleOpenEdit(item)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEdit(item);
+                                    }}
                                     title="Edit position details"
                                     className="flex items-center justify-center gap-1 px-3 py-1.5 bg-sky-50 text-[#08315F] rounded-lg text-[12.5px] font-black uppercase tracking-widest hover:bg-[#08315F] hover:text-white transition-all border-2 border-sky-200 shadow-2xs shrink-0 cursor-pointer"
                                   >
@@ -1185,7 +1232,10 @@ const TloPositions = () => {
                                     <span>Edit</span>
                                   </button>
                                   <button
-                                    onClick={() => handleDeletePosition(item)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeletePosition(item);
+                                    }}
                                     title="Delete position from catalog"
                                     className="flex items-center justify-center gap-1 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[12.5px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all border-2 border-rose-200 shadow-2xs shrink-0 cursor-pointer"
                                   >
@@ -1218,7 +1268,12 @@ const TloPositions = () => {
                         </div>
                       ) : (
                         positions.map((item) => (
-                        <div key={item.id} className="p-4 bg-white hover:bg-slate-50/50 transition-colors flex flex-col gap-3">
+                        <div
+                          key={item.id}
+                          onClick={() => handleViewHistory(item)}
+                          className="p-4 bg-white hover:bg-slate-50/70 transition-colors flex flex-col gap-3 cursor-pointer"
+                          title="Click to view position assignment history"
+                        >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#08315F] font-black text-xs flex items-center justify-center border-2 border-sky-200 shadow-sm shrink-0">
@@ -1271,13 +1326,19 @@ const TloPositions = () => {
 
                           <div className="flex items-center gap-2 mt-1">
                             <button
-                              onClick={() => handleOpenEdit(item)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEdit(item);
+                              }}
                               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-50 text-[#08315F] rounded-xl text-[13px] font-black uppercase tracking-widest border-2 border-sky-200 hover:bg-[#08315F] hover:text-white transition-all shadow-2xs"
                             >
                               <FiEdit2 size={13} /> Edit
                             </button>
                             <button
-                              onClick={() => handleDeletePosition(item)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePosition(item);
+                              }}
                               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-600 rounded-xl text-[13px] font-black uppercase tracking-widest border-2 border-rose-200 hover:bg-rose-500 hover:text-white transition-all shadow-2xs"
                             >
                               <FiTrash2 size={13} /> Delete
@@ -1535,6 +1596,337 @@ const TloPositions = () => {
                     </button>
                   </div>
                 </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: POSITION ASSIGNMENT HISTORY (PORTAL) */}
+      {/* ========================================================================= */}
+      {createPortal(
+        <AnimatePresence>
+          {isHistoryModalOpen && selectedPositionForHistory && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                className="bg-white rounded-[2.5rem] sm:rounded-[3rem] w-full max-w-4xl shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col max-h-[92vh]"
+              >
+                {/* Modal Header */}
+                <div className="p-6 sm:p-8 pb-4 flex justify-between items-start border-b-2 border-slate-100 bg-gradient-to-r from-blue-50/40 via-sky-50/20 to-white">
+                  <div className="min-w-0 flex-1 pr-4">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-[12px] font-black text-[#075985] uppercase tracking-widest bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200">
+                        Position Assignment History
+                      </span>
+                      <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        ID #{selectedPositionForHistory.id}
+                      </span>
+                      {selectedPositionForHistory.salary_grade && (
+                        <span className="text-[11px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                          SG {selectedPositionForHistory.salary_grade}
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-[22px] sm:text-[28px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight truncate leading-tight">
+                      {selectedPositionForHistory.position_title}
+                    </h2>
+                    <div className="flex items-center gap-2 text-slate-500 font-bold text-[13px] mt-1 flex-wrap">
+                      <span>{selectedPositionForHistory.region || 'Central Office'}</span>
+                      <span>•</span>
+                      <span>{selectedPositionForHistory.division || selectedPositionForHistory.bureau || 'General Bureau / Division'}</span>
+                      {selectedPositionForHistory.position_code && (
+                        <>
+                          <span>•</span>
+                          <span className="font-mono text-[12px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Code: {selectedPositionForHistory.position_code}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsHistoryModalOpen(false)}
+                    className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 transition-all border-2 border-slate-200 cursor-pointer shadow-xs shrink-0"
+                    title="Close"
+                  >
+                    <FiX size={18} />
+                  </button>
+                </div>
+
+                {/* Modal Content Body */}
+                <div className="p-6 sm:p-8 overflow-y-auto space-y-5 flex-1 min-h-0 custom-scrollbar bg-slate-50/40">
+                  {/* Status Banner */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          positionHistory.some(a => a.status === 'Active' && !a.end_date)
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-600 border border-amber-200'
+                        }`}>
+                          <FiUserCheck size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Current Status</p>
+                          <p className={`text-[15px] font-black ${
+                            positionHistory.some(a => a.status === 'Active' && !a.end_date)
+                              ? 'text-emerald-700'
+                              : 'text-amber-700'
+                          }`}>
+                            {positionHistory.some(a => a.status === 'Active' && !a.end_date)
+                              ? 'Currently Occupied'
+                              : 'Currently Vacant'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#08315F] border border-blue-200 flex items-center justify-center">
+                          <FiClock size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Deployment Records</p>
+                          <p className="text-[15px] font-black text-[#08315F]">
+                            {positionHistory.length} assignment record{positionHistory.length === 1 ? '' : 's'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Loading State */}
+                  {loadingHistory ? (
+                    <div className="p-12 text-center bg-white rounded-3xl border-2 border-slate-200">
+                      <FiRefreshCw size={28} className="animate-spin text-[#08315F] mx-auto mb-3" />
+                      <p className="text-[14px] font-black text-[#08315F] uppercase tracking-wider">Loading Assignment History...</p>
+                      <p className="text-slate-400 text-xs font-bold mt-1">Retrieving official deployment records from tlo_assignments</p>
+                    </div>
+                  ) : positionHistory.length === 0 ? (
+                    /* Empty State */
+                    <div className="p-12 text-center bg-white rounded-3xl border-2 border-slate-200">
+                      <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                        <FiBriefcase size={30} />
+                      </div>
+                      <h3 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">
+                        No Assignment Records Found
+                      </h3>
+                      <p className="text-slate-400 font-medium text-sm mt-1.5 max-w-md mx-auto">
+                        This position has never had an official assigned to it in the database. It is currently vacant and available for deployment in Position Assignments.
+                      </p>
+                    </div>
+                  ) : (
+                    /* Assignment History Table & Cards */
+                    <div className="space-y-3">
+                      <h4 className="text-[13px] font-black text-slate-400 uppercase tracking-widest">
+                        Assignment Log ({positionHistory.length})
+                      </h4>
+
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block bg-white rounded-2xl border-2 border-slate-200 overflow-hidden shadow-xs">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                              <th className="px-4 py-3">Official</th>
+                              <th className="px-3 py-3 text-center">Status</th>
+                              <th className="px-3 py-3 text-center">Capacity</th>
+                              <th className="px-4 py-3">Inclusive Dates</th>
+                              <th className="px-4 py-3">Designation / Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-[13px]">
+                            {positionHistory.map((a) => {
+                              const isActive = a.status === 'Active' && !a.end_date;
+                              const officialDisplayName = a.official_name || `${a.first_name || ''} ${a.last_name || ''}`.trim() || 'Official';
+                              return (
+                                <tr key={a.id} className="hover:bg-slate-50/70 transition-colors">
+                                  {/* Official Info */}
+                                  <td className="px-4 py-3.5 align-top">
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-[#08315F] font-black text-xs border border-blue-200 shrink-0">
+                                        {a.first_name ? a.first_name[0] : 'O'}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                          <p className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight truncate">
+                                            {officialDisplayName}
+                                          </p>
+                                          {a.tloid && (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/official-profiling?tloid=${encodeURIComponent(a.tloid)}&TLOid=${encodeURIComponent(a.tloid)}${a.email ? `&email=${encodeURIComponent(a.email)}` : ''}`);
+                                              }}
+                                              title="View Official Profile"
+                                              className="text-[#004A99] hover:text-[#08315F] transition-colors p-0.5 cursor-pointer"
+                                            >
+                                              <FiExternalLink size={12} />
+                                            </button>
+                                          )}
+                                        </div>
+                                        {a.tloid && (
+                                          <p className="text-[11px] font-bold text-slate-400 font-mono">
+                                            TLO ID: #{a.tloid}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  {/* Status */}
+                                  <td className="px-3 py-3.5 align-middle text-center whitespace-nowrap">
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${
+                                      isActive
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : 'bg-slate-50 text-slate-500 border-slate-200'
+                                    }`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                                      {isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </td>
+
+                                  {/* Capacity */}
+                                  <td className="px-3 py-3.5 align-middle text-center whitespace-nowrap">
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${
+                                      a.capacity === 'Full' || a.capacity === 'Full-fledged'
+                                        ? 'bg-blue-50 text-[#075985] border-blue-200'
+                                        : a.capacity === 'OIC' || a.capacity === 'Officer-in-Charge (OIC)'
+                                          ? 'bg-[#FCD116]/20 border-[#FCD116] text-[#0038A8]'
+                                          : 'bg-purple-50 text-purple-700 border-purple-200'
+                                    }`}>
+                                      {a.capacity === 'Full' ? 'Full-fledged' : a.capacity === 'OIC' ? 'OIC' : a.capacity || '—'}
+                                    </span>
+                                  </td>
+
+                                  {/* Inclusive Dates */}
+                                  <td className="px-4 py-3.5 align-top whitespace-nowrap">
+                                    <div className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-700">
+                                      <FiCalendar size={13} className="text-slate-400 shrink-0" />
+                                      <span>
+                                        {a.start_date ? String(a.start_date).split('T')[0] : '—'}
+                                      </span>
+                                      <span className="text-slate-300">→</span>
+                                      <span className={isActive ? 'text-emerald-700 font-black' : ''}>
+                                        {isActive ? 'Present' : (a.end_date ? String(a.end_date).split('T')[0] : '—')}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Designation / Remarks */}
+                                  <td className="px-4 py-3.5 align-top">
+                                    {a.designation && (
+                                      <p className="text-[12px] font-bold text-purple-700 mb-0.5">
+                                        {a.designation}
+                                      </p>
+                                    )}
+                                    {a.remarks ? (
+                                      <p className="text-[12px] text-slate-500 font-medium line-clamp-2" title={a.remarks}>
+                                        {a.remarks}
+                                      </p>
+                                    ) : (
+                                      !a.designation && <span className="text-slate-300 font-mono text-xs">—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Cards View */}
+                      <div className="md:hidden space-y-2.5">
+                        {positionHistory.map((a) => {
+                          const isActive = a.status === 'Active' && !a.end_date;
+                          const officialDisplayName = a.official_name || `${a.first_name || ''} ${a.last_name || ''}`.trim() || 'Official';
+                          return (
+                            <div key={a.id} className="p-4 rounded-2xl bg-white border-2 border-slate-200 space-y-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-[#08315F] font-black text-xs border border-blue-200 shrink-0">
+                                    {a.first_name ? a.first_name[0] : 'O'}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[15px] leading-tight truncate">
+                                      {officialDisplayName}
+                                    </p>
+                                    {a.tloid && (
+                                      <p className="text-[11px] font-bold text-slate-400 font-mono">
+                                        TLO ID: #{a.tloid}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider border shrink-0 ${
+                                  isActive
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-slate-50 text-slate-500 border-slate-200'
+                                }`}>
+                                  {isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+
+                              <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 text-[12px] border border-slate-100">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-black text-slate-400 uppercase tracking-wider">Capacity</span>
+                                  <span className="font-black text-[#08315F]">{a.capacity || '—'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="font-black text-slate-400 uppercase tracking-wider">Inclusive Dates</span>
+                                  <span className="font-mono font-bold text-slate-700">
+                                    {a.start_date ? String(a.start_date).split('T')[0] : '—'} → {isActive ? 'Present' : (a.end_date ? String(a.end_date).split('T')[0] : '—')}
+                                  </span>
+                                </div>
+                                {a.designation && (
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-black text-slate-400 uppercase tracking-wider">Special Desig.</span>
+                                    <span className="font-bold text-purple-700 text-right">{a.designation}</span>
+                                  </div>
+                                )}
+                                {a.remarks && (
+                                  <div className="flex justify-between items-start gap-2 pt-1 border-t border-slate-200/60">
+                                    <span className="font-black text-slate-400 uppercase tracking-wider shrink-0">Remarks</span>
+                                    <span className="text-slate-600 text-right">{a.remarks}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {a.tloid && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/official-profiling?tloid=${encodeURIComponent(a.tloid)}&TLOid=${encodeURIComponent(a.tloid)}${a.email ? `&email=${encodeURIComponent(a.email)}` : ''}`);
+                                  }}
+                                  className="w-full py-2 px-3 bg-blue-50 text-[#08315F] hover:bg-[#08315F] hover:text-white rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all border border-blue-200 cursor-pointer"
+                                >
+                                  <FiExternalLink size={13} />
+                                  <span>Open Official Profile</span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-5 sm:p-6 border-t-2 border-slate-100 bg-slate-50/50 flex justify-end items-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsHistoryModalOpen(false)}
+                    className="w-full sm:w-auto px-8 py-3 rounded-2xl bg-[#08315F] hover:bg-[#004A99] text-white font-black text-[13.5px] uppercase tracking-widest transition-all text-center cursor-pointer shadow-md shadow-blue-900/10 active:scale-95"
+                  >
+                    Close
+                  </button>
+                </div>
               </motion.div>
             </div>
           )}

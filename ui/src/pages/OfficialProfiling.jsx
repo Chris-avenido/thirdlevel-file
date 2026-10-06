@@ -4728,16 +4728,23 @@ const OfficialProfiling = () => {
 
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
-                                                                { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx' },
-                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf' },
-                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf' },
-                                                                { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf' },
-                                                            ].map(({ id, label, note, accept }) => (
+                                                                { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx', isApplication: false },
+                                                                { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf', isApplication: true },
+                                                                { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf', isApplication: true },
+                                                                { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf', isApplication: false },
+                                                            ].map(({ id, label, note, accept, isApplication }) => (
                                                                 <div key={id} className="flex flex-col justify-between gap-4 p-6 bg-slate-50/40 hover:bg-slate-50/70 border-2 border-slate-200/60 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-md min-w-0 overflow-hidden">
                                                                     <div className="flex items-center gap-3 min-w-0">
                                                                         <div className="w-10 h-10 bg-white border border-slate-200/80 rounded-xl flex items-center justify-center text-[#08315F] shadow-xs shrink-0"><FiFileText size={18} /></div>
                                                                         <div className="flex-1 min-w-0">
-                                                                            <p className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight truncate">{label}</p>
+                                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                                <p className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight truncate">{label}</p>
+                                                                                {isApplication && (
+                                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs shrink-0">
+                                                                                        Application
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
                                                                             <p className="text-[13.5px] font-bold text-slate-400 italic mt-0.5 truncate">{note}</p>
                                                                         </div>
                                                                         {profile[`${id}_binary_id`] && (
@@ -5052,7 +5059,14 @@ const OfficialProfiling = () => {
                                                                             accept: '.pdf'
                                                                         }
                                                                     ].map(({ id, binaryKey, label, accept }) => (
-                                                                        <Field key={id} label={label}>
+                                                                        <Field key={id} label={
+                                                                            <span className="inline-flex items-center gap-2 flex-wrap">
+                                                                                <span>{label}</span>
+                                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs shrink-0">
+                                                                                    Application
+                                                                                </span>
+                                                                            </span>
+                                                                        }>
                                                                             <div className="flex flex-col gap-3 p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl min-w-0 overflow-hidden">
                                                                                 {!profile[binaryKey] ? (
                                                                                     <div className="relative group/upload w-full h-11">
@@ -5861,26 +5875,31 @@ const OfficialProfiling = () => {
 
                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                                                     {[
-                                                                        { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*' },
-                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx' },
-                                                                        { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf' },
-                                                                        { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf' },
-                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },
+                                                                        { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*', isApplication: false },
+                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx', isApplication: false },
+                                                                        { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf', isApplication: true },
+                                                                        { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf', isApplication: true },
+                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf', isApplication: false },
                                                                         ...(hasPendingCases ? [
-                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf' }
+                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf', isApplication: false }
                                                                         ] : []),
                                                                         ...(isApplyingForPosition ? [
-                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf' },
-                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf' },
-                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf' },
-                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf' },
-                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf' },
+                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf', isApplication: true },
+                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf', isApplication: true },
+                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf', isApplication: true },
+                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf', isApplication: true },
+                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf', isApplication: true },
                                                                         ] : []),
                                                                     ].map(d => (
                                                                         <div key={d.key} className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 ${profile[d.dbKey] ? 'bg-emerald-50/30 border-emerald-200' : 'bg-transparent border-slate-200'}`}>
                                                                             {d.key === 'photo' ? <FiCamera size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} /> : <FiFileText size={28} className={profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-300'} />}
                                                                             <div className="text-center">
                                                                                 <p className={`text-[18px] font-black uppercase tracking-wider ${profile[d.dbKey] ? 'text-emerald-700' : 'text-slate-500'}`}>{d.label}</p>
+                                                                                {d.isApplication && (
+                                                                                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                                                                                        Application
+                                                                                    </span>
+                                                                                )}
                                                                                 <p className={`text-[13.5px] font-bold uppercase tracking-widest mt-1 ${profile[d.dbKey] ? 'text-emerald-500' : 'text-slate-400'}`}>{profile[d.dbKey] ? 'Uploaded' : 'Missing'}</p>
                                                                             </div>
 
