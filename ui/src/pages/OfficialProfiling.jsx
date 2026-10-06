@@ -170,8 +170,9 @@ const buildFullName = (profile) => {
 // Canonical positions and salary grades from public.tlo_positions (managerial: salary_grade >= 18)
 const DEFAULT_TLO_POSITIONS = [
     { position_title: 'Assistant Regional Director', salary_grade: 27 },
-    { position_title: 'Assistant Schools Division Superintendent', salary_grade: 28 },
+    { position_title: 'Assistant Schools Division Superintendent', salary_grade: 26 },
     { position_title: 'Assistant Secretary', salary_grade: 29 },
+    { position_title: 'Director II', salary_grade: 26 },
     { position_title: 'Director III', salary_grade: 27 },
     { position_title: 'Director IV', salary_grade: 28 },
     { position_title: 'Regional Director', salary_grade: 28 },
@@ -784,6 +785,99 @@ const SearchableSelect = ({ value, onChange, options, placeholder, className, di
                     ) : (
                         <div className="px-3 py-2 text-[18px] text-slate-400 italic">No matches found. Typing custom position...</div>
                     )}
+                </div>
+            )}
+        </div>
+    );
+};
+const PositionDropdownSelect = ({
+    value,
+    onChange,
+    positions,
+    tloPositions,
+    placeholder = "Select Position",
+    disabled = false,
+    theme = "blue"
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = React.useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedSg = value && value !== 'Others' ? getSalaryGradeForPosition(value, tloPositions) : null;
+    const isBlue = theme === 'blue';
+
+    return (
+        <div ref={containerRef} className={`relative w-full ${isOpen ? 'z-50' : ''}`}>
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                className={`bg-white border-2 ${isBlue ? 'border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50' : 'border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30'} rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm flex items-center justify-between text-left ${disabled ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:border-slate-300'}`}
+            >
+                <span className={value && value !== 'Others' ? "truncate uppercase font-bold text-slate-800" : "text-slate-400 font-semibold"}>
+                    {(value && value !== 'Others') ? value : placeholder}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                    {selectedSg ? (
+                        <span className={`px-2 py-0.5 rounded-md text-[11px] font-black ${isBlue ? 'bg-blue-50 text-[#0038A8] border border-blue-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                            SG {selectedSg}
+                        </span>
+                    ) : null}
+                    <FiChevronDown className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-[#0038A8]' : 'text-slate-400'}`} size={16} />
+                </div>
+            </button>
+
+            {isOpen && !disabled && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border-2 border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-64 overflow-y-auto divide-y divide-slate-100">
+                    {positions.map((pos) => {
+                        const posTitle = typeof pos === 'string' ? pos : pos.position_title;
+                        const sg = getSalaryGradeForPosition(posTitle, tloPositions, pos.salary_grade);
+                        const isSelected = value?.toUpperCase() === posTitle?.toUpperCase();
+                        return (
+                            <button
+                                key={posTitle}
+                                type="button"
+                                onClick={() => {
+                                    onChange(posTitle);
+                                    setIsOpen(false);
+                                }}
+                                className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors cursor-pointer group ${isSelected ? (isBlue ? 'bg-blue-50 font-black' : 'bg-amber-50 font-black') : 'hover:bg-slate-50'}`}
+                            >
+                                <span className={`text-[15px] font-bold uppercase ${isSelected ? (isBlue ? 'text-[#0038A8]' : 'text-amber-800') : 'text-slate-800 group-hover:text-[#0038A8]'}`}>
+                                    {posTitle}
+                                </span>
+                                {sg > 0 ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-black tracking-wider bg-blue-50 text-[#0038A8] border border-blue-200 shadow-sm shrink-0">
+                                        SG {sg}
+                                    </span>
+                                ) : null}
+                            </button>
+                        );
+                    })}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onChange('Others');
+                            setIsOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors cursor-pointer group hover:bg-amber-50/70 ${value === 'Others' ? 'bg-amber-50' : ''}`}
+                    >
+                        <span className="text-[15px] font-bold uppercase text-slate-700 italic group-hover:text-amber-700">
+                            Others
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black tracking-wider bg-amber-50 text-amber-700 border border-amber-200 shadow-sm shrink-0">
+                            <FiEdit2 size={10} /> Type Custom
+                        </span>
+                    </button>
                 </div>
             )}
         </div>
@@ -2108,10 +2202,14 @@ const OfficialProfiling = () => {
 
         // 3. Year Graduated
         if (profile.education_year_graduated) {
-            const yr = Number(profile.education_year_graduated);
-            if (isNaN(yr) || yr < 1900) {
-                Swal.fire('Validation Error', 'Year Graduated must be 1900 or later.', 'error');
-                return false;
+            const rawYr = String(profile.education_year_graduated).trim().toLowerCase();
+            const isNaYear = ['not applicable', 'n/a', 'na', 'none'].includes(rawYr) || rawYr.startsWith('not applicable');
+            if (!isNaYear) {
+                const yr = Number(profile.education_year_graduated);
+                if (isNaN(yr) || yr < 1900) {
+                    Swal.fire('Validation Error', 'Year Graduated must be 1900 or later.', 'error');
+                    return false;
+                }
             }
         }
 
@@ -3910,7 +4008,7 @@ const OfficialProfiling = () => {
                                                         </div>
 
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
-                                                            <SectionLabel color="#08315F">Previous Positions Held</SectionLabel>
+                                                            <SectionLabel color="#08315F">Employment History</SectionLabel>
                                                             <div className="space-y-3">
                                                                 <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-3 px-2">
                                                                     {['Position', 'Office / Division', 'From', 'To', 'OIC?', ''].map(h => <span key={h} className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest">{h}</span>)}
@@ -3946,15 +4044,15 @@ const OfficialProfiling = () => {
                                                                                                     )}
                                                                                                 </div>
                                                                                             ) : (
-                                                                                                <select disabled={!isEditing}
-                                                                                                    value={pos.position_name?.toUpperCase() || ''}
-                                                                                                    onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value } : x))}
-                                                                                                    className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
-                                                                                                >
-                                                                                                    <option value="">Select Position</option>
-                                                                                                    {tloPositionOptions.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
-                                                                                                    <option value="Others">Others</option>
-                                                                                                </select>
+                                                                                                <PositionDropdownSelect
+                                                                                                    disabled={!isEditing}
+                                                                                                    value={pos.position_name}
+                                                                                                    onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: val } : x))}
+                                                                                                    positions={tloPositionOptions}
+                                                                                                    tloPositions={tloPositions}
+                                                                                                    placeholder="Select Position"
+                                                                                                    theme="blue"
+                                                                                                />
                                                                                             )}
                                                                                             {pos.position_name && pos.position_name !== 'Others' && (() => {
                                                                                                 const sg = getSalaryGradeForPosition(pos.position_name, tloPositions, pos.salary_grade);
@@ -4075,15 +4173,15 @@ const OfficialProfiling = () => {
                                                                                                                 )}
                                                                                                             </div>
                                                                                                         ) : (
-                                                                                                            <select disabled={!isEditing}
-                                                                                                                value={oic.oic_position_name?.toUpperCase() || ''}
-                                                                                                                onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value } : o) } : x))}
-                                                                                                                className="bg-white border-2 border-[#FCD116]/50 focus:border-[#FBBF24] focus:ring-2 focus:ring-[#FBBF24]/30 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all truncate min-w-0 shadow-sm"
-                                                                                                            >
-                                                                                                                <option value="">Select OIC Position</option>
-                                                                                                                {tloPositionOptions.map(o => <option key={o} value={o.toUpperCase()}>{o}</option>)}
-                                                                                                                <option value="Others">Others</option>
-                                                                                                            </select>
+                                                                                                            <PositionDropdownSelect
+                                                                                                                disabled={!isEditing}
+                                                                                                                value={oic.oic_position_name}
+                                                                                                                onChange={val => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: val } : o) } : x))}
+                                                                                                                positions={tloPositionOptions}
+                                                                                                                tloPositions={tloPositions}
+                                                                                                                placeholder="Select OIC Position"
+                                                                                                                theme="amber"
+                                                                                                            />
                                                                                                         )}
                                                                                                         {oic.oic_position_name && oic.oic_position_name !== 'Others' && (() => {
                                                                                                             const oicSg = getSalaryGradeForPosition(oic.oic_position_name, tloPositions, oic.salary_grade);
@@ -6098,12 +6196,12 @@ const OfficialProfiling = () => {
                                                                             )}
                                                                         </div>
 
-                                                                        {/* Previous Positions */}
+                                                                        {/* Employment History */}
                                                                         {prevPositions.length > 0 && (
                                                                             <div className="mt-8">
                                                                                 <div className="flex items-center gap-2 mb-3">
                                                                                     <FiRotateCcw className="text-blue-500" size={18} />
-                                                                                    <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">Previous Position ({prevPositions.length})</h3>
+                                                                                    <h3 className="text-[15px] font-bold text-slate-400 uppercase tracking-widest">Employment History ({prevPositions.length})</h3>
                                                                                 </div>
                                                                                 <div className="pl-6 space-y-2">
                                                                                     {prevPositions.map((p, i) => (
@@ -6373,7 +6471,7 @@ const OfficialProfiling = () => {
                                                                         {prevPositions.length > 0 && (
                                                                             <div className="border-t-2 border-slate-200">
                                                                                 <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
-                                                                                    Previous Positions Held ({prevPositions.length})
+                                                                                    Employment History ({prevPositions.length})
                                                                                 </div>
                                                                                 <div className="overflow-x-auto">
                                                                                     <table className="w-full text-left border-collapse text-xs sm:text-sm">

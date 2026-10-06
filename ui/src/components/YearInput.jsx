@@ -12,13 +12,19 @@ const YearInput = ({
     label = "",
     errorText = "",
     disabled = false,
-    className = ""
+    className = "",
+    showNotApplicable = true,
+    notApplicableText = "Not Applicable (if currently ongoing)"
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [dropUp, setDropUp] = useState(false);
     const [alignRight, setAlignRight] = useState(true);
     const currentYear = new Date().getFullYear();
-    const selectedYear = value ? parseInt(value, 10) : null;
+    const selectedYear = value && !isNaN(parseInt(value, 10)) ? parseInt(value, 10) : null;
+    const isNotApplicable = typeof value === 'string' && (
+        ['not applicable', 'n/a', 'na'].includes(value.trim().toLowerCase()) ||
+        value.trim().toLowerCase().startsWith('not applicable')
+    );
 
     // Decade page: show 12 years at a time
     const initialDecadeStart = selectedYear
@@ -40,7 +46,7 @@ const YearInput = ({
                 setDropUp(false);
             }
 
-            if (rect.right < 320 && (window.innerWidth - rect.left) >= 300) {
+            if (rect.right < 340 && (window.innerWidth - rect.left) >= 320) {
                 setAlignRight(false);
             } else {
                 setAlignRight(true);
@@ -98,10 +104,10 @@ const YearInput = ({
                     ${disabled ? 'bg-slate-50 text-slate-700 cursor-not-allowed border-slate-200' : 'text-slate-800'} ${className}`}
             >
                 <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-                <span className={`truncate leading-normal ${selectedYear ? (disabled ? 'text-slate-700 font-bold' : 'text-slate-800 font-bold') : 'text-slate-400 font-medium'}`}>
-                    {selectedYear || placeholder}
+                <span className={`truncate leading-normal ${value ? (disabled ? 'text-slate-700 font-bold' : 'text-slate-800 font-bold') : 'text-slate-400 font-medium'}`}>
+                    {value || placeholder}
                 </span>
-                {selectedYear && !disabled && (
+                {value && !disabled && (
                     <button
                         type="button"
                         onClick={handleClear}
@@ -122,7 +128,7 @@ const YearInput = ({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: dropUp ? 8 : -8, scale: 0.96 }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className={`absolute z-[100] ${dropUp ? 'bottom-full mb-2' : 'top-full mt-2'} ${alignRight ? 'right-0' : 'left-0'} w-72 sm:w-80 max-w-[calc(100vw-2.5rem)] bg-white rounded-2xl shadow-2xl shadow-slate-900/20 border-2 border-slate-200 overflow-hidden flex flex-col max-h-[min(380px,calc(100vh-2rem))]`}
+                        className={`absolute z-[100] ${dropUp ? 'bottom-full mb-2' : 'top-full mt-2'} ${alignRight ? 'right-0' : 'left-0'} w-80 sm:w-88 max-w-[calc(100vw-2.5rem)] bg-white rounded-2xl shadow-2xl shadow-slate-900/20 border-2 border-slate-200 overflow-hidden flex flex-col max-h-[min(400px,calc(100vh-2rem))]`}
                     >
                         {/* Header with navigation */}
                         <div className="flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-[#08315F] to-[#0A4A8A] shrink-0">
@@ -150,7 +156,7 @@ const YearInput = ({
                         {/* Year grid */}
                         <div className="grid grid-cols-3 gap-1.5 p-2.5 overflow-y-auto">
                             {yearsGrid.map(yr => {
-                                const isSelected = yr === selectedYear;
+                                const isSelected = yr === selectedYear && !isNotApplicable;
                                 const isCurrent = yr === currentYear;
                                 const isDisabled = yr < min || yr > max;
 
@@ -178,18 +184,33 @@ const YearInput = ({
                         </div>
 
                         {/* Quick select footer */}
-                        <div className="flex items-center justify-between px-3 pb-2.5 pt-1.5 border-t border-slate-100 shrink-0 bg-slate-50/50">
-                            <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handleSelect(currentYear); }}
-                                className="text-[12px] sm:text-[13px] font-bold text-[#08315F] uppercase tracking-wider hover:underline transition-all px-2 py-1 rounded-lg hover:bg-[#08315F]/5 cursor-pointer"
-                            >
-                                This Year
-                            </button>
+                        <div className="flex items-center justify-between px-3 pb-2.5 pt-1.5 border-t border-slate-100 shrink-0 bg-slate-50/50 gap-2">
+                            {showNotApplicable ? (
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleSelect('Not Applicable'); }}
+                                    className={`text-[11px] sm:text-[12px] font-bold transition-all px-2.5 py-1 rounded-lg cursor-pointer truncate ${
+                                        isNotApplicable
+                                            ? 'bg-[#08315F] text-white shadow-sm'
+                                            : 'text-[#08315F] hover:bg-[#08315F]/10 hover:underline'
+                                    }`}
+                                    title={notApplicableText}
+                                >
+                                    {notApplicableText}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleSelect(currentYear); }}
+                                    className="text-[12px] sm:text-[13px] font-bold text-[#08315F] uppercase tracking-wider hover:underline transition-all px-2 py-1 rounded-lg hover:bg-[#08315F]/5 cursor-pointer"
+                                >
+                                    This Year
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); handleClear(e); }}
-                                className="text-[12px] sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider hover:text-red-500 hover:underline transition-all px-2 py-1 rounded-lg hover:bg-red-50 cursor-pointer"
+                                className="text-[12px] sm:text-[13px] font-bold text-slate-400 uppercase tracking-wider hover:text-red-500 hover:underline transition-all px-2 py-1 rounded-lg hover:bg-red-50 cursor-pointer shrink-0"
                             >
                                 Clear
                             </button>

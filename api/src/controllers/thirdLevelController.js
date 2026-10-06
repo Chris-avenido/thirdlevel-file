@@ -810,10 +810,21 @@ export const updateProfile = async (req, res) => {
       req.body.is_oic = normalizedPosition.is_oic;
     }
 
+    const isNaYear = (val) => {
+      if (!val) return true;
+      const s = String(val).trim().toLowerCase();
+      return s === 'not applicable' || s === 'n/a' || s === 'na' || s === 'none' || s === 'currently ongoing' || s.startsWith('not applicable');
+    };
+
     const validateYear = (yr, max) => {
       if (!yr) return;
-      const num = parseInt(yr, 10);
-      if (isNaN(num) || num > max) throw new Error(`Year ${yr} cannot be greater than ${max}`);
+      const lines = String(yr).split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || isNaYear(trimmed)) continue;
+        const num = parseInt(trimmed, 10);
+        if (isNaN(num) || num > max) throw new Error(`Year ${trimmed} cannot be greater than ${max}`);
+      }
     };
     const currentYear = new Date().getFullYear();
 
@@ -831,10 +842,13 @@ export const updateProfile = async (req, res) => {
     validateYear(req.body.master_year, currentYear);
     validateYear(req.body.doctorate_year, currentYear);
 
-    if (req.body.bachelor_year && req.body.master_year && parseInt(req.body.master_year) <= parseInt(req.body.bachelor_year)) {
+    const bYrNum = parseInt(req.body.bachelor_year);
+    const mYrNum = parseInt(req.body.master_year);
+    const dYrNum = parseInt(req.body.doctorate_year);
+    if (!isNaN(bYrNum) && !isNaN(mYrNum) && mYrNum <= bYrNum) {
       throw new Error("Master's year must be greater than Bachelor's year");
     }
-    if (req.body.master_year && req.body.doctorate_year && parseInt(req.body.doctorate_year) <= parseInt(req.body.master_year)) {
+    if (!isNaN(mYrNum) && !isNaN(dYrNum) && dYrNum <= mYrNum) {
       throw new Error("Doctorate year must be greater than Master's year");
     }
 
