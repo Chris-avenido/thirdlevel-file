@@ -13,6 +13,7 @@ import {
   resolveSourceTable
 } from '../services/tloProfileService.js';
 import { sendOfficialApprovalEmail, sendOfficialRejectionEmail } from '../services/emailService.js';
+import { parsePdsDocument } from '../utils/pdsPdfParser.js';
 
 let oicSchemaReady = false;
 const optionalColumnExpressionCache = new Map();
@@ -730,12 +731,30 @@ export const uploadDocument = async (req, res) => {
       await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [finalBlobUrlOrPath, binary_id]);
     }
 
+    let parsedPds = null;
+    let parseSummary = null;
+    if (docType === 'pds') {
+      try {
+        console.log(`[Upload] Parsing PDS file for auto-population...`);
+        const pdsParseRes = await parsePdsDocument(req.file.buffer, req.file.originalname);
+        if (pdsParseRes && pdsParseRes.success && pdsParseRes.data) {
+          parsedPds = pdsParseRes.data;
+          parseSummary = pdsParseRes.summary;
+          console.log(`[Upload] PDS parsed successfully. Address: ${parsedPds.permanent_address ? 'Yes' : 'No'}, Eligibilities: ${parsedPds.eligibilities?.length || 0}, Positions: ${parsedPds.previous_positions?.length || 0}`);
+        }
+      } catch (pErr) {
+        console.warn(`[Upload] PDS parse warning: ${pErr.message}`);
+      }
+    }
+
     res.json({
       success: true,
       binary_id,
       filePath: localFolderPath,
       blobUrl: azureData?.blobUrl || null,
       message: `${docType} uploaded successfully`,
+      parsed_pds: parsedPds,
+      parse_summary: parseSummary,
       ...(azureData || {})
     });
   } catch (err) {
@@ -743,6 +762,20 @@ export const uploadDocument = async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
+  }
+};
+
+export const parsePdsOnly = async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file provided' });
+  try {
+    const pdsParseRes = await parsePdsDocument(req.file.buffer, req.file.originalname);
+    return res.json({
+      success: true,
+      parsed_pds: pdsParseRes?.data || null,
+      summary: pdsParseRes?.summary || null
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 };
 

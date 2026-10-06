@@ -18,6 +18,7 @@ import newLogo from '../assets/modern_logo.png';
 import depedLogo from '../assets/DepED-Logo.png';
 import { apiUrl } from '../utils/api';
 import { compressImageClientSide } from '../utils/imageCompressor';
+import { parsePDSFile } from '../utils/pdsParser';
 import ModernDatePicker from '../components/ModernDatePicker';
 import YearInput from '../components/YearInput';
 import Swal from 'sweetalert2';
@@ -832,6 +833,7 @@ const OfficialProfiling = () => {
     const [saved, setSaved] = useState(false);
     const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
     const [isEditing, setIsEditing] = useState(isTlo);
+    const [isDraggingPds, setIsDraggingPds] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSuffixNA, setIsSuffixNA] = useState(false);
     const [isAchievementsNA, setIsAchievementsNA] = useState(false);
@@ -2611,6 +2613,118 @@ const OfficialProfiling = () => {
             }
         }
 
+        const applyParsedPds = (d) => {
+            if (!d) return [];
+            const changes = [];
+
+            // 1. Personal Info: Permanent Address & Phone Number
+            setProfile(prev => {
+                const updated = { ...prev };
+                if (d.permanent_address) {
+                    updated.permanent_address = d.permanent_address;
+                    changes.push('Permanent Address');
+                }
+                if (d.temporary_address && !updated.temporary_address) {
+                    updated.temporary_address = d.temporary_address;
+                }
+                if (d.phone_number) {
+                    updated.alt_contact_details_1 = d.phone_number;
+                    updated.contact_details = d.phone_number;
+                    changes.push('Phone Number');
+                }
+                if (d.email && !updated.email) updated.email = d.email;
+                if (d.date_of_birth && !updated.date_of_birth) updated.date_of_birth = d.date_of_birth;
+                if (d.civil_status && !updated.civil_status) updated.civil_status = d.civil_status;
+                if (d.gender && !updated.gender) updated.gender = d.gender;
+
+                // 2. Eligibility: Other Civil Service Eligibility
+                if (Array.isArray(d.eligibilities) && d.eligibilities.length > 0) {
+                    updated.eligibilities = d.eligibilities;
+                    changes.push(`Other Civil Service Eligibility (${d.eligibilities.length} records)`);
+                }
+
+                // 4. Educational Attainment: Bachelor, Master, Doctorate, Other Courses
+                if (d.bachelor_degree) {
+                    updated.bachelor_degree = d.bachelor_degree;
+                    updated.bachelor_year = d.bachelor_year || '';
+                    changes.push('Bachelor Degree');
+                }
+                if (d.master_degree) {
+                    updated.master_degree = d.master_degree;
+                    updated.master_year = d.master_year || '';
+                    changes.push('Master Degree');
+                }
+                if (d.doctorate_degree) {
+                    updated.doctorate_degree = d.doctorate_degree;
+                    updated.doctorate_year = d.doctorate_year || '';
+                    changes.push('Doctorate Degree');
+                }
+                if (Array.isArray(d.other_courses) && d.other_courses.length > 0) {
+                    updated.other_courses = d.other_courses;
+                }
+
+                return updated;
+            });
+
+            // 3. Experience: Previous Positions Held
+            if (Array.isArray(d.previous_positions) && d.previous_positions.length > 0) {
+                setPrevPositions(d.previous_positions);
+                changes.push(`Previous Positions Held (${d.previous_positions.length} records)`);
+            }
+
+            // Activate editing mode to let the user review and save changes
+            setIsEditing(true);
+
+            if (changes.length > 0) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'PDS Parsed Successfully!',
+                    html: `<div style="text-align: left; font-size: 14px;">
+                        <p style="margin-bottom: 8px; font-weight: bold; color: #08315F;">The following sections were auto-populated:</p>
+                        <ul style="list-style-type: disc; padding-left: 20px; line-height: 1.6;">
+                            ${changes.map(c => `<li>${c}</li>`).join('')}
+                        </ul>
+                        <p style="margin-top: 10px; color: #64748b; font-size: 12px;">Review the tabs and click <b>Save Profile Changes</b> when ready.</p>
+                    </div>`,
+                    confirmButtonColor: '#08315F'
+                });
+            }
+            return changes;
+        };
+
+        // ── PDS Auto-Parsing on Upload/Drop ──
+        if (docType === 'pds') {
+            const isExcelOrSpreadsheet = file.name.match(/\.(xlsx|xls|csv)$/i) ||
+                file.type.includes('spreadsheet') ||
+                file.type.includes('excel') ||
+                file.type.includes('csv');
+
+            if (isExcelOrSpreadsheet) {
+                try {
+                    Swal.fire({
+                        title: 'Parsing PDS...',
+                        text: 'Extracting address, contact, eligibility, experience, and education details...',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    const parsed = await parsePDSFile(file);
+                    if (parsed && parsed.success && parsed.data) {
+                        applyParsedPds(parsed.data);
+                    }
+                } catch (parseErr) {
+                    console.warn('[PDS Parser] Parse error (proceeding with file upload):', parseErr);
+                }
+            } else {
+                Swal.fire({
+                    title: 'Uploading & Processing PDS...',
+                    text: 'Extracting address, contact, eligibility, experience, and education from document...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+        }
+
         setUploadingDocs(prev => ({ ...prev, [docType]: true }));
         try {
             let fileToUpload = file;
@@ -2649,6 +2763,12 @@ const OfficialProfiling = () => {
                 setUploadedFileNames(prev => ({ ...prev, [docType]: file.name }));
                 setSaved(true);
                 setTimeout(() => setSaved(false), 3000);
+
+                if (docType === 'pds' && data.parsed_pds) {
+                    applyParsedPds(data.parsed_pds);
+                } else if (docType !== 'pds') {
+                    Swal.close();
+                }
             } else {
                 Swal.fire('Notice', data.error || 'Upload failed.', 'info');
             }
@@ -2656,6 +2776,38 @@ const OfficialProfiling = () => {
             Swal.fire('Notice', 'Upload failed: ' + err.message, 'info');
         } finally {
             setUploadingDocs(prev => ({ ...prev, [docType]: false }));
+        }
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+            setIsDraggingPds(true);
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            setIsDraggingPds(false);
+        }
+    };
+
+    const handleGlobalDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingPds(false);
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            await handleFileUpload(file, 'pds');
         }
     };
 
@@ -2773,8 +2925,46 @@ const OfficialProfiling = () => {
     // ── MAIN PROFILING FORM ──
     return (
         <PageTransition>
-            <div className="min-h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
-                {/* Ambient Decorative Background Elements */}
+            <div
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleGlobalDrop}
+                className="min-h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden"
+            >
+                {/* ── Global PDS Drag-and-Drop Overlay ── */}
+                <AnimatePresence>
+                    {isDraggingPds && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[9999] bg-[#08315F]/85 backdrop-blur-md flex flex-col items-center justify-center p-6 sm:p-10 pointer-events-none"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.9, y: 20 }}
+                                className="bg-white rounded-3xl p-8 sm:p-12 max-w-xl w-full border-4 border-dashed border-[#0038A8] shadow-2xl flex flex-col items-center text-center space-y-5 pointer-events-auto"
+                            >
+                                <div className="w-24 h-24 rounded-3xl bg-blue-50 text-[#0038A8] border-2 border-blue-200 flex items-center justify-center shadow-inner animate-bounce">
+                                    <FiUpload size={44} />
+                                </div>
+                                <div className="space-y-2">
+                                    <h2 className="text-[26px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-wide">
+                                        Drop Personal Data Sheet (PDS)
+                                    </h2>
+                                    <p className="text-[16px] font-bold text-slate-600 leading-relaxed max-w-md mx-auto">
+                                        Release your CS Form 212 / PDS (Excel / PDF / Word) here to auto-populate your Permanent Address, Phone Number, Eligibilities, Previous Positions, and Educational Attainment.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-[13px] font-black uppercase tracking-wider">
+                                    <FiCheckCircle size={16} /> Auto-Parsing & Profile Sync
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* ── Mobile Sidebar Drawer ── */}
                 <AnimatePresence>
@@ -4728,7 +4918,7 @@ const OfficialProfiling = () => {
 
                                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                             {[
-                                                                { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'PDF/Word - properly signed & notarized', accept: '.pdf,.doc,.docx' },
+                                                                { id: 'pds', label: 'Personal Data Sheet (PDS)', note: 'Excel/PDF/Word - CS Form 212', accept: '.xlsx,.xls,.csv,.pdf,.doc,.docx' },
                                                                 { id: 'wes', label: 'Accomplished Work Experience Sheet (WES) notarized', note: 'PDF - properly signed & notarized', accept: '.pdf' },
                                                                 { id: 'cv', label: 'Comprehensive Curriculum Vitae', note: 'PDF format', accept: '.pdf' },
                                                                 { id: 'service_records', label: 'Service Records', note: 'PDF - certified true copy', accept: '.pdf' },
@@ -5862,7 +6052,7 @@ const OfficialProfiling = () => {
                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                                                     {[
                                                                         { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*' },
-                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.pdf,.doc,.docx' },
+                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'PDS', accept: '.xlsx,.xls,.csv,.pdf,.doc,.docx' },
                                                                         { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf' },
                                                                         { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf' },
                                                                         { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf' },

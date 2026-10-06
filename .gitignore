@@ -40,6 +40,7 @@ stride.conf.patch
 *.csv
 *.xlsx
 *.py
+!api/src/utils/pds_extractor.py
 __pycache__/
 .claude/
 desktop.ini
