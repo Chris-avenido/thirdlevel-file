@@ -52,10 +52,12 @@ export const login = async (req, res) => {
       return res.status(404).json({ error: 'Account not found for this portal. Please register or verify your role.' });
     }
 
-    let masterRes = await pool.query(
-      'SELECT "TLOid", first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1',
-      [normalizedEmail]
-    );
+    let masterRes = await pool.query(`
+      SELECT "TLOid", first_name, last_name, status 
+      FROM third_level_official_masterlist 
+      WHERE LOWER(email) = $1 AND status != 'Inactive'
+      ORDER BY created_at DESC NULLS LAST, "TLOid" DESC
+    `, [normalizedEmail]);
 
     // If direct match is not found or is 'Reconciled', check if this email is linked as an alternate login email on an Active official
     if (masterRes.rows.length === 0 || masterRes.rows[0].status === 'Reconciled') {
@@ -67,8 +69,8 @@ export const login = async (req, res) => {
       if (altRes.rows.length === 1) {
         masterRes = altRes;
       } else if (altRes.rows.length > 1) {
-        return res.status(409).json({ 
-          error: 'Identity collision detected: this email is linked to multiple active official records. Please contact Central Office Administrator.' 
+        return res.status(409).json({
+          error: 'Identity collision detected: this email is linked to multiple active official records. Please contact Central Office Administrator.'
         });
       }
     }
@@ -85,8 +87,8 @@ export const login = async (req, res) => {
       [normalizedEmail]
     );
 
-    const registryUser = (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled') 
-      ? masterRes.rows[0] 
+    const registryUser = (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled')
+      ? masterRes.rows[0]
       : (stagingRes.rows[0] || masterRes.rows[0]);
 
     let role = centralUser.central_role;

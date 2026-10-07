@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-10-07 — Masterlist Profile Resolution by Latest `created_at` (`loginController.js` & `thirdLevelController.js`)
+
+### Profile Resolution (`loginController.js` & `thirdLevelController.js`)
+- **Resolved Duplicate Records by Latest Timestamp**:
+  - Configured [loginController.js](file:///e:/christop/staging/api/src/controllers/loginController.js) and [thirdLevelController.js](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js) (`getByEmail`) to order masterlist candidate records using:
+    ```sql
+    ORDER BY created_at DESC NULLS LAST, "TLOid" DESC
+    ```
+  - Where duplicate records exist for the same email address with `status != 'Inactive'`, the system deterministically resolves and displays the most recently created record (e.g. the latest registration / submission) without mutating or merging data in-flight.
+
+---
+
 ## 2026-10-07 — Bugfix: Identity Reconciliation UUID Syntax Error (`thirdLevelController.js`)
 
 ### Process Registration (`thirdLevelController.js`)

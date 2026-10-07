@@ -454,7 +454,7 @@ export const getByEmail = async (req, res) => {
       );
     } else if (email) {
       masterRes = await pool.query(
-        `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY "TLOid" ASC`,
+        `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY created_at DESC NULLS LAST, "TLOid" DESC`,
         [email, isTest]
       );
     }
@@ -464,7 +464,7 @@ export const getByEmail = async (req, res) => {
       let allSharingRes = masterRes;
       if (tloid && targetEmail) {
         allSharingRes = await pool.query(
-          `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY "TLOid" ASC`,
+          `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY created_at DESC NULLS LAST, "TLOid" DESC`,
           [targetEmail, isTest]
         );
       }
@@ -496,7 +496,7 @@ export const getByEmail = async (req, res) => {
         });
       }
 
-      const activeRecord = tloid 
+      const activeRecord = tloid
         ? allSharingRes.rows.find(r => r.TLOid === tloid) || masterRes.rows[0]
         : masterRes.rows[0];
 
@@ -1111,12 +1111,12 @@ export const updateProfile = async (req, res) => {
 
         const norm = (v) => (v === null || v === undefined || v === '') ? '' : String(v).trim().toUpperCase();
         const incomingPosTitle = norm(req.body.position_title);
-        const incomingDesig    = norm(req.body.designation);
-        const incomingRegion   = norm(req.body.region);
+        const incomingDesig = norm(req.body.designation);
+        const incomingRegion = norm(req.body.region);
         const incomingDivision = norm(req.body.division);
-        const incomingOffice   = req.body.office ? req.body.office.trim() : null;
-        const incomingStrand   = req.body.strand ? req.body.strand.trim() : null;
-        const incomingIsOic    = Boolean(req.body.is_oic || (req.body.designation && req.body.designation.toUpperCase().includes('OIC')));
+        const incomingOffice = req.body.office ? req.body.office.trim() : null;
+        const incomingStrand = req.body.strand ? req.body.strand.trim() : null;
+        const incomingIsOic = Boolean(req.body.is_oic || (req.body.designation && req.body.designation.toUpperCase().includes('OIC')));
 
         if (incomingPosTitle || incomingDesig || incomingRegion || incomingDivision) {
           // Resolve numeric tlo_masterlist_id for this TLOid
@@ -1242,7 +1242,7 @@ export const updateProfile = async (req, res) => {
         }
         await client.query(`RELEASE SAVEPOINT ${sp_assign}`);
       } catch (assignErr) {
-        await client.query(`ROLLBACK TO SAVEPOINT ${sp_assign}`).catch(() => {});
+        await client.query(`ROLLBACK TO SAVEPOINT ${sp_assign}`).catch(() => { });
         console.warn(`[updateProfile] Assignment tracking skipped: ${assignErr.message}`);
       }
     }
@@ -2130,7 +2130,7 @@ export const processRegistration = async (req, res) => {
           `, [regMasterlistId, candMasterlistId]);
           await client.query('RELEASE SAVEPOINT sp_tlo_profile');
         } catch (profErr) {
-          await client.query('ROLLBACK TO SAVEPOINT sp_tlo_profile').catch(() => {});
+          await client.query('ROLLBACK TO SAVEPOINT sp_tlo_profile').catch(() => { });
         }
       }
 
@@ -3718,8 +3718,8 @@ export const adminAction = async (req, res) => {
             ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, updated_at, effectivity_date, updated_by)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Active', $13, NOW(), NULL, $14)
         `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
-            official.position_title, official.office, official.division, official.region, official.strand,
-            official.email, official.contact_details, justification || 'Cancelled scheduled action', updatedBy]);
+        official.position_title, official.office, official.division, official.region, official.strand,
+        official.email, official.contact_details, justification || 'Cancelled scheduled action', updatedBy]);
 
       } else {
         // Path B: Post-maturity / immediate vacancy cancellation (from 'VACANT' or 'Inactive')
@@ -3851,7 +3851,7 @@ export const adminAction = async (req, res) => {
               reassign_assignee_tloid = NULL
           WHERE "TLOid" = $7 AND is_testaccount = $8
         `, [latestAction.first_name, latestAction.last_name, latestAction.middle_name, latestAction.suffix,
-            latestAction.email, latestAction.contact_details, TLOid, isTest]);
+        latestAction.email, latestAction.contact_details, TLOid, isTest]);
 
         // Insert cancellation audit record:
         await client.query(`
@@ -3859,8 +3859,8 @@ export const adminAction = async (req, res) => {
             ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, assignment, updated_at, effectivity_date, updated_by)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Active', $13, $14, NOW(), NULL, $15)
         `, [TLOid, latestAction.first_name, latestAction.last_name, latestAction.middle_name, latestAction.suffix,
-            latestAction.position_title, latestAction.office, latestAction.division, latestAction.region, latestAction.strand,
-            latestAction.email, latestAction.contact_details, justification || 'Cancelled vacancy / resignation', targetAssignId.toString(), updatedBy]);
+          latestAction.position_title, latestAction.office, latestAction.division, latestAction.region, latestAction.strand,
+          latestAction.email, latestAction.contact_details, justification || 'Cancelled vacancy / resignation', targetAssignId.toString(), updatedBy]);
       }
 
     } else if (action === 'vacate') {
@@ -3890,8 +3890,8 @@ export const adminAction = async (req, res) => {
             ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, strand, email, contact_details, status, remarks, updated_at, effectivity_date, vacate_reason, updated_by)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), ${effTs}, $13, $14)
         `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
-            official.position_title, official.office, official.strand, official.email, official.contact_details,
-            futureStatus, justification || (vacateReason || 'Administrative action'), vacateReason || null, updatedBy]);
+        official.position_title, official.office, official.strand, official.email, official.contact_details,
+          futureStatus, justification || (vacateReason || 'Administrative action'), vacateReason || null, updatedBy]);
 
       } else {
         // Immediate Vacancy / Resignation
@@ -3971,9 +3971,9 @@ export const adminAction = async (req, res) => {
             ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, assignment, updated_at, effectivity_date, vacate_reason, updated_by)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), ${effTs}, $16, $17)
         `, [official.TLOid, official.first_name, official.last_name, official.middle_name, official.suffix,
-            official.position_title, official.office, official.division, official.region, official.strand,
-            official.email, official.contact_details, targetStatus, justification || (vacateReason || 'Administrative action'),
-            activeAssignmentId ? activeAssignmentId.toString() : null, vacateReason || null, updatedBy]);
+        official.position_title, official.office, official.division, official.region, official.strand,
+        official.email, official.contact_details, targetStatus, justification || (vacateReason || 'Administrative action'),
+        activeAssignmentId ? activeAssignmentId.toString() : null, vacateReason || null, updatedBy]);
       }
 
     } else if (action === 'succeed') {
