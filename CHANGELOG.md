@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-10-07 — Bugfix: Identity Reconciliation UUID Syntax Error (`thirdLevelController.js`)
+
+### Process Registration (`thirdLevelController.js`)
+- **Fixed `invalid input syntax for type uuid: ""` on Identity Reconciliation**:
+  - **Root Cause**: In `processRegistration` under `action === 'reconcile'`, the dynamic SQL `UPDATE` statement that copies data from the duplicate candidate official into the activated registration record was wrapping UUID and Date columns (`deped_clearance_binary_id`, `executive_summary_binary_id`, `sandiganbayan_clearance_binary_id`, `nbi_clearance_binary_id`, `csc_clearance_binary_id`, `ombudsman_clearance_binary_id`, and `date_of_assignment`) with `NULLIF(cand.col, '')`.
+  - In PostgreSQL, evaluating `NULLIF(uuid_col, '')` causes an implicit cast `''::uuid`, triggering `ERROR: invalid input syntax for type uuid: ""` whenever the candidate column is evaluated.
+  - **Fix**: Replaced `COALESCE(NULLIF(cand.col, ''), target.col)` with direct `COALESCE(cand.col, target.col)` for all UUID clearance/binary columns and date fields (matching the safe implementation used for `photo_binary_id`, `pds_binary_id`, `wes_binary_id`, `cv_binary_id`, `service_records_binary_id`, and `reassignment_order_binary_id`).
+
+---
+
 ## 2026-10-07 — Profile Summary: Retain Only Table View (`OfficialProfiling.jsx`)
 
 ### Profile Summary Tab (`OfficialProfiling.jsx`)
