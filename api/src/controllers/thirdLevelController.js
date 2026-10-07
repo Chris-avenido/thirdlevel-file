@@ -964,7 +964,7 @@ export const updateProfile = async (req, res) => {
       'performance_rating_ipcrf', 'performance_rating_cespes',
       'is_oic', 'unique_number', 'employment_status',
       'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-      'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
+      'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id', 'reassignment_order_binary_id',
       'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'dpa_consented_at', 'profiling_status', 'target_TLOid', 'application_status', 'position_applied_for',
       'is_applying_for_position'
     ];
@@ -986,7 +986,7 @@ export const updateProfile = async (req, res) => {
     const DO_NOT_UPPERCASE = new Set([
       'email', 'alt_email_1', 'alt_email_2', 'contact_details', 'alt_contact_details_1', 'alt_contact_details_2',
       'password', 'password_hash', 'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-      'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
+      'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id', 'reassignment_order_binary_id',
       'target_tloid', 'application_status', 'profiling_status', 'designation', 'suffix', 'is_applying_for_position'
     ]);
 

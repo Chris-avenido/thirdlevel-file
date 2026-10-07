@@ -1026,6 +1026,7 @@ const OfficialProfiling = () => {
         csc_clearance_binary_id: null,
         ombudsman_clearance_binary_id: null,
         executive_summary_binary_id: null,
+        reassignment_order_binary_id: null,
         updated_at: null,
     });
     const [prevPositions, setPrevPositions] = useState([]);
@@ -1658,20 +1659,67 @@ const OfficialProfiling = () => {
     };
 
     const handleExportAllDocs = async () => {
+        const cleanPart = (str) => (str || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+
         const documentDefinitions = [
-            { key: 'wes_binary_id', label: 'Work_Experience_Sheet_WES', defaultExt: '.pdf' },
+            { key: 'pds_binary_id', label: 'Personal_Data_Sheet_PDS', defaultExt: '.pdf' },
             { key: 'service_records_binary_id', label: 'Service_Records', defaultExt: '.pdf' },
+            { key: 'wes_binary_id', label: 'Work_Experience_Sheet_WES', defaultExt: '.pdf' },
             { key: 'cv_binary_id', label: 'Curriculum_Vitae_CV', defaultExt: '.pdf' },
-            { key: 'pds_binary_id', label: 'Personal_Data_Sheet_PDS', defaultExt: '.pdf' }
+            { key: 'ombudsman_clearance_binary_id', label: 'Clearance_Ombudsman', defaultExt: '.pdf' },
+            { key: 'sandiganbayan_clearance_binary_id', label: 'Clearance_Sandiganbayan', defaultExt: '.pdf' },
+            { key: 'csc_clearance_binary_id', label: 'Clearance_CSC', defaultExt: '.pdf' },
+            { key: 'nbi_clearance_binary_id', label: 'Clearance_NBI', defaultExt: '.pdf' },
+            { key: 'deped_clearance_binary_id', label: 'Clearance_DepEd_RO', defaultExt: '.pdf' },
+            { key: 'executive_summary_binary_id', label: 'Executive_Summary_of_Cases', defaultExt: '.pdf' },
+            { key: 'profile_word_binary_id', label: 'Profile_Document_Word', defaultExt: '.docx' },
+            { key: 'profile_ppt_binary_id', label: 'Profile_Document_PPT', defaultExt: '.pptx' },
+            { key: 'reassignment_order_binary_id', label: 'Reassignment_Special_Order', defaultExt: '.pdf' }
         ];
 
-        const uploadedDocs = documentDefinitions.filter(d => profile[d.key]);
+        const docsToExport = [];
 
-        if (uploadedDocs.length === 0) {
+        // 1. Add all profile document definitions that have recorded binary IDs
+        documentDefinitions.forEach(d => {
+            const bId = profile[d.key];
+            if (bId) {
+                docsToExport.push({
+                    binaryId: bId,
+                    label: d.label,
+                    defaultExt: d.defaultExt
+                });
+            }
+        });
+
+        // 2. Include any additional special orders attached to position history
+        (prevPositions || []).forEach((p, i) => {
+            if (p && p.reassignment_order_binary_id) {
+                const titlePart = cleanPart(p.position_name || p.position_title || `Position_${i + 1}`);
+                docsToExport.push({
+                    binaryId: p.reassignment_order_binary_id,
+                    label: `Special_Order_${titlePart}`,
+                    defaultExt: '.pdf'
+                });
+            }
+        });
+
+        // 3. Include any additional special orders attached to active assignments
+        (activeAssignments || []).forEach((a, i) => {
+            if (a && a.reassignment_order_binary_id) {
+                const titlePart = cleanPart(a.position_title || a.designation || `Assignment_${i + 1}`);
+                docsToExport.push({
+                    binaryId: a.reassignment_order_binary_id,
+                    label: `Special_Order_${titlePart}`,
+                    defaultExt: '.pdf'
+                });
+            }
+        });
+
+        if (docsToExport.length === 0) {
             Swal.fire({
                 icon: 'info',
-                title: 'No Work Experience Documents',
-                text: 'There are no uploaded work experience documents available in the blob for this official.',
+                title: 'No Recorded Documents',
+                text: 'There are no uploaded documents recorded in storage for this official.',
                 confirmButtonColor: '#08315F'
             });
             return;
@@ -1680,8 +1728,8 @@ const OfficialProfiling = () => {
         setExportingDocs(true);
 
         Swal.fire({
-            title: 'Exporting Work Experience Documents',
-            html: `Packaging <b>${uploadedDocs.length}</b> work experience document(s) from the blob into RAR archive...<br><span class="text-xs text-slate-500 font-semibold mt-2 inline-block">Please wait while files are being retrieved and compressed...</span>`,
+            title: 'Exporting Official Documents',
+            html: `Packaging <b>${docsToExport.length}</b> recorded document(s) from storage into a ZIP archive...<br><span class="text-xs text-slate-500 font-semibold mt-2 inline-block">Please wait while files are being retrieved and compressed...</span>`,
             allowOutsideClick: false,
             allowEscapeKey: false,
             didOpen: () => {
@@ -1692,6 +1740,7 @@ const OfficialProfiling = () => {
         try {
             const zip = new JSZip();
             let successCount = 0;
+            const addedFileNames = new Set();
 
             const getDocExtension = (mimeType, defaultExt = '.pdf') => {
                 if (!mimeType) return defaultExt;
@@ -1714,32 +1763,51 @@ const OfficialProfiling = () => {
             const activeToken = token || localStorage.getItem('token');
             const headers = activeToken ? { 'Authorization': `Bearer ${activeToken}` } : {};
 
+            // Fetch all unique binary IDs efficiently with caching
+            const uniqueBinaryIds = Array.from(new Set(docsToExport.map(d => d.binaryId)));
+            const binaryCache = new Map();
+
             await Promise.all(
-                uploadedDocs.map(async (doc) => {
-                    const binaryId = profile[doc.key];
+                uniqueBinaryIds.map(async (binaryId) => {
                     try {
                         const response = await fetch(apiUrl(`/api/binary/${binaryId}`), { headers });
-                        if (!response.ok) {
-                            console.warn(`Failed to fetch binary for ${doc.label} (${binaryId}): status ${response.status}`);
-                            return;
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const contentType = response.headers.get('Content-Type') || blob.type || '';
+                            binaryCache.set(binaryId, { blob, contentType });
+                        } else {
+                            console.warn(`Failed to fetch binary ${binaryId}: status ${response.status}`);
                         }
-                        const blob = await response.blob();
-                        const contentType = response.headers.get('Content-Type') || blob.type || '';
-                        const ext = getDocExtension(contentType, doc.defaultExt);
-                        const fileName = `${doc.label}${ext}`;
-                        zip.file(fileName, blob);
-                        successCount++;
                     } catch (err) {
-                        console.error(`Error fetching document ${doc.label}:`, err);
+                        console.error(`Error fetching binary ${binaryId}:`, err);
                     }
                 })
             );
+
+            // Populate all document entries into the zip archive
+            docsToExport.forEach((doc) => {
+                const cached = binaryCache.get(doc.binaryId);
+                if (cached && cached.blob) {
+                    const ext = getDocExtension(cached.contentType, doc.defaultExt);
+                    let baseFileName = `${doc.label}${ext}`;
+                    let finalFileName = baseFileName;
+                    let counter = 1;
+                    while (addedFileNames.has(finalFileName)) {
+                        finalFileName = `${doc.label}_${counter}${ext}`;
+                        counter++;
+                    }
+                    addedFileNames.add(finalFileName);
+
+                    zip.file(finalFileName, cached.blob);
+                    successCount++;
+                }
+            });
 
             if (successCount === 0) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Export Failed',
-                    text: 'Could not fetch document files from the blob storage server.',
+                    text: 'Could not fetch document files from the storage server.',
                     confirmButtonColor: '#08315F'
                 });
                 return;
@@ -1747,16 +1815,15 @@ const OfficialProfiling = () => {
 
             const archiveBlob = await zip.generateAsync({ type: 'blob' });
 
-            const cleanPart = (str) => (str || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_');
             const lName = cleanPart(profile.last_name) || 'Official';
             const fName = cleanPart(profile.first_name) || '';
             const tloTag = cleanPart(TLOid || profile.TLOid) || 'TLO';
-            const rarFileName = `${lName}${fName ? '_' + fName : ''}_${tloTag}_Work_Experience_Documents.rar`;
+            const zipFileName = `${lName}${fName ? '_' + fName : ''}_${tloTag}_Official_Documents.zip`;
 
             const downloadUrl = URL.createObjectURL(archiveBlob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = rarFileName;
+            link.download = zipFileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1765,16 +1832,16 @@ const OfficialProfiling = () => {
             Swal.fire({
                 icon: 'success',
                 title: 'Export Complete',
-                text: `Successfully exported ${successCount} work experience document(s) as ${rarFileName}`,
+                text: `Successfully exported ${successCount} document(s) as ${zipFileName}`,
                 timer: 2500,
                 showConfirmButton: false
             });
         } catch (err) {
-            console.error('Export work experience docs error:', err);
+            console.error('Export docs error:', err);
             Swal.fire({
                 icon: 'error',
                 title: 'Export Error',
-                text: err.message || 'An error occurred while packaging work experience documents.',
+                text: err.message || 'An error occurred while packaging documents.',
                 confirmButtonColor: '#08315F'
             });
         } finally {
@@ -2264,6 +2331,7 @@ const OfficialProfiling = () => {
                         csc_clearance_binary_id: d.csc_clearance_binary_id || null,
                         ombudsman_clearance_binary_id: d.ombudsman_clearance_binary_id || null,
                         executive_summary_binary_id: d.executive_summary_binary_id || null,
+                        reassignment_order_binary_id: d.reassignment_order_binary_id || null,
                         is_applying_for_position: d.is_applying_for_position !== undefined && d.is_applying_for_position !== null
                             ? Boolean(d.is_applying_for_position)
                             : Boolean(d.target_TLOid || d.wes_binary_id || d.cv_binary_id),
@@ -2482,7 +2550,7 @@ const OfficialProfiling = () => {
         const skipFields = new Set([
             'email', 'alt_email_1', 'alt_email_2', 'suffix',
             'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id',
-            'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
+            'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id', 'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id', 'reassignment_order_binary_id',
             'target_TLOid', 'application_status', 'profiling_status', 'is_oic', 'is_applying_for_position',
             'pending_admin_case', 'guilty_admin_details', 'criminally_charged_details', 'convicted_crime_details', 'ces_stage', 'gender', 'civil_status', 'employment_status'
         ]);
@@ -3414,15 +3482,23 @@ const OfficialProfiling = () => {
             const blob = await res.blob();
             if (!filename) {
                 let ext = '';
-                if (blob.type === 'application/pdf') ext = '.pdf';
-                else if (blob.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') ext = '.docx';
-                else if (blob.type === 'application/msword') ext = '.doc';
-                else if (blob.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') ext = '.pptx';
-                else if (blob.type === 'application/vnd.ms-powerpoint') ext = '.ppt';
-                else if (blob.type.startsWith('image/')) ext = '.' + blob.type.split('/')[1];
+                const type = (blob.type || res.headers.get('Content-Type') || '').toLowerCase();
+                if (type.includes('pdf')) ext = '.pdf';
+                else if (type.includes('wordprocessingml') || type.includes('docx')) ext = '.docx';
+                else if (type.includes('msword') || type.includes('doc')) ext = '.doc';
+                else if (type.includes('presentationml') || type.includes('pptx')) ext = '.pptx';
+                else if (type.includes('powerpoint') || type.includes('ppt')) ext = '.ppt';
+                else if (type.includes('jpeg') || type.includes('jpg')) ext = '.jpg';
+                else if (type.includes('png')) ext = '.png';
+                else if (type.includes('webp')) ext = '.webp';
+                else if (type.startsWith('image/')) ext = '.' + type.split('/')[1];
+                else ext = '.pdf';
 
-                const safeLabel = label.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_').toLowerCase();
-                const name = buildFullName(profile).replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_');
+                const cleanPart = (str) => (str || '').toString().trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+                const safeLabel = cleanPart(label) || 'Document';
+                const lName = cleanPart(profile.last_name) || 'Official';
+                const fName = cleanPart(profile.first_name) || '';
+                const name = `${lName}${fName ? '_' + fName : ''}`;
                 filename = `${name}_${safeLabel}${ext}`;
             }
 
@@ -3436,6 +3512,7 @@ const OfficialProfiling = () => {
             window.URL.revokeObjectURL(url);
             Swal.close();
         } catch (err) {
+            console.error('[handleDownloadDocument] Error:', err);
             Swal.fire('Error', 'Could not download the document.', 'error');
         }
     };
@@ -5945,18 +6022,16 @@ const OfficialProfiling = () => {
                                                                             </button>
                                                                         </div>
 
-                                                                        {!isTlo && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={handleExportAllDocs}
-                                                                                disabled={exportingDocs}
-                                                                                className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#08315F] border-2 border-amber-400/50 hover:border-amber-400 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-white hover:bg-[#0A4A8A] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-sm shrink-0 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                                                                title="Export all work experience documents from the blob into a RAR archive"
-                                                                            >
-                                                                                <FiArchive size={16} className="text-amber-300 shrink-0" />
-                                                                                <span>{exportingDocs ? 'Exporting...' : 'Export Docs'}</span>
-                                                                            </button>
-                                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={handleExportAllDocs}
+                                                                            disabled={exportingDocs}
+                                                                            className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#08315F] border-2 border-amber-400/50 hover:border-amber-400 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-white hover:bg-[#0A4A8A] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-sm shrink-0 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                                            title="Export all recorded documents for this official into a compressed archive"
+                                                                        >
+                                                                            <FiArchive size={16} className="text-amber-300 shrink-0" />
+                                                                            <span>{exportingDocs ? 'Exporting...' : 'Export Docs'}</span>
+                                                                        </button>
 
                                                                         <button
                                                                             type="button"

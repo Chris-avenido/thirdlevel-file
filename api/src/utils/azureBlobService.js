@@ -86,26 +86,33 @@ export const uploadToAzure = async (fileBuffer, originalName, mimeType, tloId, d
  */
 export const downloadFromAzure = async (blobUrlOrPath) => {
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerName = process.env.AZURE_FOLDER_NAME;
+    const defaultContainerName = process.env.AZURE_FOLDER_NAME;
 
-    if (!connectionString || !containerName || !blobUrlOrPath) {
+    if (!connectionString || !blobUrlOrPath) {
         return null;
     }
 
     try {
+        let targetContainer = defaultContainerName;
         let blobPath = blobUrlOrPath;
+
         if (blobUrlOrPath.startsWith('http://') || blobUrlOrPath.startsWith('https://')) {
             const urlObj = new URL(blobUrlOrPath);
             const pathParts = urlObj.pathname.split('/').filter(Boolean);
-            if (pathParts.length > 0 && pathParts[0] === containerName) {
+            if (pathParts.length > 1) {
+                targetContainer = pathParts[0];
                 blobPath = pathParts.slice(1).join('/');
-            } else {
-                blobPath = pathParts.join('/');
+            } else if (pathParts.length === 1) {
+                blobPath = pathParts[0];
             }
         }
 
+        if (!targetContainer) {
+            targetContainer = 'staging-tlo';
+        }
+
         const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-        const containerClient = blobServiceClient.getContainerClient(containerName);
+        const containerClient = blobServiceClient.getContainerClient(targetContainer);
         const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
 
         const downloadBlockBlobResponse = await blockBlobClient.download(0);
