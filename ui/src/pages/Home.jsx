@@ -370,23 +370,81 @@ const Home = () => {
 
   const anticipatedVacancies = useMemo(() => {
     const today = new Date();
-    const in5Years = new Date(today.getFullYear() + 5, today.getMonth(), today.getDate());
+    today.setHours(0, 0, 0, 0);
+    const in5Years = new Date(today.getFullYear() + 5, today.getMonth(), today.getDate(), 23, 59, 59);
 
-    return officials.filter(o => {
-      if (!o.date_of_birth) return false;
-      const dob = new Date(o.date_of_birth);
-      const retirementDate = new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate());
-      return retirementDate >= today && retirementDate <= in5Years;
-    }).map(o => {
-      const dob = new Date(o.date_of_birth);
-      return {
-        ...o,
-        separationReason: 'Anticipated Retirement',
-        separationDate: new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate()),
-        isTurning65: false
-      };
+    const map = new Map();
+
+    // 1. Scheduled / declared future vacates from tlo_assignments.end_date, effectivity_date, or pending statuses
+    allOfficials.forEach(o => {
+      if (!o.first_name || o.first_name === 'VACANT' || o.status === 'Vacated') return;
+
+      const rawEndDate = o.assignment_end_date || o.effectivity_date;
+      let scheduledDate = null;
+      if (rawEndDate) {
+        const parsed = new Date(rawEndDate);
+        if (!isNaN(parsed.getTime())) {
+          scheduledDate = parsed;
+        }
+      }
+
+      const isScheduledStatus = ['Vacating', 'Resigning'].includes(o.status);
+      const isFutureScheduled = scheduledDate && scheduledDate >= today && scheduledDate <= in5Years;
+
+      if (isFutureScheduled || (isScheduledStatus && scheduledDate)) {
+        let reason = 'Scheduled Vacate';
+        if (o.vacate_reason) {
+          reason = o.vacate_reason === 'Resignation' ? 'Resignation' :
+                   o.vacate_reason === 'Retirement' ? 'Retirement' :
+                   o.vacate_reason.startsWith('Vacated') ? o.vacate_reason : `Vacated - ${o.vacate_reason}`;
+        } else if (o.status === 'Resigning') {
+          reason = 'Resignation';
+        } else if (o.status === 'Vacating') {
+          reason = 'Scheduled Vacate';
+        }
+
+        map.set(o.TLOid, {
+          ...o,
+          separationReason: reason,
+          separationDate: scheduledDate,
+          isTurning65: false,
+          source: 'assignment_schedule'
+        });
+      }
     });
-  }, [officials]);
+
+    // 2. Anticipated mandatory retirements (age 65 within 5 years)
+    allOfficials.forEach(o => {
+      if (!o.first_name || o.first_name === 'VACANT' || o.status === 'Vacated' || o.status === 'Inactive') return;
+      if (!o.date_of_birth) return;
+
+      const dob = new Date(o.date_of_birth);
+      if (isNaN(dob.getTime())) return;
+
+      const retirementDate = new Date(dob.getFullYear() + 65, dob.getMonth(), dob.getDate());
+      if (retirementDate >= today && retirementDate <= in5Years) {
+        if (!map.has(o.TLOid)) {
+          const isTurning65 = (dob.getFullYear() === today.getFullYear() - 65) && (dob.getMonth() === today.getMonth());
+          map.set(o.TLOid, {
+            ...o,
+            separationReason: 'Anticipated Retirement',
+            separationDate: retirementDate,
+            isTurning65,
+            source: 'mandatory_retirement'
+          });
+        }
+      }
+    });
+
+    const list = Array.from(map.values());
+    list.sort((a, b) => {
+      const dateA = a.separationDate ? new Date(a.separationDate).getTime() : Infinity;
+      const dateB = b.separationDate ? new Date(b.separationDate).getTime() : Infinity;
+      return dateA - dateB;
+    });
+
+    return list;
+  }, [allOfficials]);
 
   const anticipatedVacanciesCount = anticipatedVacancies.length;
 
@@ -587,14 +645,14 @@ const Home = () => {
       });
     });
 
-    // Anticipated Retirees
+    // Anticipated Vacancies
     anticipatedVacancies.forEach(o => {
       if (!retireesThisMonth.find(r => r.TLOid === o.TLOid)) {
         queue.push({
           id: o.TLOid,
           email: o.email,
           name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
-          desc: `Anticipated Retirement (Within 5 Yrs) · ${o.office || 'Unassigned'}`,
+          desc: `${o.separationReason || 'Anticipated Vacancy'} · ${o.office || 'Unassigned'}`,
           status: 'Anticipated',
           badgeClass: 'warn',
           type: 'retirees',
@@ -1068,12 +1126,26 @@ const Home = () => {
                 </div>
               </div>
               <div className={`kpi purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}`} onClick={() => toggleFilter('retirees')} style={{ cursor: 'pointer' }}>
-                <p>Anticipated Vacancies</p>
+                <div className="flex justify-between items-start">
+                  <p>Anticipated Vacancies</p>
+                  {user?.role === 'Central Office' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsRetireesModalOpen(true);
+                      }}
+                      className="text-[10px] font-black uppercase tracking-wider text-purple-600 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded transition-colors"
+                      title="Open Anticipated Vacancies Modal"
+                    >
+                      View Modal
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 mt-2">
                   <h2 className="!mt-0">{loading ? '-' : anticipatedVacanciesCount}</h2>
                   <span className="text-purple-500 text-[10px] font-black uppercase tracking-widest bg-purple-50 px-2 py-1 rounded-md border border-purple-100" title="Separating this month">{loading ? '-' : retireesThisMonth.length} Separating</span>
                 </div>
-                <div className="kpi-subheader mt-1">Retiring within 5 years</div>
+                <div className="kpi-subheader mt-1">Upcoming within 5 years</div>
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
                   {Object.keys(anticipatedRegionBreakdown).length > 0 ? Object.entries(anticipatedRegionBreakdown).map(([region, count], idx) => (

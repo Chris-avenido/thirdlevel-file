@@ -968,6 +968,7 @@ export const updateAssignment = async (req, res) => {
         ]);
         resultRecord = res.rows[0];
       } else {
+        const targetEndDate = end_date !== undefined ? (end_date || null) : current.end_date;
         const updateQuery = `
           UPDATE tlo_assignments
           SET 
@@ -975,18 +976,19 @@ export const updateAssignment = async (req, res) => {
             capacity = $2,
             status = 'Active',
             start_date = COALESCE($3, start_date),
-            end_date = NULL,
-            designation = $4,
-            remarks = $5,
+            end_date = $4,
+            designation = $5,
+            remarks = $6,
             updated_at = CURRENT_TIMESTAMP,
-            updated_by = $6
-          WHERE id = $7
+            updated_by = $7
+          WHERE id = $8
           RETURNING *
         `;
         const res = await client.query(updateQuery, [
           targetMasterlistId,
           targetCapacity,
           start_date || current.start_date,
+          targetEndDate,
           designation !== undefined ? (designation || null) : current.designation,
           remarks !== undefined ? (remarks || null) : current.remarks,
           updatedBy,

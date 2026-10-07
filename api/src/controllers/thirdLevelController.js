@@ -2425,12 +2425,11 @@ export const processScheduledVacancies = async (client, force = false) => {
 
         if (personId) {
           const aRes = await conn.query(
-            `SELECT a.id, a.tlo_position_id, a.status
+            `SELECT a.id, a.tlo_position_id, a.status, a.position_id
              FROM tlo_assignments a
              LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
-             WHERE (tm.tloid = $1 OR a.tlo_position_id = $1)
+             WHERE (LOWER(tm.tloid) = LOWER($1) OR LOWER(a.tlo_position_id) = LOWER($1))
                AND a.status = 'Active'
-               AND a.end_date IS NULL
              ORDER BY a.id DESC
              LIMIT 1
              FOR UPDATE`,
@@ -2444,7 +2443,7 @@ export const processScheduledVacancies = async (client, force = false) => {
 
             await conn.query(
               `UPDATE tlo_assignments
-               SET status = 'Inactive', end_date = $1, updated_at = NOW()
+               SET status = 'Inactive', end_date = COALESCE($1, end_date, NOW()), updated_at = NOW()
                WHERE id = $2`,
               [lockedOfficial.effectivity_date, activeAssignmentId]
             );
@@ -2749,6 +2748,28 @@ export const getOfficials = async (req, res) => {
       SELECT 
         m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
         m.plantilla_item_no, m.appointment_status, m.is_applying_for_position,
+        (
+          SELECT a.end_date 
+          FROM tlo_assignments a 
+          LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id 
+          WHERE (LOWER(tm.tloid) = LOWER(m."TLOid") OR LOWER(a.tlo_position_id) = LOWER(m."TLOid"))
+            AND a.end_date IS NOT NULL
+          ORDER BY 
+            CASE WHEN a.status = 'Active' THEN 0 ELSE 1 END,
+            CASE WHEN a.end_date >= CURRENT_DATE THEN 0 ELSE 1 END,
+            a.end_date DESC,
+            a.id DESC 
+          LIMIT 1
+        ) as assignment_end_date,
+        (
+          SELECT a.remarks 
+          FROM tlo_assignments a 
+          LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id 
+          WHERE (LOWER(tm.tloid) = LOWER(m."TLOid") OR LOWER(a.tlo_position_id) = LOWER(m."TLOid"))
+            AND a.status = 'Active'
+          ORDER BY a.id DESC 
+          LIMIT 1
+        ) as assignment_remarks,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (
           SELECT u.remarks 
@@ -3055,6 +3076,28 @@ export const getKpiSummary = async (req, res) => {
         m.plantilla_item_no, m.appointment_status, m.is_testaccount,
         m.employment_status, m.guilty_admin_details, m.criminally_charged_details, m.convicted_crime_details,
         m.is_applying_for_position,
+        (
+          SELECT a.end_date 
+          FROM tlo_assignments a 
+          LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id 
+          WHERE (LOWER(tm.tloid) = LOWER(m."TLOid") OR LOWER(a.tlo_position_id) = LOWER(m."TLOid"))
+            AND a.end_date IS NOT NULL
+          ORDER BY 
+            CASE WHEN a.status = 'Active' THEN 0 ELSE 1 END,
+            CASE WHEN a.end_date >= CURRENT_DATE THEN 0 ELSE 1 END,
+            a.end_date DESC,
+            a.id DESC 
+          LIMIT 1
+        ) as assignment_end_date,
+        (
+          SELECT a.remarks 
+          FROM tlo_assignments a 
+          LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id 
+          WHERE (LOWER(tm.tloid) = LOWER(m."TLOid") OR LOWER(a.tlo_position_id) = LOWER(m."TLOid"))
+            AND a.status = 'Active'
+          ORDER BY a.id DESC 
+          LIMIT 1
+        ) as assignment_remarks,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         (
@@ -3254,7 +3297,25 @@ export const getLastVacateUpdate = async (req, res) => {
       WHERE "TLOid" = $1 AND status IN ('Vacating', 'Resigning', 'Inactive', 'Vacated', 'Reassigning', 'Pending Assignment')
       ORDER BY updated_at DESC LIMIT 1
     `, [TLOid]);
-    res.json({ success: true, data: result.rows[0] || null });
+
+    let data = result.rows[0] || null;
+    if (!data || !data.remarks) {
+      const assignRes = await pool.query(`
+        SELECT a.remarks, a.end_date
+        FROM tlo_assignments a
+        LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+        WHERE (LOWER(tm.tloid) = LOWER($1) OR LOWER(a.tlo_position_id) = LOWER($1))
+        ORDER BY CASE WHEN a.status = 'Active' THEN 0 ELSE 1 END, a.id DESC LIMIT 1
+      `, [TLOid]);
+      if (assignRes.rows.length > 0 && assignRes.rows[0].remarks) {
+        data = {
+          vacate_reason: data?.vacate_reason || 'Scheduled Vacate',
+          remarks: assignRes.rows[0].remarks
+        };
+      }
+    }
+
+    res.json({ success: true, data: data || null });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -3639,6 +3700,19 @@ export const adminAction = async (req, res) => {
           WHERE "TLOid" = $1 AND is_testaccount = $2
         `, [TLOid, isTest]);
 
+        // Reset declared end_date in tlo_assignments for active assignment:
+        await client.query(`
+          UPDATE tlo_assignments
+          SET end_date = NULL, updated_at = NOW()
+          WHERE id IN (
+            SELECT a.id
+            FROM tlo_assignments a
+            LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+            WHERE (LOWER(tm.tloid) = LOWER($1) OR LOWER(a.tlo_position_id) = LOWER($1))
+              AND a.status = 'Active'
+          )
+        `, [TLOid]);
+
         await client.query(`
           INSERT INTO third_level_officials_updates
             ("TLOid", first_name, last_name, middle_name, suffix, position_title, office, division, region, strand, email, contact_details, status, remarks, updated_at, effectivity_date, updated_by)
@@ -3797,6 +3871,19 @@ export const adminAction = async (req, res) => {
           SET status = $1, updated_at = NOW(), effectivity_date = ${effTs}
           WHERE "TLOid" = $2 AND is_testaccount = $3
         `, [futureStatus, TLOid, isTest]);
+
+        // Declare future vacate date in tlo_assignments.end_date for active assignment:
+        await client.query(`
+          UPDATE tlo_assignments
+          SET end_date = ${effTs}, updated_at = NOW()
+          WHERE id IN (
+            SELECT a.id
+            FROM tlo_assignments a
+            LEFT JOIN tlo_masterlist tm ON tm.id = a.tlo_masterlist_id
+            WHERE (LOWER(tm.tloid) = LOWER($1) OR LOWER(a.tlo_position_id) = LOWER($1))
+              AND a.status = 'Active'
+          )
+        `, [TLOid]);
 
         await client.query(`
           INSERT INTO third_level_officials_updates

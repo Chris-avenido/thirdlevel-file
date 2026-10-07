@@ -1,6 +1,29 @@
 # CHANGELOG
 
-## 2026-09-30 — Legal Portal (`OfficialProfiling.jsx`): Conditional Executive Summary & "Applying for a Position" Toggle
+## 2026-10-07 — Anticipated Vacancies & Future Scheduled Vacates (`tlo_assignments.end_date`)
+
+### Anticipated Vacancies Logic & Modal (`Home.jsx` & `RetireesModal.jsx`)
+- **Connected Vacate Logic to `tlo_assignments.end_date`**:
+  - Replaced legacy calculations with dynamic anticipated vacancy detection combining:
+    1. **Scheduled Vacancies / Declared End Dates**: Officials with declared future `tlo_assignments.end_date`, future `effectivity_date`, or pending `Vacating` / `Resigning` statuses.
+    2. **Anticipated Mandatory Retirements**: Officials reaching age 65 within the 5-year anticipation window based on their `date_of_birth`.
+  - Display dynamic separation reasons (e.g. *Resignation*, *Retirement*, *Vacated - Promotion*, *Scheduled Vacate*, *Anticipated Retirement*) and exact effectivity / separation dates with status tags (*Upcoming* vs *Completed*).
+  - Enhanced badge color palettes according to reason type in [RetireesModal.jsx](file:///e:/christop/staging/ui/src/components/RetireesModal.jsx).
+  - Integrated remarks and justification loader with automatic fallback to `assignment_remarks` or mandatory retirement justification.
+  - Added a "View Modal" trigger directly on the Anticipated Vacancies KPI card in [Home.jsx](file:///e:/christop/staging/ui/src/pages/Home.jsx).
+
+### Backend Controllers (`thirdLevelController.js` & `assignmentController.js`)
+- **Future-Dated Vacate Synchronization**:
+  - When `action === 'vacate'` is performed with a future effectivity date, the official's active assignment in `tlo_assignments` has `end_date` set to the declared future effectivity timestamp.
+  - When `action === 'cancel-vacate'` is triggered for pending scheduled vacates, `tlo_assignments.end_date` is reset to `NULL`.
+- **API Endpoints Exposing `assignment_end_date`**:
+  - Updated `/api/third-level/officials-kpi-summary` (`getKpiSummary`) and `/api/third-level/officials` (`getOfficials`) to include `assignment_end_date` and `assignment_remarks` subqueries from `tlo_assignments`.
+  - Updated `processScheduledVacancies` to properly match and inactivate mature scheduled assignments that reached their declared `end_date`.
+- **Assignment Controller Update**:
+  - Updated `updateAssignment` in [assignmentController.js](file:///e:/christop/staging/api/src/controllers/assignmentController.js) to preserve and set `end_date` if supplied during assignment edits.
+
+---
+
 
 ### Legal Portal (`OfficialProfiling.jsx`)
 - **"Applying for a Position" Toggle**:
