@@ -109,6 +109,62 @@ const formatDateStr = (val) => {
     return String(val).split('T')[0];
 };
 
+const getExportExperienceData = (positionsList, managerialTotal) => {
+    const currentYear = new Date().getFullYear();
+    const cutoffYear = currentYear - 5;
+
+    const list = Array.isArray(positionsList) ? positionsList.filter(p => p && (p.position_title || p.position_name || p.office)) : [];
+
+    // Sort positions: current positions first, then by end_date / start_date desc
+    const sortedList = [...list].sort((a, b) => {
+        if (a.is_current && !b.is_current) return -1;
+        if (!a.is_current && b.is_current) return 1;
+        const dateA = a.end_date ? new Date(a.end_date).getTime() : (a.start_date ? new Date(a.start_date).getTime() : 0);
+        const dateB = b.end_date ? new Date(b.end_date).getTime() : (b.start_date ? new Date(b.start_date).getTime() : 0);
+        return dateB - dateA;
+    });
+
+    // Separate positions: past 5 years vs older
+    const isPast5Years = (p) => {
+        if (p.is_current || !p.end_date) return true;
+        const endYr = new Date(p.end_date).getFullYear();
+        if (!isNaN(endYr) && endYr >= cutoffYear) return true;
+        const startYr = p.start_date ? new Date(p.start_date).getFullYear() : NaN;
+        if (!isNaN(startYr) && startYr >= cutoffYear) return true;
+        return false;
+    };
+
+    const getPosMonths = (p) => {
+        if (!p.start_date) return 0;
+        const dur = calculateDuration(p.start_date, p.end_date);
+        return (dur.years || 0) * 12 + (dur.months || 0);
+    };
+
+    const recentPositions = sortedList.filter(isPast5Years);
+    const olderPositions = sortedList.filter(p => !isPast5Years(p));
+
+    const mainPositions = recentPositions.slice(0, 5);
+    const remainingRecent = recentPositions.slice(5);
+    const othersPositions = [...remainingRecent, ...olderPositions];
+
+    let othersTotalMonths = 0;
+    othersPositions.forEach(p => {
+        othersTotalMonths += getPosMonths(p);
+    });
+
+    const otherYears = Math.floor(othersTotalMonths / 12);
+    const otherMonthsRem = othersTotalMonths % 12;
+    const othersDurationStr = formatExperienceDuration({ years: otherYears, months: otherMonthsRem });
+
+    return {
+        mainPositions,
+        hasOthers: othersPositions.length > 0,
+        othersDurationStr: othersTotalMonths > 0 ? othersDurationStr : '—',
+        othersCount: othersPositions.length,
+        managerialTotal
+    };
+};
+
 const inp = 'w-full bg-white hover:bg-transparent border-2 border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-[18px] font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400/80 shadow-none';
 const sel = 'w-full bg-white hover:bg-transparent border-2 border-slate-200 focus:border-[#0038A8] focus:ring-1 focus:ring-[#0038A8] rounded-lg py-2.5 px-4 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-none';
 
@@ -1032,37 +1088,51 @@ const OfficialProfiling = () => {
     const [exporting, setExporting] = useState(false);
     const [exportingDocs, setExportingDocs] = useState(false);
     const [previewScale, setPreviewScale] = useState(1);
+    const [previewHeight, setPreviewHeight] = useState(680);
     const [selectedEducationType, setSelectedEducationType] = useState('');
     const [uploadedFileNames, setUploadedFileNames] = useState({});
     const previewContainerRef = React.useRef(null);
+    const previewCardRef = React.useRef(null);
 
     React.useEffect(() => {
         if (!exportModalOpen) return;
         const observer = new ResizeObserver(entries => {
             for (let entry of entries) {
                 const width = entry.contentRect.width;
-                // Previews are 1000px wide, plus padding -> ~1040px
+                // Target width is 1000px preview card + safe padding
                 const targetWidth = 1040;
                 if (width < targetWidth) {
-                    setPreviewScale(width / targetWidth);
+                    setPreviewScale(Math.max(0.2, (width - 24) / 1000));
                 } else {
                     setPreviewScale(1);
                 }
             }
         });
 
-        // Use timeout to allow DOM to render before observing
+        const updateHeight = () => {
+            if (previewCardRef.current) {
+                const h = previewCardRef.current.offsetHeight;
+                if (h > 100) {
+                    setPreviewHeight(h);
+                }
+            }
+        };
+
         const timeoutId = setTimeout(() => {
             if (previewContainerRef.current) {
                 observer.observe(previewContainerRef.current);
             }
+            updateHeight();
         }, 100);
+
+        const rafId = requestAnimationFrame(updateHeight);
 
         return () => {
             clearTimeout(timeoutId);
+            cancelAnimationFrame(rafId);
             observer.disconnect();
         };
-    }, [exportModalOpen, selectedExportType]);
+    }, [exportModalOpen, selectedExportType, profile, history, prevPositions]);
     const fullName = buildFullName(profile) || 'Official Profiling';
     const isCaseYes = (val) => {
         if (val === true) return true;
@@ -1239,6 +1309,17 @@ const OfficialProfiling = () => {
     };
 
     // Export Logic
+    const getExportBaseFilename = () => {
+        const now = new Date();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const cleanPart = (str) => (str || '').toString().trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        const lName = cleanPart(profile.last_name) || 'OFFICIAL';
+        const fName = cleanPart(profile.first_name) || '';
+        const mName = cleanPart(profile.middle_name) || '';
+        return `${mm}${yyyy}-tlo_profile-${lName}${fName}${mName}`;
+    };
+
     const generateCSV = () => {
         setExporting(true);
         try {
@@ -1270,7 +1351,7 @@ const OfficialProfiling = () => {
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `profile_${profile.last_name || 'export'}.csv`);
+            link.setAttribute("download", `${getExportBaseFilename()}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1300,7 +1381,7 @@ const OfficialProfiling = () => {
 
             const opt = {
                 margin: 0,
-                filename: `profile_${profile.last_name || 'export'}.pdf`,
+                filename: `${getExportBaseFilename()}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: {
                     scale: 2.5,
@@ -1310,9 +1391,15 @@ const OfficialProfiling = () => {
                     logging: false,
                     onclone: (clonedDoc) => {
                         const clonedEl = clonedDoc.getElementById('pdf-preview-content');
-                        if (clonedEl && clonedEl.parentElement) {
-                            clonedEl.parentElement.style.transform = 'none';
-                            clonedEl.parentElement.style.marginBottom = '0px';
+                        if (clonedEl) {
+                            clonedEl.style.transform = 'none';
+                            clonedEl.style.position = 'static';
+                            if (clonedEl.parentElement) {
+                                clonedEl.parentElement.style.transform = 'none';
+                                clonedEl.parentElement.style.width = '1000px';
+                                clonedEl.parentElement.style.height = 'auto';
+                                clonedEl.parentElement.style.position = 'static';
+                            }
                         }
                     }
                 },
@@ -1417,38 +1504,52 @@ const OfficialProfiling = () => {
             }
 
             // --- Left Column: Managerial Experience ---
-            let histRows = [
-                [{ text: `Managerial Experience${profile.managerial_experience_total ? ` — Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}`, options: { colspan: 3, fill: '08315F', color: 'FFFFFF', bold: true, align: 'center', fontSize: 10 } }]
-            ];
             const displayHistory = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
-            const filteredHistory = displayHistory.filter(h => h.position_title || h.position_name || h.office).slice(0, 4);
-            filteredHistory.forEach(h => {
-                const title = h.position_title || h.position_name || '—';
-                const officeName = h.office || '—';
-                const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                histRows.push([
-                    { text: title, options: { fill: 'F8FAFC', fontSize: 9, color: '000000', bold: true } },
-                    { text: officeName, options: { fill: 'F8FAFC', fontSize: 9, color: '000000' } },
-                    { text: formatExperienceDuration(dur), options: { fill: 'F8FAFC', fontSize: 9, color: '000000', align: 'center' } }
-                ]);
+            const expData = getExportExperienceData(displayHistory, profile.managerial_experience_total);
 
-                // Nested Child OIC positions under Parent
-                if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
-                    h.oic_positions.forEach(oic => {
-                        if (oic.oic_position_name || oic.oic_office) {
-                            const oicTitle = `   └─ OIC: ${oic.oic_position_name || 'OIC Position'}`;
-                            const oicOffice = oic.oic_office || '—';
-                            const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
-                            histRows.push([
-                                { text: oicTitle, options: { fill: 'FEF3C7', fontSize: 8.5, color: '08315F' } },
-                                { text: oicOffice, options: { fill: 'FEF3C7', fontSize: 8.5, color: '334155' } },
-                                { text: formatExperienceDuration(oicDur), options: { fill: 'FEF3C7', fontSize: 8.5, color: '334155', align: 'center' } }
-                            ]);
-                        }
-                    });
+            let histRows = [
+                [{ text: `Managerial Experience${expData.managerialTotal ? ` — Total: ${formatExperienceTotal(expData.managerialTotal)}` : ''}`, options: { colspan: 3, fill: '08315F', color: 'FFFFFF', bold: true, align: 'center', fontSize: 10 } }]
+            ];
+
+            if (expData.mainPositions.length === 0 && !expData.hasOthers) {
+                histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 9, align: 'center' } }]);
+            } else {
+                expData.mainPositions.forEach(h => {
+                    const title = h.position_title || h.position_name || '—';
+                    const officeName = h.office || '—';
+                    const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                    histRows.push([
+                        { text: title, options: { fill: 'F8FAFC', fontSize: 9, color: '000000', bold: true } },
+                        { text: officeName, options: { fill: 'F8FAFC', fontSize: 9, color: '000000' } },
+                        { text: formatExperienceDuration(dur), options: { fill: 'F8FAFC', fontSize: 9, color: '000000', align: 'center' } }
+                    ]);
+
+                    // Nested Child OIC positions under Parent
+                    if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
+                        h.oic_positions.forEach(oic => {
+                            if (oic.oic_position_name || oic.oic_office) {
+                                const oicTitle = `   └─ OIC: ${oic.oic_position_name || 'OIC Position'}`;
+                                const oicOffice = oic.oic_office || '—';
+                                const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
+                                histRows.push([
+                                    { text: oicTitle, options: { fill: 'FEF3C7', fontSize: 8.5, color: '08315F' } },
+                                    { text: oicOffice, options: { fill: 'FEF3C7', fontSize: 8.5, color: '334155' } },
+                                    { text: formatExperienceDuration(oicDur), options: { fill: 'FEF3C7', fontSize: 8.5, color: '334155', align: 'center' } }
+                                ]);
+                            }
+                        });
+                    }
+                });
+
+                if (expData.hasOthers) {
+                    histRows.push([
+                        { text: 'Others (Prior Positions)', options: { fill: 'F1F5F9', fontSize: 9, color: '475569', italic: true, bold: true } },
+                        { text: '—', options: { fill: 'F1F5F9', fontSize: 9, color: '475569', align: 'center' } },
+                        { text: expData.othersDurationStr, options: { fill: 'F1F5F9', fontSize: 9, color: '475569', align: 'center', bold: true } }
+                    ]);
                 }
-            });
-            if (filteredHistory.length === 0) histRows.push([{ text: 'No experience listed', options: { colspan: 3, fill: 'FFFFFF', fontSize: 9, align: 'center' } }]);
+            }
+
             if (profile.managerial_experience_total) {
                 const todayFormatted = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 histRows.push([
@@ -1547,7 +1648,7 @@ const OfficialProfiling = () => {
 
             slide.addTable(eligRows, { x: 5.8, y: eligY, w: 3.8, colW: [2.6, 1.2], border: { pt: 0.75, color: '94A3B8' }, fill: 'FFFFFF', autoPage: false });
 
-            await pres.writeFile({ fileName: `profile_${profile.last_name || 'export'}.pptx` });
+            await pres.writeFile({ fileName: `${getExportBaseFilename()}.pptx` });
             setExporting(false);
         } catch (err) {
             console.error(err);
@@ -4524,20 +4625,8 @@ const OfficialProfiling = () => {
                                                         </div>
 
                                                         <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none">
-                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                                            <div className="mb-4">
                                                                 <SectionLabel color="#08315F">Employment History</SectionLabel>
-                                                                {!isTlo && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={handleExportAllDocs}
-                                                                        disabled={exportingDocs}
-                                                                        className="flex items-center justify-center gap-2 bg-[#08315F] border-2 border-amber-400/50 hover:border-amber-400 px-4 py-2 rounded-xl text-white hover:bg-[#0A4A8A] font-bold text-[14.5px] transition-all shadow-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                                                        title="Export all work experience documents from the blob into a RAR archive"
-                                                                    >
-                                                                        <FiArchive size={16} className="text-amber-300" />
-                                                                        <span>{exportingDocs ? 'Exporting...' : 'Export Docs'}</span>
-                                                                    </button>
-                                                                )}
                                                             </div>
                                                             <div className="space-y-3">
                                                                 <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-3 px-2">
@@ -5929,11 +6018,14 @@ const OfficialProfiling = () => {
                                                                                         </div>
 
                                                                                         <div className="mt-auto pt-2 sm:pt-6 flex flex-row lg:flex-col gap-2 sm:gap-3">
-                                                                                            {selectedExportType === 'pdf' && (
+                                                                                            {(selectedExportType === 'pdf' || selectedExportType === 'ppt') && (
                                                                                                 <button
                                                                                                     onClick={() => {
-                                                                                                        const printContent = document.getElementById('pdf-preview-content').outerHTML;
+                                                                                                        const printElement = document.getElementById('pdf-preview-content');
+                                                                                                        if (!printElement) return;
+                                                                                                        const printContent = printElement.outerHTML;
                                                                                                         const printWindow = window.open('', '_blank');
+                                                                                                        if (!printWindow) return;
                                                                                                         printWindow.document.write(`
                                                                                                                                                     <html>
                                                                                                                                                     <head>
@@ -5991,7 +6083,7 @@ const OfficialProfiling = () => {
                                                                                                     <div className="w-full max-w-4xl bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                                                                                                         <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
                                                                                                             <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
-                                                                                                            <span className="text-[16.5px] text-slate-300 font-mono ml-2">profile_{profile.last_name || 'export'}.csv</span>
+                                                                                                            <span className="text-[16.5px] text-slate-300 font-mono ml-2">{getExportBaseFilename()}.csv</span>
                                                                                                         </div>
                                                                                                         <div className="p-0 overflow-x-auto custom-scrollbar">
                                                                                                             <table className="w-full text-left border-collapse text-[16.5px] font-mono whitespace-nowrap">
@@ -6022,109 +6114,137 @@ const OfficialProfiling = () => {
                                                                                                 )}
 
                                                                                                 {(selectedExportType === 'pdf' || selectedExportType === 'ppt') && (
-                                                                                                    <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border-2 border-slate-200 shadow-inner hide-scrollbar">
-                                                                                                        <div className="bg-white shadow-2xl border-2 border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale * 0.5})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale * 0.5)}px` }}>
-                                                                                                            <div className="p-8 mx-auto w-[1000px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id={selectedExportType === 'pdf' ? "pdf-preview-content" : "ppt-preview-content"}>
-                                                                                                                <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
-                                                                                                                <div className="flex justify-between items-start mb-5 pt-2">
-                                                                                                                    <div className="flex gap-4 items-center flex-1 min-w-0 pr-4">
-                                                                                                                        <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain shrink-0" crossOrigin="anonymous" />
-                                                                                                                        <div className="min-w-0">
-                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F] leading-tight">
-                                                                                                                                {profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}
-                                                                                                                            </h1>
-                                                                                                                            <h2 className="text-base font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap leading-snug">
-                                                                                                                                <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                                {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                                {profile.office ? `, ${profile.office}` : ''}
-                                                                                                                            </h2>
-                                                                                                                            {profile.designation &&
-                                                                                                                                profile.designation.trim() !== '' &&
-                                                                                                                                profile.designation.trim().toLowerCase() !== 'no designation' &&
-                                                                                                                                profile.designation.trim().toLowerCase() !== 'none' &&
-                                                                                                                                profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
-                                                                                                                                    <p className="text-sm font-semibold italic text-[#08315F] mt-0.5 leading-snug">
-                                                                                                                                        {profile.designation}
-                                                                                                                                    </p>
+                                                                                                    <div className="w-full flex justify-center items-start py-2 sm:py-4">
+                                                                                                        <div
+                                                                                                            style={{
+                                                                                                                width: `${1000 * previewScale}px`,
+                                                                                                                height: `${previewHeight * previewScale}px`,
+                                                                                                                position: 'relative',
+                                                                                                                overflow: 'hidden'
+                                                                                                            }}
+                                                                                                            className="rounded-2xl shadow-xl border-2 border-slate-200 shrink-0 bg-white"
+                                                                                                        >
+                                                                                                            <div
+                                                                                                                ref={previewCardRef}
+                                                                                                                style={{
+                                                                                                                    width: '1000px',
+                                                                                                                    transform: `scale(${previewScale})`,
+                                                                                                                    transformOrigin: 'top left',
+                                                                                                                    position: 'absolute',
+                                                                                                                    top: 0,
+                                                                                                                    left: 0
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                <div className="p-8 mx-auto w-[1000px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id="pdf-preview-content">
+                                                                                                                    <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
+                                                                                                                    <div className="flex justify-between items-start mb-5 pt-2">
+                                                                                                                        <div className="flex gap-4 items-center flex-1 min-w-0 pr-4">
+                                                                                                                            <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain shrink-0" crossOrigin="anonymous" />
+                                                                                                                            <div className="min-w-0">
+                                                                                                                                <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F] leading-tight">
+                                                                                                                                    {profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}
+                                                                                                                                </h1>
+                                                                                                                                <h2 className="text-base font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap leading-snug">
+                                                                                                                                    <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                                    {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                                    {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                                </h2>
+                                                                                                                                {profile.designation &&
+                                                                                                                                    profile.designation.trim() !== '' &&
+                                                                                                                                    profile.designation.trim().toLowerCase() !== 'no designation' &&
+                                                                                                                                    profile.designation.trim().toLowerCase() !== 'none' &&
+                                                                                                                                    profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
+                                                                                                                                        <p className="text-sm font-semibold italic text-[#08315F] mt-0.5 leading-snug">
+                                                                                                                                            {profile.designation}
+                                                                                                                                        </p>
+                                                                                                                                    )}
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                        <div className="flex gap-3 items-center shrink-0">
+                                                                                                                            <div className="w-20 text-center border-2 border-amber-500 overflow-hidden bg-white shadow-sm">
+                                                                                                                                <div className="bg-amber-500 text-white font-bold py-0.5 text-[10px] uppercase tracking-widest">Age</div>
+                                                                                                                                <div className="py-1 text-center font-bold text-base text-[#08315F] bg-white leading-none">{profile.age || '—'}</div>
+                                                                                                                            </div>
+                                                                                                                            <div className="w-[84px] h-[84px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0 overflow-hidden">
+                                                                                                                                {profile.photo_binary_id ? (
+                                                                                                                                    <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                                                                                                                ) : (
+                                                                                                                                    "2x2 Photo"
                                                                                                                                 )}
+                                                                                                                            </div>
                                                                                                                         </div>
                                                                                                                     </div>
-                                                                                                                    <div className="flex gap-3 items-center shrink-0">
-                                                                                                                        <div className="w-20 text-center border-2 border-amber-500 overflow-hidden bg-white shadow-sm">
-                                                                                                                            <div className="bg-amber-500 text-white font-bold py-0.5 text-[10px] uppercase tracking-widest">Age</div>
-                                                                                                                            <div className="py-1 text-center font-bold text-base text-[#08315F] bg-white leading-none">{profile.age || '—'}</div>
-                                                                                                                        </div>
-                                                                                                                        <div className="w-[84px] h-[84px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0 overflow-hidden">
-                                                                                                                            {profile.photo_binary_id ? (
-                                                                                                                                <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
-                                                                                                                            ) : (
-                                                                                                                                "2x2 Photo"
-                                                                                                                            )}
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                                <div className="grid grid-cols-12 gap-8">
-                                                                                                                    <div className="col-span-7 space-y-4">
-                                                                                                                        <table className="w-full text-xs border-collapse">
-                                                                                                                            <thead>
-                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}</th></tr>
-                                                                                                                            </thead>
-                                                                                                                            <tbody>
-                                                                                                                                {(() => {
-                                                                                                                                    const list = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
-                                                                                                                                    const displayList = list.filter(h => h.position_title || h.position_name || h.office).slice(0, 4);
-                                                                                                                                    if (displayList.length === 0) {
-                                                                                                                                        return (
-                                                                                                                                            <tr><td colSpan={3} className="border-2 border-slate-400 px-3 py-1.5 text-center text-slate-500 italic">No experience listed</td></tr>
-                                                                                                                                        );
-                                                                                                                                    }
-                                                                                                                                    const rows = [];
-                                                                                                                                    displayList.forEach((h, i) => {
-                                                                                                                                        const title = h.position_title || h.position_name || '—';
-                                                                                                                                        const officeName = h.office || '—';
-                                                                                                                                        const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                                                                                                                                        rows.push(
-                                                                                                                                            <tr key={`parent-${i}`} className="text-slate-800 bg-slate-50/30 font-semibold">
-                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 font-bold w-1/3">{title}</td>
-                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/3">{officeName}</td>
-                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-medium">{formatExperienceDuration(dur)}</td>
-                                                                                                                                            </tr>
-                                                                                                                                        );
-                                                                                                                                        if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
-                                                                                                                                            h.oic_positions.forEach((oic, oicIdx) => {
-                                                                                                                                                if (oic.oic_position_name || oic.oic_office) {
-                                                                                                                                                    const oicTitle = oic.oic_position_name || 'OIC Position';
-                                                                                                                                                    const oicOffice = oic.oic_office || '—';
-                                                                                                                                                    const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
-                                                                                                                                                    rows.push(
-                                                                                                                                                        <tr key={`child-${i}-${oicIdx}`} className="text-slate-700 text-[11px] bg-amber-50/50">
-                                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 pl-6 font-medium">
-                                                                                                                                                                <span className="text-[#08315F] font-bold">└─ OIC:</span> {oicTitle}
-                                                                                                                                                            </td>
-                                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-slate-600">{oicOffice}</td>
-                                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">{formatExperienceDuration(oicDur)}</td>
-                                                                                                                                                        </tr>
-                                                                                                                                                    );
-                                                                                                                                                }
-                                                                                                                                            });
+                                                                                                                    <div className="grid grid-cols-12 gap-8">
+                                                                                                                        <div className="col-span-7 space-y-4">
+                                                                                                                            <table className="w-full text-xs border-collapse">
+                                                                                                                                <thead>
+                                                                                                                                    <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}</th></tr>
+                                                                                                                                </thead>
+                                                                                                                                <tbody>
+                                                                                                                                    {(() => {
+                                                                                                                                        const list = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
+                                                                                                                                        const expData = getExportExperienceData(list, profile.managerial_experience_total);
+                                                                                                                                        if (expData.mainPositions.length === 0 && !expData.hasOthers) {
+                                                                                                                                            return (
+                                                                                                                                                <tr><td colSpan={3} className="border-2 border-slate-400 px-3 py-1.5 text-center text-slate-500 italic">No experience listed</td></tr>
+                                                                                                                                            );
                                                                                                                                         }
-                                                                                                                                    });
-                                                                                                                                    return rows;
-                                                                                                                                })()}
-                                                                                                                            </tbody>
-                                                                                                                            {profile.managerial_experience_total && (
-                                                                                                                                <tfoot>
-                                                                                                                                    <tr className="bg-slate-100 font-bold text-slate-800">
-                                                                                                                                        <td colSpan={2} className="border-2 border-slate-400 px-3 py-1.5 text-right font-black uppercase text-[10px] text-[#08315F] tracking-wider">
-                                                                                                                                            Total Managerial Experience (As of {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}):
-                                                                                                                                        </td>
-                                                                                                                                        <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black text-[#08315F] text-[11px]">
-                                                                                                                                            {formatExperienceTotal(profile.managerial_experience_total)}
-                                                                                                                                        </td>
-                                                                                                                                    </tr>
-                                                                                                                                </tfoot>
-                                                                                                                            )}
-                                                                                                                        </table>
+                                                                                                                                        const rows = [];
+                                                                                                                                        expData.mainPositions.forEach((h, i) => {
+                                                                                                                                            const title = h.position_title || h.position_name || '—';
+                                                                                                                                            const officeName = h.office || '—';
+                                                                                                                                            const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                                                                                                                                            rows.push(
+                                                                                                                                                <tr key={`parent-${i}`} className="text-slate-800 bg-slate-50/30 font-semibold">
+                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 font-bold w-1/3">{title}</td>
+                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/3">{officeName}</td>
+                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-medium">{formatExperienceDuration(dur)}</td>
+                                                                                                                                                </tr>
+                                                                                                                                            );
+                                                                                                                                            if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
+                                                                                                                                                h.oic_positions.forEach((oic, oicIdx) => {
+                                                                                                                                                    if (oic.oic_position_name || oic.oic_office) {
+                                                                                                                                                        const oicTitle = oic.oic_position_name || 'OIC Position';
+                                                                                                                                                        const oicOffice = oic.oic_office || '—';
+                                                                                                                                                        const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
+                                                                                                                                                        rows.push(
+                                                                                                                                                            <tr key={`child-${i}-${oicIdx}`} className="text-slate-700 text-[11px] bg-amber-50/50">
+                                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 pl-6 font-medium">
+                                                                                                                                                                    <span className="text-[#08315F] font-bold">└─ OIC:</span> {oicTitle}
+                                                                                                                                                                </td>
+                                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-slate-600">{oicOffice}</td>
+                                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">{formatExperienceDuration(oicDur)}</td>
+                                                                                                                                                            </tr>
+                                                                                                                                                        );
+                                                                                                                                                    }
+                                                                                                                                                });
+                                                                                                                                            }
+                                                                                                                                        });
+                                                                                                                                        if (expData.hasOthers) {
+                                                                                                                                            rows.push(
+                                                                                                                                                <tr key="others-row" className="text-slate-600 bg-slate-100/70 italic font-semibold text-[11.5px]">
+                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 font-bold">Others (Prior Positions)</td>
+                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">—</td>
+                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-bold">{expData.othersDurationStr}</td>
+                                                                                                                                                </tr>
+                                                                                                                                            );
+                                                                                                                                        }
+                                                                                                                                        return rows;
+                                                                                                                                    })()}
+                                                                                                                                </tbody>
+                                                                                                                                {profile.managerial_experience_total && (
+                                                                                                                                    <tfoot>
+                                                                                                                                        <tr className="bg-slate-100 font-bold text-slate-800">
+                                                                                                                                            <td colSpan={2} className="border-2 border-slate-400 px-3 py-1.5 text-right font-black uppercase text-[10px] text-[#08315F] tracking-wider">
+                                                                                                                                                Total Managerial Experience (As of {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}):
+                                                                                                                                            </td>
+                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black text-[#08315F] text-[11px]">
+                                                                                                                                                {formatExperienceTotal(profile.managerial_experience_total)}
+                                                                                                                                            </td>
+                                                                                                                                        </tr>
+                                                                                                                                    </tfoot>
+                                                                                                                                )}
+                                                                                                                            </table>
                                                                                                                         <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
                                                                                                                                 <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Educational Attainment</th></tr>
@@ -6208,7 +6328,8 @@ const OfficialProfiling = () => {
                                                                                                             </div>
                                                                                                         </div>
                                                                                                     </div>
-                                                                                                )}
+                                                                                                </div>
+                                                                                            )}
                                                                                             </div>
                                                                                         </motion.div>
                                                                                     </motion.div>

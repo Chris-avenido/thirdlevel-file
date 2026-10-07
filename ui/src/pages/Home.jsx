@@ -893,7 +893,7 @@ const Home = () => {
           .hero { background:#08315f; color:white; border-radius:28px; padding:28px; }
           .hero small { color:#fbbf24; font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
           .hero h1 { margin:10px 0 8px; font-size:42px; line-height:1; font-weight:900; }
-          .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+          .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
           .kpi { position:relative; background:white; border:2px solid #bae6fd; border-radius:22px; padding:18px; border-left-width:8px; transition:all 0.2s; }
           .kpi:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
           .kpi.amber { border-left-color:#f59e0b; } 
@@ -946,6 +946,7 @@ const Home = () => {
           .log-row .action.for-approval { background:#fef3c7; color:#92400e; }
           .log-row .action.vacated { background:#fee2e2; color:#991b1b; }
           @media(max-width:1024px){
+            .kpis { grid-template-columns:repeat(2,1fr); }
             .grid-layout { grid-template-columns:1fr 1fr; }
             .grid-layout > aside { grid-column: span 2; }
           }
@@ -1094,24 +1095,6 @@ const Home = () => {
                 <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
                   {Object.keys(vacantRegionBreakdown).length > 0 ? Object.entries(vacantRegionBreakdown).map(([region, count], idx) => (
-                    <div key={region} className="kpi-tooltip-row">
-                      <span className="label" title={region}>
-                        <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
-                      </span>
-                      <span className="count">{count}</span>
-                    </div>
-                  )) : (
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">No records</div>
-                  )}
-                </div>
-              </div>
-              <div className={`kpi blue ${activeQueueFilter === 'inactive' ? 'active-filter' : ''}`} onClick={() => toggleFilter('inactive')} style={{ cursor: 'pointer' }}>
-                <p>Total Inactive Personnel</p>
-                <h2>{loading ? '-' : inactiveOfficials.length}</h2>
-                <div className="kpi-subheader">Personnel off duty</div>
-                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
-                  <h4>Region Breakdown</h4>
-                  {Object.keys(inactiveRegionBreakdown).length > 0 ? Object.entries(inactiveRegionBreakdown).map(([region, count], idx) => (
                     <div key={region} className="kpi-tooltip-row">
                       <span className="label" title={region}>
                         <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}

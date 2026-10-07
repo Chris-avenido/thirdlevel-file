@@ -2748,7 +2748,7 @@ export const getOfficials = async (req, res) => {
     WITH RankedOfficials AS (
       SELECT 
         m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.is_oic, m.designation, m.contact_details, m.effectivity_date, m.reassign_assignee_tloid, m.reassign_target_tloid, m.created_at, m.updated_at, m.photo_binary_id, m.pds_binary_id, m.pending_admin_case, m.date_of_birth, m.is_testaccount,
-        m.plantilla_item_no, m.appointment_status,
+        m.plantilla_item_no, m.appointment_status, m.is_applying_for_position,
         (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
         (
           SELECT u.remarks 
@@ -2782,33 +2782,35 @@ export const getOfficials = async (req, res) => {
             (CASE WHEN 
               (m.ces_stage IS NOT NULL AND m.ces_stage != '' AND m.ces_stage != 'NOT APPLICABLE') OR
               m.emt_passer IS NOT NULL OR
-              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE el.source_table = 'masterlist' AND el.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE (el.source_table = 'masterlist' OR el.source_table IS NULL) AND el.tlo_id = m."TLOid" AND (el.delete_flg != 'Yes' OR el.delete_flg IS NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.source_table = 'masterlist' AND ph.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.source_table = 'masterlist' AND ed.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != '' AND
               m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.source_table = 'masterlist' AND tr.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE (tr.source_table = 'masterlist' OR tr.source_table IS NULL) AND tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               (m.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(m.notable_achievements) = 'array' THEN m.notable_achievements ELSE '[]'::jsonb END) > 0) OR
-              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE ac.source_table = 'masterlist' AND ac.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE (ac.source_table = 'masterlist' OR ac.source_table IS NULL) AND ac.tlo_id = m."TLOid" AND (ac.delete_flg != 'Yes' OR ac.delete_flg IS NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.pds_binary_id IS NOT NULL AND m.service_records_binary_id IS NOT NULL
+              AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.wes_binary_id IS NOT NULL AND m.cv_binary_id IS NOT NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.pending_admin_case IS NOT NULL AND m.pending_admin_case != '' AND (
                 (m.guilty_admin_details IS NOT NULL AND m.criminally_charged_details IS NOT NULL AND m.convicted_crime_details IS NOT NULL) OR
                 (UPPER(m.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
               )
+              AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.ombudsman_clearance_binary_id IS NOT NULL AND m.sandiganbayan_clearance_binary_id IS NOT NULL AND m.csc_clearance_binary_id IS NOT NULL AND m.nbi_clearance_binary_id IS NOT NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.dpa_consented_at IS NOT NULL
@@ -3051,6 +3053,10 @@ export const getKpiSummary = async (req, res) => {
         m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
         m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case,
         m.plantilla_item_no, m.appointment_status, m.is_testaccount,
+        m.employment_status, m.guilty_admin_details, m.criminally_charged_details, m.convicted_crime_details,
+        m.is_applying_for_position,
+        (SELECT vacate_reason FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.vacate_reason IS NOT NULL ORDER BY updated_at DESC LIMIT 1) as vacate_reason,
+        (SELECT CONCAT_WS(' ', u.first_name, u.last_name) FROM third_level_officials_updates u WHERE u."TLOid" = m."TLOid" AND u.first_name IS NOT NULL AND u.first_name != 'VACANT' AND u.status != 'Vacated' ORDER BY updated_at DESC LIMIT 1) as previous_incumbent,
         (
           -- Tab 1: Personal
           (
@@ -3070,17 +3076,17 @@ export const getKpiSummary = async (req, res) => {
           )
           AND (
             -- Tab 2: Eligibility
-            (m.ces_stage IS NOT NULL AND m.ces_stage != '')
+            (m.ces_stage IS NOT NULL AND m.ces_stage != '' AND m.ces_stage != 'NOT APPLICABLE')
             OR m.emt_passer IS NOT NULL
-            OR EXISTS (SELECT 1 FROM tlo_eligibility_records er WHERE er.tlo_id = m."TLOid" AND (er.delete_flg != 'Yes' OR er.delete_flg IS NULL))
+            OR EXISTS (SELECT 1 FROM tlo_eligibility_records er WHERE (er.source_table = 'masterlist' OR er.source_table IS NULL) AND er.tlo_id = m."TLOid" AND (er.delete_flg != 'Yes' OR er.delete_flg IS NULL))
           )
           AND (
             -- Tab 3: Experience
-            EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+            EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
           )
           AND (
             -- Tab 4: Education
-            EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.tlo_id = m."TLOid")
+            EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
           )
           AND (
             -- Tab 5: Performance
@@ -3089,24 +3095,27 @@ export const getKpiSummary = async (req, res) => {
           )
           AND (
             -- Tab 6: Trainings
-            EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
+            EXISTS (SELECT 1 FROM tlo_training_records tr WHERE (tr.source_table = 'masterlist' OR tr.source_table IS NULL) AND tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
           )
           AND (
             -- Tab 7: Achievements
-            EXISTS (SELECT 1 FROM tlo_accomplishment_records ar WHERE ar.tlo_id = m."TLOid" AND (ar.delete_flg != 'Yes' OR ar.delete_flg IS NULL))
-            OR (m.notable_achievements IS NOT NULL AND m.notable_achievements::text != '[]' AND m.notable_achievements::text != '')
+            EXISTS (SELECT 1 FROM tlo_accomplishment_records ar WHERE (ar.source_table = 'masterlist' OR ar.source_table IS NULL) AND ar.tlo_id = m."TLOid" AND (ar.delete_flg != 'Yes' OR ar.delete_flg IS NULL))
+            OR (m.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(m.notable_achievements) = 'array' THEN m.notable_achievements ELSE '[]'::jsonb END) > 0)
           )
           AND (
             -- Tab 8: Documents
             m.pds_binary_id IS NOT NULL 
             AND m.service_records_binary_id IS NOT NULL
+            AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.wes_binary_id IS NOT NULL AND m.cv_binary_id IS NOT NULL))
           )
           AND (
             -- Tab 9: Legal
             m.pending_admin_case IS NOT NULL AND m.pending_admin_case != ''
-            AND m.guilty_admin_details IS NOT NULL AND m.guilty_admin_details != ''
-            AND m.criminally_charged_details IS NOT NULL AND m.criminally_charged_details != ''
-            AND m.convicted_crime_details IS NOT NULL AND m.convicted_crime_details != ''
+            AND (
+              (m.guilty_admin_details IS NOT NULL AND m.criminally_charged_details IS NOT NULL AND m.convicted_crime_details IS NOT NULL)
+              OR (UPPER(m.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
+            )
+            AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.ombudsman_clearance_binary_id IS NOT NULL AND m.sandiganbayan_clearance_binary_id IS NOT NULL AND m.csc_clearance_binary_id IS NOT NULL AND m.nbi_clearance_binary_id IS NOT NULL))
           )
           AND (
             -- Tab 10: Summary
@@ -3134,33 +3143,35 @@ export const getKpiSummary = async (req, res) => {
             (CASE WHEN 
               (m.ces_stage IS NOT NULL AND m.ces_stage != '' AND m.ces_stage != 'NOT APPLICABLE') OR
               m.emt_passer IS NOT NULL OR
-              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE el.source_table = 'masterlist' AND el.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE (el.source_table = 'masterlist' OR el.source_table IS NULL) AND el.tlo_id = m."TLOid" AND (el.delete_flg != 'Yes' OR el.delete_flg IS NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE ph.source_table = 'masterlist' AND ph.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE ed.source_table = 'masterlist' AND ed.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != '' AND
               m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE tr.source_table = 'masterlist' AND tr.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_training_records tr WHERE (tr.source_table = 'masterlist' OR tr.source_table IS NULL) AND tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               (m.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(m.notable_achievements) = 'array' THEN m.notable_achievements ELSE '[]'::jsonb END) > 0) OR
-              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE ac.source_table = 'masterlist' AND ac.tlo_id = m."TLOid")
+              EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE (ac.source_table = 'masterlist' OR ac.source_table IS NULL) AND ac.tlo_id = m."TLOid")
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.pds_binary_id IS NOT NULL AND m.service_records_binary_id IS NOT NULL
+              AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.wes_binary_id IS NOT NULL AND m.cv_binary_id IS NOT NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.pending_admin_case IS NOT NULL AND m.pending_admin_case != '' AND (
                 (m.guilty_admin_details IS NOT NULL AND m.criminally_charged_details IS NOT NULL AND m.convicted_crime_details IS NOT NULL) OR
                 (UPPER(m.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
               )
+              AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.ombudsman_clearance_binary_id IS NOT NULL AND m.sandiganbayan_clearance_binary_id IS NOT NULL AND m.csc_clearance_binary_id IS NOT NULL AND m.nbi_clearance_binary_id IS NOT NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               m.dpa_consented_at IS NOT NULL
