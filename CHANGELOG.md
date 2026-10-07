@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 2026-10-07 — Profile Summary: Retain Only Table View (`OfficialProfiling.jsx`)
+
+### Profile Summary Tab (`OfficialProfiling.jsx`)
+- **Retained Only Table View**:
+  - Removed the Card View / Table View toggle buttons from the Profile Summary header.
+  - Removed all legacy Card View JSX structures and state conditionals across all Profile Summary sections.
+  - Profile Summary now permanently renders the comprehensive and structured **Table View** across all 7 summary sections:
+    1. *Personal Information Table* (with 2x2 Photo preview and biographical data)
+    2. *Designation & Appointment Table* (Position, item number, office/strand/division, OIC flags, CES/EMT statuses)
+    3. *Eligibility & Qualifications Table* (CES eligibility stages, EMT examination records, other eligibilities)
+    4. *Education & Academic Background Table* (Degrees, courses, graduation years, other certifications)
+    5. *Performance History & Experience Table* (OPCRF rating history, 3rd level and managerial service durations)
+    6. *Uploaded Documents Table* (PDS, WES, CV, Service Records, clearances with quick view/preview triggers)
+    7. *Legal Disclosures Table* (Administrative, criminal, and conviction disclosure status badges)
+  - Followed by the standard Data Privacy Notice & Certification card.
+
+---
+
 ## 2026-10-07 — Anticipated Vacancies & Future Scheduled Vacates (`tlo_assignments.end_date`)
 
 ### Anticipated Vacancies Logic & Modal (`Home.jsx` & `RetireesModal.jsx`)
