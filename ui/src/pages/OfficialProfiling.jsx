@@ -12,6 +12,7 @@ import {
     FiArchive
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useSeasonalTheme } from '../utils/themeUtils';
 import PageTransition from '../components/PageTransition';
 import html2pdf from 'html2pdf.js';
 import PptxGenJS from 'pptxgenjs';
@@ -949,6 +950,7 @@ const OfficialProfiling = () => {
     const urlVacancy = searchParams.get('vacancy');
     const urlTloid = searchParams.get('tloid');
     const { user, token, logout } = useAuth();
+    const { isHalloween } = useSeasonalTheme(user);
 
     const [status, setStatus] = useState('loading'); // loading | found | not-found | error
     const [TLOid, setTlid] = useState(null);
@@ -3562,7 +3564,7 @@ const OfficialProfiling = () => {
     // ── MAIN PROFILING FORM ──
     return (
         <PageTransition>
-            <div className="min-h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+            <div className={`min-h-screen ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} font-['Plus_Jakarta_Sans'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden`}>
                 {/* Ambient Decorative Background Elements */}
 
                 {/* ── Mobile Sidebar Drawer ── */}

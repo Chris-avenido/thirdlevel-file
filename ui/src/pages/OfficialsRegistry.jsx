@@ -20,6 +20,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import { expandAcronym, formatPositionTitle, isThirdLevelPosition } from '../utils/officialsUtils';
+import { useSeasonalTheme } from '../utils/themeUtils';
 import ModernDatePicker from '../components/ModernDatePicker';
 import sgMap from '../utils/sgMap.json';
 import newLogo from '../assets/modern_logo.png';
@@ -152,6 +153,7 @@ const OfficialsRegistry = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout, token } = useAuth();
+    const { isHalloween } = useSeasonalTheme(user);
 
     // --- SEARCHABLE SELECT COMPONENT ---
     const SearchableSelect = ({ label, options, value, onChange, placeholder, info }) => {
@@ -1562,47 +1564,52 @@ const OfficialsRegistry = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent font-sans overflow-hidden">
+            <div className={`flex h-screen ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} font-sans overflow-hidden`}>
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
-                        <div className="flex items-center gap-4 text-white">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                                <FiUsers size={20} />
+                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full relative">
+                        <div className="flex items-center gap-3 sm:gap-4 text-white relative z-10 min-w-0">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                                <FiUsers size={18} />
                             </div>
-                            <div>
-                                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">
-                                    Personnel <span className="text-blue-300 not-italic">Registry</span>
+                            <div className="min-w-0">
+                                <h1 className="text-base sm:text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase truncate">
+                                    Personnel <span className={isHalloween ? "text-[#f59e0b] not-italic" : "text-blue-300 not-italic"}>Registry</span>
                                 </h1>
-                                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
+                                <p className="text-[8.5px] sm:text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1 truncate">
                                     Official Leadership Management • Third Level Officials Command Dashboard
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3 sm:gap-6 relative z-10 shrink-0">
+                            {isHalloween && (
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-sm sm:text-base shadow-sm shrink-0">
+                                    🎃
+                                </div>
+                            )}
                             <div className="hidden md:flex flex-col items-end">
                                 <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
                                     {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
                                 </span>
-                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">
+                                <span className={`text-[9px] font-bold ${isHalloween ? 'text-[#fbbf24]' : 'text-[#FBBF24]'} uppercase tracking-widest mt-1`}>
                                     {user?.role || 'Central Office'}
                                 </span>
                             </div>
                         </div>
                     </header>
 
-                    <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
+                    <main className="flex-1 px-3 sm:px-6 lg:px-8 pb-12 pt-4 sm:pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* UNIFIED DATA CONTROLS TAB */}
-                        <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
+                        <div className="bg-white border-2 border-[#08315F] rounded-[20px] sm:rounded-[24px] p-2.5 sm:p-3 shadow-sm mb-6 flex flex-col gap-2.5">
                             {/* TOP ROW: FILTERS */}
                             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full">
                                 {/* DROPDOWNS */}
-                                <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
+                                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                     {/* Level Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[13px] sm:text-[15px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All CO / RO / SDO</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Regional Office">Regional Office</option>
@@ -1612,8 +1619,8 @@ const OfficialsRegistry = () => {
                                     </div>
 
                                     {/* Region Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[13px] sm:text-[15px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Regions</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Region I">Region I</option>

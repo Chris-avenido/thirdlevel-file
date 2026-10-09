@@ -1,0 +1,1165 @@
+/* Halloween Seasonal Theme Stylesheet */
+
+.theme-halloween-wrapper {
+  background-color: #060b19;
+  height: 100vh;
+  overflow: hidden;
+  color: #f8fafc;
+  position: relative;
+}
+
+/* Atmospheric Halloween Background Glow */
+.theme-halloween-wrapper::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background: radial-gradient(circle at 75% 20%, rgba(249, 115, 22, 0.15) 0%, rgba(147, 51, 234, 0.08) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Spooky Corner Accents */
+.halloween-web-left {
+  position: fixed;
+  bottom: 0;
+  left: 96px;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+  opacity: 0.45;
+  z-index: 10;
+  background-repeat: no-repeat;
+  background-position: bottom left;
+}
+
+.halloween-decor-right {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 240px;
+  height: 200px;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 10;
+}
+
+/* Dark Card Overrides for Halloween Theme */
+.theme-halloween-wrapper .dash-card {
+  background: #0b1733 !important;
+  border: 1.5px solid #1e345e !important;
+  border-radius: 24px !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+.theme-halloween-wrapper .dash-head {
+  border-bottom: 1px solid #16274a !important;
+  padding: 18px 20px !important;
+}
+
+.theme-halloween-wrapper .dash-head h3 {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 1.25rem !important;
+}
+
+.theme-halloween-wrapper .dash-head p {
+  color: #94a3b8 !important;
+  font-size: 0.875rem !important;
+}
+
+.theme-halloween-wrapper .chips {
+  border-bottom: 1px solid #16274a !important;
+  padding: 14px 20px !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.theme-halloween-wrapper .chip {
+  background: #132347 !important;
+  color: #7dd3fc !important;
+  border: 1px solid #1e3867 !important;
+  border-radius: 999px !important;
+  padding: 6px 14px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+}
+
+.theme-halloween-wrapper .queue-row {
+  border-bottom: 1px solid #16274a !important;
+  padding: 16px 20px !important;
+  transition: background 0.2s !important;
+}
+
+.theme-halloween-wrapper .queue-row:hover {
+  background: #122345 !important;
+}
+
+.theme-halloween-wrapper .queue-row strong {
+  color: #ffffff !important;
+  font-size: 14px !important;
+}
+
+.theme-halloween-wrapper .queue-row span {
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+}
+
+.theme-halloween-wrapper .log-row {
+  border-bottom: 1px solid #16274a !important;
+  padding: 16px 20px !important;
+  transition: background 0.2s !important;
+}
+
+.theme-halloween-wrapper .log-row:hover {
+  background: #122345 !important;
+}
+
+.theme-halloween-wrapper .log-row strong {
+  color: #ffffff !important;
+  font-size: 14px !important;
+}
+
+.theme-halloween-wrapper .log-row .time {
+  color: #94a3b8 !important;
+  font-size: 11px !important;
+}
+
+/* KPI Card Halloween Styling */
+.hw-kpi-card {
+  position: relative;
+  background: #0b1733;
+  border-radius: 22px;
+  padding: 20px 22px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 135px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
+  cursor: pointer;
+}
+
+.hw-kpi-card:hover {
+  transform: translateY(-3px);
+}
+
+.hw-kpi-card.orange {
+  border-color: rgba(249, 115, 22, 0.85);
+  box-shadow: 0 0 25px -5px rgba(249, 115, 22, 0.25), inset 0 0 15px rgba(249, 115, 22, 0.05);
+}
+
+.hw-kpi-card.amber {
+  border-color: rgba(245, 158, 11, 0.85);
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.25), inset 0 0 15px rgba(245, 158, 11, 0.05);
+}
+
+.hw-kpi-card.purple {
+  border-color: rgba(168, 85, 247, 0.85);
+  box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.25), inset 0 0 15px rgba(168, 85, 247, 0.05);
+}
+
+.hw-kpi-card.red {
+  border-color: rgba(239, 68, 68, 0.85);
+  box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.25), inset 0 0 15px rgba(239, 68, 68, 0.05);
+}
+
+.hw-kpi-card.active-filter {
+  outline: 3px solid #f97316;
+  outline-offset: 2px;
+}
+
+.hw-kpi-img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 18px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Tooltip for Halloween Mode */
+.hw-tooltip {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 290px;
+  background: rgba(11, 23, 51, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(249, 115, 22, 0.15);
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease-out;
+  z-index: 70;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.hw-kpi-card:first-child .hw-tooltip {
+  right: auto;
+  left: 0;
+}
+
+.hw-kpi-card:hover .hw-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hw-tooltip h4 {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.hw-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+}
+
+.hw-tooltip-row:last-child {
+  border-bottom: none;
+}
+
+.hw-tooltip-row span.label {
+  color: #cbd5e1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.hw-tooltip-row span.count {
+  color: #f8fafc;
+  font-weight: 900;
+  background: rgba(249, 115, 22, 0.2);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+/* Floating animation for Ghost */
+@keyframes hw-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+.hw-floating-ghost {
+  animation: hw-float 3.5s ease-in-out infinite;
+}
+
+/* Subtle bat flying or flicker animation */
+@keyframes hw-pulse-glow {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px #f97316);
+  }
+}
+
+.hw-glow {
+  animation: hw-pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* Quick Action button in Halloween theme */
+.hw-action-btn {
+  background: #0e1e3e;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 16px 20px;
+  color: #f8fafc;
+  font-weight: 800;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hw-action-btn:hover:not(:disabled) {
+  background: #142954;
+  border-color: #f97316;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Halloween Theme Overrides for Analytics & Drilldown Chart (.mdb-card) */
+.theme-halloween-wrapper .mdb-card {
+  background: #0b1733 !important;
+  border: 1.5px solid #1e345e !important;
+  border-radius: 24px !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+.theme-halloween-wrapper .mdb-card h2 {
+  color: #ffffff !important;
+}
+
+.theme-halloween-wrapper .mdb-card-subtitle {
+  color: #94a3b8 !important;
+}
+
+.theme-halloween-wrapper .mdb-chart-toggle {
+  background: #132347 !important;
+  border-color: #1e3867 !important;
+  color: #fbbf24 !important;
+}
+
+.theme-halloween-wrapper .mdb-chart-toggle:hover {
+  background: #1e3867 !important;
+  border-color: #f97316 !important;
+}
+
+.theme-halloween-wrapper .mdb-breadcrumb {
+  color: #94a3b8 !important;
+}
+
+.theme-halloween-wrapper .mdb-breadcrumb span {
+  color: #38bdf8 !important;
+}
+
+.theme-halloween-wrapper .mdb-bar-row {
+  border-bottom: 1px solid #16274a !important;
+}
+
+.theme-halloween-wrapper .mdb-bar-row:hover {
+  background: rgba(18, 35, 69, 0.8) !important;
+}
+
+.theme-halloween-wrapper .mdb-bar-row-label {
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper .mdb-bar-row-total {
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper .mdb-bar-track {
+  background: #060e20 !important;
+  border-color: #1d355f !important;
+}
+
+.theme-halloween-wrapper .mdb-heatmap-wrap {
+  border-color: #1e345e !important;
+  background: #060e20 !important;
+}
+
+.theme-halloween-wrapper .mdb-heatmap-table {
+  background: #060e20 !important;
+}
+
+.theme-halloween-wrapper .mdb-heatmap-table th {
+  background: #030712 !important;
+  color: #f8fafc !important;
+  border-color: #1e345e !important;
+}
+
+.theme-halloween-wrapper .mdb-heatmap-table td {
+  border-color: #16274a !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper .mdb-heatmap-group-name {
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+}
+
+.theme-halloween-wrapper .mdb-heatmap-oic {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+.theme-halloween-wrapper .mdb-heatmap-total {
+  color: #f8fafc !important;
+  font-weight: 900 !important;
+}
+
+/* Universal Halloween Header */
+.theme-halloween-wrapper header {
+  background-image: linear-gradient(90deg, rgba(8, 49, 95, 0.82) 0%, rgba(15, 23, 42, 0.65) 50%, rgba(8, 49, 95, 0.82) 100%), url('../assets/halloween/header_bg.jpg') !important;
+  background-position: center !important;
+  background-size: cover !important;
+  border-bottom: 1px solid #1e345e !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Filter / Data Controls Bar across registry, assignments, and plantilla */
+.theme-halloween-wrapper div[class*="border-[#08315F]"] {
+  background: #0a162e !important;
+  border-color: #1e345e !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Filter Dropdown Pills & Search Inputs */
+.theme-halloween-wrapper div[class*="bg-[#F0F9FF]"],
+.theme-halloween-wrapper div[class*="bg-slate-50"] {
+  background: #060e20 !important;
+  border-color: #1d355f !important;
+}
+
+.theme-halloween-wrapper select,
+.theme-halloween-wrapper input:not([type="checkbox"]):not([type="radio"]) {
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper select option {
+  background: #060e20 !important;
+  color: #f8fafc !important;
+}
+
+/* Tables and Data Containers */
+.theme-halloween-wrapper .dashboard-theme,
+.theme-halloween-wrapper div[class*="border-slate-200"],
+.theme-halloween-wrapper div[class*="border-slate-100"] {
+  background: #0b1733 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper table {
+  background: #0b1733 !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper table th {
+  background: #060e20 !important;
+  color: #f8fafc !important;
+  border-color: #1e345e !important;
+}
+
+.theme-halloween-wrapper table td {
+  border-color: #16274a !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper table tr:hover td {
+  background: #122345 !important;
+}
+
+/* Form Inputs, Textareas, and Placeholders */
+.theme-halloween-wrapper input:not([type="checkbox"]):not([type="radio"]),
+.theme-halloween-wrapper textarea,
+.theme-halloween-wrapper select {
+  background-color: #060e20 !important;
+  color: #f8fafc !important;
+  border-color: #1d355f !important;
+}
+
+.theme-halloween-wrapper input::placeholder,
+.theme-halloween-wrapper textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* ==========================================================================
+   STATS / KPI CARDS (Positions Library, Position Assignments, Plantilla, etc.)
+   ========================================================================== */
+.theme-halloween-wrapper div[class*="min-h-[108px]"],
+.theme-halloween-wrapper div[class*="min-h-[100px]"],
+.theme-halloween-wrapper div[class*="rounded-[18px]"],
+.theme-halloween-wrapper div[class*="rounded-[16px]"],
+.theme-halloween-wrapper div[class*="rounded-[22px]"] {
+  background-color: #0b1733 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper div[class*="border-[#BAE6FD]"] {
+  border-color: #1e345e !important;
+}
+
+/* Card Numbers & Headers */
+.theme-halloween-wrapper div[class*="text-[#08315F]"],
+.theme-halloween-wrapper span[class*="text-[#08315F]"],
+.theme-halloween-wrapper p[class*="text-[#08315F]"],
+.theme-halloween-wrapper h1[class*="text-[#08315F]"],
+.theme-halloween-wrapper h2[class*="text-[#08315F]"],
+.theme-halloween-wrapper h3[class*="text-[#08315F]"],
+.theme-halloween-wrapper h4[class*="text-[#08315F]"] {
+  color: #ffffff !important;
+}
+
+/* Stat Card Labels & Subtitles */
+.theme-halloween-wrapper div[class*="text-slate-500"],
+.theme-halloween-wrapper span[class*="text-slate-500"],
+.theme-halloween-wrapper p[class*="text-slate-500"] {
+  color: #94a3b8 !important;
+}
+
+.theme-halloween-wrapper div[class*="text-slate-400"],
+.theme-halloween-wrapper span[class*="text-slate-400"],
+.theme-halloween-wrapper p[class*="text-slate-400"] {
+  color: #64748b !important;
+}
+
+/* Glow Borders on Active Stat Cards */
+.theme-halloween-wrapper .border-l-sky-500,
+.theme-halloween-wrapper .border-l-sky-400 {
+  border-left-color: #38bdf8 !important;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.15) !important;
+}
+
+.theme-halloween-wrapper .border-l-rose-500,
+.theme-halloween-wrapper .border-l-rose-400 {
+  border-left-color: #f43f5e !important;
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.15) !important;
+}
+
+.theme-halloween-wrapper .border-l-amber-500,
+.theme-halloween-wrapper .border-l-amber-400 {
+  border-left-color: #f59e0b !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.15) !important;
+}
+
+.theme-halloween-wrapper .border-l-indigo-500,
+.theme-halloween-wrapper .border-l-indigo-400 {
+  border-left-color: #a855f7 !important;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.15) !important;
+}
+
+/* Card Badges and Filter Pills */
+.theme-halloween-wrapper .bg-sky-50,
+.theme-halloween-wrapper .bg-sky-100 {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+.theme-halloween-wrapper .bg-rose-50,
+.theme-halloween-wrapper .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+.theme-halloween-wrapper .bg-amber-50,
+.theme-halloween-wrapper .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+.theme-halloween-wrapper .bg-indigo-50,
+.theme-halloween-wrapper .bg-indigo-100 {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+/* Hover Popovers on Stat Cards */
+.theme-halloween-wrapper div[class*="group"] div[class*="absolute"] div[class*="backdrop-blur-md"],
+.theme-halloween-wrapper div[class*="group"] div[class*="absolute"] div[class*="bg-white"] {
+  background-color: rgba(11, 23, 51, 0.98) !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper div[class*="group"] div[class*="absolute"] button {
+  background-color: #060e20 !important;
+  color: #f8fafc !important;
+  border-color: #16274a !important;
+}
+
+.theme-halloween-wrapper div[class*="group"] div[class*="absolute"] button:hover {
+  background-color: #132347 !important;
+  color: #ffffff !important;
+  border-color: #f97316 !important;
+}
+
+/* ==========================================================================
+   DATA TABLES (Officials, Plantilla, Positions Library, Position Assignments, Achievements)
+   ========================================================================== */
+.theme-halloween-wrapper table,
+body.theme-halloween-active table {
+  background-color: #0b1733 !important;
+  color: #f8fafc !important;
+  border-collapse: separate !important;
+}
+
+/* Table Card Outer Shell */
+.theme-halloween-wrapper .card,
+.theme-halloween-wrapper div[class*="rounded-[30px]"],
+.theme-halloween-wrapper div[class*="rounded-[2.5rem]"],
+.theme-halloween-wrapper div[class*="rounded-[24px]"],
+.theme-halloween-wrapper div[class*="rounded-[22px]"],
+body.theme-halloween-active .card,
+body.theme-halloween-active div[class*="rounded-[30px]"] {
+  background-color: #0b1733 !important;
+  border-color: #1e345e !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  color: #f8fafc !important;
+}
+
+/* Table Head and Header Cells */
+.theme-halloween-wrapper table thead,
+.theme-halloween-wrapper table thead tr,
+.theme-halloween-wrapper table thead th,
+body.theme-halloween-active table thead,
+body.theme-halloween-active table thead tr,
+body.theme-halloween-active table thead th {
+  background-color: #060e20 !important;
+  color: #cbd5e1 !important;
+  border-bottom: 2px solid #1e345e !important;
+}
+
+/* Table Head Sort Buttons */
+.theme-halloween-wrapper table thead th button,
+body.theme-halloween-active table thead th button {
+  color: #94a3b8 !important;
+}
+
+.theme-halloween-wrapper table thead th button:hover,
+body.theme-halloween-active table thead th button:hover {
+  color: #f97316 !important;
+}
+
+/* Table Head Dropdown Filter Selects */
+.theme-halloween-wrapper table thead select,
+.theme-halloween-wrapper table th select,
+.theme-halloween-wrapper select[class*="bg-white"],
+body.theme-halloween-active table thead select,
+body.theme-halloween-active table th select {
+  background-color: #0b1733 !important;
+  border: 1.5px solid #1e345e !important;
+  color: #f8fafc !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.theme-halloween-wrapper table thead select:focus,
+.theme-halloween-wrapper table th select:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.3) !important;
+}
+
+.theme-halloween-wrapper table thead select option,
+.theme-halloween-wrapper table th select option {
+  background-color: #060e20 !important;
+  color: #f8fafc !important;
+}
+
+/* Table Body, Rows, and Cells */
+.theme-halloween-wrapper table tbody,
+.theme-halloween-wrapper table tbody.bg-white,
+.theme-halloween-wrapper table tbody tr,
+.theme-halloween-wrapper table tbody tr.bg-white,
+.theme-halloween-wrapper table tbody td,
+body.theme-halloween-active table tbody,
+body.theme-halloween-active table tbody tr,
+body.theme-halloween-active table tbody td {
+  background-color: #0b1733 !important;
+  border-color: #16274a !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper table tbody.divide-y-2 > tr,
+.theme-halloween-wrapper table tbody.divide-y > tr {
+  border-bottom: 1px solid #16274a !important;
+}
+
+/* Table Row Hover State */
+.theme-halloween-wrapper table tbody tr:hover,
+.theme-halloween-wrapper table tbody tr:hover td,
+.theme-halloween-wrapper table tbody tr.hover\:bg-slate-50\/80:hover,
+.theme-halloween-wrapper table tbody tr.hover\:bg-slate-50\/80:hover td,
+body.theme-halloween-active table tbody tr:hover,
+body.theme-halloween-active table tbody tr:hover td {
+  background-color: #132448 !important;
+}
+
+/* Table Cell Official Name */
+.theme-halloween-wrapper table td div[class*="text-[#08315F]"],
+.theme-halloween-wrapper table td span[class*="text-[#08315F]"],
+body.theme-halloween-active table td div[class*="text-[#08315F]"] {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+.theme-halloween-wrapper table td div[class*="text-[#08315F]"]:hover,
+body.theme-halloween-active table td div[class*="text-[#08315F]"]:hover {
+  color: #f97316 !important;
+}
+
+/* Table Cell Position Title & DBM Item */
+.theme-halloween-wrapper table td span[class*="text-[#075985]"],
+.theme-halloween-wrapper table td div[class*="text-[#075985]"],
+body.theme-halloween-active table td span[class*="text-[#075985]"] {
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+}
+
+/* Table Cell Division & Office Text */
+.theme-halloween-wrapper table td div[class*="text-slate-700"],
+.theme-halloween-wrapper table td span[class*="text-slate-700"],
+.theme-halloween-wrapper table td div[class*="text-slate-800"],
+body.theme-halloween-active table td div[class*="text-slate-700"] {
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper table td div[class*="text-slate-400"],
+.theme-halloween-wrapper table td span[class*="text-slate-400"],
+.theme-halloween-wrapper table td div[class*="text-slate-500"],
+body.theme-halloween-active table td div[class*="text-slate-400"] {
+  color: #94a3b8 !important;
+}
+
+/* Table ID Badge */
+.theme-halloween-wrapper td span[class*="font-mono"],
+.theme-halloween-wrapper td span[class*="bg-sky-50"] {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* Table Region Button Pill */
+.theme-halloween-wrapper td button[class*="bg-slate-100"],
+.theme-halloween-wrapper td span[class*="bg-slate-100"],
+body.theme-halloween-active td button[class*="bg-slate-100"] {
+  background-color: #132347 !important;
+  color: #f8fafc !important;
+  border-color: #1e3867 !important;
+}
+
+.theme-halloween-wrapper td button[class*="bg-slate-100"]:hover,
+body.theme-halloween-active td button[class*="bg-slate-100"]:hover {
+  background-color: #f97316 !important;
+  border-color: #f97316 !important;
+  color: #ffffff !important;
+}
+
+.theme-halloween-wrapper td button[class*="bg-slate-100"] svg {
+  color: #f59e0b !important;
+}
+
+/* Salary Grade Badge in Table */
+.theme-halloween-wrapper td span[class*="border-amber-300"],
+.theme-halloween-wrapper td span[class*="border-amber-200"],
+.theme-halloween-wrapper td span[class*="bg-amber-50"] {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+.theme-halloween-wrapper td span[class*="border-blue-200"],
+.theme-halloween-wrapper td span[class*="border-sky-200"],
+.theme-halloween-wrapper td span[class*="bg-blue-50"] {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+  color: #7dd3fc !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+/* Avatar Circle Placeholder in Table */
+.theme-halloween-wrapper table td div[class*="from-blue-50"],
+body.theme-halloween-active table td div[class*="from-blue-50"] {
+  background: #132347 !important;
+  border-color: #1e345e !important;
+  color: #38bdf8 !important;
+}
+
+/* Table Row Action Toolbar (Hover state) */
+.theme-halloween-wrapper tr div[class*="group-hover:opacity-100"],
+body.theme-halloween-active tr div[class*="group-hover:opacity-100"] {
+  background-color: #060e20 !important;
+  border-color: #1e345e !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ==========================================================================
+   TABLE FOOTER & PAGINATION
+   ========================================================================== */
+.theme-halloween-wrapper table + div,
+.theme-halloween-wrapper div[class*="border-t-2"][class*="bg-white"],
+.theme-halloween-wrapper div[class*="border-t"][class*="bg-white"],
+body.theme-halloween-active table + div {
+  background-color: #060e20 !important;
+  border-top: 2px solid #1e345e !important;
+  color: #94a3b8 !important;
+}
+
+.theme-halloween-wrapper table + div button,
+.theme-halloween-wrapper div[class*="border-t-2"] button[class*="bg-white"],
+body.theme-halloween-active table + div button {
+  background-color: #0b1733 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper table + div button:hover:not(:disabled),
+body.theme-halloween-active table + div button:hover:not(:disabled) {
+  background-color: #1e3867 !important;
+  border-color: #f97316 !important;
+  color: #ffffff !important;
+}
+
+.theme-halloween-wrapper div[class*="border-t-2"] button[class*="bg-[#08315F]"],
+body.theme-halloween-active div[class*="border-t-2"] button[class*="bg-[#08315F]"] {
+  background-color: #f97316 !important;
+  border-color: #ea580c !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.4) !important;
+}
+
+/* ==========================================================================
+   MOBILE TABLE CARDS & DIRECTORY VIEW
+   ========================================================================== */
+.theme-halloween-wrapper div.md\:hidden > div,
+.theme-halloween-wrapper .md\:hidden div[class*="bg-white"],
+body.theme-halloween-active div.md\:hidden > div {
+  background-color: #0b1733 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper .md\:hidden div[class*="bg-slate-50"],
+body.theme-halloween-active .md\:hidden div[class*="bg-slate-50"] {
+  background-color: #060e20 !important;
+  border-color: #16274a !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper div[class*="rounded-[1.5rem]"],
+body.theme-halloween-active div[class*="rounded-[1.5rem]"] {
+  background-color: #0b1733 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   ACTION BUTTONS & DATA CONTROLS
+   ========================================================================== */
+.theme-halloween-wrapper button[class*="bg-[#F0F9FF]"] {
+  background-color: #132347 !important;
+  color: #38bdf8 !important;
+  border-color: #1e3867 !important;
+}
+
+.theme-halloween-wrapper button[class*="bg-[#F0F9FF]"]:hover {
+  background-color: #1e3867 !important;
+  color: #ffffff !important;
+  border-color: #f97316 !important;
+}
+
+.theme-halloween-wrapper button[class*="bg-[#08315F]"]:not(.active-tab) {
+  background-color: #0e2755 !important;
+  border-color: #f97316 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.25) !important;
+}
+
+.theme-halloween-wrapper button[class*="bg-[#08315F]"]:hover {
+  background-color: #f97316 !important;
+  border-color: #ea580c !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(249, 115, 22, 0.45) !important;
+}
+
+/* Status Pill Switcher Active State */
+.theme-halloween-wrapper div[class*="rounded-full"] button[class*="bg-[#08315F]"] {
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+}
+
+/* Form Cards & Settings Cards */
+.theme-halloween-wrapper .card,
+.theme-halloween-wrapper div[class*="rounded-[2rem]"],
+.theme-halloween-wrapper div[class*="rounded-[30px]"],
+.theme-halloween-wrapper div[class*="rounded-[24px]"] {
+  background-color: #0b1733 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+/* Text Overrides for High Contrast */
+.theme-halloween-wrapper .text-slate-800,
+.theme-halloween-wrapper .text-slate-900,
+.theme-halloween-wrapper .text-slate-700,
+body.theme-halloween-active .text-slate-800,
+body.theme-halloween-active .text-slate-900,
+body.theme-halloween-active .text-slate-700 {
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper .text-slate-400,
+.theme-halloween-wrapper .text-slate-500,
+body.theme-halloween-active .text-slate-400,
+body.theme-halloween-active .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   MODALS, PORTALS, & DIALOGS (Upload, Reassign, Vacate, Retirees, Personnel)
+   ========================================================================== */
+.theme-halloween-wrapper .fixed.inset-0,
+body.theme-halloween-active .fixed.inset-0,
+.theme-halloween-wrapper .mdb-modal-overlay,
+body.theme-halloween-active .mdb-modal-overlay {
+  background-color: rgba(2, 6, 23, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Modal Dialog Windows */
+.theme-halloween-wrapper .fixed.inset-0 > div[class*="bg-white"],
+body.theme-halloween-active .fixed.inset-0 > div[class*="bg-white"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="rounded-[2.5rem]"],
+body.theme-halloween-active .fixed.inset-0 div[class*="rounded-[2.5rem]"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="rounded-[3rem]"],
+body.theme-halloween-active .fixed.inset-0 div[class*="rounded-[3rem]"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="rounded-[28px]"],
+body.theme-halloween-active .fixed.inset-0 div[class*="rounded-[28px]"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="rounded-3xl"],
+body.theme-halloween-active .fixed.inset-0 div[class*="rounded-3xl"],
+.theme-halloween-wrapper .mdb-modal-card,
+body.theme-halloween-active .mdb-modal-card {
+  background-color: #0b1733 !important;
+  border: 1.5px solid #1e345e !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 25px rgba(249, 115, 22, 0.15) !important;
+  color: #f8fafc !important;
+}
+
+/* Modal Headers */
+.theme-halloween-wrapper .fixed.inset-0 div[class*="border-b"],
+body.theme-halloween-active .fixed.inset-0 div[class*="border-b"] {
+  background-color: #070f24 !important;
+  border-bottom-color: #1e345e !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 h2,
+.theme-halloween-wrapper .fixed.inset-0 h3,
+.theme-halloween-wrapper .mdb-modal-card h2,
+.theme-halloween-wrapper .mdb-modal-card h3,
+body.theme-halloween-active .fixed.inset-0 h2,
+body.theme-halloween-active .fixed.inset-0 h3,
+body.theme-halloween-active .mdb-modal-card h2,
+body.theme-halloween-active .mdb-modal-card h3 {
+  color: #ffffff !important;
+}
+
+/* Modal Body & Background containers */
+.theme-halloween-wrapper .fixed.inset-0 div[class*="bg-slate-50"],
+body.theme-halloween-active .fixed.inset-0 div[class*="bg-slate-50"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="bg-slate-100"],
+body.theme-halloween-active .fixed.inset-0 div[class*="bg-slate-100"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="bg-white"],
+body.theme-halloween-active .fixed.inset-0 div[class*="bg-white"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="bg-blue-50"],
+body.theme-halloween-active .fixed.inset-0 div[class*="bg-blue-50"],
+.theme-halloween-wrapper .fixed.inset-0 div[class*="bg-cyan-50"],
+body.theme-halloween-active .fixed.inset-0 div[class*="bg-cyan-50"] {
+  background-color: #060e20 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+/* Modal Footers */
+.theme-halloween-wrapper .fixed.inset-0 div[class*="border-t"],
+body.theme-halloween-active .fixed.inset-0 div[class*="border-t"] {
+  background-color: #070f24 !important;
+  border-top-color: #1e345e !important;
+}
+
+/* Modal Row Items (e.g., in RetireesModal) */
+.theme-halloween-wrapper .fixed.inset-0 div[class*="border-slate-200"],
+body.theme-halloween-active .fixed.inset-0 div[class*="border-slate-200"] {
+  border-color: #1e345e !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 div[class*="hover:bg-blue-50"]:hover,
+body.theme-halloween-active .fixed.inset-0 div[class*="hover:bg-blue-50"]:hover {
+  background-color: #132448 !important;
+  border-color: #f97316 !important;
+}
+
+/* Modal Badges Contrast in Halloween Mode */
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-amber-100"],
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-yellow-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-amber-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-yellow-100"] {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-rose-100"],
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-red-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-rose-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-red-100"] {
+  background-color: rgba(244, 63, 94, 0.2) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-blue-100"],
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-sky-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-blue-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-sky-100"] {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+  color: #7dd3fc !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-purple-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-purple-100"] {
+  background-color: rgba(168, 85, 247, 0.2) !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-emerald-100"],
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-green-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-emerald-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-green-100"] {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 span[class*="bg-slate-100"],
+body.theme-halloween-active .fixed.inset-0 span[class*="bg-slate-100"] {
+  background-color: #132347 !important;
+  color: #cbd5e1 !important;
+  border-color: #1e3867 !important;
+}
+
+/* Modal Inputs and Selects */
+.theme-halloween-wrapper .fixed.inset-0 input,
+.theme-halloween-wrapper .fixed.inset-0 select,
+.theme-halloween-wrapper .fixed.inset-0 textarea,
+body.theme-halloween-active .fixed.inset-0 input,
+body.theme-halloween-active .fixed.inset-0 select,
+body.theme-halloween-active .fixed.inset-0 textarea {
+  background-color: #060e20 !important;
+  border-color: #1d355f !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 input:focus,
+.theme-halloween-wrapper .fixed.inset-0 select:focus,
+.theme-halloween-wrapper .fixed.inset-0 textarea:focus,
+body.theme-halloween-active .fixed.inset-0 input:focus,
+body.theme-halloween-active .fixed.inset-0 select:focus,
+body.theme-halloween-active .fixed.inset-0 textarea:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3) !important;
+}
+
+/* Portal Dropdown Menus (Comboboxes / Search Selects) */
+body.theme-halloween-active div[style*="fixed"][class*="bg-white"],
+body.theme-halloween-active div[style*="fixed"][class*="rounded-3xl"],
+body.theme-halloween-active div[style*="fixed"][class*="rounded-2xl"],
+body.theme-halloween-active div[class*="shadow-[0_25px_60px"] {
+  background-color: #0b1733 !important;
+  border: 1.5px solid #1e345e !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8) !important;
+  color: #f8fafc !important;
+}
+
+body.theme-halloween-active div[style*="fixed"] input,
+body.theme-halloween-active div[class*="shadow-[0_25px_60px"] input {
+  background-color: #060e20 !important;
+  border-color: #1e345e !important;
+  color: #f8fafc !important;
+}
+
+body.theme-halloween-active div[style*="fixed"] .cursor-pointer:hover,
+body.theme-halloween-active div[class*="shadow-[0_25px_60px"] .cursor-pointer:hover {
+  background-color: #142850 !important;
+}
+
+/* Close & Cancel Buttons in Modals */
+.theme-halloween-wrapper .fixed.inset-0 button[class*="bg-slate-50"],
+.theme-halloween-wrapper .fixed.inset-0 button[class*="bg-white"],
+body.theme-halloween-active .fixed.inset-0 button[class*="bg-slate-50"],
+body.theme-halloween-active .fixed.inset-0 button[class*="bg-white"] {
+  background-color: #132347 !important;
+  border-color: #1e3867 !important;
+  color: #f8fafc !important;
+}
+
+.theme-halloween-wrapper .fixed.inset-0 button[class*="bg-slate-50"]:hover,
+.theme-halloween-wrapper .fixed.inset-0 button[class*="bg-white"]:hover,
+body.theme-halloween-active .fixed.inset-0 button[class*="bg-slate-50"]:hover,
+body.theme-halloween-active .fixed.inset-0 button[class*="bg-white"]:hover {
+  background-color: #f43f5e !important;
+  border-color: #e11d48 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   SWEETALERT2 DIALOG THEME
+   ========================================================================== */
+body.theme-halloween-active .swal2-popup {
+  background: #0b1733 !important;
+  border: 1.5px solid #1e345e !important;
+  border-radius: 28px !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(249, 115, 22, 0.2) !important;
+  color: #f8fafc !important;
+}
+
+body.theme-halloween-active .swal2-title {
+  color: #ffffff !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+}
+
+body.theme-halloween-active .swal2-html-container {
+  color: #cbd5e1 !important;
+}
+
+body.theme-halloween-active .swal2-confirm {
+  background-color: #f97316 !important;
+  border-radius: 999px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.4) !important;
+}
+
+body.theme-halloween-active .swal2-cancel {
+  background-color: #1e293b !important;
+  border-radius: 999px !important;
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================================================
+   PAGINATION CONTROLS
+   ========================================================================== */
+.theme-halloween-wrapper button[class*="rounded-xl"]:not(:disabled),
+.theme-halloween-wrapper button[class*="rounded-lg"]:not(:disabled) {
+  background-color: #0d1e40;
+  border-color: #1e3867;
+  color: #f8fafc;
+}
+
+.theme-halloween-wrapper .pagination-btn-active,
+.theme-halloween-wrapper button[class*="bg-[#08315F]"].active-page {
+  background-color: #f97316 !important;
+  border-color: #ea580c !important;
+  color: #ffffff !important;
+}
+
+
+
+

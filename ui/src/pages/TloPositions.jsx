@@ -28,6 +28,7 @@ import {
   FiTag
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useSeasonalTheme } from '../utils/themeUtils';
 import AdminSidebar from '../components/AdminSidebar';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
@@ -36,6 +37,7 @@ import { apiUrl } from '../utils/api';
 
 const TloPositions = () => {
   const { user, token } = useAuth();
+  const { isHalloween } = useSeasonalTheme(user);
   const navigate = useNavigate();
 
   // Positions Data State
@@ -526,34 +528,39 @@ const TloPositions = () => {
 
   return (
     <PageTransition>
-      <div className="flex h-screen bg-transparent font-sans overflow-hidden">
+      <div className={`flex h-screen ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} font-sans overflow-hidden`}>
         {/* Navigation Sidebar */}
         <AdminSidebar />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
           {/* TOP NAVIGATION BAR (Exact Match to PositionAssignments) */}
-          <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
-            <div className="flex items-center gap-4 text-white">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                <FiLayers size={20} />
+          <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full relative">
+            <div className="flex items-center gap-3 sm:gap-4 text-white relative z-10 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                <FiLayers size={18} />
               </div>
-              <div>
-                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">
-                  Positions <span className="text-blue-300 not-italic">Library</span>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase truncate">
+                  Positions <span className={isHalloween ? "text-[#f59e0b] not-italic" : "text-blue-300 not-italic"}>Library</span>
                 </h1>
-                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                  Plantilla Inventory & Catalog • Third Level Officials Command Dashboard
+                <p className="text-[8.5px] sm:text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1 truncate">
+                  Plantilla Inventory & Catalog • Third Level Officials
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 sm:gap-6 relative z-10 shrink-0">
+              {isHalloween && (
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-sm sm:text-base shadow-sm shrink-0">
+                  🎃
+                </div>
+              )}
               <div className="hidden md:flex flex-col items-end">
                 <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
                   {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
                 </span>
-                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">
+                <span className={`text-[9px] font-bold ${isHalloween ? 'text-[#fbbf24]' : 'text-[#FBBF24]'} uppercase tracking-widest mt-1`}>
                   {user?.role || 'Central Office'}
                 </span>
               </div>
@@ -561,66 +568,66 @@ const TloPositions = () => {
           </header>
 
           {/* MAIN CONTAINER */}
-          <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
+          <main className="flex-1 px-3 sm:px-6 lg:px-8 pb-12 pt-4 sm:pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
             {/* UNIFIED DATA CONTROLS TAB */}
-            <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-3 w-full">
+            <div className="bg-white border-2 border-[#08315F] rounded-[20px] sm:rounded-[24px] p-2.5 sm:p-3 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-2.5 w-full">
               {/* Left/Center: Search Bar & Dropdown Filters */}
-              <div className="flex flex-col md:flex-row items-center gap-2.5 flex-1 w-full min-w-0">
+              <div className="flex flex-col md:flex-row items-center gap-2 flex-1 w-full min-w-0">
                 {/* Search Bar */}
-                <div className="relative flex-1 w-full h-[44px]">
-                  <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
+                <div className="relative flex-1 w-full h-[40px] sm:h-[44px]">
+                  <FiSearch className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by position title, code, region, division, bureau, or salary grade..."
-                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-10 text-[14px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                    placeholder="Search position title, code, region, division, bureau..."
+                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-10 sm:pl-11 pr-9 text-[13px] sm:text-[14px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                   />
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                       title="Clear search"
                     >
-                      <FiX size={16} />
+                      <FiX size={15} />
                     </button>
                   )}
                 </div>
 
                 {/* Region Filter */}
-                <div className="relative w-full md:w-56 h-[44px] shrink-0">
+                <div className="relative w-full md:w-52 h-[40px] sm:h-[44px] shrink-0">
                   <select
                     value={regionFilter}
                     onChange={(e) => {
                       setRegionFilter(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full px-4 text-[13px] font-black text-[#08315F] outline-none focus:border-sky-400 appearance-none pr-10 cursor-pointer"
+                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full pl-3.5 sm:pl-4 pr-8 text-[12.5px] sm:text-[13px] font-black text-[#08315F] outline-none focus:border-sky-400 appearance-none cursor-pointer text-ellipsis"
                   >
                     <option value="All">All Regions</option>
                     {filterOptions.regions.map(r => (
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
-                  <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#08315F]/60 pointer-events-none w-4 h-4" />
+                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[#08315F]/60 pointer-events-none w-4 h-4" />
                 </div>
 
                 {/* Salary Grade Filter */}
-                <div className="relative w-full md:w-44 h-[44px] shrink-0">
+                <div className="relative w-full md:w-40 h-[40px] sm:h-[44px] shrink-0">
                   <select
                     value={salaryGradeFilter}
                     onChange={(e) => {
                       setSalaryGradeFilter(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full px-4 text-[13px] font-black text-[#08315F] outline-none focus:border-sky-400 appearance-none pr-10 cursor-pointer"
+                    className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full pl-3.5 sm:pl-4 pr-8 text-[12.5px] sm:text-[13px] font-black text-[#08315F] outline-none focus:border-sky-400 appearance-none cursor-pointer text-ellipsis"
                   >
                     <option value="All">All Grades</option>
                     {filterOptions.salaryGrades.map(sg => (
                       <option key={sg} value={sg}>SG {sg}</option>
                     ))}
                   </select>
-                  <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#08315F]/60 pointer-events-none w-4 h-4" />
+                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[#08315F]/60 pointer-events-none w-4 h-4" />
                 </div>
 
                 {/* Reset Filters */}
@@ -634,7 +641,7 @@ const TloPositions = () => {
                       setSortOrder('ASC');
                       setCurrentPage(1);
                     }}
-                    className="h-[44px] px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full border-2 border-slate-200 font-black text-[12px] uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    className="h-[40px] sm:h-[44px] px-3.5 sm:px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full border-2 border-slate-200 font-black text-[11.5px] sm:text-[12px] uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                     title="Reset all filters"
                   >
                     <FiX size={14} />
@@ -644,23 +651,24 @@ const TloPositions = () => {
               </div>
 
               {/* Right Side: Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto shrink-0">
                 <button
                   onClick={() => fetchPositions(true)}
                   disabled={refreshing}
-                  className="h-[44px] px-5 bg-[#F0F9FF] hover:bg-sky-100 text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[13.5px] tracking-widest uppercase transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 active:scale-95 cursor-pointer"
+                  className="h-[40px] sm:h-[44px] px-3.5 sm:px-5 flex-1 sm:flex-none bg-[#F0F9FF] hover:bg-sky-100 text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[12px] sm:text-[13.5px] tracking-widest uppercase transition-colors flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap disabled:opacity-50 active:scale-95 cursor-pointer shrink-0"
                   title="Refresh data"
                 >
-                  <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-sky-600' : ''}`} />
+                  <FiRefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${refreshing ? 'animate-spin text-sky-600' : ''}`} />
                   <span>Refresh</span>
                 </button>
 
                 <button
                   onClick={handleOpenCreate}
-                  className="h-[44px] px-6 bg-[#08315F] hover:bg-[#004A99] text-white rounded-full font-black text-[13.5px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-md active:scale-95 border-2 border-transparent cursor-pointer"
+                  className="h-[40px] sm:h-[44px] px-4 sm:px-6 flex-1 sm:flex-none bg-[#08315F] hover:bg-[#004A99] text-white rounded-full font-black text-[12px] sm:text-[13.5px] tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shadow-md active:scale-95 border-2 border-transparent cursor-pointer"
                 >
-                  <FiPlus className="w-4 h-4 stroke-[3]" />
-                  <span>Add Plantilla Position</span>
+                  <FiPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+                  <span className="hidden sm:inline">Add Plantilla Position</span>
+                  <span className="sm:hidden">Add Position</span>
                 </button>
               </div>
             </div>

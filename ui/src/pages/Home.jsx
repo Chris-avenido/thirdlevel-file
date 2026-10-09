@@ -11,8 +11,15 @@ import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import AnalyticsSection from './MainDashboard/components/AnalyticsSection';
 import './MainDashboard/MainDashboard.css';
-import { FiUserPlus, FiUploadCloud, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
+import { FiUserPlus, FiUploadCloud, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid, FiSun, FiMoon } from 'react-icons/fi';
 import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
+import { useSeasonalTheme } from '../utils/themeUtils';
+import './HalloweenTheme.css';
+import headerBg from '../assets/halloween/header_bg.jpg';
+import pumpkinImg from '../assets/halloween/card_pumpkin.jpg';
+import ghostImg from '../assets/halloween/card_ghost.jpg';
+import graveyardImg from '../assets/halloween/card_graveyard.jpg';
+import catImg from '../assets/halloween/card_cat.jpg';
 // Text cleaning engine from MainDashboard
 const repairMojibake = (text) => {
   return String(text || "")
@@ -137,6 +144,7 @@ const isThirdLevelPosition = (pos) => {
 const Home = () => {
   const navigate = useNavigate();
   const { user, token, logout } = useAuth();
+  const { isHalloween, override, toggleHalloween, isDateActive } = useSeasonalTheme(user);
 
   const [applications, setApplications] = useState([]);
   const [officials, setOfficials] = useState([]);
@@ -924,30 +932,81 @@ const Home = () => {
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen bg-transparent text-[#0f172a] font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
+      <div className={`flex h-screen overflow-hidden ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} text-[#0f172a] font-['Plus_Jakarta_Sans',system-ui,sans-serif]`}>
         <AdminSidebar />
-        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
+          
           {/* TOP NAVIGATION BAR */}
-          <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                <FiGrid size={20} />
+          <header 
+            className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full relative"
+            style={isHalloween ? {
+              backgroundImage: `linear-gradient(90deg, rgba(8, 49, 95, 0.82) 0%, rgba(15, 23, 42, 0.65) 50%, rgba(8, 49, 95, 0.82) 100%), url(${headerBg})`,
+              backgroundPosition: 'center',
+              backgroundSize: 'cover'
+            } : {}}
+          >
+            <div className="flex items-center gap-2.5 sm:gap-4 text-white relative z-10 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                <FiGrid size={18} />
               </div>
-              <div>
-                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
-                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">InsightED Top-Level Metrics</p>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase truncate">
+                  Executive <span className={isHalloween ? 'text-[#f59e0b] not-italic' : 'text-blue-300 not-italic'}>Dashboard</span>
+                </h1>
+                <p className="text-[8px] sm:text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-0.5 sm:mt-1 whitespace-nowrap">
+                  InsightED Top-Level Metrics
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className="hidden md:flex flex-col items-end">
-                <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
-                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
+            <div className="flex items-center gap-3 sm:gap-6 relative z-10 shrink-0">
+              {/* Seasonal Theme Mode Switcher Pill */}
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-black/40 border border-white/10 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 backdrop-blur-md">
+                <button
+                  onClick={() => toggleHalloween(isHalloween ? 'normal' : 'halloween')}
+                  className={`flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 sm:px-2.5 py-0.5 rounded-full transition-all ${
+                    isHalloween ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'bg-sky-600 text-white'
+                  }`}
+                  title="Toggle Halloween Seasonal Preview (Active Oct 26 - Nov 6)"
+                >
+                  {isHalloween ? (
+                    <><span>🎃</span> Halloween</>
+                  ) : (
+                    <><span>☀️</span> Standard</>
+                  )}
+                </button>
+                {override && (
+                  <button
+                    onClick={() => toggleHalloween('auto')}
+                    className="text-[8px] sm:text-[9px] font-bold text-slate-400 hover:text-white uppercase tracking-wider transition-colors"
+                    title="Reset to automatic date schedule (Oct 26 - Nov 6)"
+                  >
+                    Auto
+                  </button>
+                )}
+              </div>
+
+              <div className="hidden md:flex items-center gap-3">
+                {isHalloween && (
+                  <div className="w-8 h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-base shadow-sm shrink-0">
+                    🎃
+                  </div>
+                )}
+                <div className="flex flex-col items-end">
+                  <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
+                    {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'Wilfredo E. Cabral'}
+                  </span>
+                  <span className={`text-[9px] font-bold ${isHalloween ? 'text-[#fbbf24]' : 'text-[#FBBF24]'} uppercase tracking-widest mt-1`}>
+                    {user?.role || 'Central Office'}
+                  </span>
+                </div>
               </div>
             </div>
           </header>
+
           <style>{`
-          .dashboard-wrap { padding:28px; }
+          .dashboard-wrap { padding:16px 16px; }
+          @media(min-width:640px){ .dashboard-wrap { padding:24px 28px; } }
           .hero { background:#08315f; color:white; border-radius:28px; padding:28px; }
           .hero small { color:#fbbf24; font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
           .hero h1 { margin:10px 0 8px; font-size:42px; line-height:1; font-weight:900; }
@@ -962,8 +1021,8 @@ const Home = () => {
           .kpi p { margin:0; color:#64748b; font-size:12px; font-weight:900; text-transform:uppercase; }
           .kpi h2 { margin:8px 0 0; font-size:34px; color:#08315f; }
           .kpi .kpi-subheader { margin-top:2px; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; display:block; }
-          .kpi-tooltip { position:absolute; right:0; top:100%; margin-top:8px; width:280px; background:rgba(255,255,255,0.95); backdrop-filter:blur(8px); border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding:16px; opacity:0; pointer-events:none; transition:all 0.2s; z-index:60; max-height:400px; overflow-y:auto; }
-          .kpi:first-child .kpi-tooltip { right:auto; left:0; }
+          .kpi-tooltip { position:absolute; right:0; top:100%; margin-top:8px; width:280px; max-width:calc(100vw - 36px); background:rgba(255,255,255,0.95); backdrop-filter:blur(8px); border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding:16px; opacity:0; pointer-events:none; transition:all 0.2s; z-index:60; max-height:400px; overflow-y:auto; }
+          .kpi-first-child .kpi-tooltip { right:auto; left:0; }
           .kpi-tooltip::-webkit-scrollbar { width: 4px; }
           .kpi-tooltip::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
           .kpi:hover .kpi-tooltip { opacity:1; pointer-events:auto; }
@@ -1014,58 +1073,105 @@ const Home = () => {
             .grid-layout > aside { grid-column: span 1; }
             .hero h1 { font-size:32px; } 
           }
+          @media(max-width:640px){
+            .dashboard-wrap { padding:12px 10px; }
+            .kpis { grid-template-columns:1fr; }
+          }
           @media(max-width:500px){ 
             .kpis { grid-template-columns:1fr; }
           }
         `}</style>
 
-          <div className="dashboard-wrap mt-6">
+          <div className="dashboard-wrap">
             {/* FILTERS & SEARCH BAR */}
-            <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-[#08315F] rounded-[24px] xl:rounded-full p-2 shadow-sm relative z-20 mt-[-24px] max-w-[1200px] mx-auto">
+            <div className={`mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 ${
+              isHalloween
+                ? 'bg-[#0a162e]/95 border border-[#234275] shadow-[0_0_25px_rgba(249,115,22,0.12)]'
+                : 'bg-white border-[2px] border-[#08315F] shadow-sm'
+            } rounded-[24px] xl:rounded-full p-2 relative z-20 max-w-[1200px] mx-auto transition-all`}>
               {/* SEARCH BAR */}
-              <div className="relative w-full xl:flex-[1.5] h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={14} />
+              <div className={`relative w-full xl:flex-[1.5] h-[38px] ${
+                isHalloween
+                  ? 'bg-[#060e20] border border-[#1d355f] focus-within:border-orange-400'
+                  : 'bg-[#F0F9FF] border border-[#BAE6FD] focus-within:border-sky-400'
+              } rounded-full transition-colors`}>
+                <FiSearch className={`absolute left-4 top-1/2 -translate-y-1/2 ${isHalloween ? 'text-orange-400' : 'text-[#08315F]/50'}`} size={14} />
                 <input
                   type="text"
                   value={filterSearch}
                   onChange={(e) => setFilterSearch(e.target.value)}
                   placeholder="Search name or email..."
-                  className="w-full h-full bg-transparent py-0 pl-10 pr-4 text-[11px] font-bold text-[#08315F] outline-none placeholder:text-[#08315F]/50 transition-colors"
+                  className={`w-full h-full bg-transparent py-0 pl-10 pr-4 text-[11px] font-bold ${
+                    isHalloween ? 'text-white placeholder:text-slate-500' : 'text-[#08315F] placeholder:text-[#08315F]/50'
+                  } outline-none transition-colors`}
                 />
               </div>
 
               {/* DROPDOWNS */}
               <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
                 {/* Region Dropdown */}
-                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                  <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                    <option value="All regions">All Regions</option>
+                <div className={`relative w-full xl:flex-1 h-[38px] ${
+                  isHalloween
+                    ? 'bg-[#060e20] border border-[#1d355f] focus-within:border-orange-400'
+                    : 'bg-[#F0F9FF] border border-[#BAE6FD] focus-within:border-sky-400'
+                } rounded-full transition-colors`}>
+                  <select 
+                    value={filterRegion} 
+                    onChange={(e) => setFilterRegion(e.target.value)} 
+                    title={filterRegion} 
+                    className={`w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold ${
+                      isHalloween ? 'text-slate-200' : 'text-[#08315F]'
+                    } outline-none appearance-none cursor-pointer text-ellipsis`}
+                  >
+                    <option value="All regions" className={isHalloween ? 'bg-[#060e20] text-white' : ''}>All Regions</option>
                     {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
-                      <option key={r} value={r}>{r}</option>
+                      <option key={r} value={r} className={isHalloween ? 'bg-[#060e20] text-white' : ''}>{r}</option>
                     ))}
                   </select>
-                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                  <FiChevronRight className={`absolute right-2 top-1/2 -translate-y-1/2 ${isHalloween ? 'text-orange-400' : 'text-sky-500'} pointer-events-none`} size={12} />
                 </div>
 
                 {/* Level Dropdown */}
-                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                  <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                    <option value="All levels">All Levels</option>
-                    <option value="Third Level">Third Level</option>
-                    <option value="Division Chief">Division Chief</option>
+                <div className={`relative w-full xl:flex-1 h-[38px] ${
+                  isHalloween
+                    ? 'bg-[#060e20] border border-[#1d355f] focus-within:border-orange-400'
+                    : 'bg-[#F0F9FF] border border-[#BAE6FD] focus-within:border-sky-400'
+                } rounded-full transition-colors`}>
+                  <select 
+                    value={filterLevel} 
+                    onChange={(e) => setFilterLevel(e.target.value)} 
+                    title={filterLevel} 
+                    className={`w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold ${
+                      isHalloween ? 'text-slate-200' : 'text-[#08315F]'
+                    } outline-none appearance-none cursor-pointer text-ellipsis`}
+                  >
+                    <option value="All levels" className={isHalloween ? 'bg-[#060e20] text-white' : ''}>All Levels</option>
+                    <option value="Third Level" className={isHalloween ? 'bg-[#060e20] text-white' : ''}>Third Level</option>
+                    <option value="Division Chief" className={isHalloween ? 'bg-[#060e20] text-white' : ''}>Division Chief</option>
                   </select>
-                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                  <FiChevronRight className={`absolute right-2 top-1/2 -translate-y-1/2 ${isHalloween ? 'text-orange-400' : 'text-sky-500'} pointer-events-none`} size={12} />
                 </div>
 
                 {/* Office Dropdown */}
-                <div className="relative w-full xl:flex-1 h-[38px] bg-[#F0F9FF] border border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                  <select value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
-                    <option value="All">All Offices</option>
+                <div className={`relative w-full xl:flex-1 h-[38px] ${
+                  isHalloween
+                    ? 'bg-[#060e20] border border-[#1d355f] focus-within:border-orange-400'
+                    : 'bg-[#F0F9FF] border border-[#BAE6FD] focus-within:border-sky-400'
+                } rounded-full transition-colors`}>
+                  <select 
+                    value={filterOffice} 
+                    onChange={(e) => setFilterOffice(e.target.value)} 
+                    title={filterOffice} 
+                    className={`w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold ${
+                      isHalloween ? 'text-slate-200' : 'text-[#08315F]'
+                    } outline-none appearance-none cursor-pointer text-ellipsis`}
+                  >
+                    <option value="All" className={isHalloween ? 'bg-[#060e20] text-white' : ''}>All Offices</option>
                     {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
-                      <option key={o} value={o}>{o}</option>
+                      <option key={o} value={o} className={isHalloween ? 'bg-[#060e20] text-white' : ''}>{o}</option>
                     ))}
                   </select>
-                  <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
+                  <FiChevronRight className={`absolute right-2 top-1/2 -translate-y-1/2 ${isHalloween ? 'text-orange-400' : 'text-sky-500'} pointer-events-none`} size={12} />
                 </div>
               </div>
 
@@ -1078,22 +1184,39 @@ const Home = () => {
                     setFilterLevel('All levels');
                     setFilterOffice('All');
                   }}
-                  className="h-[38px] px-8 w-full xl:w-auto bg-[#075985] text-white rounded-full font-black text-[11px] tracking-widest uppercase hover:bg-[#0369a1] transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
+                  className={`h-[38px] px-8 w-full xl:w-auto ${
+                    isHalloween
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/25'
+                      : 'bg-[#075985] hover:bg-[#0369a1] text-white'
+                  } rounded-full font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center whitespace-nowrap shrink-0`}
                 >
                   Clear
                 </button>
               </div>
             </div>
 
+            {/* TOP 4 KPIS CARDS */}
             <section className="kpis">
-              <div className={`kpi ${activeQueueFilter === 'thirdLevel' ? 'active-filter' : ''}`} onClick={() => toggleFilter('thirdLevel')} style={{ cursor: 'pointer', outlineColor: '#bae6fd' }}>
-                <p>Total Third Level Officials</p>
-                <h2>{loading ? '-' : thirdLevelCount}</h2>
-                <div className="kpi-subheader">Active assigned personnel</div>
-                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+              {/* Card 1: Total Third Level Officials */}
+              <div 
+                className={isHalloween ? `hw-kpi-card orange ${activeQueueFilter === 'thirdLevel' ? 'active-filter' : ''}` : `kpi ${activeQueueFilter === 'thirdLevel' ? 'active-filter' : ''}`} 
+                onClick={() => toggleFilter('thirdLevel')} 
+                style={{ cursor: 'pointer', outlineColor: '#bae6fd' }}
+              >
+                <div className="flex-1 pr-2">
+                  <p className={isHalloween ? 'text-slate-400 font-black text-[11px] uppercase tracking-wider' : ''}>Total Third Level Officials</p>
+                  <h2 className={isHalloween ? 'text-4xl font-black text-white mt-1 leading-none' : ''}>{loading ? '-' : thirdLevelCount}</h2>
+                  <div className={isHalloween ? 'text-[10px] font-bold uppercase tracking-wider text-sky-400 mt-2' : 'kpi-subheader'}>
+                    Active assigned personnel
+                  </div>
+                </div>
+                {isHalloween && (
+                  <img src={pumpkinImg} alt="Pumpkin" className="hw-kpi-img" />
+                )}
+                <div className={isHalloween ? 'hw-tooltip' : 'kpi-tooltip'} onClick={e => e.stopPropagation()}>
                   <h4>Position Breakdown</h4>
                   {Object.keys(thirdLevelBreakdown).length > 0 ? Object.entries(thirdLevelBreakdown).map(([position, count], idx) => (
-                    <div key={position} className="kpi-tooltip-row">
+                    <div key={position} className={isHalloween ? 'hw-tooltip-row' : 'kpi-tooltip-row'}>
                       <span className="label" title={position}>
                         <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {position}
                       </span>
@@ -1104,52 +1227,95 @@ const Home = () => {
                   )}
                 </div>
               </div>
-              <div className={`kpi amber ${activeQueueFilter === 'incomplete' ? 'active-filter' : ''}`} onClick={() => toggleFilter('incomplete')} style={{ cursor: 'pointer' }}>
-                <p>Complete Profiles</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <h2 className="!mt-0">{loading ? '-' : (officials.length - incompleteProfiles)}</h2>
-                  <span className="text-rose-500 text-[10px] font-black uppercase tracking-widest bg-rose-50 px-2 py-1 rounded-md border border-rose-100">-{incompleteProfiles} Deficit</span>
+
+              {/* Card 2: Complete Profiles */}
+              <div 
+                className={isHalloween ? `hw-kpi-card amber ${activeQueueFilter === 'incomplete' ? 'active-filter' : ''}` : `kpi amber ${activeQueueFilter === 'incomplete' ? 'active-filter' : ''}`} 
+                onClick={() => toggleFilter('incomplete')} 
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="flex-1 pr-2">
+                  <p className={isHalloween ? 'text-slate-400 font-black text-[11px] uppercase tracking-wider' : ''}>Complete Profiles</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <h2 className={isHalloween ? 'text-4xl font-black text-white leading-none !mt-0' : '!mt-0'}>
+                      {loading ? '-' : (officials.length - incompleteProfiles)}
+                    </h2>
+                    <span className={isHalloween 
+                      ? 'text-[#f87171] text-[10px] font-black uppercase tracking-wider bg-[#581414] border border-[#7f1d1d] px-2 py-1 rounded-md' 
+                      : 'text-rose-500 text-[10px] font-black uppercase tracking-widest bg-rose-50 px-2 py-1 rounded-md border border-rose-100'
+                    }>
+                      -{incompleteProfiles} Deficit
+                    </span>
+                  </div>
+                  <div className={isHalloween ? 'text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2' : 'kpi-subheader mt-1'}>
+                    100% compliant records
+                  </div>
                 </div>
-                <div className="kpi-subheader mt-1">100% compliant records</div>
-                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+                {isHalloween && (
+                  <img src={ghostImg} alt="Ghost" className="hw-kpi-img hw-floating-ghost" />
+                )}
+                <div className={isHalloween ? 'hw-tooltip' : 'kpi-tooltip'} onClick={e => e.stopPropagation()}>
                   <h4>Incomplete Profiles by Region</h4>
                   {Object.keys(incompleteRegionBreakdown).length > 0 ? Object.entries(incompleteRegionBreakdown).map(([region, count], idx) => (
-                    <div key={region} className="kpi-tooltip-row">
+                    <div key={region} className={isHalloween ? 'hw-tooltip-row' : 'kpi-tooltip-row'}>
                       <span className="label" title={region}>
                         <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
                       </span>
-                      <span className="count bg-rose-50 text-rose-600">{count}</span>
+                      <span className={isHalloween ? 'count text-rose-300' : 'count bg-rose-50 text-rose-600'}>{count}</span>
                     </div>
                   )) : (
                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mt-2">All complete</div>
                   )}
                 </div>
               </div>
-              <div className={`kpi purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}`} onClick={() => toggleFilter('retirees')} style={{ cursor: 'pointer' }}>
-                <div className="flex justify-between items-start">
-                  <p>Anticipated Vacancies</p>
-                  {user?.role === 'Central Office' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsRetireesModalOpen(true);
-                      }}
-                      className="text-[10px] font-black uppercase tracking-wider text-purple-600 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded transition-colors"
-                      title="Open Anticipated Vacancies Modal"
-                    >
-                      View Modal
-                    </button>
-                  )}
+
+              {/* Card 3: Anticipated Vacancies */}
+              <div 
+                className={isHalloween ? `hw-kpi-card purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}` : `kpi purple ${activeQueueFilter === 'retirees' ? 'active-filter' : ''}`} 
+                onClick={() => toggleFilter('retirees')} 
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="flex-1 pr-2">
+                  <div className="flex justify-between items-start">
+                    <p className={isHalloween ? 'text-slate-400 font-black text-[11px] uppercase tracking-wider' : ''}>Anticipated Vacancies</p>
+                    {user?.role === 'Central Office' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsRetireesModalOpen(true);
+                        }}
+                        className={isHalloween 
+                          ? 'text-[10px] font-black uppercase tracking-wider text-purple-100 bg-[#7c3aed] hover:bg-[#6d28d9] px-2.5 py-0.5 rounded-md transition-colors'
+                          : 'text-[10px] font-black uppercase tracking-wider text-purple-600 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded transition-colors'
+                        }
+                        title="Open Anticipated Vacancies Modal"
+                      >
+                        View Modal
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-2">
+                    <h2 className={isHalloween ? 'text-4xl font-black text-white leading-none !mt-0' : '!mt-0'}>
+                      {loading ? '-' : anticipatedVacanciesCount}
+                    </h2>
+                    <span className={isHalloween
+                      ? 'text-[#d8b4fe] text-[10px] font-black uppercase tracking-wider bg-[#3b0764] border border-[#6b21a8] px-2 py-1 rounded-md'
+                      : 'text-purple-500 text-[10px] font-black uppercase tracking-widest bg-purple-50 px-2 py-1 rounded-md border border-purple-100'
+                    } title="Separating this month">
+                      {loading ? '-' : retireesThisMonth.length} Separating
+                    </span>
+                  </div>
+                  <div className={isHalloween ? 'text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2' : 'kpi-subheader mt-1'}>
+                    Upcoming within 5 years
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 mt-2">
-                  <h2 className="!mt-0">{loading ? '-' : anticipatedVacanciesCount}</h2>
-                  <span className="text-purple-500 text-[10px] font-black uppercase tracking-widest bg-purple-50 px-2 py-1 rounded-md border border-purple-100" title="Separating this month">{loading ? '-' : retireesThisMonth.length} Separating</span>
-                </div>
-                <div className="kpi-subheader mt-1">Upcoming within 5 years</div>
-                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+                {isHalloween && (
+                  <img src={graveyardImg} alt="Graveyard" className="hw-kpi-img" />
+                )}
+                <div className={isHalloween ? 'hw-tooltip' : 'kpi-tooltip'} onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
                   {Object.keys(anticipatedRegionBreakdown).length > 0 ? Object.entries(anticipatedRegionBreakdown).map(([region, count], idx) => (
-                    <div key={region} className="kpi-tooltip-row">
+                    <div key={region} className={isHalloween ? 'hw-tooltip-row' : 'kpi-tooltip-row'}>
                       <span className="label" title={region}>
                         <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
                       </span>
@@ -1160,14 +1326,27 @@ const Home = () => {
                   )}
                 </div>
               </div>
-              <div className={`kpi red ${activeQueueFilter === 'vacant' ? 'active-filter' : ''}`} onClick={() => toggleFilter('vacant')} style={{ cursor: 'pointer' }}>
-                <p>Total Vacant Positions</p>
-                <h2>{loading ? '-' : vacantOfficials.length}</h2>
-                <div className="kpi-subheader">Unfilled positions</div>
-                <div className="kpi-tooltip" onClick={e => e.stopPropagation()}>
+
+              {/* Card 4: Total Vacant Positions */}
+              <div 
+                className={isHalloween ? `hw-kpi-card red ${activeQueueFilter === 'vacant' ? 'active-filter' : ''}` : `kpi red ${activeQueueFilter === 'vacant' ? 'active-filter' : ''}`} 
+                onClick={() => toggleFilter('vacant')} 
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="flex-1 pr-2">
+                  <p className={isHalloween ? 'text-slate-400 font-black text-[11px] uppercase tracking-wider' : ''}>Total Vacant Positions</p>
+                  <h2 className={isHalloween ? 'text-4xl font-black text-white mt-1 leading-none' : ''}>{loading ? '-' : vacantOfficials.length}</h2>
+                  <div className={isHalloween ? 'text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2' : 'kpi-subheader'}>
+                    Unfilled positions
+                  </div>
+                </div>
+                {isHalloween && (
+                  <img src={catImg} alt="Cat" className="hw-kpi-img" />
+                )}
+                <div className={isHalloween ? 'hw-tooltip' : 'kpi-tooltip'} onClick={e => e.stopPropagation()}>
                   <h4>Region Breakdown</h4>
                   {Object.keys(vacantRegionBreakdown).length > 0 ? Object.entries(vacantRegionBreakdown).map(([region, count], idx) => (
-                    <div key={region} className="kpi-tooltip-row">
+                    <div key={region} className={isHalloween ? 'hw-tooltip-row' : 'kpi-tooltip-row'}>
                       <span className="label" title={region}>
                         <span className="text-slate-400 font-black mr-1">{idx + 1}.</span> {region}
                       </span>
@@ -1180,12 +1359,14 @@ const Home = () => {
               </div>
             </section>
 
+            {/* BOTTOM 3-COLUMN GRID */}
             <section className="grid-layout">
-              <main className="dash-card">
-                <div className="dash-head flex justify-between items-center">
+              {/* Column 1: Action Queue */}
+              <main className={`dash-card ${isHalloween ? 'bg-[#0b162f] border border-[#1e345e]' : ''}`}>
+                <div className={`dash-head flex justify-between items-center ${isHalloween ? 'border-b border-[#16274a]' : ''}`}>
                   <div>
-                    <h3>Action Queue</h3>
-                    <p>
+                    <h3 className={isHalloween ? 'text-white font-extrabold text-lg' : ''}>Action Queue</h3>
+                    <p className={isHalloween ? 'text-slate-400 text-xs mt-1' : ''}>
                       {activeQueueFilter === 'all' && "Records requiring review or correction."}
                       {activeQueueFilter === 'pending' && "Showing only pool of applicants."}
                       {activeQueueFilter === 'incomplete' && "Showing only incomplete profiles."}
@@ -1202,41 +1383,56 @@ const Home = () => {
                         setFilterOffice('All');
                         setFilterSearch('');
                       }}
-                      className="text-[10px] font-black text-slate-400 hover:text-slate-700 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-xl transition-colors"
+                      className={`text-[10px] font-black ${
+                        isHalloween ? 'text-orange-400 bg-orange-950/50 hover:bg-orange-900/60 border border-orange-800/60' : 'text-slate-400 hover:text-slate-700 bg-slate-100'
+                      } uppercase tracking-widest px-3 py-1.5 rounded-xl transition-colors`}
                     >
                       Clear Filter
                     </button>
                   )}
                 </div>
-                <div className="chips">
-                  <span className="chip">Status</span>
-                  <span className="chip">Department</span>
-                  <span className="chip">Missing ID</span>
-                  <span className="chip">Flagged</span>
+                <div className={`chips ${isHalloween ? 'border-b border-[#16274a]' : ''}`}>
+                  <span className={isHalloween ? 'chip bg-[#132347] text-[#7dd3fc] border border-[#1e3867]' : 'chip'}>Status</span>
+                  <span className={isHalloween ? 'chip bg-[#132347] text-[#7dd3fc] border border-[#1e3867]' : 'chip'}>Department</span>
+                  <span className={isHalloween ? 'chip bg-[#132347] text-[#7dd3fc] border border-[#1e3867]' : 'chip'}>Missing ID</span>
+                  <span className={isHalloween ? 'chip bg-[#132347] text-[#7dd3fc] border border-[#1e3867]' : 'chip'}>Flagged</span>
                 </div>
 
                 {loading ? (
                   <div className="p-8 text-center text-slate-400 font-bold text-sm">Loading queue...</div>
                 ) : actionQueue.length > 0 ? (
-                  actionQueue.map((item, idx) => (
-                    <div key={idx} className="queue-row" onClick={() => navigate(item.email ? `/official-profiling?email=${encodeURIComponent(item.email)}` : '/officials-registry')}>
-                      <div>
-                        <strong>{item.name || 'Unknown User'}</strong>
-                        <span>{item.desc}</span>
+                  actionQueue.map((item, idx) => {
+                    let badgeStyles = item.badgeClass;
+                    if (isHalloween) {
+                      if (item.badgeClass === 'warn') badgeStyles = 'bg-[#451a03] text-[#fbbf24] border border-[#78350f]';
+                      else if (item.badgeClass === 'risk') badgeStyles = 'bg-[#4c0519] text-[#f43f5e] border border-[#881337]';
+                      else badgeStyles = 'bg-[#1e293b] text-slate-300 border border-slate-700';
+                    }
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`queue-row ${isHalloween ? 'border-b border-[#16274a] hover:bg-[#122345]' : ''}`} 
+                        onClick={() => navigate(item.email ? `/official-profiling?email=${encodeURIComponent(item.email)}` : '/officials-registry')}
+                      >
+                        <div>
+                          <strong className={isHalloween ? 'text-white font-bold text-sm' : ''}>{item.name || 'Unknown User'}</strong>
+                          <span className={isHalloween ? 'text-slate-400 text-xs' : ''}>{item.desc}</span>
+                        </div>
+                        <b className={`queue-badge ${badgeStyles}`}>{item.status}</b>
                       </div>
-                      <b className={`queue-badge ${item.badgeClass}`}>{item.status}</b>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="p-8 text-center text-slate-400 font-bold text-sm">No pending actions</div>
                 )}
               </main>
 
-              <main className="dash-card">
-                <div className="dash-head flex justify-between items-center">
+              {/* Column 2: Activity Logs */}
+              <main className={`dash-card ${isHalloween ? 'bg-[#0b162f] border border-[#1e345e]' : ''}`}>
+                <div className={`dash-head flex justify-between items-center ${isHalloween ? 'border-b border-[#16274a]' : ''}`}>
                   <div>
-                    <h3>Activity Logs</h3>
-                    <p>
+                    <h3 className={isHalloween ? 'text-white font-extrabold text-lg' : ''}>Activity Logs</h3>
+                    <p className={isHalloween ? 'text-slate-400 text-xs mt-1' : ''}>
                       {activeQueueFilter === 'all' && filterRegion === 'All regions' && filterLevel === 'All levels' && filterOffice === 'All' && filterSearch === ''
                         ? "Recent profile updates and creations."
                         : "Showing filtered recent activity."}
@@ -1251,71 +1447,110 @@ const Home = () => {
                         setFilterOffice('All');
                         setFilterSearch('');
                       }}
-                      className="text-[10px] font-black text-slate-400 hover:text-slate-700 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-xl transition-colors"
+                      className={`text-[10px] font-black ${
+                        isHalloween ? 'text-orange-400 bg-orange-950/50 hover:bg-orange-900/60 border border-orange-800/60' : 'text-slate-400 hover:text-slate-700 bg-slate-100'
+                      } uppercase tracking-widest px-3 py-1.5 rounded-xl transition-colors`}
                     >
                       Clear Filter
                     </button>
                   )}
                 </div>
-                <div className="chips">
-                  <span className="chip">Personnel</span>
-                  <span className="chip">Timestamp</span>
+                <div className={`chips ${isHalloween ? 'border-b border-[#16274a]' : ''}`}>
+                  <span className={isHalloween ? 'chip bg-[#132347] text-[#7dd3fc] border border-[#1e3867]' : 'chip'}>Personnel</span>
+                  <span className={isHalloween ? 'chip bg-[#132347] text-[#7dd3fc] border border-[#1e3867]' : 'chip'}>Timestamp</span>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {loading ? (
                     <div className="p-8 text-center text-slate-400 font-bold text-sm">Loading logs...</div>
                   ) : activityLogs.length > 0 ? (
-                    activityLogs.map((log, idx) => (
-                      <div key={idx} className="log-row" onClick={() => navigate(log.email ? `/official-profiling?email=${encodeURIComponent(log.email)}` : '/officials-registry')}>
-                        <div className="flex items-center justify-between gap-2">
-                          <strong>{log.name}</strong>
-                          {log.status === 'For Approval' && (
-                            <span className="queue-badge warn text-[10px] py-0.5 px-2">For Approval</span>
-                          )}
+                    activityLogs.map((log, idx) => {
+                      let hwActionClass = '';
+                      if (isHalloween) {
+                        if (log.actionClass === 'updated') hwActionClass = 'bg-[#082f49] text-[#38bdf8] border border-[#0369a1]';
+                        else if (log.actionClass === 'created') hwActionClass = 'bg-[#064e3b] text-[#34d399] border border-[#059669]';
+                        else if (log.actionClass === 'for-approval') hwActionClass = 'bg-[#451a03] text-[#fbbf24] border border-[#78350f]';
+                        else if (log.actionClass === 'vacated') hwActionClass = 'bg-[#4c0519] text-[#f43f5e] border border-[#881337]';
+                      }
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`log-row ${isHalloween ? 'border-b border-[#16274a] hover:bg-[#122345]' : ''}`} 
+                          onClick={() => navigate(log.email ? `/official-profiling?email=${encodeURIComponent(log.email)}` : '/officials-registry')}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <strong className={isHalloween ? 'text-white font-bold text-sm' : ''}>{log.name}</strong>
+                            {log.status === 'For Approval' && (
+                              <span className={`queue-badge text-[10px] py-0.5 px-2 ${
+                                isHalloween ? 'bg-[#451a03] text-[#fbbf24] border border-[#78350f]' : 'warn'
+                              }`}>For Approval</span>
+                            )}
+                          </div>
+                          <div className="meta">
+                            <span className={`action ${isHalloween ? hwActionClass : log.actionClass || 'updated'}`}>{log.action}</span>
+                            <span className={`time ${isHalloween ? 'text-slate-400' : ''}`}><FiClock /> {log.date} at {log.time}</span>
+                          </div>
                         </div>
-                        <div className="meta">
-                          <span className={`action ${log.actionClass || 'updated'}`}>{log.action}</span>
-                          <span className="time"><FiClock /> {log.date} at {log.time}</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="p-8 text-center text-slate-400 font-bold text-sm">No recent activity</div>
                   )}
                 </div>
               </main>
 
-              <aside className="dash-card side">
-                <div className="h-px bg-slate-100 my-1"></div>
+              {/* Column 3: Quick Actions Aside */}
+              <aside className={`dash-card side ${isHalloween ? 'bg-[#0b162f] border border-[#1e345e]' : ''}`}>
+                <div className={`h-px ${isHalloween ? 'bg-[#16274a]' : 'bg-slate-100'} my-1`}></div>
+                
+                {/* 1. Upload Officials Directory */}
                 <button
-                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                  className={isHalloween 
+                    ? `hw-action-btn ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`
+                    : `action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`
+                  }
                   onClick={() => setIsUploadModalOpen(true)}
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can upload directory data.' : ''}
                 >
-                  <FiUploadCloud />Upload Officials Directory Data
+                  {isHalloween ? <span className="text-xl">🎃</span> : <FiUploadCloud />}
+                  <span>Upload Officials Directory Data</span>
                 </button>
+
+                {/* 2. Register Third Level Personnel */}
                 <button
-                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                  className={isHalloween 
+                    ? `hw-action-btn ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`
+                    : `action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`
+                  }
                   onClick={() => setIsRegisterPersonnelOpen(true)}
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can register personnel.' : ''}
                 >
-                  <FiUserPlus />Register Third Level Personnel
+                  <FiUserPlus className={isHalloween ? 'text-amber-400 text-lg' : ''} />
+                  <span>Register Third Level Personnel</span>
                 </button>
+
+                {/* 3. Reassign Official */}
                 <button
-                  className={`action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                  className={isHalloween 
+                    ? `hw-action-btn ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`
+                    : `action-btn primary ${user?.role !== 'Central Office' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`
+                  }
                   onClick={() => setIsReassignModalOpen(true)}
                   disabled={user?.role !== 'Central Office'}
                   title={user?.role !== 'Central Office' ? 'Only Central Office can reassign officials.' : ''}
                 >
-                  <FiList />Reassign Official
+                  <FiList className={isHalloween ? 'text-sky-400 text-lg' : ''} />
+                  <span>Reassign Official</span>
                 </button>
+
+                {/* 4. Notable Achievements */}
                 <button
-                  className="action-btn primary"
+                  className={isHalloween ? 'hw-action-btn' : 'action-btn primary'}
                   onClick={() => navigate('/notable-achievements')}
                 >
-                  <FiAward />Notable Achievements
+                  <FiAward className={isHalloween ? 'text-orange-400 text-lg' : ''} />
+                  <span>Notable Achievements</span>
                 </button>
               </aside>
             </section>
