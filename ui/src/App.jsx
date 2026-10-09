@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import './pages/HalloweenTheme.css';
 
 // Pages
 import NexusGate from './pages/NexusGate';

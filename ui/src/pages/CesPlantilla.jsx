@@ -25,6 +25,7 @@ import {
     FiArrowRight
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useSeasonalTheme } from '../utils/themeUtils';
 import PageTransition from '../components/PageTransition';
 import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
@@ -32,6 +33,7 @@ import { apiUrl } from '../utils/api';
 
 const CesPlantilla = () => {
     const { user, token } = useAuth();
+    const { isHalloween } = useSeasonalTheme(user);
     const navigate = useNavigate();
 
     // Data State
@@ -466,47 +468,52 @@ const CesPlantilla = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent font-sans overflow-hidden">
+            <div className={`flex h-screen ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} font-sans overflow-hidden`}>
                 <AdminSidebar />
 
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR (IDENTICAL TO OFFICIALS REGISTRY) */}
-                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
-                        <div className="flex items-center gap-4 text-white">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                                <FiBookmark size={20} />
+                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full relative">
+                        <div className="flex items-center gap-3 sm:gap-4 text-white relative z-10 min-w-0">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                                <FiBookmark size={18} />
                             </div>
-                            <div>
-                                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">
-                                    CES Plantilla <span className="text-blue-300 not-italic">Registry</span>
+                            <div className="min-w-0">
+                                <h1 className="text-base sm:text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase truncate">
+                                    CES Plantilla <span className={isHalloween ? "text-[#f59e0b] not-italic" : "text-blue-300 not-italic"}>Registry</span>
                                 </h1>
-                                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
+                                <p className="text-[8.5px] sm:text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1 truncate">
                                     Plantilla Management • Career Executive Service Command Dashboard
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3 sm:gap-6 relative z-10 shrink-0">
+                            {isHalloween && (
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-sm sm:text-base shadow-sm shrink-0">
+                                    🎃
+                                </div>
+                            )}
                             <div className="hidden md:flex flex-col items-end">
                                 <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
                                     {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
                                 </span>
-                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">
+                                <span className={`text-[9px] font-bold ${isHalloween ? 'text-[#fbbf24]' : 'text-[#FBBF24]'} uppercase tracking-widest mt-1`}>
                                     {user?.role || 'Central Office'}
                                 </span>
                             </div>
                         </div>
                     </header>
 
-                    <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
+                    <main className="flex-1 px-3 sm:px-6 lg:px-8 pb-12 pt-4 sm:pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* UNIFIED DATA CONTROLS TAB (IDENTICAL PILL STYLE FROM OFFICIALS REGISTRY) */}
-                        <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
+                        <div className="bg-white border-2 border-[#08315F] rounded-[20px] sm:rounded-[24px] p-2.5 sm:p-3 shadow-sm mb-6 flex flex-col gap-2.5">
                             {/* TOP ROW: FILTERS */}
                             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full">
                                 {/* DROPDOWNS */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:flex xl:flex-[6] gap-2">
+                                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:flex xl:flex-[6] gap-2">
                                     {/* Region Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select
                                             value={regionFilter}
                                             onChange={(e) => {
@@ -515,102 +522,102 @@ const CesPlantilla = () => {
                                                 setCurrentPage(1);
                                             }}
                                             title={regionFilter}
-                                            className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
+                                            className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[12.5px] sm:text-[14px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
                                         >
                                             <option value="All">All Regions</option>
                                             {filterOptions.regions.map(r => (
                                                 <option key={r} value={r}>{r}</option>
                                             ))}
                                         </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={15} />
                                     </div>
 
                                     {/* Office / Bureau / Division Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select
                                             value={officeFilter}
                                             onChange={(e) => { setOfficeFilter(e.target.value); setCurrentPage(1); }}
                                             title={officeFilter === 'All' ? 'All Offices' : officeFilter}
-                                            className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
+                                            className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[12.5px] sm:text-[14px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
                                         >
                                             <option value="All">All Offices / Divisions</option>
                                             {availableOffices.map(o => (
                                                 <option key={o} value={o}>{o}</option>
                                             ))}
                                         </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={15} />
                                     </div>
 
                                     {/* Position Title Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select
                                             value={positionFilter}
                                             onChange={(e) => { setPositionFilter(e.target.value); setCurrentPage(1); }}
                                             title={positionFilter === 'All' ? 'All Positions' : positionFilter}
-                                            className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
+                                            className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[12.5px] sm:text-[14px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
                                         >
                                             <option value="All">All Positions</option>
                                             {(filterOptions.positions || []).map(p => (
                                                 <option key={p} value={p}>{p}</option>
                                             ))}
                                         </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={15} />
                                     </div>
 
                                     {/* Salary Grade Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select
                                             value={salaryGradeFilter}
                                             onChange={(e) => { setSalaryGradeFilter(e.target.value); setCurrentPage(1); }}
                                             title={salaryGradeFilter === 'All' ? 'All Salary Grades' : `SG ${salaryGradeFilter}`}
-                                            className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
+                                            className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[12.5px] sm:text-[14px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
                                         >
                                             <option value="All">All Salary Grades</option>
                                             {filterOptions.salaryGrades.map(sg => (
                                                 <option key={sg} value={sg}>SG {sg}</option>
                                             ))}
                                         </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={15} />
                                     </div>
 
                                     {/* Appointment Status Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select
                                             value={appointmentStatusFilter}
                                             onChange={(e) => { setAppointmentStatusFilter(e.target.value); setCurrentPage(1); }}
                                             title={appointmentStatusFilter === 'All' ? 'All Appointments' : appointmentStatusFilter}
-                                            className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
+                                            className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[12.5px] sm:text-[14px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
                                         >
                                             <option value="All">All Appointments</option>
                                             {filterOptions.appointmentStatuses.map(st => (
                                                 <option key={st} value={st}>{st}</option>
                                             ))}
                                         </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={15} />
                                     </div>
 
                                     {/* Vacancy Status Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
+                                    <div className="relative w-full xl:flex-1 h-[40px] sm:h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select
                                             value={vacancyFilter}
                                             onChange={(e) => { setVacancyFilter(e.target.value); setCurrentPage(1); }}
                                             title={vacancyFilter === 'All' ? 'All Positions' : (vacancyFilter === 'true' ? 'Vacant Only' : 'Filled Only')}
-                                            className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
+                                            className="w-full h-full bg-transparent pl-3.5 sm:pl-4 pr-7 text-[12.5px] sm:text-[14px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis"
                                         >
                                             <option value="All">All Statuses</option>
                                             <option value="false">Filled Positions</option>
                                             <option value="true">Vacant Positions</option>
                                         </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
+                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={15} />
                                     </div>
                                 </div>
 
                                 {/* BUTTONS */}
-                                <div className="flex items-center gap-2 w-full xl:w-auto">
+                                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full xl:w-auto shrink-0">
                                     {/* Reset Filters */}
                                     <button
                                         onClick={handleResetFilters}
-                                        className="h-[44px] px-5 flex-1 xl:flex-none bg-transparent text-rose-500 rounded-full border-2 border-rose-200 font-black text-[15px] tracking-widest uppercase hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
+                                        className="h-[40px] sm:h-[44px] px-4 sm:px-5 flex-1 sm:flex-none bg-transparent text-rose-500 rounded-full border-2 border-rose-200 font-black text-[12px] sm:text-[13.5px] tracking-widest uppercase hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
                                         title="Reset all filters"
                                     >
                                         Reset
@@ -619,10 +626,10 @@ const CesPlantilla = () => {
                                     {/* Export CSV Button */}
                                     <button
                                         onClick={handleExportCSV}
-                                        className="h-[44px] px-5 flex-1 xl:flex-none bg-[#F0F9FF] text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[15px] tracking-widest uppercase hover:bg-sky-100 transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
+                                        className="h-[40px] sm:h-[44px] px-4 sm:px-5 flex-1 sm:flex-none bg-[#F0F9FF] text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[12px] sm:text-[13.5px] tracking-widest uppercase hover:bg-sky-100 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
                                         title="Export CSV"
                                     >
-                                        <FiDownload size={15} className="text-sky-500" />
+                                        <FiDownload size={14} className="text-sky-500" />
                                         <span>Export CSV</span>
                                     </button>
 
@@ -630,10 +637,10 @@ const CesPlantilla = () => {
                                     {canManagePlantilla && (
                                         <button
                                             onClick={handleOpenCreate}
-                                            className="h-[44px] px-5 flex-1 xl:flex-none bg-[#08315F] text-white rounded-full border-2 border-[#08315F] font-black text-[15px] tracking-widest uppercase hover:bg-[#004A99] transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 shadow-sm"
+                                            className="h-[40px] sm:h-[44px] px-4 sm:px-5 flex-1 sm:flex-none bg-[#08315F] text-white rounded-full border-2 border-[#08315F] font-black text-[12px] sm:text-[13.5px] tracking-widest uppercase hover:bg-[#004A99] transition-colors flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0 shadow-sm"
                                             title="Add New CES Plantilla Position"
                                         >
-                                            <FiPlus size={16} className="text-[#FBBF24]" />
+                                            <FiPlus size={15} className="text-[#FBBF24]" />
                                             <span>Add Position</span>
                                         </button>
                                     )}
@@ -642,51 +649,51 @@ const CesPlantilla = () => {
 
                             {/* BOTTOM ROW: SEARCH BAR & VIEW TOGGLES */}
                             <div className="flex items-center gap-2 w-full">
-                                <div className="relative flex-1 h-[44px]">
-                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
+                                <div className="relative flex-1 h-[40px] sm:h-[44px]">
+                                    <FiSearch className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
                                     <input
                                         type="text"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         placeholder="Search by DBM item no, position, bureau, division, or incumbent..."
-                                        className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-4 text-[16.5px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                                        className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-10 sm:pl-11 pr-4 text-[13px] sm:text-[14.5px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                                     />
                                 </div>
                                 {/* VIEW TOGGLES */}
-                                <div className="flex items-center gap-2 shrink-0 px-1">
+                                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 px-1">
                                     <button
                                         onClick={() => setViewMode('table')}
-                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                         title="Table view"
                                     >
-                                        <FiList size={16} />
+                                        <FiList size={15} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('grid')}
-                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
                                         title="Grid view"
                                     >
-                                        <FiGrid size={16} />
+                                        <FiGrid size={15} />
                                     </button>
                                 </div>
                             </div>
                         </div>
 
                         {/* STATS CARDS (EXACT MATCH TO OFFICIALS REGISTRY KPI CARDS) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 w-full">
                             {/* Card 1: Total Plantilla Positions */}
                             <div
                                 onClick={() => {
                                     setVacancyFilter('All');
                                     setCurrentPage(1);
                                 }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${vacancyFilter === 'All' ? 'border-l-sky-400 shadow-md ring-1 ring-sky-200' : 'border-l-sky-300 hover:shadow-sm'}`}
+                                className={`min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${vacancyFilter === 'All' ? 'border-l-sky-400 shadow-md ring-1 ring-sky-200' : 'border-l-sky-300 hover:shadow-sm'}`}
                             >
-                                <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Plantilla Positions</div>
-                                <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3 font-['Plus_Jakarta_Sans']">
+                                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2 sm:mb-3">Total Plantilla Positions</div>
+                                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-2 sm:mb-3 font-['Plus_Jakarta_Sans']">
                                     {loading ? '...' : kpis.totalPlantilla}
                                 </div>
-                                <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Authorized Plantilla Items</div>
+                                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Authorized Plantilla Items</div>
                             </div>
 
                             {/* Card 2: Total Vacant Positions */}
@@ -695,13 +702,13 @@ const CesPlantilla = () => {
                                     setVacancyFilter(prev => prev === 'true' ? 'All' : 'true');
                                     setCurrentPage(1);
                                 }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${vacancyFilter === 'true' ? 'border-l-rose-500 shadow-md ring-1 ring-rose-200' : 'border-l-rose-400 hover:shadow-sm'}`}
+                                className={`min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${vacancyFilter === 'true' ? 'border-l-rose-500 shadow-md ring-1 ring-rose-200' : 'border-l-rose-400 hover:shadow-sm'}`}
                             >
-                                <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Vacant Positions</div>
-                                <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3 font-['Plus_Jakarta_Sans']">
+                                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2 sm:mb-3">Total Vacant Positions</div>
+                                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-2 sm:mb-3 font-['Plus_Jakarta_Sans']">
                                     {loading ? '...' : kpis.totalVacant}
                                 </div>
-                                <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Unfilled / Open Items</div>
+                                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Unfilled / Open Items</div>
                             </div>
 
                             {/* Card 3: Total Filled Positions */}
@@ -710,22 +717,22 @@ const CesPlantilla = () => {
                                     setVacancyFilter(prev => prev === 'false' ? 'All' : 'false');
                                     setCurrentPage(1);
                                 }}
-                                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${vacancyFilter === 'false' ? 'border-l-emerald-500 shadow-md ring-1 ring-emerald-200' : 'border-l-emerald-400 hover:shadow-sm'}`}
+                                className={`min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${vacancyFilter === 'false' ? 'border-l-emerald-500 shadow-md ring-1 ring-emerald-200' : 'border-l-emerald-400 hover:shadow-sm'}`}
                             >
-                                <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Total Filled Positions</div>
-                                <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3 font-['Plus_Jakarta_Sans']">
+                                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2 sm:mb-3">Total Filled Positions</div>
+                                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-2 sm:mb-3 font-['Plus_Jakarta_Sans']">
                                     {loading ? '...' : kpis.totalFilled}
                                 </div>
-                                <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Positions with Active Incumbent</div>
+                                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Positions with Active Incumbent</div>
                             </div>
 
                             {/* Card 4: Covered Regions */}
-                            <div className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] border-l-indigo-400 overflow-hidden transition-all flex flex-col justify-between shadow-sm">
-                                <div className="text-[15px] text-slate-500 uppercase tracking-widest font-bold mb-3">Covered Regions</div>
-                                <div className="text-[48px] text-[#08315F] font-normal leading-none mb-3 font-['Plus_Jakarta_Sans']">
+                            <div className="min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] border-l-indigo-400 overflow-hidden transition-all flex flex-col justify-between shadow-sm">
+                                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2 sm:mb-3">Covered Regions</div>
+                                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-2 sm:mb-3 font-['Plus_Jakarta_Sans']">
                                     {loading ? '...' : kpis.totalRegions}
                                 </div>
-                                <div className="text-[13.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Administrative Jurisdictions</div>
+                                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Administrative Jurisdictions</div>
                             </div>
                         </div>
 

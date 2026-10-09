@@ -70,7 +70,7 @@ const DrilldownChart = ({
   }
 
   return (
-    <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1.5px solid var(--mdb-line)' }}>
+    <div className="mdb-heatmap-wrap" style={{ overflowX: 'auto', borderRadius: '12px', border: '1.5px solid var(--mdb-line)' }}>
       <table className="mdb-heatmap-table">
         <thead>
           <tr>
@@ -91,17 +91,17 @@ const DrilldownChart = ({
                 style={{ cursor: 'pointer' }}
                 title={`Click to drill down into ${gName}`}
               >
-                <td style={{ fontWeight: 700, textAlign: 'left', color: 'var(--mdb-navy)' }}>{gName}</td>
+                <td className="mdb-heatmap-group-name">{gName}</td>
                 <td style={{ background: `rgba(22, 163, 74, ${Math.min(g.regular / maxTotal + 0.1, 0.85)})`, color: 'white' }}>
                   {g.regular}
                 </td>
-                <td style={{ background: `rgba(251, 191, 36, ${Math.min(g.oic / maxTotal + 0.1, 0.85)})`, color: 'var(--mdb-navy)' }}>
+                <td className="mdb-heatmap-oic" style={{ background: `rgba(251, 191, 36, ${Math.min(g.oic / maxTotal + 0.1, 0.85)})` }}>
                   {g.oic}
                 </td>
                 <td style={{ background: `rgba(185, 28, 28, ${Math.min(g.vacant / maxTotal + 0.1, 0.85)})`, color: 'white' }}>
                   {g.vacant}
                 </td>
-                <td style={{ fontWeight: 800, color: 'var(--mdb-navy)' }}>{g.total}</td>
+                <td className="mdb-heatmap-total">{g.total}</td>
               </tr>
             );
           })}
