@@ -26,13 +26,10 @@ const getFormattedTimestamp = () => {
  */
 export const uploadToAzure = async (fileBuffer, originalName, mimeType, tloId, docType) => {
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerName = process.env.AZURE_FOLDER_NAME;
+    const containerName = process.env.AZURE_FOLDER_NAME || 'tlo-main';
 
     if (!connectionString) {
         throw new Error("AZURE_STORAGE_CONNECTION_STRING is not configured");
-    }
-    if (!containerName) {
-        throw new Error("AZURE_FOLDER_NAME is not configured");
     }
 
     // Connect to Azure
@@ -86,7 +83,7 @@ export const uploadToAzure = async (fileBuffer, originalName, mimeType, tloId, d
  */
 export const downloadFromAzure = async (blobUrlOrPath) => {
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const defaultContainerName = process.env.AZURE_FOLDER_NAME;
+    const defaultContainerName = process.env.AZURE_FOLDER_NAME || 'tlo-main';
 
     if (!connectionString || !blobUrlOrPath) {
         return null;

@@ -683,70 +683,35 @@ export const uploadDocument = async (req, res) => {
 
     await client.query('COMMIT');
 
-    // 1. Azure Blob Storage Upload (Primary Storage Destination)
-    let azureData = null;
-    let finalBlobUrlOrPath = null;
+    // 1. Mandatory Azure Blob Storage Upload (Stored directly in tlo-main, NOT in VM)
     const targetAzureContainer = process.env.AZURE_FOLDER_NAME || 'tlo-main';
+    console.log(`[Upload] Uploading ${docType} for ${TLOid} to Azure Blob Storage container (${targetAzureContainer})...`);
 
-    try {
-      console.log(`[Upload] Uploading ${docType} for ${TLOid} to Azure Blob Storage (${targetAzureContainer})...`);
-      azureData = await uploadToAzure(
-        req.file.buffer,
-        req.file.originalname,
-        mimeType,
-        TLOid,
-        docType
-      );
-      if (azureData && (azureData.blobUrl || azureData.url)) {
-        finalBlobUrlOrPath = azureData.blobUrl || azureData.url;
-        console.log(`[Upload] Azure upload successful: ${azureData.filename} -> ${finalBlobUrlOrPath}`);
-      }
-    } catch (azureErr) {
-      console.error(`[Upload] Azure upload failed: ${azureErr.message}`);
+    const azureData = await uploadToAzure(
+      req.file.buffer,
+      req.file.originalname,
+      mimeType,
+      TLOid,
+      docType
+    );
+
+    if (!azureData || (!azureData.blobUrl && !azureData.url)) {
+      throw new Error(`Failed to upload ${docType} to Azure Blob Storage container '${targetAzureContainer}'`);
     }
 
-    // 2. Local disk fallback (ONLY if Azure upload failed or is unconfigured)
-    let localFolderPath = null;
-    if (!finalBlobUrlOrPath) {
-      try {
-        console.warn(`[Upload] Azure upload unavailable. Falling back to local disk storage for ${docType} (${TLOid})...`);
-        const pad = (n) => n.toString().padStart(2, '0');
-        const now = new Date();
-        const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-        const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
-        const filename = `${docType}_${TLOid}_${timestamp}${ext}`;
+    const finalBlobUrl = azureData.blobUrl || azureData.url;
+    console.log(`[Upload] Azure upload successful: ${azureData.filename} -> ${finalBlobUrl}`);
 
-        const folderRelative = path.join('uploads', TLOid, docType);
-        const folderAbsolute = path.join(process.cwd(), folderRelative);
-        if (!fs.existsSync(folderAbsolute)) {
-          fs.mkdirSync(folderAbsolute, { recursive: true });
-        }
-        const fileAbsolute = path.join(folderAbsolute, filename);
-        fs.writeFileSync(fileAbsolute, req.file.buffer);
-        localFolderPath = `/uploads/${TLOid}/${docType}/${filename}`;
-        finalBlobUrlOrPath = localFolderPath;
-        console.log(`[Upload] File saved to local fallback path: ${localFolderPath}`);
-      } catch (fsErr) {
-        console.error(`[Upload] Local fallback write failed: ${fsErr.message}`);
-      }
-    }
-
-    // 3. Update database record in unified_binaries with Azure Blob URL (or fallback path)
-    // When stored in Azure, clear the raw BYTEA content to prevent VM database bloat
-    if (finalBlobUrlOrPath) {
-      if (azureData && finalBlobUrlOrPath.startsWith('http')) {
-        await pool.query('UPDATE unified_binaries SET azure_blob_url = $1, content = NULL WHERE id = $2', [finalBlobUrlOrPath, binary_id]);
-      } else {
-        await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [finalBlobUrlOrPath, binary_id]);
-      }
-    }
+    // 2. Update database record in unified_binaries with Azure Blob URL
+    // Clear raw BYTEA content so the VM database stores 0 bytes for this binary
+    await pool.query('UPDATE unified_binaries SET azure_blob_url = $1, content = NULL WHERE id = $2', [finalBlobUrl, binary_id]);
 
     res.json({
       success: true,
       binary_id,
-      filePath: finalBlobUrlOrPath,
-      blobUrl: azureData?.blobUrl || null,
-      message: `${docType} uploaded successfully`,
+      filePath: finalBlobUrl,
+      blobUrl: finalBlobUrl,
+      message: `${docType} uploaded successfully to Azure Storage (${targetAzureContainer})`,
       ...(azureData || {})
     });
   } catch (err) {

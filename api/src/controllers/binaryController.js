@@ -11,9 +11,9 @@ export const getBinary = async (req, res) => {
 
         const result = await pool.query('SELECT * FROM unified_binaries WHERE id = $1', [id]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Binary not found' });
-        
+
         const { content, mime_type, azure_blob_url } = result.rows[0];
-        
+
         // 1. Azure Blob Storage (Primary Cloud Storage via Authenticated SDK)
         if (azure_blob_url && (azure_blob_url.startsWith('http://') || azure_blob_url.startsWith('https://'))) {
             const azureStream = await downloadFromAzure(azure_blob_url);
