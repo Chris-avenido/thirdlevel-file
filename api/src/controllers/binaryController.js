@@ -14,25 +14,7 @@ export const getBinary = async (req, res) => {
         
         const { content, mime_type, azure_blob_url } = result.rows[0];
         
-        // 1. Database binary content (Primary Source of Truth)
-        if (content && content.length > 0) {
-            res.setHeader('Content-Type', mime_type || 'application/octet-stream');
-            res.setHeader('Cache-Control', 'public, max-age=31536000');
-            return res.send(content);
-        }
-
-        // 2. Local disk storage fallback
-        if (azure_blob_url && !azure_blob_url.startsWith('http://') && !azure_blob_url.startsWith('https://')) {
-            const cleanRelative = azure_blob_url.startsWith('/') ? azure_blob_url.slice(1) : azure_blob_url;
-            const localFilePath = path.join(process.cwd(), cleanRelative);
-            if (fs.existsSync(localFilePath)) {
-                res.setHeader('Content-Type', mime_type || 'application/octet-stream');
-                res.setHeader('Cache-Control', 'public, max-age=31536000');
-                return res.sendFile(localFilePath);
-            }
-        }
-
-        // 3. Azure Blob Storage fallback (Stream via authenticated SDK)
+        // 1. Azure Blob Storage (Primary Cloud Storage via Authenticated SDK)
         if (azure_blob_url && (azure_blob_url.startsWith('http://') || azure_blob_url.startsWith('https://'))) {
             const azureStream = await downloadFromAzure(azure_blob_url);
             if (azureStream && azureStream.readableStream) {
@@ -42,6 +24,24 @@ export const getBinary = async (req, res) => {
                     res.setHeader('Content-Length', azureStream.contentLength);
                 }
                 return azureStream.readableStream.pipe(res);
+            }
+        }
+
+        // 2. Database binary content (Fallback for legacy inline content)
+        if (content && content.length > 0) {
+            res.setHeader('Content-Type', mime_type || 'application/octet-stream');
+            res.setHeader('Cache-Control', 'public, max-age=31536000');
+            return res.send(content);
+        }
+
+        // 3. Local disk storage fallback (Fallback for legacy disk uploads)
+        if (azure_blob_url && !azure_blob_url.startsWith('http://') && !azure_blob_url.startsWith('https://')) {
+            const cleanRelative = azure_blob_url.startsWith('/') ? azure_blob_url.slice(1) : azure_blob_url;
+            const localFilePath = path.join(process.cwd(), cleanRelative);
+            if (fs.existsSync(localFilePath)) {
+                res.setHeader('Content-Type', mime_type || 'application/octet-stream');
+                res.setHeader('Cache-Control', 'public, max-age=31536000');
+                return res.sendFile(localFilePath);
             }
         }
 

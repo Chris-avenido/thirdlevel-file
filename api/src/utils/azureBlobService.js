@@ -108,7 +108,7 @@ export const downloadFromAzure = async (blobUrlOrPath) => {
         }
 
         if (!targetContainer) {
-            targetContainer = 'staging-tlo';
+            targetContainer = process.env.AZURE_FOLDER_NAME || 'tlo-main';
         }
 
         const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);

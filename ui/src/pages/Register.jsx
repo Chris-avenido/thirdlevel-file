@@ -46,7 +46,8 @@ const Register = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const [masterlistCheckStatus, setMasterlistCheckStatus] = useState('idle'); // 'idle' | 'checking' | 'valid' | 'invalid'
+    const [masterlistCheckStatus, setMasterlistCheckStatus] = useState('idle'); // 'idle' | 'checking' | 'valid' | 'invalid' | 'has_existing_email'
+    const [existingMasterlistEmail, setExistingMasterlistEmail] = useState('');
 
     // Debounced masterlist check for non-CO accounts
     useEffect(() => {
@@ -57,29 +58,52 @@ const Register = () => {
 
         if (!email || !isValidFormat) {
             setMasterlistCheckStatus('idle');
+            setExistingMasterlistEmail('');
             return;
         }
 
         if (!email.toLowerCase().endsWith('@deped.gov.ph')) {
             setMasterlistCheckStatus('invalid_domain');
+            setExistingMasterlistEmail('');
             return;
         }
 
         const checkMasterlist = async () => {
             setMasterlistCheckStatus('checking');
             try {
-                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}&isCO=${isCO}`));
+                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}&isCO=${isCO}&firstName=${encodeURIComponent(formData.first_name)}&lastName=${encodeURIComponent(formData.last_name)}`));
                 if (res.ok) {
                     const data = await res.json();
                     if (data.alreadyRegistered) {
                         setMasterlistCheckStatus('already_registered');
+                        setExistingMasterlistEmail('');
+                    } else if (data.hasExistingMasterlistEmail) {
+                        setMasterlistCheckStatus('has_existing_email');
+                        setExistingMasterlistEmail(data.existingEmail);
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Existing Email in Masterlist',
+                            html: `You already have an existing official email in the Masterlist:<br><br><span style="font-size: 1.15em; font-weight: 800; color: #08315F;">${data.existingEmail}</span><br><br>Please use this email instead.`,
+                            confirmButtonColor: '#08315F',
+                            confirmButtonText: 'Use This Email',
+                            showCancelButton: true,
+                            cancelButtonText: 'Modify Manually',
+                            allowOutsideClick: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                setFormData(prev => ({ ...prev, email: data.existingEmail }));
+                            }
+                        });
                     } else if (data.inMasterlist) {
                         setMasterlistCheckStatus('valid');
+                        setExistingMasterlistEmail('');
                     } else {
                         setMasterlistCheckStatus('invalid');
+                        setExistingMasterlistEmail('');
                     }
                 } else {
                     setMasterlistCheckStatus('idle');
+                    setExistingMasterlistEmail('');
                 }
             } catch (err) {
                 console.error("Masterlist check failed", err);
@@ -89,7 +113,7 @@ const Register = () => {
 
         const timer = setTimeout(checkMasterlist, 500);
         return () => clearTimeout(timer);
-    }, [formData.email, isCO, currentStep]);
+    }, [formData.email, formData.first_name, formData.last_name, isCO, currentStep]);
 
     useEffect(() => {
         if (!isCO) {
@@ -110,6 +134,23 @@ const Register = () => {
         }
         if (masterlistCheckStatus === 'already_registered') {
             Swal.fire('Notice', 'This email is already registered for this portal. Please login instead.', 'warning');
+            return;
+        }
+        if (masterlistCheckStatus === 'has_existing_email' || existingMasterlistEmail) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Existing Email in Masterlist',
+                html: `You already have an existing official email in the Masterlist:<br><br><span style="font-size: 1.15em; font-weight: 800; color: #08315F;">${existingMasterlistEmail}</span><br><br>Please use this email instead.`,
+                confirmButtonColor: '#08315F',
+                confirmButtonText: 'Use This Email',
+                showCancelButton: true,
+                cancelButtonText: 'Modify Manually',
+                allowOutsideClick: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    setFormData(prev => ({ ...prev, email: existingMasterlistEmail }));
+                }
+            });
             return;
         }
         if (isCO && formData.auth_code !== 'nVxCpLrTqWmK') {
@@ -256,7 +297,24 @@ const Register = () => {
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                     <div className="relative group">
                                         <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`} />
+                                        <input 
+                                            type="email" 
+                                            value={formData.email} 
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, email: e.target.value });
+                                                if (masterlistCheckStatus === 'has_existing_email') {
+                                                    setMasterlistCheckStatus('idle');
+                                                    setExistingMasterlistEmail('');
+                                                }
+                                            }} 
+                                            placeholder="example@gmail.com" 
+                                            className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${
+                                                masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : 
+                                                masterlistCheckStatus === 'has_existing_email' ? 'border-amber-500 focus:border-amber-600' :
+                                                masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 
+                                                'border-slate-100 focus:border-[#08315F]'
+                                            }`} 
+                                        />
 
                                         {!isCO && masterlistCheckStatus === 'valid' && (
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
@@ -269,6 +327,23 @@ const Register = () => {
                                             </div>
                                         )}
                                     </div>
+                                    {!isCO && masterlistCheckStatus === 'has_existing_email' && (
+                                        <div className="mt-2 p-3.5 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5">
+                                            <FiShield className="text-amber-600 shrink-0 mt-0.5" size={16} />
+                                            <div className="text-[11px] font-bold text-amber-900 leading-relaxed">
+                                                You already have an existing official email in the Masterlist: <span className="font-black text-[#08315F] underline">{existingMasterlistEmail}</span>.
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, email: existingMasterlistEmail }))}
+                                                        className="bg-[#08315F] text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-900 active:scale-95 transition-all shadow-sm"
+                                                    >
+                                                        Use {existingMasterlistEmail}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                     {!isCO && masterlistCheckStatus === 'invalid' && (
                                         <div className="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2">
                                             <FiShield className="text-amber-500 shrink-0 mt-0.5" />

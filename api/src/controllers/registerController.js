@@ -174,7 +174,7 @@ export const checkEmail = async (req, res) => {
 };
 
 export const checkMasterlistEmail = async (req, res) => {
-  const { email, isCO, role } = req.query;
+  const { email, isCO, role, firstName, lastName } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
     const normalizedEmail = email.toLowerCase().trim();
@@ -189,12 +189,61 @@ export const checkMasterlistEmail = async (req, res) => {
       return res.json({ alreadyRegistered: true });
     }
 
-    const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
-    if (check.rows.length > 0) {
-      res.json({ alreadyRegistered: false, inMasterlist: true, official: check.rows[0] });
-    } else {
-      res.json({ alreadyRegistered: false, inMasterlist: false });
+    // Check for existing base email in Masterlist (e.g. arlene.bermejo001@deped.gov.ph -> arlene.bermejo@deped.gov.ph)
+    let existingOfficial = null;
+    const numSuffixMatch = normalizedEmail.match(/^([^@]+?)(\d+)@deped\.gov\.ph$/);
+    if (numSuffixMatch) {
+      const baseEmail = `${numSuffixMatch[1]}@deped.gov.ph`;
+      const baseCheck = await pool.query(
+        `SELECT "TLOid", first_name, last_name, email, position_title, status 
+         FROM third_level_official_masterlist 
+         WHERE LOWER(email) = $1 AND (status IS NULL OR status != 'Rejected')
+         ORDER BY (status = 'Active') DESC, created_at DESC 
+         LIMIT 1`,
+        [baseEmail]
+      );
+      if (baseCheck.rows.length > 0) {
+        existingOfficial = baseCheck.rows[0];
+      }
     }
+
+    const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
+    if (!existingOfficial && check.rows.length > 0) {
+      return res.json({ alreadyRegistered: false, inMasterlist: true, official: check.rows[0] });
+    }
+
+    // Secondary check: match by First Name & Last Name in masterlist if provided
+    if (!existingOfficial && firstName && lastName) {
+      const cleanFirst = String(firstName).trim().toUpperCase();
+      const cleanLast = String(lastName).trim().toUpperCase();
+      const nameCheck = await pool.query(
+        `SELECT "TLOid", first_name, last_name, email, position_title, status 
+         FROM third_level_official_masterlist 
+         WHERE UPPER(TRIM(last_name)) = $1 
+           AND UPPER(TRIM(first_name)) = $2 
+           AND email IS NOT NULL AND TRIM(email) != ''
+           AND LOWER(email) != $3
+           AND (status IS NULL OR status != 'Rejected')
+         ORDER BY (status = 'Active') DESC, created_at DESC 
+         LIMIT 1`,
+        [cleanLast, cleanFirst, normalizedEmail]
+      );
+      if (nameCheck.rows.length > 0) {
+        existingOfficial = nameCheck.rows[0];
+      }
+    }
+
+    if (existingOfficial) {
+      return res.json({
+        alreadyRegistered: false,
+        inMasterlist: false,
+        hasExistingMasterlistEmail: true,
+        existingEmail: existingOfficial.email,
+        official: existingOfficial
+      });
+    }
+
+    return res.json({ alreadyRegistered: false, inMasterlist: false });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -239,6 +288,50 @@ export const registerUser = async (req, res) => {
       await client.query('ROLLBACK');
       client.release();
       return res.status(400).json({ error: 'This email is already registered in InsightEd for this portal. Please Login instead.' });
+    }
+
+    // Check if registering under a variant email while an existing base email exists in Masterlist
+    const numSuffixMatch = normalizedEmail.match(/^([^@]+?)(\d+)@deped\.gov\.ph$/);
+    let existingMlOfficial = null;
+    if (numSuffixMatch) {
+      const baseEmail = `${numSuffixMatch[1]}@deped.gov.ph`;
+      const baseCheck = await client.query(
+        `SELECT "TLOid", first_name, last_name, email, position_title, status 
+         FROM third_level_official_masterlist 
+         WHERE LOWER(email) = $1 AND (status IS NULL OR status != 'Rejected')
+         ORDER BY (status = 'Active') DESC, created_at DESC 
+         LIMIT 1`,
+        [baseEmail]
+      );
+      if (baseCheck.rows.length > 0) {
+        existingMlOfficial = baseCheck.rows[0];
+      }
+    }
+
+    if (!existingMlOfficial && firstName && lastName) {
+      const nameCheck = await client.query(
+        `SELECT "TLOid", first_name, last_name, email, position_title, status 
+         FROM third_level_official_masterlist 
+         WHERE UPPER(TRIM(last_name)) = $1 
+           AND UPPER(TRIM(first_name)) = $2 
+           AND email IS NOT NULL AND TRIM(email) != ''
+           AND LOWER(email) != $3
+           AND (status IS NULL OR status != 'Rejected')
+         ORDER BY (status = 'Active') DESC, created_at DESC 
+         LIMIT 1`,
+        [lastName, firstName, normalizedEmail]
+      );
+      if (nameCheck.rows.length > 0) {
+        existingMlOfficial = nameCheck.rows[0];
+      }
+    }
+
+    if (existingMlOfficial) {
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(400).json({
+        error: `You already have an existing email in the Masterlist (${existingMlOfficial.email}). Please use ${existingMlOfficial.email} to register or login.`
+      });
     }
 
     const isTestAccount = Boolean(req.body.is_testaccount);

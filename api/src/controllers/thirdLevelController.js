@@ -683,33 +683,13 @@ export const uploadDocument = async (req, res) => {
 
     await client.query('COMMIT');
 
-    // 1. Save file to local folder path on disk
-    let localFolderPath = null;
-    try {
-      const pad = (n) => n.toString().padStart(2, '0');
-      const now = new Date();
-      const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-      const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
-      const filename = `${docType}_${TLOid}_${timestamp}${ext}`;
-
-      const folderRelative = path.join('uploads', TLOid, docType);
-      const folderAbsolute = path.join(process.cwd(), folderRelative);
-      if (!fs.existsSync(folderAbsolute)) {
-        fs.mkdirSync(folderAbsolute, { recursive: true });
-      }
-      const fileAbsolute = path.join(folderAbsolute, filename);
-      fs.writeFileSync(fileAbsolute, req.file.buffer);
-      localFolderPath = `/uploads/${TLOid}/${docType}/${filename}`;
-      console.log(`[Upload] File saved to folder path: ${localFolderPath}`);
-    } catch (fsErr) {
-      console.warn(`[Upload] Local folder path write skipped/failed: ${fsErr.message}`);
-    }
-
-    // 2. Azure Blob Storage Upload
+    // 1. Azure Blob Storage Upload (Primary Storage Destination)
     let azureData = null;
-    let finalBlobUrlOrPath = localFolderPath;
+    let finalBlobUrlOrPath = null;
+    const targetAzureContainer = process.env.AZURE_FOLDER_NAME || 'tlo-main';
+
     try {
-      console.log(`[Upload] Calling uploadToAzure...`);
+      console.log(`[Upload] Uploading ${docType} for ${TLOid} to Azure Blob Storage (${targetAzureContainer})...`);
       azureData = await uploadToAzure(
         req.file.buffer,
         req.file.originalname,
@@ -719,21 +699,52 @@ export const uploadDocument = async (req, res) => {
       );
       if (azureData && (azureData.blobUrl || azureData.url)) {
         finalBlobUrlOrPath = azureData.blobUrl || azureData.url;
+        console.log(`[Upload] Azure upload successful: ${azureData.filename} -> ${finalBlobUrlOrPath}`);
       }
-      console.log(`[Upload] Azure upload successful: ${azureData.filename}`);
     } catch (azureErr) {
-      console.error(`[Upload] Azure upload skipped/failed: ${azureErr.message}`);
+      console.error(`[Upload] Azure upload failed: ${azureErr.message}`);
     }
 
-    // 3. Update database record in unified_binaries with folder path or Azure Blob URL
+    // 2. Local disk fallback (ONLY if Azure upload failed or is unconfigured)
+    let localFolderPath = null;
+    if (!finalBlobUrlOrPath) {
+      try {
+        console.warn(`[Upload] Azure upload unavailable. Falling back to local disk storage for ${docType} (${TLOid})...`);
+        const pad = (n) => n.toString().padStart(2, '0');
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        const ext = path.extname(req.file.originalname) || (mimeType === 'application/pdf' ? '.pdf' : '');
+        const filename = `${docType}_${TLOid}_${timestamp}${ext}`;
+
+        const folderRelative = path.join('uploads', TLOid, docType);
+        const folderAbsolute = path.join(process.cwd(), folderRelative);
+        if (!fs.existsSync(folderAbsolute)) {
+          fs.mkdirSync(folderAbsolute, { recursive: true });
+        }
+        const fileAbsolute = path.join(folderAbsolute, filename);
+        fs.writeFileSync(fileAbsolute, req.file.buffer);
+        localFolderPath = `/uploads/${TLOid}/${docType}/${filename}`;
+        finalBlobUrlOrPath = localFolderPath;
+        console.log(`[Upload] File saved to local fallback path: ${localFolderPath}`);
+      } catch (fsErr) {
+        console.error(`[Upload] Local fallback write failed: ${fsErr.message}`);
+      }
+    }
+
+    // 3. Update database record in unified_binaries with Azure Blob URL (or fallback path)
+    // When stored in Azure, clear the raw BYTEA content to prevent VM database bloat
     if (finalBlobUrlOrPath) {
-      await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [finalBlobUrlOrPath, binary_id]);
+      if (azureData && finalBlobUrlOrPath.startsWith('http')) {
+        await pool.query('UPDATE unified_binaries SET azure_blob_url = $1, content = NULL WHERE id = $2', [finalBlobUrlOrPath, binary_id]);
+      } else {
+        await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [finalBlobUrlOrPath, binary_id]);
+      }
     }
 
     res.json({
       success: true,
       binary_id,
-      filePath: localFolderPath,
+      filePath: finalBlobUrlOrPath,
       blobUrl: azureData?.blobUrl || null,
       message: `${docType} uploaded successfully`,
       ...(azureData || {})
