@@ -3,6 +3,7 @@
 .env.local
 .env.*.local
 .env_server
+.env_staging
 
 # Node modules
 node_modules/
