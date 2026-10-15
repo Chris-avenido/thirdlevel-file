@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiFilter, FiDownload, FiUploadCloud, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiCheckCircle, FiX, FiAward } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useSeasonalTheme } from '../utils/themeUtils';
 import PageTransition from '../components/PageTransition';
 import AdminSidebar from '../components/AdminSidebar';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
@@ -20,6 +21,7 @@ const generateHash = (id) => {
 
 const NotableAchievements = () => {
     const { user, token } = useAuth();
+    const { isHalloween } = useSeasonalTheme(user);
     const navigate = useNavigate();
 
     const [achievements, setAchievements] = useState([]);
@@ -211,37 +213,47 @@ const NotableAchievements = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] flex-col lg:flex-row relative overflow-hidden">
+            <div className={`flex h-screen ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} font-['Plus_Jakarta_Sans'] text-[#08315F] flex-col lg:flex-row relative overflow-hidden`}>
                 <AdminSidebar />
-                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0">
-                        <div className="flex items-center gap-4 text-white">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                                <FiAward size={20} />
+                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-3.5 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg shadow-blue-900/20 shrink-0 w-full relative">
+                        <div className="flex items-center gap-3 sm:gap-4 text-white relative z-10 min-w-0">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                                <FiAward size={18} />
                             </div>
-                            <div>
-                                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Notable <span className="text-blue-300 not-italic">Achievements</span></h1>
-                                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                                    {achievements.length} Total Achievements
+                            <div className="min-w-0">
+                                <h1 className="text-base sm:text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase truncate">
+                                    Notable <span className={isHalloween ? "text-[#f59e0b] not-italic" : "text-blue-300 not-italic"}>Achievements</span>
+                                </h1>
+                                <p className="text-[8.5px] sm:text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1 truncate">
+                                    {achievements.length} Total Achievements • Central Office Catalog
                                 </p>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-100 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
-                                <FiUploadCloud size={14} /> Import Data
-                            </button>
-                            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-all shadow-sm">
-                                <FiDownload size={14} /> Export Data
-                            </button>
-                            <button onClick={handleOpenAdd} className="flex items-center gap-2 px-4 py-2 bg-white text-[#08315F] rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-50 shadow-md shadow-black/10 transition-all border border-white">
-                                <FiPlus size={14} /> Add Record
-                            </button>
+
+                        <div className="flex items-center gap-2 sm:gap-4 relative z-10 shrink-0 justify-end flex-wrap">
+                            {isHalloween && (
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-sm sm:text-base shadow-sm shrink-0">
+                                    🎃
+                                </div>
+                            )}
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
+                                <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-emerald-500/20 text-emerald-100 rounded-lg text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                                    <FiUploadCloud size={13} /> Import Data
+                                </button>
+                                <button onClick={handleExport} className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-blue-500/20 text-blue-100 rounded-lg text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-all shadow-sm">
+                                    <FiDownload size={13} /> Export Data
+                                </button>
+                                <button onClick={handleOpenAdd} className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-white text-[#08315F] rounded-lg text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest hover:bg-blue-50 shadow-md shadow-black/10 transition-all border border-white">
+                                    <FiPlus size={13} /> Add Record
+                                </button>
+                            </div>
                         </div>
                     </header>
 
-                    <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
+                    <div className="flex-1 p-3 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
                         {/* Filters */}
                         <div className="mb-6 flex flex-col md:flex-row gap-4">
                             <div className="flex-1 max-w-xl flex items-center gap-3">

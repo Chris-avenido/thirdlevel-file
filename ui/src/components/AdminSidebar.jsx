@@ -5,10 +5,13 @@ import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, 
 import { useAuth } from '../context/AuthContext';
 import newLogo from '../assets/modern_logo.png';
 
+import { useSeasonalTheme } from '../utils/themeUtils';
+
 const AdminSidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { isHalloween } = useSeasonalTheme(user);
 
     // Hover State
     const [isHovered, setIsHovered] = useState(false);
@@ -93,7 +96,7 @@ const AdminSidebar = () => {
             {/* Mobile Hamburger Button (Floating) */}
             <button
                 onClick={() => setIsMobileOpen(true)}
-                className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-[#08315F] rounded-full flex items-center justify-center text-white shadow-2xl z-[50] border-2 border-blue-400 hover:bg-blue-800 transition-colors"
+                className={`lg:hidden fixed bottom-6 right-6 w-14 h-14 ${isHalloween ? 'bg-[#0f172a] border-orange-500 hover:bg-orange-950' : 'bg-[#08315F] border-blue-400 hover:bg-blue-800'} rounded-full flex items-center justify-center text-white shadow-2xl z-[50] border-2 transition-colors`}
             >
                 <FiMenu size={24} />
             </button>
@@ -110,7 +113,7 @@ const AdminSidebar = () => {
             <div
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-[#08315F] border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
+                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 ${isHalloween ? 'bg-[#0a1226] border-r border-[#1e345e]' : 'bg-[#08315F] border-r border-blue-900'} flex-col pt-8 shadow-2xl transition-all duration-300 transform 
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:translate-x-0 
                 ${sidebarCollapsed ? 'w-[320px] lg:w-[96px]' : 'w-[320px]'}`
@@ -143,12 +146,18 @@ const AdminSidebar = () => {
                     {navItems.filter(item => !item.hidden).map((item) => {
                         const Icon = item.icon;
                         const active = item.isActive(location.pathname, location.search);
+                        const activeClass = isHalloween
+                            ? 'bg-[#f97316] text-white shadow-lg shadow-orange-500/25'
+                            : 'bg-white text-[#08315F] shadow-lg';
+                        const inactiveClass = isHalloween
+                            ? 'text-slate-300 hover:bg-white/10 hover:text-white'
+                            : 'text-blue-200 hover:bg-white/10 hover:text-white';
                         return (
                             <button
                                 key={item.id}
                                 onClick={() => navigate(item.path)}
                                 title={item.label}
-                                className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${active ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                                className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${active ? activeClass : inactiveClass}`}
                             >
                                 <Icon size={18} className="shrink-0" />
                                 <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>

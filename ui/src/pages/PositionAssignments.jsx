@@ -30,6 +30,7 @@ import {
   FiHelpCircle
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { useSeasonalTheme } from '../utils/themeUtils';
 import AdminSidebar from '../components/AdminSidebar';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
@@ -663,6 +664,7 @@ const PositionCombobox = ({ positions, selectedId, onSelect, placeholder = "Sele
 // =============================================================================
 const PositionAssignments = () => {
   const { user, token } = useAuth();
+  const { isHalloween } = useSeasonalTheme(user);
   const navigate = useNavigate();
 
   // Data States
@@ -1407,52 +1409,57 @@ const PositionAssignments = () => {
 
   return (
     <PageTransition>
-      <div className="flex h-screen bg-transparent font-sans overflow-hidden">
+      <div className={`flex h-screen ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} font-sans overflow-hidden`}>
         {/* Navigation Sidebar */}
         <AdminSidebar />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
           {/* TOP NAVIGATION BAR (Matching OfficialsRegistry) */}
-          <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
-            <div className="flex items-center gap-4 text-white">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                <FiBriefcase size={20} />
+          <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full relative">
+            <div className="flex items-center gap-3 sm:gap-4 text-white relative z-10 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                <FiBriefcase size={18} />
               </div>
-              <div>
-                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">
-                  Position <span className="text-blue-300 not-italic">Assignments</span>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase truncate">
+                  Position <span className={isHalloween ? "text-[#f59e0b] not-italic" : "text-blue-300 not-italic"}>Assignments</span>
                 </h1>
-                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                  Plantilla Deployment & Staffing • Third Level Officials Command Dashboard
+                <p className="text-[8.5px] sm:text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1 truncate">
+                  Plantilla Deployment & Staffing • Third Level Officials
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 sm:gap-6 relative z-10 shrink-0">
+              {isHalloween && (
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-sm sm:text-base shadow-sm shrink-0">
+                  🎃
+                </div>
+              )}
               <div className="hidden md:flex flex-col items-end">
                 <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
                   {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
                 </span>
-                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">
+                <span className={`text-[9px] font-bold ${isHalloween ? 'text-[#fbbf24]' : 'text-[#FBBF24]'} uppercase tracking-widest mt-1`}>
                   {user?.role || 'Central Office'}
                 </span>
               </div>
             </div>
           </header>
 
-          <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
+          <main className="flex-1 px-3 sm:px-6 lg:px-8 pb-12 pt-4 sm:pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
             {/* UNIFIED DATA CONTROLS TAB (Matching OfficialsRegistry) */}
-            <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
+            <div className="bg-white border-2 border-[#08315F] rounded-[20px] sm:rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
               {/* TOP ROW: STATUS PILL SWITCHER & ACTION BUTTONS */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 w-full">
                 {/* Status Tabs */}
-                <div className="flex items-center gap-1.5 p-1 bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full">
+                <div className="flex items-center justify-center sm:justify-start gap-1 p-1 bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full overflow-x-auto w-full sm:w-auto">
                   {['ACTIVE', 'INACTIVE', 'ALL'].map((st) => (
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
-                      className={`h-[36px] px-5 rounded-full text-[13.5px] font-black uppercase tracking-widest transition-all ${statusFilter === st
+                      className={`h-[34px] sm:h-[36px] px-3.5 sm:px-5 flex-1 sm:flex-none rounded-full text-[12px] sm:text-[13.5px] font-black uppercase tracking-widest transition-all ${statusFilter === st
                           ? 'bg-[#08315F] text-white shadow-sm'
                           : 'text-[#08315F] hover:bg-sky-100'
                         }`}
@@ -1463,87 +1470,88 @@ const PositionAssignments = () => {
                 </div>
 
                 {/* Buttons: Refresh & New Position Assignment */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className="h-[44px] px-5 bg-[#F0F9FF] hover:bg-sky-100 text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[13.5px] tracking-widest uppercase transition-colors flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 active:scale-95"
+                    className="h-[40px] sm:h-[44px] px-3.5 sm:px-5 bg-[#F0F9FF] hover:bg-sky-100 text-[#08315F] rounded-full border-2 border-[#BAE6FD] font-black text-[12px] sm:text-[13.5px] tracking-widest uppercase transition-colors flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap disabled:opacity-50 active:scale-95 shrink-0"
                     title="Refresh data"
                   >
-                    <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-sky-600' : ''}`} />
+                    <FiRefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${refreshing ? 'animate-spin text-sky-600' : ''}`} />
                     <span>Refresh</span>
                   </button>
 
                   <button
                     onClick={handleOpenAssignModal}
-                    className="h-[44px] px-6 bg-[#08315F] hover:bg-[#004A99] text-white rounded-full font-black text-[13.5px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-md active:scale-95 border-2 border-transparent"
+                    className="h-[40px] sm:h-[44px] px-4 sm:px-6 flex-1 sm:flex-none bg-[#08315F] hover:bg-[#004A99] text-white rounded-full font-black text-[12px] sm:text-[13.5px] tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap shadow-md active:scale-95 border-2 border-transparent"
                   >
-                    <FiPlus className="w-4 h-4" />
-                    <span>New Position Assignment</span>
+                    <FiPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">New Position Assignment</span>
+                    <span className="sm:hidden">Assign Position</span>
                   </button>
                 </div>
               </div>
 
               {/* BOTTOM ROW: SEARCH BAR */}
-              <div className="relative w-full h-[44px]">
-                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
+              <div className="relative w-full h-[40px] sm:h-[44px]">
+                <FiSearch className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by official name, plantilla item no, position title, office, or region..."
-                  className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-10 text-[15px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                  placeholder="Search official, plantilla item, title, office..."
+                  className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-10 sm:pl-11 pr-9 text-[13.5px] sm:text-[15px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
                 />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                     title="Clear search"
                   >
-                    <FiX size={16} />
+                    <FiX size={15} />
                   </button>
                 )}
               </div>
             </div>
 
             {/* STATS CARDS (Exact match to OfficialsRegistry styling) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 w-full">
               {/* Card 1: Active Assignments */}
               <div
                 onClick={() => setStatusFilter(prev => prev === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
-                className={`min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusFilter === 'ACTIVE' ? 'border-l-sky-500 shadow-md ring-1 ring-sky-200' : 'border-l-sky-400 hover:shadow-sm'
+                className={`min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden cursor-pointer transition-all flex flex-col justify-between ${statusFilter === 'ACTIVE' ? 'border-l-sky-500 shadow-md ring-1 ring-sky-200' : 'border-l-sky-400 hover:shadow-sm'
                   }`}
               >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">Total Active Assignments</div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">{stats.activeAssignments}</div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Currently deployed in view</div>
+                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-1.5 sm:mb-2">Total Active Assignments</div>
+                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-1.5 sm:mb-2">{stats.activeAssignments}</div>
+                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Currently deployed in view</div>
               </div>
 
               {/* Card 2: Vacant Positions */}
               <div
-                className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden transition-all flex flex-col justify-between border-l-rose-400 hover:shadow-sm"
+                className="min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden transition-all flex flex-col justify-between border-l-rose-400 hover:shadow-sm"
               >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">Total Vacant Positions</div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">{stats.vacantPositionsCount}</div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Available for assignment</div>
+                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-1.5 sm:mb-2">Total Vacant Positions</div>
+                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-1.5 sm:mb-2">{stats.vacantPositionsCount}</div>
+                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Available for assignment</div>
               </div>
 
               {/* Card 3: Registered Officials */}
               <div
-                className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden transition-all flex flex-col justify-between border-l-amber-400 hover:shadow-sm"
+                className="min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden transition-all flex flex-col justify-between border-l-amber-400 hover:shadow-sm"
               >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">Registered Officials</div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">{stats.totalOfficialsCount}</div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">In TLO Masterlist</div>
+                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-1.5 sm:mb-2">Registered Officials</div>
+                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-1.5 sm:mb-2">{stats.totalOfficialsCount}</div>
+                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">In TLO Masterlist</div>
               </div>
 
               {/* Card 4: Plantilla Positions */}
               <div
-                className="min-h-[100px] p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden transition-all flex flex-col justify-between border-l-indigo-400 hover:shadow-sm"
+                className="min-h-[90px] sm:min-h-[100px] p-4 sm:p-5 bg-white rounded-[16px] border-2 border-[#BAE6FD] border-l-[6px] overflow-hidden transition-all flex flex-col justify-between border-l-indigo-400 hover:shadow-sm"
               >
-                <div className="text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-2">Plantilla Positions</div>
-                <div className="text-[44px] text-[#08315F] font-normal leading-none mb-2">{stats.totalPositionsCount}</div>
-                <div className="text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Authorized plantilla items</div>
+                <div className="text-[12.5px] sm:text-[14px] text-slate-500 uppercase tracking-widest font-bold mb-1.5 sm:mb-2">Plantilla Positions</div>
+                <div className="text-[36px] sm:text-[44px] text-[#08315F] font-normal leading-none mb-1.5 sm:mb-2">{stats.totalPositionsCount}</div>
+                <div className="text-[11.5px] sm:text-[12.5px] text-slate-400 uppercase tracking-widest font-bold leading-none">Authorized plantilla items</div>
               </div>
             </div>
 

@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 import { FiSave, FiLock, FiUser, FiEye, FiEyeOff, FiLogOut, FiSettings } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
+import { useSeasonalTheme } from '../utils/themeUtils';
 import AdminSidebar from '../components/AdminSidebar';
 import { apiUrl } from '../utils/api';
 
 const Settings = () => {
     const { user, token, setUser, logout } = useAuth();
+    const { isHalloween } = useSeasonalTheme(user);
     
     const [formData, setFormData] = useState({
         firstName: '',
@@ -114,46 +116,53 @@ const Settings = () => {
     };
 
     return (
-        <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] overflow-hidden">
+        <div className={`flex h-screen ${isHalloween ? 'theme-halloween-wrapper' : 'bg-transparent'} font-['Plus_Jakarta_Sans'] overflow-hidden`}>
             <AdminSidebar />
             
-            <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
+            <main className="flex-1 flex flex-col h-screen overflow-y-auto relative bg-transparent">
                 {/* TOP NAVIGATION BAR */}
-                <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                            <FiSettings size={20} />
+                <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full relative">
+                    <div className="flex items-center gap-3 sm:gap-4 text-white relative z-10 min-w-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0">
+                            <FiSettings size={18} />
                         </div>
-                        <div>
-                            <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Account <span className="text-blue-300 not-italic">Settings</span></h1>
-                            <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">Profile & Security</p>
+                        <div className="min-w-0">
+                            <h1 className="text-base sm:text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase truncate">
+                                Account <span className={isHalloween ? "text-[#f59e0b] not-italic" : "text-blue-300 not-italic"}>Settings</span>
+                            </h1>
+                            <p className="text-[8.5px] sm:text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1 truncate">Profile & Security Management</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3 sm:gap-6 relative z-10 shrink-0">
+                        {isHalloween && (
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-sm sm:text-base shadow-sm shrink-0">
+                                🎃
+                            </div>
+                        )}
                         <div className="hidden md:flex flex-col items-end">
                             <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
-                            <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
+                            <span className={`text-[9px] font-bold ${isHalloween ? 'text-[#fbbf24]' : 'text-[#FBBF24]'} uppercase tracking-widest mt-1`}>{user?.role || 'Central Office'}</span>
                         </div>
                     </div>
                 </header>
                 
-                <div className="p-8 lg:p-12 max-w-4xl mx-auto w-full mt-4">
+                <div className="p-4 sm:p-8 lg:p-12 max-w-4xl mx-auto w-full mt-2 sm:mt-4">
                     
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mb-10"
+                        className="mb-6 sm:mb-10"
                     >
-                        <h1 className="text-3xl font-black text-[#08315F] tracking-tight">Account Settings</h1>
-                        <p className="text-slate-500 font-medium mt-2">Update your personal information and security credentials.</p>
+                        <h1 className="text-2xl sm:text-3xl font-black text-[#08315F] tracking-tight">Account Settings</h1>
+                        <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1 sm:mt-2">Update your personal information and security credentials.</p>
                     </motion.div>
 
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-white rounded-[2rem] border-2 border-[#08315F] p-8 shadow-xl"
+                        className="bg-white rounded-[1.5rem] sm:rounded-[2rem] border-2 border-[#08315F] p-4 sm:p-8 shadow-xl"
                     >
                         <form onSubmit={handleSave} className="space-y-8">
                             
