@@ -888,8 +888,8 @@ export const updateProfile = async (req, res) => {
     if (req.body.relevant_trainings && Array.isArray(req.body.relevant_trainings)) {
       req.body.relevant_trainings = req.body.relevant_trainings.map(t => {
         if (t.training_name) t.training_name = t.training_name.toUpperCase();
-        if (t.date_from && t.date_to && new Date(t.date_to) <= new Date(t.date_from)) {
-          throw new Error("End date must be after start date for trainings");
+        if (t.date_from && t.date_to && new Date(t.date_to) < new Date(t.date_from)) {
+          throw new Error("End date cannot be earlier than start date for trainings");
         }
         return t;
       });

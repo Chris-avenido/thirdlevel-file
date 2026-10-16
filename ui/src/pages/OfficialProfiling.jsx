@@ -2699,11 +2699,12 @@ const OfficialProfiling = () => {
         }
 
         // 4. Employment History (Held Positions) Validation
-        const validateRange = (from, to, ctx, targetTab = 'experience') => {
+        const validateRange = (from, to, ctx, targetTab = 'experience', allowEqual = false) => {
             if (from && to) {
                 const d1 = new Date(from);
                 const d2 = new Date(to);
-                if (d2 <= d1) {
+                const isInvalid = allowEqual ? (d2 < d1) : (d2 <= d1);
+                if (isInvalid) {
                     setTab(targetTab);
                     Swal.fire({
                         icon: 'error',
@@ -2712,7 +2713,7 @@ const OfficialProfiling = () => {
                             <div style="text-align: left; font-size: 14.5px;">
                                 <p style="color: #334155;">In <strong>${ctx}</strong>:</p>
                                 <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px; margin-top: 8px; color: #b91c1c; font-weight: 700;">
-                                    To Date (${to}) must be later than From Date (${from}).
+                                    To Date (${to}) ${allowEqual ? 'cannot be earlier than' : 'must be later than'} From Date (${from}).
                                 </div>
                             </div>
                         `,
@@ -2880,7 +2881,7 @@ const OfficialProfiling = () => {
                         return false;
                     }
 
-                    if (!validateRange(from, to, `Relevant Training #${i + 1}${name ? ` (${name})` : ''}`, 'trainings')) return false;
+                    if (!validateRange(from, to, `Relevant Training #${i + 1}${name ? ` (${name})` : ''}`, 'trainings', true)) return false;
                 }
             }
         }
@@ -5474,32 +5475,116 @@ const OfficialProfiling = () => {
 
                                                             {/* Trainings List */}
                                                             <div className="space-y-3">
-                                                                <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 px-2">
-                                                                    {['Training / Seminar Name', 'Date From', 'Date To', 'Hrs/Day', 'Total Hrs', ''].map(h => (
+                                                                <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_165px_165px_100px_100px_44px] gap-3 px-2">
+                                                                    {['Training / Seminar Name', 'Date From', 'Date To', 'Hrs / Day', 'Total Hrs', ''].map(h => (
                                                                         <span key={h} className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest">{h}</span>
                                                                     ))}
                                                                 </div>
-                                                                {trainings.map((tr, idx) => (
-                                                                    <motion.div key={tr.id || tr.training_id || `tr-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border-2 border-slate-200/50 transition-colors shadow-sm">
-                                                                        <input disabled={!isEditing} type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))} placeholder="Training / Seminar name" className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
-                                                                        <div className="relative">
-                                                                            <ModernDatePicker disabled={!isEditing} value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                        </div>
-                                                                        <div className="relative">
-                                                                            <ModernDatePicker disabled={!isEditing} value={tr.date_to ? tr.date_to.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_to', val)} minDate={tr.date_from ? new Date(tr.date_from) : undefined} className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
-                                                                            {tr.date_from && (tr.date_to || tr.date_completed) && new Date(tr.date_to || tr.date_completed) <= new Date(tr.date_from) && (
-                                                                                <p className="text-red-500 text-[15px] mt-1 font-semibold absolute -bottom-5">Must be after From Date.</p>
-                                                                            )}
-                                                                        </div>
-                                                                        <select disabled={!isEditing} value={tr.hours_per_day || '8'} onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)} className="bg-white border-2 border-slate-200 rounded-xl px-2 py-2 text-[18px] font-bold outline-none focus:border-[#0038A8] transition-all min-w-0 cursor-pointer shadow-sm">
-                                                                            <option value="8">8 hrs</option>
-                                                                            <option value="4">4 hrs</option>
-                                                                            <option value="2">2 hrs</option>
-                                                                        </select>
-                                                                        <input disabled={!isEditing} type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" className="bg-white border-2 border-slate-200 rounded-xl px-3 py-2 text-[18px] font-bold outline-none focus:border-[#0038A8] transition-all min-w-0" />
-                                                                        {isEditing && <button onClick={() => handleRemoveTraining(idx)} className="w-11 h-11 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"><FiTrash2 size={14} /></button>}
-                                                                    </motion.div>
-                                                                ))}
+                                                                {trainings.map((tr, idx) => {
+                                                                    const fromVal = tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '');
+                                                                    const toVal = tr.date_to ? tr.date_to.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '');
+                                                                    const isDateToInvalid = Boolean(fromVal && toVal && new Date(toVal) < new Date(fromVal));
+                                                                    return (
+                                                                        <motion.div
+                                                                            key={tr.id || tr.training_id || `tr-${idx}`}
+                                                                            initial={{ opacity: 0, y: 8 }}
+                                                                            animate={{ opacity: 1, y: 0 }}
+                                                                            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_165px_165px_100px_100px_44px] gap-4 xl:gap-3 items-start bg-slate-50/40 hover:bg-transparent p-4 md:p-5 xl:p-4 rounded-2xl border-2 border-slate-200/60 transition-colors shadow-sm"
+                                                                        >
+                                                                            {/* Training / Seminar Name */}
+                                                                            <div className="flex flex-col gap-1.5 w-full md:col-span-2 xl:col-span-1">
+                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Training / Seminar Name</span>
+                                                                                <input
+                                                                                    disabled={!isEditing}
+                                                                                    type="text"
+                                                                                    value={tr.training_name || ''}
+                                                                                    onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))}
+                                                                                    placeholder="Training / Seminar name"
+                                                                                    className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[17px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
+                                                                                />
+                                                                            </div>
+
+                                                                            {/* Date From */}
+                                                                            <div className="flex flex-col gap-1.5 w-full col-span-1">
+                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Date From</span>
+                                                                                <div className="relative w-full">
+                                                                                    <ModernDatePicker
+                                                                                        disabled={!isEditing}
+                                                                                        value={fromVal}
+                                                                                        onChange={val => handleTrainingDateChange(idx, 'date_from', val)}
+                                                                                        className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[17px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Date To */}
+                                                                            <div className="flex flex-col gap-1.5 w-full col-span-1">
+                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Date To</span>
+                                                                                <div className="relative w-full">
+                                                                                    <ModernDatePicker
+                                                                                        disabled={!isEditing}
+                                                                                        value={toVal}
+                                                                                        onChange={val => handleTrainingDateChange(idx, 'date_to', val)}
+                                                                                        minDate={fromVal ? new Date(fromVal.includes('-') && !fromVal.includes('T') ? fromVal + 'T00:00:00' : fromVal) : undefined}
+                                                                                        className={`bg-white border-2 ${isDateToInvalid ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100' : 'border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50'} rounded-xl px-3 py-2 text-[17px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm`}
+                                                                                    />
+                                                                                    {isDateToInvalid && (
+                                                                                        <p className="text-red-500 text-[12px] font-bold mt-1.5 leading-snug flex items-center gap-1">
+                                                                                            <FiAlertTriangle size={13} className="shrink-0 text-red-500" />
+                                                                                            <span>Date To cannot be earlier than Date From.</span>
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Hrs / Day */}
+                                                                            <div className="flex flex-col gap-1.5 w-full col-span-1">
+                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Hrs / Day</span>
+                                                                                <select
+                                                                                    disabled={!isEditing}
+                                                                                    value={tr.hours_per_day || '8'}
+                                                                                    onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)}
+                                                                                    className="bg-white border-2 border-slate-200 rounded-xl px-2 py-2 text-[17px] font-bold outline-none focus:border-[#0038A8] transition-all w-full cursor-pointer shadow-sm"
+                                                                                >
+                                                                                    <option value="8">8 hrs</option>
+                                                                                    <option value="4">4 hrs</option>
+                                                                                    <option value="2">2 hrs</option>
+                                                                                </select>
+                                                                            </div>
+
+                                                                            {/* Total Hrs */}
+                                                                            <div className="flex flex-col gap-1.5 w-full col-span-1">
+                                                                                <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Total Hrs</span>
+                                                                                <input
+                                                                                    disabled={!isEditing}
+                                                                                    type="number"
+                                                                                    min="0"
+                                                                                    max="999"
+                                                                                    step="0.5"
+                                                                                    value={tr.hours || ''}
+                                                                                    onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }}
+                                                                                    placeholder="Total"
+                                                                                    className="bg-white border-2 border-slate-200 rounded-xl px-3 py-2 text-[17px] font-bold outline-none focus:border-[#0038A8] transition-all w-full shadow-sm"
+                                                                                />
+                                                                            </div>
+
+                                                                            {/* Remove Button */}
+                                                                            <div className="flex items-center justify-end xl:justify-center col-span-1 md:col-span-2 xl:col-span-1 pt-1 xl:pt-0">
+                                                                                {isEditing ? (
+                                                                                    <button
+                                                                                        onClick={() => handleRemoveTraining(idx)}
+                                                                                        className="w-11 h-11 flex items-center justify-center bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all shadow-sm"
+                                                                                        title="Remove training"
+                                                                                    >
+                                                                                        <FiTrash2 size={16} />
+                                                                                    </button>
+                                                                                ) : (
+                                                                                    <div className="w-11 h-11 hidden xl:block" />
+                                                                                )}
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    );
+                                                                })}
                                                                 {isEditing && <button onClick={handleAddTraining} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[15px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2">
                                                                     <FiPlus size={14} /> Add Training
                                                                 </button>}
