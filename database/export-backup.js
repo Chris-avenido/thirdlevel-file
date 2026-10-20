@@ -19,10 +19,27 @@ const { Pool } = pg;
 const rootDir = path.resolve(__dirname, '..');
 require('dotenv').config({ path: path.join(rootDir, '.env') });
 
-// Target database connection string (insightEd production database)
-const sourceUrl = process.env.BACKUP_SOURCE_URL || 
-  process.argv[2] || 
-  'postgres://Administrator1:pRZTbQ2T1JD7@stride-posgre-prod-01.postgres.database.azure.com:5432/insightEd';
+// Load production environment configuration directly from .env_server
+const envServerPath = path.join(rootDir, '.env_server');
+let prodDbUrl = null;
+if (fs.existsSync(envServerPath)) {
+  const parsedServerEnv = require('dotenv').parse(fs.readFileSync(envServerPath));
+  prodDbUrl = parsedServerEnv.DATABASE_URL;
+}
+
+// Target database connection string (sourced directly from .env_server for production)
+const sourceUrl = prodDbUrl || 
+  process.env.BACKUP_SOURCE_URL || 
+  process.argv[2] ||
+  'postgres://Administrator1:pRZTbQ2T1JD7@stride-posgre-prod-01.postgres.database.azure.com:5432/tlo_database';
+
+let dbName = 'tlo_database';
+let dbHost = 'stride-posgre-prod-01.postgres.database.azure.com';
+try {
+  const parsedUrl = new URL(sourceUrl);
+  dbName = parsedUrl.pathname.replace(/^\//, '') || dbName;
+  dbHost = parsedUrl.hostname || dbHost;
+} catch (e) {}
 
 // Determine backup folder per current day and year (backups/YYYY/YYYY-MM-DD)
 const now = new Date();
@@ -92,16 +109,17 @@ async function runBackup() {
   const startTime = Date.now();
   console.log('================================================================');
   console.log(`🚀 Starting InsightEd TLO Database Backup`);
-  console.log(`   Source: stride-posgre-prod-01.postgres.database.azure.com / insightEd`);
-  console.log(`   Target Output: ${backupDir}`);
-  console.log(`   Mode: READ-ONLY SAFE TRANSACTION (Zero writes to server)`);
+  console.log(`   Source Host:     ${dbHost}`);
+  console.log(`   Source Database: ${dbName} (loaded from .env_server)`);
+  console.log(`   Target Output:   ${backupDir}`);
+  console.log(`   Safety Mode:     READ-ONLY SAFE TRANSACTION (Zero writes/mutations to server)`);
   console.log('================================================================');
 
   const client = await pool.connect();
   const manifest = {
     backupDate: new Date().toISOString(),
-    databaseName: 'insightEd',
-    host: 'stride-posgre-prod-01.postgres.database.azure.com',
+    databaseName: dbName,
+    host: dbHost,
     tables: {},
     totalRows: 0,
     files: {
@@ -124,7 +142,7 @@ async function runBackup() {
 
   sqlStream.write(`-- ====================================================================\n`);
   sqlStream.write(`-- InsightEd Third Level Officials (TLO) System Database Backup\n`);
-  sqlStream.write(`-- Extracted from Server: stride-posgre-prod-01.postgres.database.azure.com / insightEd\n`);
+  sqlStream.write(`-- Extracted from Server: ${dbHost} / ${dbName}\n`);
   sqlStream.write(`-- Timestamp: ${manifest.backupDate}\n`);
   sqlStream.write(`-- Mode: READ-ONLY SAFE EXTRACTION (Zero writes performed on server)\n`);
   sqlStream.write(`-- ====================================================================\n\n`);
@@ -134,26 +152,47 @@ async function runBackup() {
     await client.query('BEGIN READ ONLY;');
     console.log('[Backup] Safe read-only transaction started on server.');
 
-    const targetTables = [
+    // Fetch all public base tables dynamically (excluding unified_binaries which is handled with specialized metadata extraction)
+    const tablesQueryRes = await client.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+        AND table_type = 'BASE TABLE'
+        AND table_name != 'unified_binaries'
+      ORDER BY table_name;
+    `);
+
+    const preferredOrder = [
       'authorization_codes',
       'notable_achievements',
       'verification_codes',
       'tlo_users',
+      'tlo_items',
+      'tlo_positions',
+      'tlo_personnel',
+      'tlo_masterlist',
       'third_level_official_masterlist',
+      'third_level_officials_masterlist',
+      'third_level_officials_profiles',
       'third_level_officials_profiling_application',
       'third_level_officials_updates',
+      'tlo_assignments',
+      'tlo_assignments_backup_20260917',
       'tlo_education_records',
       'tlo_eligibility_records',
       'tlo_position_history',
       'tlo_training_records',
       'tlo_accomplishment_records',
       'tlo_other_courses',
-      'third_level_officials_masterlist',
-      'third_level_officials_profiles',
-      'tlo_personnel',
-      'tlo_items',
-      'tlo_assignments',
-      'ces_plantilla_report'
+      'ces_plantilla',
+      'tlo_plantilla',
+      'tlo_profile'
+    ];
+
+    const discoveredTables = tablesQueryRes.rows.map(r => r.table_name);
+    const targetTables = [
+      ...preferredOrder.filter(t => discoveredTables.includes(t)),
+      ...discoveredTables.filter(t => !preferredOrder.includes(t))
     ];
 
     for (const table of targetTables) {
@@ -202,7 +241,9 @@ async function runBackup() {
         else if (c.data_type === 'date') typeStr = 'DATE';
         else if (c.data_type === 'jsonb') typeStr = 'JSONB';
         else if (c.data_type === 'uuid') typeStr = 'UUID';
-        else if (c.data_type === 'ARRAY' && c.udt_name === '_text') typeStr = 'TEXT[]';
+        else if (c.data_type === 'ARRAY') {
+          typeStr = (c.udt_name && c.udt_name.startsWith('_') ? c.udt_name.slice(1) : (c.udt_name || 'TEXT')).toUpperCase() + '[]';
+        }
 
         let line = `  "${c.column_name}" ${typeStr}`;
         if (c.is_nullable === 'NO') line += ' NOT NULL';
@@ -294,50 +335,26 @@ async function runBackup() {
       console.log(`         -> Exported ${rows.length} rows to .db and .sql.`);
     }
 
-    // Extract TLO subset of unified_binaries (with Azure Blob URLs and metadata, without raw bytea)
-    console.log('[Backup] Extracting TLO referenced unified_binaries metadata...');
+    console.log('[Backup] Extracting unified_binaries metadata...');
     
-    // Dynamic filter: Only query columns that actually exist in the target database schema
-    const getExistingCols = async (tableName, targetCols) => {
-      const res = await client.query(
-        `SELECT column_name FROM information_schema.columns WHERE table_name = $1`,
-        [tableName]
-      );
-      const existing = new Set(res.rows.map(r => r.column_name.toLowerCase()));
-      return targetCols.filter(c => existing.has(c.toLowerCase()));
-    };
-
-    const targetBinCols = [
-      'photo_binary_id', 'pds_binary_id', 'wes_binary_id', 'cv_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id',
-      'service_records_binary_id', 'deped_clearance_binary_id', 'sandiganbayan_clearance_binary_id', 'nbi_clearance_binary_id',
-      'csc_clearance_binary_id', 'ombudsman_clearance_binary_id', 'executive_summary_binary_id',
-      'reassignment_order_binary_id'
-    ];
-
-    const mlExisting = await getExistingCols('third_level_official_masterlist', targetBinCols);
-    const appExisting = await getExistingCols('third_level_officials_profiling_application', targetBinCols.filter(c => c !== 'reassignment_order_binary_id'));
-    const updExisting = await getExistingCols('third_level_officials_updates', ['photo_binary_id', 'pds_binary_id', 'profile_word_binary_id', 'profile_ppt_binary_id', 'service_records_binary_id']);
-
-    const mlSelects = mlExisting.map(c => `SELECT "${c}"::text AS bid FROM third_level_official_masterlist WHERE "${c}" IS NOT NULL`);
-    const appSelects = appExisting.map(c => `SELECT "${c}"::text AS bid FROM third_level_officials_profiling_application WHERE "${c}" IS NOT NULL`);
-    const updSelects = updExisting.map(c => `SELECT "${c}"::text AS bid FROM third_level_officials_updates WHERE "${c}" IS NOT NULL`);
-
-    const allSelects = [...mlSelects, ...appSelects, ...updSelects];
     let tloBinaries = [];
-    if (allSelects.length > 0) {
+    const hasBinTable = (await client.query(`
+      SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'unified_binaries';
+    `)).rows.length > 0;
+
+    if (hasBinTable) {
+      // In the dedicated TLO database, unified_binaries stores system files.
+      // We extract all metadata without raw bytea to keep the backup fast, safe, and compact.
       const binaryMetaRes = await client.query(`
-        WITH all_bids AS (
-          ${allSelects.join(' UNION ')}
-        )
         SELECT 
-          u.id, 
-          u.hash, 
-          u.mime_type, 
-          u.size_bytes, 
-          u.azure_blob_url, 
-          u.created_at
-        FROM all_bids b
-        JOIN unified_binaries u ON u.id::text = b.bid;
+          id, 
+          hash, 
+          mime_type, 
+          size_bytes, 
+          azure_blob_url, 
+          created_at
+        FROM unified_binaries
+        ORDER BY created_at ASC;
       `);
       tloBinaries = binaryMetaRes.rows;
     }

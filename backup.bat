@@ -1,2 +1,2 @@
 @echo off
-node database/export-backup.js
+node database/export-backup.js %*

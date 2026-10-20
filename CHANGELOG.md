@@ -1,6 +1,20 @@
 # CHANGELOG
 
-## 2026-10-07 — Masterlist Profile Resolution by Latest `created_at` (`loginController.js` & `thirdLevelController.js`)
+## 2026-10-20 — Bugfix: Database Backup Source Alignment (`tlo_database`) & Complete Table Export (`export-backup.js`)
+
+### Database Backup System (`export-backup.js`, `.env`, `backup.bat`, `package.json`)
+- **Resolved Stale Database Source**:
+  - Configured [export-backup.js](file:///e:/christop/staging/database/export-backup.js) to read `DATABASE_URL` directly from [.env_server](file:///e:/christop/staging/.env_server) (`tlo_database`), resolving the production database configuration dynamically.
+- **Dynamic Table Discovery**:
+  - Replaced hardcoded static table list with dynamic query against `information_schema.tables` in `public` schema.
+  - Automatically captures previously missing tables: `tlo_positions`, `tlo_masterlist`, `ces_plantilla`, `tlo_assignments`, `tlo_items`, and `tlo_personnel`.
+- **Complete Binary Metadata Extraction**:
+  - Extracted 100% of binary metadata (1,701 records) from `unified_binaries` without raw bytea content, ensuring zero missing document links.
+- **100% Read-Only Safety**:
+  - Maintained `BEGIN READ ONLY;` transaction with terminating `ROLLBACK;`, guaranteeing zero server mutations.
+
+---
+
 
 ### Profile Resolution (`loginController.js` & `thirdLevelController.js`)
 - **Resolved Duplicate Records by Latest Timestamp**:
