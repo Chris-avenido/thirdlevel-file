@@ -2768,11 +2768,6 @@ export const getOfficials = async (req, res) => {
               m.date_of_birth IS NOT NULL AND
               m.civil_status IS NOT NULL AND m.civil_status != '' AND
               m.photo_binary_id IS NOT NULL AND
-              m.employment_status IS NOT NULL AND m.employment_status != '' AND
-              m.region IS NOT NULL AND m.region != '' AND
-              m.position_title IS NOT NULL AND m.position_title != '' AND
-              m.appointment_date IS NOT NULL AND
-              (COALESCE(m.is_oic, false) = false OR (m.designation IS NOT NULL AND m.designation != '')) AND
               m.permanent_address IS NOT NULL AND m.permanent_address != '' AND
               ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
             THEN 10 ELSE 0 END) +
@@ -2783,6 +2778,7 @@ export const getOfficials = async (req, res) => {
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+              OR (m.position_title IS NOT NULL AND m.position_title != '' AND m.position_title != 'VACANT')
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
@@ -3089,11 +3085,6 @@ export const getKpiSummary = async (req, res) => {
             AND m.date_of_birth IS NOT NULL
             AND m.civil_status IS NOT NULL AND m.civil_status != ''
             AND m.photo_binary_id IS NOT NULL
-            AND m.employment_status IS NOT NULL AND m.employment_status != ''
-            AND m.region IS NOT NULL AND m.region != ''
-            AND m.position_title IS NOT NULL AND m.position_title != ''
-            AND m.appointment_date IS NOT NULL
-            AND (COALESCE(m.is_oic, FALSE) = FALSE OR (m.designation IS NOT NULL AND m.designation != ''))
             AND m.permanent_address IS NOT NULL AND m.permanent_address != ''
             AND (COALESCE(m.contact_details, '') != '' OR COALESCE(m.alt_contact_details_1, '') != '')
           )
@@ -3106,6 +3097,7 @@ export const getKpiSummary = async (req, res) => {
           AND (
             -- Tab 3: Experience
             EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+            OR (m.position_title IS NOT NULL AND m.position_title != '' AND m.position_title != 'VACANT')
           )
           AND (
             -- Tab 4: Education
@@ -3155,11 +3147,6 @@ export const getKpiSummary = async (req, res) => {
               m.date_of_birth IS NOT NULL AND
               m.civil_status IS NOT NULL AND m.civil_status != '' AND
               m.photo_binary_id IS NOT NULL AND
-              m.employment_status IS NOT NULL AND m.employment_status != '' AND
-              m.region IS NOT NULL AND m.region != '' AND
-              m.position_title IS NOT NULL AND m.position_title != '' AND
-              m.appointment_date IS NOT NULL AND
-              (COALESCE(m.is_oic, false) = false OR (m.designation IS NOT NULL AND m.designation != '')) AND
               m.permanent_address IS NOT NULL AND m.permanent_address != '' AND
               ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
             THEN 10 ELSE 0 END) +
@@ -3170,6 +3157,7 @@ export const getKpiSummary = async (req, res) => {
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+              OR (m.position_title IS NOT NULL AND m.position_title != '' AND m.position_title != 'VACANT')
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
