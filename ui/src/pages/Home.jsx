@@ -180,7 +180,7 @@ const Home = () => {
           fetch(apiUrl('/api/third-level/applications'), {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(apiUrl('/api/third-level/officials-kpi-summary'), {
+          fetch(apiUrl('/api/third-level/officials-kpi-summary?exclude_inactive=true'), {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -190,7 +190,7 @@ const Home = () => {
 
         if (appsData.success) setApplications(appsData.data);
         if (offData.success) {
-          const validOfficials = (offData.data || []).filter(o => o.status !== 'Rejected');
+          const validOfficials = (offData.data || []).filter(o => o.status !== 'Rejected' && o.status !== 'Inactive' && o.status !== 'Reconciled');
           setAllOfficials(validOfficials);
           setOfficials(validOfficials.filter(o => o.status === 'Active' || o.status === 'For Approval'));
         }
@@ -222,7 +222,7 @@ const Home = () => {
 
       let isInactiveThisMonth = false;
       let effDate = null;
-      const inactiveStatuses = ['Inactive', 'Resigning', 'Vacated'];
+      const inactiveStatuses = ['Resigning', 'Vacated'];
       if (inactiveStatuses.includes(o.status) || inactiveStatuses.includes(o.employment_status)) {
         effDate = new Date(o.effectivity_date || o.updated_at);
         if (!isNaN(effDate.getTime())) {
@@ -677,20 +677,7 @@ const Home = () => {
       });
     });
 
-    // Inactive Personnel
-    inactiveOfficials.forEach(o => {
-      queue.push({
-        id: o.TLOid,
-        email: o.email,
-        name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
-        desc: `Inactive Personnel · ${o.office || 'Unassigned'}`,
-        status: 'Inactive',
-        badgeClass: 'warn',
-        type: 'inactive',
-        region: getOfficialRegion(o),
-        level: getOfficialLevel(o)
-      });
-    });
+    // Inactive Personnel (Excluded on Home page per requirement)
 
     // Third Level Officials (Only show when explicitly filtered so it doesn't flood the 'All' queue)
     if (activeQueueFilter === 'thirdLevel') {
@@ -744,7 +731,7 @@ const Home = () => {
   }, [applications, officials, filterRegion, filterLevel, filterOffice, filterSearch, activeQueueFilter, retireesThisMonth, anticipatedVacancies]);
 
   const activityLogs = useMemo(() => {
-    let filtered = [...allOfficials];
+    let filtered = [...allOfficials].filter(o => o.status !== 'Inactive');
 
     // Category Filter
     if (activeQueueFilter !== 'all') {

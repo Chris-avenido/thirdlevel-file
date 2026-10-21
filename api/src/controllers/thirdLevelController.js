@@ -3045,6 +3045,10 @@ export const getKpiSummary = async (req, res) => {
       allRowsStatusCondition = `AND m.status = $${allRowsParams.length}`;
     }
 
+    if (req.query.exclude_inactive === 'true' || req.query.exclude_inactive === true) {
+      allRowsStatusCondition += ` AND m.status != 'Inactive'`;
+    }
+
     const allRowsQuery = `
       SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
         m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
