@@ -2829,7 +2829,14 @@ const OfficialsRegistry = () => {
                                                                 onClick={() => setSelectedCandidate(cand)}
                                                                 className={`p-3 text-left rounded-xl border-2 transition-all ${selectedCandidate?.TLOid === cand.TLOid ? 'bg-[#08315F] text-white border-[#08315F] shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                                                             >
-                                                                <div className="font-black text-[15px]">{cand.first_name} {cand.last_name}</div>
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <div className="font-black text-[15px]">{cand.first_name} {cand.last_name}</div>
+                                                                    {cand.profile_completion != null && (
+                                                                        <span className={`text-[11px] font-black px-1.5 py-0.5 rounded ${selectedCandidate?.TLOid === cand.TLOid ? 'bg-white/20 text-white' : 'bg-slate-100 text-[#08315F]'}`}>
+                                                                            {Math.round(cand.profile_completion)}%
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                                 <div className={`text-[12px] font-medium truncate ${selectedCandidate?.TLOid === cand.TLOid ? 'text-blue-200' : 'text-slate-500'}`}>
                                                                     {cand.TLOid} • {cand.position_title || 'No Position'} • {cand.office || 'No Office'}
                                                                 </div>
@@ -2880,6 +2887,34 @@ const OfficialsRegistry = () => {
                                                                 <span className="font-medium text-slate-700">{reconcileTargetItem.region || reconcileTargetItem.strand || '(Not Set)'}</span>
                                                             </div>
                                                         </div>
+                                                        {reconcileTargetItem.profile_completion != null && (() => {
+                                                            const pct = Math.min(100, Math.max(0, Math.round(reconcileTargetItem.profile_completion)));
+                                                            const colorClass = pct >= 100 ? 'text-emerald-600' : pct >= 70 ? 'text-[#08315F]' : 'text-amber-600';
+                                                            const barClass = pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-[#08315F]' : 'bg-amber-500';
+                                                            return (
+                                                                <div className="pt-2 border-t border-slate-200">
+                                                                    <div className="flex items-center justify-between mb-1.5">
+                                                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Profile Completion</span>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className={`text-[13px] font-black ${colorClass}`}>
+                                                                                {pct}%
+                                                                            </span>
+                                                                            {pct >= 100 && (
+                                                                                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-full leading-none">
+                                                                                    Complete
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden border border-slate-300/40">
+                                                                        <div
+                                                                            className={`h-full ${barClass} rounded-full transition-all duration-300`}
+                                                                            style={{ width: `${pct}%` }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
                                                     </div>
                                                 </div>
 
@@ -2923,6 +2958,34 @@ const OfficialsRegistry = () => {
                                                                     <span className="font-medium text-slate-700">{selectedCandidate.region || selectedCandidate.strand || '—'}</span>
                                                                 </div>
                                                             </div>
+                                                            {selectedCandidate.profile_completion != null && (() => {
+                                                                const pct = Math.min(100, Math.max(0, Math.round(selectedCandidate.profile_completion)));
+                                                                const colorClass = pct >= 100 ? 'text-emerald-600' : pct >= 70 ? 'text-[#08315F]' : 'text-amber-600';
+                                                                const barClass = pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-[#08315F]' : 'bg-amber-500';
+                                                                return (
+                                                                    <div className="pt-2 border-t border-blue-200">
+                                                                        <div className="flex items-center justify-between mb-1.5">
+                                                                            <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider">Profile Completion</span>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className={`text-[13px] font-black ${colorClass}`}>
+                                                                                    {pct}%
+                                                                                </span>
+                                                                                {pct >= 100 && (
+                                                                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-full leading-none">
+                                                                                        Complete
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden border border-blue-200">
+                                                                            <div
+                                                                                className={`h-full ${barClass} rounded-full transition-all duration-300`}
+                                                                                style={{ width: `${pct}%` }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                         </div>
                                                     ) : (
                                                         <div className="text-center py-8 text-slate-400 font-medium">

@@ -2772,13 +2772,10 @@ export const getOfficials = async (req, res) => {
               ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              (m.ces_stage IS NOT NULL AND m.ces_stage != '' AND m.ces_stage != 'NOT APPLICABLE') OR
-              m.emt_passer IS NOT NULL OR
-              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE (el.source_table = 'masterlist' OR el.source_table IS NULL) AND el.tlo_id = m."TLOid" AND (el.delete_flg != 'Yes' OR el.delete_flg IS NULL))
+              (m.emt_passer = FALSE OR (m.emt_passer = TRUE AND m.emt_date IS NOT NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
-              OR (m.position_title IS NOT NULL AND m.position_title != '' AND m.position_title != 'VACANT')
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
@@ -2937,9 +2934,58 @@ export const getOfficials = async (req, res) => {
       try {
         const isTest = Boolean(req.user?.is_testaccount);
         const activeOfficialsRes = await pool.query(`
-          SELECT "TLOid", first_name, last_name, email, position_title, office, strand, region, division, status, alt_email_1, alt_email_2, plantilla_item_no
-          FROM third_level_official_masterlist
-          WHERE status = 'Active' AND is_testaccount = $1
+          SELECT m."TLOid", m.first_name, m.last_name, m.email, m.position_title, m.office, m.strand, m.region, m.division, m.status, m.alt_email_1, m.alt_email_2, m.plantilla_item_no,
+          (
+            CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' OR m.status = 'Vacated' THEN NULL
+            ELSE (
+              (CASE WHEN 
+                m.first_name IS NOT NULL AND m.first_name != '' AND
+                m.last_name IS NOT NULL AND m.last_name != '' AND
+                m.gender IS NOT NULL AND m.gender != '' AND
+                m.date_of_birth IS NOT NULL AND
+                m.civil_status IS NOT NULL AND m.civil_status != '' AND
+                m.photo_binary_id IS NOT NULL AND
+                m.permanent_address IS NOT NULL AND m.permanent_address != '' AND
+                ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                (m.emt_passer = FALSE OR (m.emt_passer = TRUE AND m.emt_date IS NOT NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != '' AND
+                m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                EXISTS (SELECT 1 FROM tlo_training_records tr WHERE (tr.source_table = 'masterlist' OR tr.source_table IS NULL) AND tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                (m.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(m.notable_achievements) = 'array' THEN m.notable_achievements ELSE '[]'::jsonb END) > 0) OR
+                EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE (ac.source_table = 'masterlist' OR ac.source_table IS NULL) AND ac.tlo_id = m."TLOid" AND (ac.delete_flg != 'Yes' OR ac.delete_flg IS NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.pds_binary_id IS NOT NULL AND m.service_records_binary_id IS NOT NULL
+                AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.wes_binary_id IS NOT NULL AND m.cv_binary_id IS NOT NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.pending_admin_case IS NOT NULL AND m.pending_admin_case != '' AND (
+                  (m.guilty_admin_details IS NOT NULL AND m.criminally_charged_details IS NOT NULL AND m.convicted_crime_details IS NOT NULL) OR
+                  (UPPER(m.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
+                )
+                AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.ombudsman_clearance_binary_id IS NOT NULL AND m.sandiganbayan_clearance_binary_id IS NOT NULL AND m.csc_clearance_binary_id IS NOT NULL AND m.nbi_clearance_binary_id IS NOT NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.dpa_consented_at IS NOT NULL
+              THEN 10 ELSE 0 END)
+            ) END
+          ) AS profile_completion
+          FROM third_level_official_masterlist m
+          WHERE m.status = 'Active' AND m.is_testaccount = $1
         `, [isTest]);
 
         const activeOfficials = activeOfficialsRes.rows;
@@ -3151,13 +3197,10 @@ export const getKpiSummary = async (req, res) => {
               ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
-              (m.ces_stage IS NOT NULL AND m.ces_stage != '' AND m.ces_stage != 'NOT APPLICABLE') OR
-              m.emt_passer IS NOT NULL OR
-              EXISTS (SELECT 1 FROM tlo_eligibility_records el WHERE (el.source_table = 'masterlist' OR el.source_table IS NULL) AND el.tlo_id = m."TLOid" AND (el.delete_flg != 'Yes' OR el.delete_flg IS NULL))
+              (m.emt_passer = FALSE OR (m.emt_passer = TRUE AND m.emt_date IS NOT NULL))
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
-              OR (m.position_title IS NOT NULL AND m.position_title != '' AND m.position_title != 'VACANT')
             THEN 10 ELSE 0 END) +
             (CASE WHEN 
               EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
@@ -3199,9 +3242,58 @@ export const getKpiSummary = async (req, res) => {
     if (req.query.status === 'For Approval' && allRows.rows.length > 0) {
       try {
         const activeCandidatesRes = await pool.query(
-          `SELECT "TLOid", first_name, last_name, middle_name, position_title, office, strand, region, division, designation, plantilla_item_no, email, alt_email_1, alt_email_2, status 
-           FROM third_level_official_masterlist 
-           WHERE status = 'Active' AND is_testaccount = $1`,
+          `SELECT m."TLOid", m.first_name, m.last_name, m.middle_name, m.position_title, m.office, m.strand, m.region, m.division, m.designation, m.plantilla_item_no, m.email, m.alt_email_1, m.alt_email_2, m.status,
+          (
+            CASE WHEN m.first_name IS NULL OR m.first_name = '' OR m.first_name ILIKE '%VACANT%' OR m.status = 'Vacated' THEN NULL
+            ELSE (
+              (CASE WHEN 
+                m.first_name IS NOT NULL AND m.first_name != '' AND
+                m.last_name IS NOT NULL AND m.last_name != '' AND
+                m.gender IS NOT NULL AND m.gender != '' AND
+                m.date_of_birth IS NOT NULL AND
+                m.civil_status IS NOT NULL AND m.civil_status != '' AND
+                m.photo_binary_id IS NOT NULL AND
+                m.permanent_address IS NOT NULL AND m.permanent_address != '' AND
+                ((m.contact_details IS NOT NULL AND m.contact_details != '') OR (m.alt_contact_details_1 IS NOT NULL AND m.alt_contact_details_1 != ''))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                (m.emt_passer = FALSE OR (m.emt_passer = TRUE AND m.emt_date IS NOT NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                EXISTS (SELECT 1 FROM tlo_position_history ph WHERE (ph.source_table = 'masterlist' OR ph.source_table IS NULL) AND ph.tlo_id = m."TLOid" AND (ph.delete_flg != 'Yes' OR ph.delete_flg IS NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                EXISTS (SELECT 1 FROM tlo_education_records ed WHERE (ed.source_table = 'masterlist' OR ed.source_table IS NULL) AND ed.tlo_id = m."TLOid")
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.performance_rating_1 IS NOT NULL AND m.performance_rating_1 != '' AND
+                m.performance_rating_1_period IS NOT NULL AND m.performance_rating_1_period != ''
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                EXISTS (SELECT 1 FROM tlo_training_records tr WHERE (tr.source_table = 'masterlist' OR tr.source_table IS NULL) AND tr.tlo_id = m."TLOid" AND (tr.delete_flg != 'Yes' OR tr.delete_flg IS NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                (m.notable_achievements IS NOT NULL AND jsonb_array_length(CASE WHEN jsonb_typeof(m.notable_achievements) = 'array' THEN m.notable_achievements ELSE '[]'::jsonb END) > 0) OR
+                EXISTS (SELECT 1 FROM tlo_accomplishment_records ac WHERE (ac.source_table = 'masterlist' OR ac.source_table IS NULL) AND ac.tlo_id = m."TLOid" AND (ac.delete_flg != 'Yes' OR ac.delete_flg IS NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.pds_binary_id IS NOT NULL AND m.service_records_binary_id IS NOT NULL
+                AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.wes_binary_id IS NOT NULL AND m.cv_binary_id IS NOT NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.pending_admin_case IS NOT NULL AND m.pending_admin_case != '' AND (
+                  (m.guilty_admin_details IS NOT NULL AND m.criminally_charged_details IS NOT NULL AND m.convicted_crime_details IS NOT NULL) OR
+                  (UPPER(m.pending_admin_case) IN ('NO', 'NONE', 'N/A'))
+                )
+                AND (COALESCE(m.is_applying_for_position, FALSE) = FALSE OR (m.ombudsman_clearance_binary_id IS NOT NULL AND m.sandiganbayan_clearance_binary_id IS NOT NULL AND m.csc_clearance_binary_id IS NOT NULL AND m.nbi_clearance_binary_id IS NOT NULL))
+              THEN 10 ELSE 0 END) +
+              (CASE WHEN 
+                m.dpa_consented_at IS NOT NULL
+              THEN 10 ELSE 0 END)
+            ) END
+          ) AS profile_completion
+           FROM third_level_official_masterlist m
+           WHERE m.status = 'Active' AND m.is_testaccount = $1`,
           [isTest]
         );
         const activeOfficials = activeCandidatesRes.rows;
@@ -3229,7 +3321,8 @@ export const getKpiSummary = async (req, res) => {
             designation: c.designation,
             plantilla_item_no: c.plantilla_item_no,
             email: c.email,
-            status: c.status
+            status: c.status,
+            profile_completion: c.profile_completion
           }));
         }
       } catch (matchErr) {
