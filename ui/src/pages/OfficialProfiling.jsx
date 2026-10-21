@@ -976,6 +976,12 @@ const OfficialProfiling = () => {
 
     const [applicationId, setApplicationId] = useState(null);
     const [applicationStatus, setApplicationStatus] = useState(null); // draft|pending_review|denied|approved|null(masterlist)
+    const [officialRecordStatus, setOfficialRecordStatus] = useState(null);
+    const [emailValidation, setEmailValidation] = useState({
+        status: 'idle',
+        message: ''
+    });
+    const [originalLoadedEmail, setOriginalLoadedEmail] = useState('');
     const [denialReason, setDenialReason] = useState('');
     const [dataSource, setDataSource] = useState(null); // 'staging' | 'masterlist'
     const [tab, setTab] = useState('personal');
@@ -985,6 +991,7 @@ const OfficialProfiling = () => {
     const [saved, setSaved] = useState(false);
     const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
     const [isEditing, setIsEditing] = useState(isTlo);
+
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSuffixNA, setIsSuffixNA] = useState(false);
     const [isAchievementsNA, setIsAchievementsNA] = useState(false);
@@ -1028,6 +1035,17 @@ const OfficialProfiling = () => {
         reassignment_order_binary_id: null,
         updated_at: null,
     });
+
+    const isForApproval = Boolean(
+        (officialRecordStatus || profile?.status || applicationStatus || '')
+            .toString()
+            .trim()
+            .toLowerCase() === 'for approval' ||
+        (officialRecordStatus || profile?.status || applicationStatus || '')
+            .toString()
+            .trim()
+            .toLowerCase() === 'for approve'
+    );
     const [prevPositions, setPrevPositions] = useState([]);
     const [trainings, setTrainings] = useState([]);
     const [completeness, setCompleteness] = useState(0);
@@ -2071,6 +2089,81 @@ const OfficialProfiling = () => {
     // Removed reactive degree year clearing because it prevents typing (e.g. typing "20" evaluates to 20 < 2010 and gets cleared).
     // Validation is already properly handled by `validateProfile` on save.
 
+    // Debounced DepEd Email validation when status is not For Approval
+    useEffect(() => {
+        if (!isEditing || isForApproval) {
+            return;
+        }
+
+        const currentEmail = (profile.email || '').trim().toLowerCase();
+        if (!currentEmail) {
+            setEmailValidation({ status: 'invalid_format', message: 'DepEd Email is required.' });
+            return;
+        }
+
+        if (originalLoadedEmail && currentEmail === originalLoadedEmail) {
+            setEmailValidation({ status: 'valid', message: 'Current official email.' });
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(currentEmail)) {
+            setEmailValidation({ status: 'invalid_format', message: 'Invalid email address format.' });
+            return;
+        }
+
+        if (!currentEmail.endsWith('@deped.gov.ph')) {
+            setEmailValidation({ status: 'invalid_domain', message: 'Only @deped.gov.ph emails are allowed for DepEd Email.' });
+            return;
+        }
+
+        setEmailValidation({ status: 'checking', message: 'Checking email in Masterlist...' });
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await fetch(
+                    apiUrl(`/api/third-level/check-email?email=${encodeURIComponent(currentEmail)}&tloid=${encodeURIComponent(TLOid || '')}`),
+                    {
+                        headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
+                    }
+                );
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.valid) {
+                        setEmailValidation({ status: 'valid', message: data.message || 'Email verified in Masterlist.' });
+                    } else if (data.reason === 'not_in_masterlist') {
+                        setEmailValidation({
+                            status: 'not_found',
+                            message: 'Email is not existing in the Masterlist.'
+                        });
+                    } else if (data.reason === 'belongs_to_other') {
+                        setEmailValidation({
+                            status: 'collision',
+                            message: data.message || 'This email already belongs to another official.'
+                        });
+                    } else if (data.reason === 'invalid_domain') {
+                        setEmailValidation({
+                            status: 'invalid_domain',
+                            message: data.message || 'Only @deped.gov.ph emails are allowed.'
+                        });
+                    } else {
+                        setEmailValidation({
+                            status: 'invalid_format',
+                            message: data.message || 'Invalid email address format.'
+                        });
+                    }
+                } else {
+                    setEmailValidation({ status: 'idle', message: '' });
+                }
+            } catch (err) {
+                console.error('Error validating email:', err);
+                setEmailValidation({ status: 'idle', message: '' });
+            }
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [profile.email, isEditing, isForApproval, originalLoadedEmail, TLOid, token]);
+
     const lookupByEmail = async (email, explicitTloid = null) => {
         if (!email && !explicitTloid) { setStatus('not-found'); return; }
         try {
@@ -2104,7 +2197,10 @@ const OfficialProfiling = () => {
                         fetchActiveAssignments(d.TLOid || d.app_TLOid);
                     }
                     setApplicationId(d.application_id || null);
-                    setApplicationStatus(data.source === 'masterlist' ? null : d.application_status);
+                    setOfficialRecordStatus(d.status || d.application_status || null);
+                    setApplicationStatus(data.source === 'masterlist' ? (d.status === 'For Approval' ? 'For Approval' : null) : d.application_status);
+                    setOriginalLoadedEmail((d.email || user?.email || '').toLowerCase().trim());
+                    setEmailValidation({ status: 'idle', message: '' });
                     setDenialReason(d.denial_reason || '');
                     setDataSource(data.source);
                     setTargetVacancyId(urlVacancy || d.target_TLOid || null);
@@ -2257,6 +2353,7 @@ const OfficialProfiling = () => {
 
                     setProfile({
                         email: d.email || user?.email || '',
+                        status: d.status || d.application_status || '',
                         last_name: d.last_name || '',
                         first_name: d.first_name || '',
                         middle_name: d.middle_name || '',
@@ -2560,6 +2657,48 @@ const OfficialProfiling = () => {
         setProfile(p => ({ ...p, [field]: finalValue }));
     };
     const validateProfile = () => {
+        // 0. DepEd Email validation
+        if (!isForApproval) {
+            const currentEmail = (profile.email || user?.email || '').trim().toLowerCase();
+            if (!currentEmail) {
+                setTab('personal');
+                Swal.fire('Validation Error', 'DepEd Email is required.', 'error');
+                return false;
+            }
+            if (!currentEmail.endsWith('@deped.gov.ph')) {
+                setTab('personal');
+                Swal.fire('Validation Error', 'Only @deped.gov.ph emails are allowed for DepEd Email.', 'error');
+                return false;
+            }
+            if (currentEmail !== originalLoadedEmail) {
+                if (emailValidation.status === 'not_found') {
+                    setTab('personal');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Email Not Found in Masterlist',
+                        text: 'The entered DepEd Email does not exist in the Masterlist. Please enter an existing Masterlist email.',
+                        confirmButtonColor: '#08315F'
+                    });
+                    return false;
+                }
+                if (emailValidation.status === 'collision') {
+                    setTab('personal');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Email Already In Use',
+                        text: emailValidation.message || 'This email already belongs to another official in the Masterlist.',
+                        confirmButtonColor: '#08315F'
+                    });
+                    return false;
+                }
+                if (emailValidation.status === 'invalid_format' || emailValidation.status === 'invalid_domain') {
+                    setTab('personal');
+                    Swal.fire('Validation Error', emailValidation.message || 'Invalid DepEd Email address.', 'error');
+                    return false;
+                }
+            }
+        }
+
         // 1. Date of Birth
         if (profile.date_of_birth) {
             const dob = new Date(profile.date_of_birth);
@@ -4490,8 +4629,8 @@ const OfficialProfiling = () => {
                                                                     <Field label="Temporary Address">
                                                                         <input disabled={!isEditing} type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
                                                                     </Field>
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                        <Field label="Phone Number" required>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                                                        <Field label="Phone Number" required className="!justify-start">
                                                                             <input
                                                                                 disabled={!isEditing}
                                                                                 type="text"
@@ -4504,15 +4643,70 @@ const OfficialProfiling = () => {
                                                                                 className={inp}
                                                                             />
                                                                         </Field>
-                                                                        <Field label="DepEd Email" required>
-                                                                            <input
-                                                                                disabled={!isEditing}
-                                                                                type="email"
-                                                                                value={profile.email || user?.email || ''}
-                                                                                onChange={e => setP('email', e.target.value)}
-                                                                                placeholder="e.g. juan.delacruz@deped.gov.ph"
-                                                                                className={inp}
-                                                                            />
+                                                                        <Field label="DepEd Email" required className="!justify-start">
+                                                                            <div className="relative">
+                                                                                <input
+                                                                                    disabled={!isEditing || isForApproval}
+                                                                                    type="email"
+                                                                                    value={profile.email || user?.email || ''}
+                                                                                    onChange={e => setP('email', e.target.value)}
+                                                                                    placeholder="e.g. juan.delacruz@deped.gov.ph"
+                                                                                    className={`${inp} ${isForApproval ? '!bg-slate-100 !text-slate-500 !cursor-not-allowed !border-slate-200' : ''}`}
+                                                                                />
+                                                                                {isForApproval && (
+                                                                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none text-slate-400">
+                                                                                        <FiLock size={15} />
+                                                                                    </div>
+                                                                                )}
+                                                                                {!isForApproval && isEditing && emailValidation.status === 'checking' && (
+                                                                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                                                        <div className="w-4 h-4 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                                                                                    </div>
+                                                                                )}
+                                                                                {!isForApproval && isEditing && emailValidation.status === 'valid' && (profile.email || '').trim().toLowerCase() !== originalLoadedEmail && (
+                                                                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-500">
+                                                                                        <FiCheckCircle size={17} />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            {isForApproval && (
+                                                                                <p className="text-[11px] font-bold text-amber-600 mt-1 flex items-center gap-1">
+                                                                                    <FiAlertTriangle size={13} className="shrink-0" />
+                                                                                    DepEd Email cannot be edited while status is For Approval.
+                                                                                </p>
+                                                                            )}
+                                                                            {!isForApproval && isEditing && (
+                                                                                <>
+                                                                                    {emailValidation.status === 'not_found' && (
+                                                                                        <div className="mt-1.5 p-2.5 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2">
+                                                                                            <FiAlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={14} />
+                                                                                            <p className="text-[11px] font-bold text-amber-800 leading-snug">
+                                                                                                {emailValidation.message || 'Email is not existing in the Masterlist.'}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {emailValidation.status === 'collision' && (
+                                                                                        <div className="mt-1.5 p-2.5 bg-red-50 rounded-xl border border-red-200 flex items-start gap-2">
+                                                                                            <FiAlertTriangle className="text-red-600 shrink-0 mt-0.5" size={14} />
+                                                                                            <p className="text-[11px] font-bold text-red-700 leading-snug">
+                                                                                                {emailValidation.message}
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {emailValidation.status === 'invalid_domain' && (
+                                                                                        <p className="text-[11px] font-bold text-red-500 mt-1 flex items-center gap-1">
+                                                                                            <FiAlertTriangle size={13} className="shrink-0" />
+                                                                                            Only @deped.gov.ph emails are allowed for DepEd Email.
+                                                                                        </p>
+                                                                                    )}
+                                                                                    {emailValidation.status === 'invalid_format' && (
+                                                                                        <p className="text-[11px] font-bold text-red-500 mt-1 flex items-center gap-1">
+                                                                                            <FiAlertTriangle size={13} className="shrink-0" />
+                                                                                            {emailValidation.message || 'Invalid email address format.'}
+                                                                                        </p>
+                                                                                    )}
+                                                                                </>
+                                                                            )}
                                                                         </Field>
                                                                     </div>
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

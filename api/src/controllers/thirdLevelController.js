@@ -612,6 +612,80 @@ export const getByEmail = async (req, res) => {
   }
 };
 
+export const checkProfilingEmail = async (req, res) => {
+  const { email, tloid } = req.query;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const isTest = Boolean(req.user?.is_testaccount);
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.json({
+        exists: false,
+        inMasterlist: false,
+        valid: false,
+        reason: 'invalid_format',
+        message: 'Invalid email address format.'
+      });
+    }
+
+    if (!normalizedEmail.endsWith('@deped.gov.ph')) {
+      return res.json({
+        exists: false,
+        inMasterlist: false,
+        valid: false,
+        reason: 'invalid_domain',
+        message: 'Only @deped.gov.ph emails are allowed for DepEd Email.'
+      });
+    }
+
+    // Check third_level_official_masterlist
+    const masterRes = await pool.query(
+      `SELECT "TLOid", first_name, last_name, middle_name, email, status 
+       FROM third_level_official_masterlist 
+       WHERE LOWER(email) = $1 AND is_testaccount = $2`,
+      [normalizedEmail, isTest]
+    );
+
+    if (masterRes.rows.length > 0) {
+      const match = masterRes.rows[0];
+      const isCurrent = tloid && match.TLOid === tloid;
+      if (isCurrent) {
+        return res.json({
+          exists: true,
+          inMasterlist: true,
+          valid: true,
+          isCurrentOfficial: true,
+          official: match,
+          message: 'Matches current official record.'
+        });
+      }
+      // Belongs to another official
+      return res.json({
+        exists: true,
+        inMasterlist: true,
+        valid: false,
+        isCollision: true,
+        reason: 'belongs_to_other',
+        otherOfficial: match,
+        message: `Email already exists and belongs to ${match.first_name || ''} ${match.last_name || ''} (${match.TLOid}).`
+      });
+    }
+
+    // Not found in Masterlist
+    return res.json({
+      exists: false,
+      inMasterlist: false,
+      valid: false,
+      reason: 'not_in_masterlist',
+      message: 'Email is not existing in the Masterlist.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const uploadDocument = async (req, res) => {
   const { TLOid, docType } = req.params;
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -779,6 +853,38 @@ export const updateProfile = async (req, res) => {
   try {
     await client.query('BEGIN');
     await ensureOicColumn(client);
+
+    if (req.body.email) {
+      const normalizedEmail = req.body.email.toLowerCase().trim();
+      const currentOfficialRes = await client.query(
+        `SELECT "TLOid", email, status FROM third_level_official_masterlist WHERE "TLOid" = $1`,
+        [TLOid]
+      );
+      if (currentOfficialRes.rows.length > 0) {
+        const currentOfficial = currentOfficialRes.rows[0];
+        const isStatusForApproval = (currentOfficial.status || '').toLowerCase().trim() === 'for approval';
+        const emailChanged = currentOfficial.email && currentOfficial.email.toLowerCase().trim() !== normalizedEmail;
+
+        if (isStatusForApproval && emailChanged) {
+          throw new Error('DepEd Email cannot be changed while status is For Approval.');
+        }
+
+        if (emailChanged) {
+          if (!normalizedEmail.endsWith('@deped.gov.ph')) {
+            throw new Error('Only @deped.gov.ph emails are allowed for DepEd Email.');
+          }
+          const isTest = Boolean(req.user?.is_testaccount);
+          const collisionCheck = await client.query(
+            `SELECT "TLOid", first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND "TLOid" != $2 AND is_testaccount = $3`,
+            [normalizedEmail, TLOid, isTest]
+          );
+          if (collisionCheck.rows.length > 0) {
+            const other = collisionCheck.rows[0];
+            throw new Error(`Email already belongs to official ${other.first_name || ''} ${other.last_name || ''} (${other.TLOid}).`);
+          }
+        }
+      }
+    }
 
     if (req.body.position_title) {
       const normalizedPosition = sanitizeOicPosition(req.body.position_title, req.body.is_oic);

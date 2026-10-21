@@ -3,6 +3,7 @@ import multer from 'multer';
 import authMiddleware from '../middleware/authMiddleware.js';
 import {
   getByEmail,
+  checkProfilingEmail,
   getCareerPath,
   getProfile,
   getVacancies,
@@ -20,6 +21,7 @@ const memoryUpload = multer({ storage: multer.memoryStorage() });
 
 router.post('/initialize', initializeProfile);
 router.get('/by-email', authMiddleware, getByEmail);
+router.get('/check-email', authMiddleware, checkProfilingEmail);
 router.post('/:TLOid/upload/:docType', authMiddleware, memoryUpload.single('file'), uploadDocument);
 router.get('/:TLOid/profile', authMiddleware, getProfile);
 router.get('/:TLOid/active-assignments', authMiddleware, getActiveAssignments);
