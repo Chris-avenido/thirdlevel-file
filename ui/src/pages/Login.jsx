@@ -135,6 +135,47 @@ const Login = () => {
         // Strictly never copy password into passcode state or vice versa
     };
 
+    const showEmailChangedAlert = (emailChangedData) => {
+        const oldMail = emailChangedData.old_email || loginId;
+        const newMail = emailChangedData.new_email;
+        Swal.fire({
+            icon: 'info',
+            title: 'DepEd Email Changed',
+            html: `
+                <div style="text-align: left; font-size: 0.95rem; line-height: 1.5; color: #374151;">
+                    <p style="margin-bottom: 8px;">The email address for this account has been changed from:</p>
+                    <div style="font-size: 0.9rem; color: #6B7280; text-decoration: line-through; margin-bottom: 12px; font-weight: 600;">
+                        ${oldMail}
+                    </div>
+                    <p style="margin-bottom: 6px; font-weight: 600; color: #1E293B;">New DepEd Email Address:</p>
+                    <div style="padding: 12px 14px; background: #F0F9FF; border: 1.5px solid #0284C7; border-radius: 10px; font-size: 1.1rem; font-weight: 800; color: #0369A1; word-break: break-all; text-align: center;">
+                        ${newMail}
+                    </div>
+                    <p style="margin-top: 14px; margin-bottom: 0; font-size: 0.9rem; color: #4B5563;">
+                        Please sign in using your new DepEd email address.
+                    </p>
+                </div>
+            `,
+            confirmButtonText: 'Use New Email',
+            confirmButtonColor: '#0038A8',
+            showCancelButton: true,
+            cancelButtonText: 'Close',
+            cancelButtonColor: '#94A3B8'
+        }).then((result) => {
+            if (result.isConfirmed && newMail) {
+                setLoginId(newMail);
+                const storedRem = localStorage.getItem('remembered_user');
+                if (storedRem) {
+                    try {
+                        const rem = JSON.parse(storedRem);
+                        rem.email = newMail;
+                        localStorage.setItem('remembered_user', JSON.stringify(rem));
+                    } catch (e) {}
+                }
+            }
+        });
+    };
+
     const handleLogin = async (e) => {
         if (e) e.preventDefault();
         setLoading(true);
@@ -180,7 +221,11 @@ const Login = () => {
                     navigate('/official-profiling');
                 }
             } else {
-                Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
+                if (data.email_changed && data.new_email) {
+                    showEmailChangedAlert(data);
+                } else {
+                    Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
+                }
             }
         } catch (err) {
             Swal.fire('Error', 'Login failed. Please check your connection.', 'error');
@@ -226,7 +271,11 @@ const Login = () => {
                     navigate('/official-profiling');
                 }
             } else {
-                Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
+                if (data.email_changed && data.new_email) {
+                    showEmailChangedAlert(data);
+                } else {
+                    Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
+                }
             }
         } catch (err) {
             Swal.fire('Error', 'Login failed. Please check your connection.', 'error');

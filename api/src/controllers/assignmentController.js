@@ -844,7 +844,7 @@ export const updateAssignment = async (req, res) => {
     // Validate and normalize capacity if provided
     let normalizedCapacity = capacity ? (
       capacity === 'Full-fledged' ? 'Full' :
-      capacity === 'Officer-in-Charge (OIC)' ? 'OIC' : capacity
+        capacity === 'Officer-in-Charge (OIC)' ? 'OIC' : capacity
     ) : current.capacity;
 
     const validCapacities = ['Full', 'OIC', 'Concurrent', 'Full-fledged', 'Officer-in-Charge (OIC)'];
@@ -1028,11 +1028,11 @@ export const updateAssignment = async (req, res) => {
 
     const msg = positionChanged
       ? (isCurrentVacated
-          ? 'New position successfully assigned; previous position vacated.'
-          : 'New position successfully assigned; previous position retained alongside.')
+        ? 'New position successfully assigned; previous position vacated.'
+        : 'New position successfully assigned; previous position retained alongside.')
       : (isCurrentVacated
-          ? 'Assignment successfully vacated.'
-          : 'Assignment record successfully updated.');
+        ? 'Assignment successfully vacated.'
+        : 'Assignment record successfully updated.');
 
     return res.status(200).json({
       success: true,

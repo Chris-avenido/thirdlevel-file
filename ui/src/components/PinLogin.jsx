@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
+import Swal from 'sweetalert2';
 
 const PinLogin = ({ rememberedUser, onSwitchAccount, onUsePassword }) => {
   const [pin, setPin] = useState('');
@@ -76,6 +77,31 @@ const PinLogin = ({ rememberedUser, onSwitchAccount, onUsePassword }) => {
         const destPath = getDashboardPath(data.user.role, data.user.account_category);
         navigate(destPath);
       } else {
+        if (data.email_changed && data.new_email) {
+          Swal.fire({
+            icon: 'info',
+            title: 'DepEd Email Changed',
+            html: `
+              <div style="text-align: left; font-size: 0.95rem; line-height: 1.5; color: #374151;">
+                <p style="margin-bottom: 8px;">The email address for this account has been changed from:</p>
+                <div style="font-size: 0.9rem; color: #6B7280; text-decoration: line-through; margin-bottom: 12px; font-weight: 600;">
+                  ${data.old_email || identifier}
+                </div>
+                <p style="margin-bottom: 6px; font-weight: 600; color: #1E293B;">New DepEd Email Address:</p>
+                <div style="padding: 12px 14px; background: #F0F9FF; border: 1.5px solid #0284C7; border-radius: 10px; font-size: 1.1rem; font-weight: 800; color: #0369A1; word-break: break-all; text-align: center;">
+                  ${data.new_email}
+                </div>
+                <p style="margin-top: 14px; margin-bottom: 0; font-size: 0.9rem; color: #4B5563;">
+                  Please sign in using your new DepEd email address.
+                </p>
+              </div>
+            `,
+            confirmButtonText: 'Switch Account',
+            confirmButtonColor: '#0038A8'
+          }).then(() => {
+            if (onSwitchAccount) onSwitchAccount();
+          });
+        }
         setError(data.error || 'Incorrect PIN');
         setPin(''); 
       }

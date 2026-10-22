@@ -191,13 +191,17 @@ export const AuthProvider = ({ children }) => {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error(`❌ Server Error Detail:`, errorText);
-                let parsedError = null;
+                let parsedJson = null;
                 try {
-                    parsedError = JSON.parse(errorText)?.error;
+                    parsedJson = JSON.parse(errorText);
                 } catch {
-                    parsedError = null;
+                    parsedJson = null;
                 }
-                return { success: false, error: parsedError || `Server returned ${response.status}: ${response.statusText}` };
+                return {
+                    success: false,
+                    ...(parsedJson || {}),
+                    error: parsedJson?.error || `Server returned ${response.status}: ${response.statusText}`
+                };
             }
 
             const data = await response.json();
@@ -205,7 +209,7 @@ export const AuthProvider = ({ children }) => {
                 login(data.user, data.token);
                 return { success: true, user: data.user };
             } else {
-                return { success: false, error: data.error };
+                return { success: false, ...(data || {}), error: data.error };
             }
         } catch (err) {
             console.error(`🚨 Network/Connection Error:`, err);
@@ -222,12 +226,26 @@ export const AuthProvider = ({ children }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, passcode, isCO })
             });
+            if (!response.ok) {
+                const errorText = await response.text();
+                let parsedJson = null;
+                try {
+                    parsedJson = JSON.parse(errorText);
+                } catch {
+                    parsedJson = null;
+                }
+                return {
+                    success: false,
+                    ...(parsedJson || {}),
+                    error: parsedJson?.error || 'PIN verification failed'
+                };
+            }
             const data = await response.json();
             if (data.success) {
                 login(data.user, data.token);
                 return { success: true, user: data.user };
             } else {
-                return { success: false, error: data.error };
+                return { success: false, ...(data || {}), error: data.error };
             }
         } catch (err) {
             return { success: false, error: 'PIN verification failed' };

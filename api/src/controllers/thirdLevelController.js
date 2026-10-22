@@ -640,7 +640,7 @@ export const checkProfilingEmail = async (req, res) => {
       });
     }
 
-    // Check third_level_official_masterlist
+    // Check third_level_official_masterlist for collision
     const masterRes = await pool.query(
       `SELECT "TLOid", first_name, last_name, middle_name, email, status 
        FROM third_level_official_masterlist 
@@ -650,7 +650,7 @@ export const checkProfilingEmail = async (req, res) => {
 
     if (masterRes.rows.length > 0) {
       const match = masterRes.rows[0];
-      const isCurrent = tloid && match.TLOid === tloid;
+      const isCurrent = tloid && String(match.TLOid).toLowerCase() === String(tloid).toLowerCase();
       if (isCurrent) {
         return res.json({
           exists: true,
@@ -661,7 +661,7 @@ export const checkProfilingEmail = async (req, res) => {
           message: 'Matches current official record.'
         });
       }
-      // Belongs to another official
+      // Belongs to another official in Masterlist
       return res.json({
         exists: true,
         inMasterlist: true,
@@ -673,13 +673,63 @@ export const checkProfilingEmail = async (req, res) => {
       });
     }
 
-    // Not found in Masterlist
+    // Check third_level_officials_profiling_application for collision
+    const appRes = await pool.query(
+      `SELECT app_TLOid AS "TLOid", application_id, first_name, last_name, email, application_status AS status
+       FROM third_level_officials_profiling_application
+       WHERE LOWER(email) = $1 AND is_testaccount = $2`,
+      [normalizedEmail, isTest]
+    );
+
+    if (appRes.rows.length > 0) {
+      const match = appRes.rows[0];
+      const isCurrent = tloid && (
+        String(match.TLOid).toLowerCase() === String(tloid).toLowerCase() ||
+        String(match.application_id).toLowerCase() === String(tloid).toLowerCase()
+      );
+      if (!isCurrent) {
+        return res.json({
+          exists: true,
+          inMasterlist: false,
+          valid: false,
+          isCollision: true,
+          reason: 'belongs_to_other',
+          otherOfficial: match,
+          message: `Email already exists and belongs to applicant ${match.first_name || ''} ${match.last_name || ''} (${match.TLOid || match.application_id}).`
+        });
+      }
+    }
+
+    // Check tlo_users for collision
+    const userRes = await pool.query(
+      `SELECT uid, email 
+       FROM tlo_users 
+       WHERE LOWER(email) = $1 AND COALESCE(is_testaccount, FALSE) = $2`,
+      [normalizedEmail, isTest]
+    );
+
+    if (userRes.rows.length > 0) {
+      const match = userRes.rows[0];
+      const isCurrent = tloid && String(match.uid).toLowerCase() === String(tloid).toLowerCase();
+      if (!isCurrent) {
+        return res.json({
+          exists: true,
+          inMasterlist: false,
+          valid: false,
+          isCollision: true,
+          reason: 'belongs_to_other',
+          message: `Email already belongs to another registered user account.`
+        });
+      }
+    }
+
+    // Not existing on our records -> Available to be used!
     return res.json({
       exists: false,
       inMasterlist: false,
-      valid: false,
-      reason: 'not_in_masterlist',
-      message: 'Email is not existing in the Masterlist.'
+      valid: true,
+      isAvailable: true,
+      message: 'Email is available.'
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -854,10 +904,14 @@ export const updateProfile = async (req, res) => {
     await client.query('BEGIN');
     await ensureOicColumn(client);
 
+    let pendingEmailChange = null;
+
     if (req.body.email) {
       const normalizedEmail = req.body.email.toLowerCase().trim();
       const currentOfficialRes = await client.query(
-        `SELECT "TLOid", email, status FROM third_level_official_masterlist WHERE "TLOid" = $1`,
+        isMasterlist
+          ? `SELECT "TLOid", email, status FROM third_level_official_masterlist WHERE "TLOid" = $1`
+          : `SELECT app_TLOid AS "TLOid", email, application_status AS status FROM third_level_officials_profiling_application WHERE application_id = $1 OR app_TLOid = $1`,
         [TLOid]
       );
       if (currentOfficialRes.rows.length > 0) {
@@ -875,13 +929,29 @@ export const updateProfile = async (req, res) => {
           }
           const isTest = Boolean(req.user?.is_testaccount);
           const collisionCheck = await client.query(
-            `SELECT "TLOid", first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND "TLOid" != $2 AND is_testaccount = $3`,
+            isMasterlist
+              ? `SELECT "TLOid", first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND "TLOid" != $2 AND is_testaccount = $3`
+              : `SELECT app_TLOid AS "TLOid", first_name, last_name FROM third_level_officials_profiling_application WHERE LOWER(email) = $1 AND application_id != $2 AND app_TLOid != $2 AND is_testaccount = $3`,
             [normalizedEmail, TLOid, isTest]
           );
           if (collisionCheck.rows.length > 0) {
             const other = collisionCheck.rows[0];
             throw new Error(`Email already belongs to official ${other.first_name || ''} ${other.last_name || ''} (${other.TLOid}).`);
           }
+
+          const userCollisionCheck = await client.query(
+            `SELECT uid, email FROM tlo_users WHERE LOWER(email) = $1 AND LOWER(uid) != LOWER($2) AND COALESCE(is_testaccount, FALSE) = $3`,
+            [normalizedEmail, TLOid, isTest]
+          );
+          if (userCollisionCheck.rows.length > 0) {
+            throw new Error(`Email already belongs to another registered user account.`);
+          }
+
+          pendingEmailChange = {
+            tloid: TLOid,
+            oldEmail: currentOfficial.email.toLowerCase().trim(),
+            newEmail: normalizedEmail
+          };
         }
       }
     }
@@ -1170,6 +1240,29 @@ export const updateProfile = async (req, res) => {
       if (updateRes.rowCount === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Profile not found or access denied' });
+      }
+
+      if (pendingEmailChange) {
+        const isTest = Boolean(req.user?.is_testaccount);
+
+        // Sync tlo_users table so authentication credentials work with new email
+        await client.query(
+          `UPDATE tlo_users 
+           SET email = $1 
+           WHERE (LOWER(email) = $2 OR LOWER(uid) = LOWER($3)) 
+             AND COALESCE(is_testaccount, FALSE) = $4`,
+          [pendingEmailChange.newEmail, pendingEmailChange.oldEmail, pendingEmailChange.tloid, isTest]
+        );
+
+        // Keep profiling applications in sync if any exist
+        await client.query(
+          `UPDATE third_level_officials_profiling_application
+           SET email = $1
+           WHERE LOWER(email) = $2 AND COALESCE(is_testaccount, FALSE) = $3`,
+          [pendingEmailChange.newEmail, pendingEmailChange.oldEmail, isTest]
+        );
+
+        console.log(`[updateProfile] DepEd email updated for ${pendingEmailChange.tloid}: ${pendingEmailChange.oldEmail} -> ${pendingEmailChange.newEmail}`);
       }
     }
 

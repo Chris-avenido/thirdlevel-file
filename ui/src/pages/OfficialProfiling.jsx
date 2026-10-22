@@ -948,7 +948,7 @@ const OfficialProfiling = () => {
     const urlEmail = searchParams.get('email');
     const urlVacancy = searchParams.get('vacancy');
     const urlTloid = searchParams.get('tloid');
-    const { user, token, logout } = useAuth();
+    const { user, token, logout, setUser } = useAuth();
 
     const [status, setStatus] = useState('loading'); // loading | found | not-found | error
     const [TLOid, setTlid] = useState(null);
@@ -2117,7 +2117,7 @@ const OfficialProfiling = () => {
             return;
         }
 
-        setEmailValidation({ status: 'checking', message: 'Checking email in Masterlist...' });
+        setEmailValidation({ status: 'checking', message: 'Checking email availability...' });
 
         const timer = setTimeout(async () => {
             try {
@@ -2130,12 +2130,7 @@ const OfficialProfiling = () => {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.valid) {
-                        setEmailValidation({ status: 'valid', message: data.message || 'Email verified in Masterlist.' });
-                    } else if (data.reason === 'not_in_masterlist') {
-                        setEmailValidation({
-                            status: 'not_found',
-                            message: 'Email is not existing in the Masterlist.'
-                        });
+                        setEmailValidation({ status: 'valid', message: data.message || 'Email is available.' });
                     } else if (data.reason === 'belongs_to_other') {
                         setEmailValidation({
                             status: 'collision',
@@ -2671,16 +2666,6 @@ const OfficialProfiling = () => {
                 return false;
             }
             if (currentEmail !== originalLoadedEmail) {
-                if (emailValidation.status === 'not_found') {
-                    setTab('personal');
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Email Not Found in Masterlist',
-                        text: 'The entered DepEd Email does not exist in the Masterlist. Please enter an existing Masterlist email.',
-                        confirmButtonColor: '#08315F'
-                    });
-                    return false;
-                }
                 if (emailValidation.status === 'collision') {
                     setTab('personal');
                     Swal.fire({
@@ -3238,6 +3223,27 @@ const OfficialProfiling = () => {
             });
             const data = await res.json();
             if (data.success) {
+                if (profile.email && originalLoadedEmail && profile.email.toLowerCase().trim() !== originalLoadedEmail.toLowerCase().trim()) {
+                    setOriginalLoadedEmail(profile.email.toLowerCase().trim());
+                    localStorage.setItem('userEmail', profile.email);
+                    const storedUser = localStorage.getItem('user');
+                    if (storedUser) {
+                        try {
+                            const parsed = JSON.parse(storedUser);
+                            parsed.email = profile.email;
+                            localStorage.setItem('user', JSON.stringify(parsed));
+                            if (setUser) setUser(parsed);
+                        } catch (e) { }
+                    }
+                    const storedRem = localStorage.getItem('remembered_user');
+                    if (storedRem) {
+                        try {
+                            const rem = JSON.parse(storedRem);
+                            rem.email = profile.email;
+                            localStorage.setItem('remembered_user', JSON.stringify(rem));
+                        } catch (e) { }
+                    }
+                }
                 setProfile(prev => ({ ...prev, education_degrees: degreesList }));
                 if (data.data && Array.isArray(data.data.position_history)) {
                     const mapped = data.data.position_history.map(rec => {
@@ -4677,13 +4683,11 @@ const OfficialProfiling = () => {
                                                                             )}
                                                                             {!isForApproval && isEditing && (
                                                                                 <>
-                                                                                    {emailValidation.status === 'not_found' && (
-                                                                                        <div className="mt-1.5 p-2.5 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2">
-                                                                                            <FiAlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={14} />
-                                                                                            <p className="text-[11px] font-bold text-amber-800 leading-snug">
-                                                                                                {emailValidation.message || 'Email is not existing in the Masterlist.'}
-                                                                                            </p>
-                                                                                        </div>
+                                                                                    {emailValidation.status === 'valid' && (profile.email || '').trim().toLowerCase() !== originalLoadedEmail && (
+                                                                                        <p className="text-[11px] font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                                                                                            <FiCheckCircle size={13} className="shrink-0" />
+                                                                                            {emailValidation.message || 'Email is available and not in use.'}
+                                                                                        </p>
                                                                                     )}
                                                                                     {emailValidation.status === 'collision' && (
                                                                                         <div className="mt-1.5 p-2.5 bg-red-50 rounded-xl border border-red-200 flex items-start gap-2">
@@ -6402,811 +6406,810 @@ const OfficialProfiling = () => {
 
                                                                                     {/* Preview Area */}
                                                                                     <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6 lg:p-10 flex flex-col items-center bg-slate-100/50 min-h-0">
-                                                                                                {selectedExportType === 'csv' && (
-                                                                                                    <div className="w-full max-w-4xl bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                                                                                        <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
-                                                                                                            <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
-                                                                                                            <span className="text-[16.5px] text-slate-300 font-mono ml-2">{getExportBaseFilename()}.csv</span>
-                                                                                                        </div>
-                                                                                                        <div className="p-0 overflow-x-auto custom-scrollbar">
-                                                                                                            <table className="w-full text-left border-collapse text-[16.5px] font-mono whitespace-nowrap">
-                                                                                                                <thead className="bg-transparent sticky top-0">
-                                                                                                                    <tr className="border-b-2 border-slate-200 text-slate-500">
-                                                                                                                        <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
-                                                                                                                    </tr>
-                                                                                                                </thead>
-                                                                                                                <tbody>
-                                                                                                                    {[
-                                                                                                                        ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
-                                                                                                                        ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
-                                                                                                                        ['Phone Number', profile.alt_contact_details_1 || profile.contact_details], ['DepEd Email', profile.email || user?.email],
-                                                                                                                        ['Alternative Email 1', profile.alt_email_1], ['Alternative Email 2', profile.alt_email_2],
-                                                                                                                        ['Total Years in Third Level', profile.total_years_third_level],
-                                                                                                                        ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
-                                                                                                                        ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
-                                                                                                                        ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
-                                                                                                                    ].map(([k, v], i) => (
-                                                                                                                        <tr key={i} className="border-b-2 border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
-                                                                                                                            <td className="px-4 py-3 font-bold text-slate-500 border-r-2 border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
-                                                                                                                        </tr>
-                                                                                                                    ))}
-                                                                                                                </tbody>
-                                                                                                            </table>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                )}
+                                                                                        {selectedExportType === 'csv' && (
+                                                                                            <div className="w-full max-w-4xl bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                                                                                <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
+                                                                                                    <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500" /><div className="w-3 h-3 rounded-full bg-amber-500" /><div className="w-3 h-3 rounded-full bg-emerald-500" /></div>
+                                                                                                    <span className="text-[16.5px] text-slate-300 font-mono ml-2">{getExportBaseFilename()}.csv</span>
+                                                                                                </div>
+                                                                                                <div className="p-0 overflow-x-auto custom-scrollbar">
+                                                                                                    <table className="w-full text-left border-collapse text-[16.5px] font-mono whitespace-nowrap">
+                                                                                                        <thead className="bg-transparent sticky top-0">
+                                                                                                            <tr className="border-b-2 border-slate-200 text-slate-500">
+                                                                                                                <th className="p-4 font-bold">Data Field</th><th className="p-4 font-bold">Exported Value</th>
+                                                                                                            </tr>
+                                                                                                        </thead>
+                                                                                                        <tbody>
+                                                                                                            {[
+                                                                                                                ['First Name', profile.first_name], ['Last Name', profile.last_name], ['Middle Name', profile.middle_name],
+                                                                                                                ['Gender', profile.gender], ['Date of Birth', profile.date_of_birth], ['Age', profile.age],
+                                                                                                                ['Phone Number', profile.alt_contact_details_1 || profile.contact_details], ['DepEd Email', profile.email || user?.email],
+                                                                                                                ['Alternative Email 1', profile.alt_email_1], ['Alternative Email 2', profile.alt_email_2],
+                                                                                                                ['Total Years in Third Level', profile.total_years_third_level],
+                                                                                                                ['Permanent Address', profile.permanent_address], ['Temporary Address', profile.temporary_address], ['CES Stage', profile.ces_stage],
+                                                                                                                ['Highest Education', profile.highest_education], ['Program / Course', profile.education_program],
+                                                                                                                ['Latest Rating', profile.performance_rating_1], ['Total Managerial Exp.', profile.managerial_experience_total],
+                                                                                                            ].map(([k, v], i) => (
+                                                                                                                <tr key={i} className="border-b-2 border-slate-100 text-slate-700 hover:bg-white bg-slate-50/30">
+                                                                                                                    <td className="px-4 py-3 font-bold text-slate-500 border-r-2 border-slate-100">{k}</td><td className="px-4 py-3">{v || '—'}</td>
+                                                                                                                </tr>
+                                                                                                            ))}
+                                                                                                        </tbody>
+                                                                                                    </table>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
 
-                                                                                                {(selectedExportType === 'pdf' || selectedExportType === 'ppt') && (
-                                                                                                    <div className="w-full flex justify-center items-start py-2 sm:py-4">
-                                                                                                        <div
-                                                                                                            style={{
-                                                                                                                width: `${1000 * previewScale}px`,
-                                                                                                                height: `${previewHeight * previewScale}px`,
-                                                                                                                position: 'relative',
-                                                                                                                overflow: 'hidden'
-                                                                                                            }}
-                                                                                                            className="rounded-2xl shadow-xl border-2 border-slate-200 shrink-0 bg-white"
-                                                                                                        >
-                                                                                                            <div
-                                                                                                                ref={previewCardRef}
-                                                                                                                style={{
-                                                                                                                    width: '1000px',
-                                                                                                                    transform: `scale(${previewScale})`,
-                                                                                                                    transformOrigin: 'top left',
-                                                                                                                    position: 'absolute',
-                                                                                                                    top: 0,
-                                                                                                                    left: 0
-                                                                                                                }}
-                                                                                                            >
-                                                                                                                <div className="p-8 mx-auto w-[1000px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id="pdf-preview-content">
-                                                                                                                    <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
-                                                                                                                    <div className="flex justify-between items-start mb-5 pt-2">
-                                                                                                                        <div className="flex gap-4 items-center flex-1 min-w-0 pr-4">
-                                                                                                                            <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain shrink-0" crossOrigin="anonymous" />
-                                                                                                                            <div className="min-w-0">
-                                                                                                                                <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F] leading-tight">
-                                                                                                                                    {profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}
-                                                                                                                                </h1>
-                                                                                                                                <h2 className="text-base font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap leading-snug">
-                                                                                                                                    <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                                    {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
-                                                                                                                                    {profile.office ? `, ${profile.office}` : ''}
-                                                                                                                                </h2>
-                                                                                                                                {profile.designation &&
-                                                                                                                                    profile.designation.trim() !== '' &&
-                                                                                                                                    profile.designation.trim().toLowerCase() !== 'no designation' &&
-                                                                                                                                    profile.designation.trim().toLowerCase() !== 'none' &&
-                                                                                                                                    profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
-                                                                                                                                        <p className="text-sm font-semibold italic text-[#08315F] mt-0.5 leading-snug">
-                                                                                                                                            {profile.designation}
-                                                                                                                                        </p>
-                                                                                                                                    )}
-                                                                                                                            </div>
-                                                                                                                        </div>
-                                                                                                                        <div className="flex gap-3 items-center shrink-0">
-                                                                                                                            <div className="w-20 text-center border-2 border-amber-500 overflow-hidden bg-white shadow-sm">
-                                                                                                                                <div className="bg-amber-500 text-white font-bold py-0.5 text-[10px] uppercase tracking-widest">Age</div>
-                                                                                                                                <div className="py-1 text-center font-bold text-base text-[#08315F] bg-white leading-none">{profile.age || '—'}</div>
-                                                                                                                            </div>
-                                                                                                                            <div className="w-[84px] h-[84px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0 overflow-hidden">
-                                                                                                                                {profile.photo_binary_id ? (
-                                                                                                                                    <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
-                                                                                                                                ) : (
-                                                                                                                                    "2x2 Photo"
-                                                                                                                                )}
-                                                                                                                            </div>
-                                                                                                                        </div>
+                                                                                        {(selectedExportType === 'pdf' || selectedExportType === 'ppt') && (
+                                                                                            <div className="w-full flex justify-center items-start py-2 sm:py-4">
+                                                                                                <div
+                                                                                                    style={{
+                                                                                                        width: `${1000 * previewScale}px`,
+                                                                                                        height: `${previewHeight * previewScale}px`,
+                                                                                                        position: 'relative',
+                                                                                                        overflow: 'hidden'
+                                                                                                    }}
+                                                                                                    className="rounded-2xl shadow-xl border-2 border-slate-200 shrink-0 bg-white"
+                                                                                                >
+                                                                                                    <div
+                                                                                                        ref={previewCardRef}
+                                                                                                        style={{
+                                                                                                            width: '1000px',
+                                                                                                            transform: `scale(${previewScale})`,
+                                                                                                            transformOrigin: 'top left',
+                                                                                                            position: 'absolute',
+                                                                                                            top: 0,
+                                                                                                            left: 0
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <div className="p-8 mx-auto w-[1000px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id="pdf-preview-content">
+                                                                                                            <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
+                                                                                                            <div className="flex justify-between items-start mb-5 pt-2">
+                                                                                                                <div className="flex gap-4 items-center flex-1 min-w-0 pr-4">
+                                                                                                                    <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain shrink-0" crossOrigin="anonymous" />
+                                                                                                                    <div className="min-w-0">
+                                                                                                                        <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F] leading-tight">
+                                                                                                                            {profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}
+                                                                                                                        </h1>
+                                                                                                                        <h2 className="text-base font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap leading-snug">
+                                                                                                                            <span>{profile.position_title || 'N/A'}</span>
+                                                                                                                            {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                            {profile.office ? `, ${profile.office}` : ''}
+                                                                                                                        </h2>
+                                                                                                                        {profile.designation &&
+                                                                                                                            profile.designation.trim() !== '' &&
+                                                                                                                            profile.designation.trim().toLowerCase() !== 'no designation' &&
+                                                                                                                            profile.designation.trim().toLowerCase() !== 'none' &&
+                                                                                                                            profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
+                                                                                                                                <p className="text-sm font-semibold italic text-[#08315F] mt-0.5 leading-snug">
+                                                                                                                                    {profile.designation}
+                                                                                                                                </p>
+                                                                                                                            )}
                                                                                                                     </div>
-                                                                                                                    <div className="grid grid-cols-12 gap-8">
-                                                                                                                        <div className="col-span-7 space-y-4">
-                                                                                                                            <table className="w-full text-xs border-collapse">
-                                                                                                                                <thead>
-                                                                                                                                    <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}</th></tr>
-                                                                                                                                </thead>
-                                                                                                                                <tbody>
-                                                                                                                                    {(() => {
-                                                                                                                                        const list = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
-                                                                                                                                        const expData = getExportExperienceData(list, profile.managerial_experience_total);
-                                                                                                                                        if (expData.mainPositions.length === 0 && !expData.hasOthers) {
-                                                                                                                                            return (
-                                                                                                                                                <tr><td colSpan={3} className="border-2 border-slate-400 px-3 py-1.5 text-center text-slate-500 italic">No experience listed</td></tr>
-                                                                                                                                            );
-                                                                                                                                        }
-                                                                                                                                        const rows = [];
-                                                                                                                                        expData.mainPositions.forEach((h, i) => {
-                                                                                                                                            const title = h.position_title || h.position_name || '—';
-                                                                                                                                            const officeName = h.office || '—';
-                                                                                                                                            const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
-                                                                                                                                            rows.push(
-                                                                                                                                                <tr key={`parent-${i}`} className="text-slate-800 bg-slate-50/30 font-semibold">
-                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 font-bold w-1/3">{title}</td>
-                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/3">{officeName}</td>
-                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-medium">{formatExperienceDuration(dur)}</td>
-                                                                                                                                                </tr>
-                                                                                                                                            );
-                                                                                                                                            if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
-                                                                                                                                                h.oic_positions.forEach((oic, oicIdx) => {
-                                                                                                                                                    if (oic.oic_position_name || oic.oic_office) {
-                                                                                                                                                        const oicTitle = oic.oic_position_name || 'OIC Position';
-                                                                                                                                                        const oicOffice = oic.oic_office || '—';
-                                                                                                                                                        const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
-                                                                                                                                                        rows.push(
-                                                                                                                                                            <tr key={`child-${i}-${oicIdx}`} className="text-slate-700 text-[11px] bg-amber-50/50">
-                                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 pl-6 font-medium">
-                                                                                                                                                                    <span className="text-[#08315F] font-bold">└─ OIC:</span> {oicTitle}
-                                                                                                                                                                </td>
-                                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-slate-600">{oicOffice}</td>
-                                                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">{formatExperienceDuration(oicDur)}</td>
-                                                                                                                                                            </tr>
-                                                                                                                                                        );
-                                                                                                                                                    }
-                                                                                                                                                });
+                                                                                                                </div>
+                                                                                                                <div className="flex gap-3 items-center shrink-0">
+                                                                                                                    <div className="w-20 text-center border-2 border-amber-500 overflow-hidden bg-white shadow-sm">
+                                                                                                                        <div className="bg-amber-500 text-white font-bold py-0.5 text-[10px] uppercase tracking-widest">Age</div>
+                                                                                                                        <div className="py-1 text-center font-bold text-base text-[#08315F] bg-white leading-none">{profile.age || '—'}</div>
+                                                                                                                    </div>
+                                                                                                                    <div className="w-[84px] h-[84px] bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border-2 border-slate-200 uppercase tracking-widest shrink-0 overflow-hidden">
+                                                                                                                        {profile.photo_binary_id ? (
+                                                                                                                            <img src={apiUrl(`/api/binary/${profile.photo_binary_id}`)} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                                                                                                        ) : (
+                                                                                                                            "2x2 Photo"
+                                                                                                                        )}
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <div className="grid grid-cols-12 gap-8">
+                                                                                                                <div className="col-span-7 space-y-4">
+                                                                                                                    <table className="w-full text-xs border-collapse">
+                                                                                                                        <thead>
+                                                                                                                            <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience {profile.managerial_experience_total ? `— Total: ${formatExperienceTotal(profile.managerial_experience_total)}` : ''}</th></tr>
+                                                                                                                        </thead>
+                                                                                                                        <tbody>
+                                                                                                                            {(() => {
+                                                                                                                                const list = (prevPositions && prevPositions.length > 0) ? prevPositions : (history || []);
+                                                                                                                                const expData = getExportExperienceData(list, profile.managerial_experience_total);
+                                                                                                                                if (expData.mainPositions.length === 0 && !expData.hasOthers) {
+                                                                                                                                    return (
+                                                                                                                                        <tr><td colSpan={3} className="border-2 border-slate-400 px-3 py-1.5 text-center text-slate-500 italic">No experience listed</td></tr>
+                                                                                                                                    );
+                                                                                                                                }
+                                                                                                                                const rows = [];
+                                                                                                                                expData.mainPositions.forEach((h, i) => {
+                                                                                                                                    const title = h.position_title || h.position_name || '—';
+                                                                                                                                    const officeName = h.office || '—';
+                                                                                                                                    const dur = h.start_date ? calculateDuration(h.start_date, h.end_date) : { years: 0, months: 0 };
+                                                                                                                                    rows.push(
+                                                                                                                                        <tr key={`parent-${i}`} className="text-slate-800 bg-slate-50/30 font-semibold">
+                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 font-bold w-1/3">{title}</td>
+                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 w-1/3">{officeName}</td>
+                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-medium">{formatExperienceDuration(dur)}</td>
+                                                                                                                                        </tr>
+                                                                                                                                    );
+                                                                                                                                    if (h.oic_positions && Array.isArray(h.oic_positions) && h.oic_positions.length > 0) {
+                                                                                                                                        h.oic_positions.forEach((oic, oicIdx) => {
+                                                                                                                                            if (oic.oic_position_name || oic.oic_office) {
+                                                                                                                                                const oicTitle = oic.oic_position_name || 'OIC Position';
+                                                                                                                                                const oicOffice = oic.oic_office || '—';
+                                                                                                                                                const oicDur = oic.oic_start_date ? calculateDuration(oic.oic_start_date, oic.oic_end_date) : { years: 0, months: 0 };
+                                                                                                                                                rows.push(
+                                                                                                                                                    <tr key={`child-${i}-${oicIdx}`} className="text-slate-700 text-[11px] bg-amber-50/50">
+                                                                                                                                                        <td className="border-2 border-slate-400 px-3 py-1.5 pl-6 font-medium">
+                                                                                                                                                            <span className="text-[#08315F] font-bold">└─ OIC:</span> {oicTitle}
+                                                                                                                                                        </td>
+                                                                                                                                                        <td className="border-2 border-slate-400 px-3 py-1.5 text-slate-600">{oicOffice}</td>
+                                                                                                                                                        <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">{formatExperienceDuration(oicDur)}</td>
+                                                                                                                                                    </tr>
+                                                                                                                                                );
                                                                                                                                             }
                                                                                                                                         });
-                                                                                                                                        if (expData.hasOthers) {
-                                                                                                                                            rows.push(
-                                                                                                                                                <tr key="others-row" className="text-slate-600 bg-slate-100/70 italic font-semibold text-[11.5px]">
-                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 font-bold">Others (Prior Positions)</td>
-                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">—</td>
-                                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-bold">{expData.othersDurationStr}</td>
-                                                                                                                                                </tr>
-                                                                                                                                            );
-                                                                                                                                        }
-                                                                                                                                        return rows;
-                                                                                                                                    })()}
-                                                                                                                                </tbody>
-                                                                                                                                {profile.managerial_experience_total && (
-                                                                                                                                    <tfoot>
-                                                                                                                                        <tr className="bg-slate-100 font-bold text-slate-800">
-                                                                                                                                            <td colSpan={2} className="border-2 border-slate-400 px-3 py-1.5 text-right font-black uppercase text-[10px] text-[#08315F] tracking-wider">
-                                                                                                                                                Total Managerial Experience (As of {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}):
-                                                                                                                                            </td>
-                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black text-[#08315F] text-[11px]">
-                                                                                                                                                {formatExperienceTotal(profile.managerial_experience_total)}
-                                                                                                                                            </td>
-                                                                                                                                        </tr>
-                                                                                                                                    </tfoot>
-                                                                                                                                )}
-                                                                                                                            </table>
-                                                                                                                        <table className="w-full text-xs border-collapse">
-                                                                                                                            <thead>
-                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Educational Attainment</th></tr>
-                                                                                                                            </thead>
-                                                                                                                            <tbody className="text-slate-800">
-                                                                                                                                <tr>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 font-medium text-center">Doctorate</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/2">{profile.doctorate_degree || '—'}</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 text-center font-medium">{profile.doctorate_year || '—'}</td>
-                                                                                                                                </tr>
-                                                                                                                                <tr>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 font-medium text-center">Master's Degree</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/2">{profile.master_degree || '—'}</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 text-center font-medium">{profile.master_year || '—'}</td>
-                                                                                                                                </tr>
-                                                                                                                                <tr>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 font-medium text-center">Baccalaureate</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/2">{profile.bachelor_degree || '—'}</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 text-center font-medium">{profile.bachelor_year || '—'}</td>
-                                                                                                                                </tr>
-                                                                                                                            </tbody>
-                                                                                                                        </table>
-                                                                                                                    </div>
-                                                                                                                    <div className="col-span-5 space-y-4">
-                                                                                                                        <table className="w-full text-xs border-collapse">
-                                                                                                                            <thead>
-                                                                                                                                <tr><th colSpan={3} className="bg-red-700 text-white font-bold py-2 border-2 border-red-700 text-center uppercase tracking-widest text-[11px]">Performance Rating</th></tr>
-                                                                                                                                <tr className="bg-red-50 text-[10px] font-black text-red-900 border-2 border-slate-400">
-                                                                                                                                    <th className="px-3 py-1 text-left border-2 border-slate-400">Period / Type</th>
-                                                                                                                                    <th className="px-2 py-1 text-center border-2 border-slate-400 w-16">Year</th>
-                                                                                                                                    <th className="px-2 py-1 text-center border-2 border-slate-400 w-16">Rating</th>
-                                                                                                                                </tr>
-                                                                                                                            </thead>
-                                                                                                                            <tbody className="text-slate-800">
-                                                                                                                                {(() => {
-                                                                                                                                    const extractPdfYear = (p) => {
-                                                                                                                                        if (!p) return '—';
-                                                                                                                                        const m = String(p).match(/\b(19\d\d|20\d\d)\b/);
-                                                                                                                                        return m ? m[1] : (String(p).split('-')[0] || String(p));
-                                                                                                                                    };
-                                                                                                                                    const rows = [];
-                                                                                                                                    if (profile.cespes_1_rating) rows.push(
-                                                                                                                                        <tr key="cespes-1"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.cespes_rating_1_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_1_rating}</td></tr>
-                                                                                                                                    );
-                                                                                                                                    if (profile.cespes_2_rating) rows.push(
-                                                                                                                                        <tr key="cespes-2"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.cespes_rating_2_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_2_rating}</td></tr>
-                                                                                                                                    );
-                                                                                                                                    if (profile.performance_rating_1) rows.push(
-                                                                                                                                        <tr key="opcrf-1"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_1_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_1}</td></tr>
-                                                                                                                                    );
-                                                                                                                                    if (profile.performance_rating_2) rows.push(
-                                                                                                                                        <tr key="opcrf-2"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_2_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_2}</td></tr>
-                                                                                                                                    );
-                                                                                                                                    if (profile.performance_rating_3) rows.push(
-                                                                                                                                        <tr key="opcrf-3"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_3_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_3}</td></tr>
-                                                                                                                                    );
-                                                                                                                                    if (rows.length === 0) {
-                                                                                                                                        return <tr><td colSpan={3} className="border-2 border-slate-400 px-3 py-2 text-center text-slate-400 italic">No ratings listed</td></tr>;
                                                                                                                                     }
-                                                                                                                                    return rows;
-                                                                                                                                })()}
-                                                                                                                            </tbody>
-                                                                                                                        </table>
-                                                                                                                        <table className="w-full text-xs border-collapse">
-                                                                                                                            <thead>
-                                                                                                                                <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2 border-2 border-red-700 text-center uppercase tracking-widest text-[11px]">Eligibility</th></tr>
-                                                                                                                            </thead>
-                                                                                                                            <tbody className="text-slate-800">
-                                                                                                                                <tr>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 font-medium">Career Executive Service (CES): {profile.ces_stage || 'Not Applicable'}</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.ces_conferment_date || '—'}</td>
+                                                                                                                                });
+                                                                                                                                if (expData.hasOthers) {
+                                                                                                                                    rows.push(
+                                                                                                                                        <tr key="others-row" className="text-slate-600 bg-slate-100/70 italic font-semibold text-[11.5px]">
+                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 font-bold">Others (Prior Positions)</td>
+                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">—</td>
+                                                                                                                                            <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-bold">{expData.othersDurationStr}</td>
+                                                                                                                                        </tr>
+                                                                                                                                    );
+                                                                                                                                }
+                                                                                                                                return rows;
+                                                                                                                            })()}
+                                                                                                                        </tbody>
+                                                                                                                        {profile.managerial_experience_total && (
+                                                                                                                            <tfoot>
+                                                                                                                                <tr className="bg-slate-100 font-bold text-slate-800">
+                                                                                                                                    <td colSpan={2} className="border-2 border-slate-400 px-3 py-1.5 text-right font-black uppercase text-[10px] text-[#08315F] tracking-wider">
+                                                                                                                                        Total Managerial Experience (As of {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}):
+                                                                                                                                    </td>
+                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black text-[#08315F] text-[11px]">
+                                                                                                                                        {formatExperienceTotal(profile.managerial_experience_total)}
+                                                                                                                                    </td>
                                                                                                                                 </tr>
-                                                                                                                                <tr>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 font-medium">Educational Management Test (EMT): {profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}</td>
-                                                                                                                                    <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.emt_date || '—'}</td>
-                                                                                                                                </tr>
-                                                                                                                            </tbody>
-                                                                                                                        </table>
-                                                                                                                    </div>
+                                                                                                                            </tfoot>
+                                                                                                                        )}
+                                                                                                                    </table>
+                                                                                                                    <table className="w-full text-xs border-collapse">
+                                                                                                                        <thead>
+                                                                                                                            <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Educational Attainment</th></tr>
+                                                                                                                        </thead>
+                                                                                                                        <tbody className="text-slate-800">
+                                                                                                                            <tr>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 font-medium text-center">Doctorate</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/2">{profile.doctorate_degree || '—'}</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 text-center font-medium">{profile.doctorate_year || '—'}</td>
+                                                                                                                            </tr>
+                                                                                                                            <tr>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 font-medium text-center">Master's Degree</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/2">{profile.master_degree || '—'}</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 text-center font-medium">{profile.master_year || '—'}</td>
+                                                                                                                            </tr>
+                                                                                                                            <tr>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 font-medium text-center">Baccalaureate</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/2">{profile.bachelor_degree || '—'}</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 w-1/4 text-center font-medium">{profile.bachelor_year || '—'}</td>
+                                                                                                                            </tr>
+                                                                                                                        </tbody>
+                                                                                                                    </table>
+                                                                                                                </div>
+                                                                                                                <div className="col-span-5 space-y-4">
+                                                                                                                    <table className="w-full text-xs border-collapse">
+                                                                                                                        <thead>
+                                                                                                                            <tr><th colSpan={3} className="bg-red-700 text-white font-bold py-2 border-2 border-red-700 text-center uppercase tracking-widest text-[11px]">Performance Rating</th></tr>
+                                                                                                                            <tr className="bg-red-50 text-[10px] font-black text-red-900 border-2 border-slate-400">
+                                                                                                                                <th className="px-3 py-1 text-left border-2 border-slate-400">Period / Type</th>
+                                                                                                                                <th className="px-2 py-1 text-center border-2 border-slate-400 w-16">Year</th>
+                                                                                                                                <th className="px-2 py-1 text-center border-2 border-slate-400 w-16">Rating</th>
+                                                                                                                            </tr>
+                                                                                                                        </thead>
+                                                                                                                        <tbody className="text-slate-800">
+                                                                                                                            {(() => {
+                                                                                                                                const extractPdfYear = (p) => {
+                                                                                                                                    if (!p) return '—';
+                                                                                                                                    const m = String(p).match(/\b(19\d\d|20\d\d)\b/);
+                                                                                                                                    return m ? m[1] : (String(p).split('-')[0] || String(p));
+                                                                                                                                };
+                                                                                                                                const rows = [];
+                                                                                                                                if (profile.cespes_1_rating) rows.push(
+                                                                                                                                    <tr key="cespes-1"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.cespes_rating_1_period || ''} 1st sem (CESPES)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.cespes_rating_1_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_1_rating}</td></tr>
+                                                                                                                                );
+                                                                                                                                if (profile.cespes_2_rating) rows.push(
+                                                                                                                                    <tr key="cespes-2"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.cespes_rating_2_period || ''} 2nd sem (CESPES)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.cespes_rating_2_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.cespes_2_rating}</td></tr>
+                                                                                                                                );
+                                                                                                                                if (profile.performance_rating_1) rows.push(
+                                                                                                                                    <tr key="opcrf-1"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.performance_rating_1_period || ''} (OPCRF)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_1_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_1}</td></tr>
+                                                                                                                                );
+                                                                                                                                if (profile.performance_rating_2) rows.push(
+                                                                                                                                    <tr key="opcrf-2"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.performance_rating_2_period || ''} (OPCRF)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_2_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_2}</td></tr>
+                                                                                                                                );
+                                                                                                                                if (profile.performance_rating_3) rows.push(
+                                                                                                                                    <tr key="opcrf-3"><td className="border-2 border-slate-400 px-3 py-1.5">{profile.performance_rating_3_period || ''} (OPCRF)</td><td className="border-2 border-slate-400 px-2 py-1.5 text-center font-semibold text-slate-600">{extractPdfYear(profile.performance_rating_3_period)}</td><td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.performance_rating_3}</td></tr>
+                                                                                                                                );
+                                                                                                                                if (rows.length === 0) {
+                                                                                                                                    return <tr><td colSpan={3} className="border-2 border-slate-400 px-3 py-2 text-center text-slate-400 italic">No ratings listed</td></tr>;
+                                                                                                                                }
+                                                                                                                                return rows;
+                                                                                                                            })()}
+                                                                                                                        </tbody>
+                                                                                                                    </table>
+                                                                                                                    <table className="w-full text-xs border-collapse">
+                                                                                                                        <thead>
+                                                                                                                            <tr><th colSpan={2} className="bg-red-700 text-white font-bold py-2 border-2 border-red-700 text-center uppercase tracking-widest text-[11px]">Eligibility</th></tr>
+                                                                                                                        </thead>
+                                                                                                                        <tbody className="text-slate-800">
+                                                                                                                            <tr>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 font-medium">Career Executive Service (CES): {profile.ces_stage || 'Not Applicable'}</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.ces_conferment_date || '—'}</td>
+                                                                                                                            </tr>
+                                                                                                                            <tr>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 font-medium">Educational Management Test (EMT): {profile.emt_passer === true ? 'Passed' : profile.emt_passer === false ? 'Not Passed' : 'Not Applicable'}</td>
+                                                                                                                                <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-black">{profile.emt_date || '—'}</td>
+                                                                                                                            </tr>
+                                                                                                                        </tbody>
+                                                                                                                    </table>
                                                                                                                 </div>
                                                                                                             </div>
                                                                                                         </div>
                                                                                                     </div>
                                                                                                 </div>
-                                                                                            )}
                                                                                             </div>
-                                                                                        </motion.div>
-                                                                                    </motion.div>
-                                                                                )}
-                                                                </AnimatePresence>,
-                                                                document.body
-                                                            )}
+                                                                                        )}
+                                                                                    </div>
+                                                                                </motion.div>
+                                                                            </motion.div>
+                                                                        )}
+                                                                    </AnimatePresence>,
+                                                                    document.body
+                                                                )}
 
                                                                 {/* Summary Content: Table View */}
                                                                 <div className="space-y-6">
                                                                     {/* 1. PERSONAL INFORMATION TABLE */}
-                                                                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
-                                                                            <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
-                                                                                <FiUser className="text-[#08315F]" size={20} />
-                                                                                <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Personal Information</h3>
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                            <FiUser className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Personal Information</h3>
+                                                                        </div>
+                                                                        <div className="p-6 flex flex-col sm:flex-row items-start gap-6">
+                                                                            {/* Left 2x2 Photo */}
+                                                                            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-2 border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                                                                                {profile.photo_binary_id ? (
+                                                                                    <img
+                                                                                        src={apiUrl(`/api/binary/${profile.photo_binary_id}`)}
+                                                                                        alt="Profile Photo"
+                                                                                        className="w-full h-full object-cover"
+                                                                                        crossOrigin="anonymous"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="flex flex-col items-center justify-center text-slate-400 gap-1 p-2 text-center">
+                                                                                        <FiCamera size={26} className="text-slate-300" />
+                                                                                        <span className="text-[11px] font-black uppercase tracking-wider">2x2 Photo</span>
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
-                                                                            <div className="p-6 flex flex-col sm:flex-row items-start gap-6">
-                                                                                {/* Left 2x2 Photo */}
-                                                                                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-2 border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
-                                                                                    {profile.photo_binary_id ? (
-                                                                                        <img
-                                                                                            src={apiUrl(`/api/binary/${profile.photo_binary_id}`)}
-                                                                                            alt="Profile Photo"
-                                                                                            className="w-full h-full object-cover"
-                                                                                            crossOrigin="anonymous"
-                                                                                        />
-                                                                                    ) : (
-                                                                                        <div className="flex flex-col items-center justify-center text-slate-400 gap-1 p-2 text-center">
-                                                                                            <FiCamera size={26} className="text-slate-300" />
-                                                                                            <span className="text-[11px] font-black uppercase tracking-wider">2x2 Photo</span>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
 
-                                                                                <div className="flex-1 w-full overflow-x-auto">
-                                                                                    <table className="w-full text-left border-collapse">
-                                                                                        <tbody>
-                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                                <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Full Name</td>
-                                                                                                <td className="w-1/4 px-6 py-3.5 text-[15px] font-black uppercase text-slate-800 border-r border-slate-100">{buildFullName(profile) || '—'}</td>
-                                                                                                <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">DepEd Email</td>
-                                                                                                <td className="w-1/4 px-6 py-3.5 text-[15px] font-black lowercase text-slate-800 break-all">{profile.email || user?.email || '—'}</td>
+                                                                            <div className="flex-1 w-full overflow-x-auto">
+                                                                                <table className="w-full text-left border-collapse">
+                                                                                    <tbody>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Full Name</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-black uppercase text-slate-800 border-r border-slate-100">{buildFullName(profile) || '—'}</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">DepEd Email</td>
+                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-black lowercase text-slate-800 break-all">{profile.email || user?.email || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">First Name</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.first_name || '—'}</td>
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Last Name</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.last_name || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Middle Name</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.middle_name || '—'}</td>
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Suffix</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{sanitizeSuffix(profile.suffix) || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Gender</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.gender || '—'}</td>
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Civil Status</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.civil_status || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Date of Birth</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.date_of_birth || '—'}</td>
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Age</td>
+                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.age || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Target Vacancy</td>
+                                                                                            <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">
+                                                                                                {(() => {
+                                                                                                    const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
+                                                                                                    return vac ? vac.position_title : '—';
+                                                                                                })()}
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Permanent Address</td>
+                                                                                            <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.permanent_address || '—'}</td>
+                                                                                        </tr>
+                                                                                        <tr className="hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Temporary Address</td>
+                                                                                            <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.temporary_address || '—'}</td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* 2. DESIGNATION & APPOINTMENT TABLE */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                            <FiBriefcase className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Designation & Appointment</h3>
+                                                                        </div>
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse">
+                                                                                <tbody>
+                                                                                    <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Position Title</td>
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[15px] font-black uppercase text-slate-800 border-r border-slate-100">
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <span>{profile.position_title || '—'}</span>
+                                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[11px] font-black uppercase">OIC</span>}
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Date of Present Position</td>
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.appointment_date || '—'}</td>
+                                                                                    </tr>
+                                                                                    <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                        <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Office / Station</td>
+                                                                                        <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.office || '—'}</td>
+                                                                                        <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Division / Region</td>
+                                                                                        <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">
+                                                                                            {[profile.division, profile.region].filter(Boolean).join(', ') || '—'}
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    {profile.strand && (
+                                                                                        <tr className="hover:bg-slate-50/50">
+                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Strand</td>
+                                                                                            <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.strand}</td>
+                                                                                        </tr>
+                                                                                    )}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* 3. ELIGIBILITY TABLE */}
+                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                            <FiAward className="text-[#08315F]" size={20} />
+                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Eligibility & Qualifications</h3>
+                                                                        </div>
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse">
+                                                                                <tbody>
+                                                                                    <tr className="border-b border-slate-100 hover:bg-slate-50/50">
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Career Executive Service (CES)</td>
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.ces_stage || '—'}</td>
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">CES Conferment Date</td>
+                                                                                        <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.ces_conferment_date || '—'}</td>
+                                                                                    </tr>
+                                                                                    <tr className="hover:bg-slate-50/50">
+                                                                                        <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Educational Management Test (EMT)</td>
+                                                                                        <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">
+                                                                                            {profile.emt_passer === true ? 'Passed / Yes' : profile.emt_passer === false ? 'No' : '—'}
+                                                                                        </td>
+                                                                                        <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">EMT Date</td>
+                                                                                        <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.emt_date || '—'}</td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+
+                                                                        {/* Eligibilities Sub-table */}
+                                                                        {profile.eligibilities && profile.eligibilities.length > 0 && (
+                                                                            <div className="border-t-2 border-slate-200">
+                                                                                <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
+                                                                                    Other Civil Service Eligibilities ({profile.eligibilities.length})
+                                                                                </div>
+                                                                                <div className="overflow-x-auto">
+                                                                                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                        <thead>
+                                                                                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                                <th className="px-6 py-3">Eligibility / Examination Title</th>
+                                                                                                <th className="px-4 py-3 text-center">Rating</th>
+                                                                                                <th className="px-4 py-3 text-center">Date Conferred</th>
+                                                                                                <th className="px-6 py-3">Place of Examination / Assignment</th>
                                                                                             </tr>
-                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">First Name</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.first_name || '—'}</td>
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Last Name</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.last_name || '—'}</td>
-                                                                                            </tr>
-                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Middle Name</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.middle_name || '—'}</td>
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Suffix</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{sanitizeSuffix(profile.suffix) || '—'}</td>
-                                                                                            </tr>
-                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Gender</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.gender || '—'}</td>
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Civil Status</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.civil_status || '—'}</td>
-                                                                                            </tr>
-                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Date of Birth</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.date_of_birth || '—'}</td>
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Age</td>
-                                                                                                <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.age || '—'}</td>
-                                                                                            </tr>
-                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Target Vacancy</td>
-                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">
-                                                                                                    {(() => {
-                                                                                                        const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
-                                                                                                        return vac ? vac.position_title : '—';
-                                                                                                    })()}
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                            <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Permanent Address</td>
-                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.permanent_address || '—'}</td>
-                                                                                            </tr>
-                                                                                            <tr className="hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Temporary Address</td>
-                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.temporary_address || '—'}</td>
-                                                                                            </tr>
+                                                                                        </thead>
+                                                                                        <tbody className="divide-y divide-slate-100">
+                                                                                            {profile.eligibilities.map((elig, idx) => (
+                                                                                                <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                                    <td className="px-6 py-3.5 font-black text-blue-700 uppercase text-[14px]">
+                                                                                                        {elig.eligibility || elig.title || 'Untitled'}
+                                                                                                    </td>
+                                                                                                    <td className="px-4 py-3.5 text-center">
+                                                                                                        <div className="flex flex-col items-center gap-1">
+                                                                                                            <span className="font-black text-slate-800 text-[14px]">{elig.rating || '—'}</span>
+                                                                                                            {elig.rating && parseInt(elig.rating) > 0 && (
+                                                                                                                <div className="flex text-yellow-400 gap-0.5">
+                                                                                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                                                                                        <FiStar key={star} size={11} fill={parseInt(elig.rating) >= star ? 'currentColor' : 'none'} className={parseInt(elig.rating) >= star ? '' : 'text-slate-200'} />
+                                                                                                                    ))}
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    </td>
+                                                                                                    <td className="px-4 py-3.5 text-center font-bold text-slate-700 text-[14px]">
+                                                                                                        {elig.date ? new Date(elig.date).toLocaleDateString() : '—'}
+                                                                                                    </td>
+                                                                                                    <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
+                                                                                                        {elig.place_of_assignment || '—'}
+                                                                                                    </td>
+                                                                                                </tr>
+                                                                                            ))}
+
                                                                                         </tbody>
                                                                                     </table>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
-
-                                                                        {/* 2. DESIGNATION & APPOINTMENT TABLE */}
-                                                                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
-                                                                            <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
-                                                                                <FiBriefcase className="text-[#08315F]" size={20} />
-                                                                                <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Designation & Appointment</h3>
-                                                                            </div>
-                                                                            <div className="overflow-x-auto">
-                                                                                <table className="w-full text-left border-collapse">
-                                                                                    <tbody>
-                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Position Title</td>
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-black uppercase text-slate-800 border-r border-slate-100">
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <span>{profile.position_title || '—'}</span>
-                                                                                                    {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[11px] font-black uppercase">OIC</span>}
-                                                                                                </div>
-                                                                                            </td>
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Date of Present Position</td>
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.appointment_date || '—'}</td>
-                                                                                        </tr>
-                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Office / Station</td>
-                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.office || '—'}</td>
-                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Division / Region</td>
-                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">
-                                                                                                {[profile.division, profile.region].filter(Boolean).join(', ') || '—'}
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                        {profile.strand && (
-                                                                                            <tr className="hover:bg-slate-50/50">
-                                                                                                <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Strand</td>
-                                                                                                <td colSpan={3} className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.strand}</td>
-                                                                                            </tr>
-                                                                                        )}
-                                                                                    </tbody>
-                                                                                </table>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {/* 3. ELIGIBILITY TABLE */}
-                                                                        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
-                                                                            <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
-                                                                                <FiAward className="text-[#08315F]" size={20} />
-                                                                                <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Eligibility & Qualifications</h3>
-                                                                            </div>
-                                                                            <div className="overflow-x-auto">
-                                                                                <table className="w-full text-left border-collapse">
-                                                                                    <tbody>
-                                                                                        <tr className="border-b border-slate-100 hover:bg-slate-50/50">
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Career Executive Service (CES)</td>
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">{profile.ces_stage || '—'}</td>
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">CES Conferment Date</td>
-                                                                                            <td className="w-1/4 px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.ces_conferment_date || '—'}</td>
-                                                                                        </tr>
-                                                                                        <tr className="hover:bg-slate-50/50">
-                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">Educational Management Test (EMT)</td>
-                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800 border-r border-slate-100">
-                                                                                                {profile.emt_passer === true ? 'Passed / Yes' : profile.emt_passer === false ? 'No' : '—'}
-                                                                                            </td>
-                                                                                            <td className="px-6 py-3.5 text-[13px] font-black uppercase text-slate-500 bg-slate-50/70 border-r border-slate-100">EMT Date</td>
-                                                                                            <td className="px-6 py-3.5 text-[15px] font-bold uppercase text-slate-800">{profile.emt_date || '—'}</td>
-                                                                                        </tr>
-                                                                                    </tbody>
-                                                                                </table>
-                                                                            </div>
-
-                                                                            {/* Eligibilities Sub-table */}
-                                                                            {profile.eligibilities && profile.eligibilities.length > 0 && (
-                                                                                <div className="border-t-2 border-slate-200">
-                                                                                    <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
-                                                                                        Other Civil Service Eligibilities ({profile.eligibilities.length})
-                                                                                    </div>
-                                                                                    <div className="overflow-x-auto">
-                                                                                        <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                                                                            <thead>
-                                                                                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
-                                                                                                    <th className="px-6 py-3">Eligibility / Examination Title</th>
-                                                                                                    <th className="px-4 py-3 text-center">Rating</th>
-                                                                                                    <th className="px-4 py-3 text-center">Date Conferred</th>
-                                                                                                    <th className="px-6 py-3">Place of Examination / Assignment</th>
-                                                                                                </tr>
-                                                                                            </thead>
-                                                                                            <tbody className="divide-y divide-slate-100">
-                                                                                                {profile.eligibilities.map((elig, idx) => (
-                                                                                                    <tr key={idx} className="hover:bg-slate-50/70">
-                                                                                                        <td className="px-6 py-3.5 font-black text-blue-700 uppercase text-[14px]">
-                                                                                                            {elig.eligibility || elig.title || 'Untitled'}
-                                                                                                        </td>
-                                                                                                        <td className="px-4 py-3.5 text-center">
-                                                                                                            <div className="flex flex-col items-center gap-1">
-                                                                                                                <span className="font-black text-slate-800 text-[14px]">{elig.rating || '—'}</span>
-                                                                                                                {elig.rating && parseInt(elig.rating) > 0 && (
-                                                                                                                    <div className="flex text-yellow-400 gap-0.5">
-                                                                                                                        {[1, 2, 3, 4, 5].map(star => (
-                                                                                                                            <FiStar key={star} size={11} fill={parseInt(elig.rating) >= star ? 'currentColor' : 'none'} className={parseInt(elig.rating) >= star ? '' : 'text-slate-200'} />
-                                                                                                                        ))}
-                                                                                                                    </div>
-                                                                                                                )}
-                                                                                                            </div>
-                                                                                                        </td>
-                                                                                                        <td className="px-4 py-3.5 text-center font-bold text-slate-700 text-[14px]">
-                                                                                                            {elig.date ? new Date(elig.date).toLocaleDateString() : '—'}
-                                                                                                        </td>
-                                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
-                                                                                                            {elig.place_of_assignment || '—'}
-                                                                                                        </td>
-                                                                                                    </tr>
-                                                                                                ))}
-                                                             
-                                                               </tbody>
-                                                                                        </table>
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
+                                                                        )}
                                                                     </div>
+                                                                </div>
                                                             </div>
                                                             {/* Remaining sections: Table View */}
                                                             <div className="space-y-6">
                                                                 {/* 4. EDUCATION TABLE */}
-                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
-                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
-                                                                            <FiBook className="text-[#08315F]" size={20} />
-                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Education & Academic Background</h3>
-                                                                        </div>
-                                                                        <div className="overflow-x-auto">
-                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                                                                <thead>
-                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
-                                                                                        <th className="px-6 py-3">Degree Level / Category</th>
-                                                                                        <th className="px-6 py-3">Specific Degree</th>
-                                                                                        <th className="px-6 py-3">Program / Major</th>
-                                                                                        <th className="px-4 py-3 text-center">Year Graduated</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody className="divide-y divide-slate-100">
-                                                                                    {profile.education_degrees && profile.education_degrees.length > 0 ? (
-                                                                                        profile.education_degrees.map((deg, idx) => (
-                                                                                            <tr key={idx} className="hover:bg-slate-50/70">
-                                                                                                <td className="px-6 py-3.5 font-black uppercase text-[#08315F] text-[14px] bg-slate-50/50">
-                                                                                                    {deg.highest_education || '—'}
-                                                                                                </td>
-                                                                                                <td className="px-6 py-3.5 font-bold uppercase text-slate-800 text-[14px]">
-                                                                                                    {deg.specific_degree || '—'}
-                                                                                                </td>
-                                                                                                <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
-                                                                                                    {deg.education_program || '—'}
-                                                                                                </td>
-                                                                                                <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[14px]">
-                                                                                                    {deg.education_year_graduated || '—'}
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                        ))
-                                                                                    ) : (profile.highest_education || profile.education_program) ? (
-                                                                                        <tr className="hover:bg-slate-50/70">
+                                                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                    <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                        <FiBook className="text-[#08315F]" size={20} />
+                                                                        <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Education & Academic Background</h3>
+                                                                    </div>
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                            <thead>
+                                                                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                    <th className="px-6 py-3">Degree Level / Category</th>
+                                                                                    <th className="px-6 py-3">Specific Degree</th>
+                                                                                    <th className="px-6 py-3">Program / Major</th>
+                                                                                    <th className="px-4 py-3 text-center">Year Graduated</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="divide-y divide-slate-100">
+                                                                                {profile.education_degrees && profile.education_degrees.length > 0 ? (
+                                                                                    profile.education_degrees.map((deg, idx) => (
+                                                                                        <tr key={idx} className="hover:bg-slate-50/70">
                                                                                             <td className="px-6 py-3.5 font-black uppercase text-[#08315F] text-[14px] bg-slate-50/50">
-                                                                                                {profile.highest_education || '—'}
+                                                                                                {deg.highest_education || '—'}
                                                                                             </td>
                                                                                             <td className="px-6 py-3.5 font-bold uppercase text-slate-800 text-[14px]">
-                                                                                                {profile.specific_degree || '—'}
+                                                                                                {deg.specific_degree || '—'}
                                                                                             </td>
                                                                                             <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
-                                                                                                {profile.education_program || '—'}
+                                                                                                {deg.education_program || '—'}
                                                                                             </td>
                                                                                             <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[14px]">
-                                                                                                {profile.education_year_graduated || '—'}
+                                                                                                {deg.education_year_graduated || '—'}
                                                                                             </td>
                                                                                         </tr>
-                                                                                    ) : (
-                                                                                        <tr>
-                                                                                            <td colSpan={4} className="px-6 py-4 text-center text-slate-400 font-bold uppercase tracking-wider">
-                                                                                                No degrees listed
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    )}
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div>
-
-                                                                        {profile.other_courses && profile.other_courses.length > 0 && (
-                                                                            <div className="border-t-2 border-slate-200">
-                                                                                <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
-                                                                                    Other Courses & Executive Programs ({profile.other_courses.length})
-                                                                                </div>
-                                                                                <div className="overflow-x-auto">
-                                                                                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                                                                        <thead>
-                                                                                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
-                                                                                                <th className="px-6 py-3">Course Title</th>
-                                                                                                <th className="px-6 py-3">Inclusive Dates</th>
-                                                                                                <th className="px-6 py-3">Details / Agency</th>
-                                                                                            </tr>
-                                                                                        </thead>
-                                                                                        <tbody className="divide-y divide-slate-100">
-                                                                                            {profile.other_courses.map((course, idx) => (
-                                                                                                <tr key={idx} className="hover:bg-slate-50/70">
-                                                                                                    <td className="px-6 py-3.5 font-black uppercase text-blue-700 text-[14px]">
-                                                                                                        {course.course || '—'}
-                                                                                                    </td>
-                                                                                                    <td className="px-6 py-3.5 font-bold text-slate-700 text-[14px]">
-                                                                                                        {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
-                                                                                                    </td>
-                                                                                                    <td className="px-6 py-3.5 font-medium text-slate-600 text-[14px]">
-                                                                                                        {course.details || '—'}
-                                                                                                    </td>
-                                                                                                </tr>
-                                                                                            ))}
-                                                                                        </tbody>
-                                                                                    </table>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-
-                                                                    {/* 5. PERFORMANCE HISTORY & EXPERIENCE TABLE */}
-                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
-                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
-                                                                            <FiBarChart2 className="text-[#08315F]" size={20} />
-                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Performance History & Experience</h3>
-                                                                        </div>
-                                                                        
-                                                                        <div className="overflow-x-auto">
-                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                                                                <thead>
-                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
-                                                                                        <th className="px-6 py-3">Rating Type / Evaluation Period</th>
-                                                                                        <th className="px-6 py-3">Performance Period</th>
-                                                                                        <th className="px-4 py-3 text-center">Numerical Rating</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody className="divide-y divide-slate-100">
+                                                                                    ))
+                                                                                ) : (profile.highest_education || profile.education_program) ? (
                                                                                     <tr className="hover:bg-slate-50/70">
-                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Latest Rating (1st)</td>
-                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_1_period || '—'}</td>
-                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_1 || '—'}</td>
+                                                                                        <td className="px-6 py-3.5 font-black uppercase text-[#08315F] text-[14px] bg-slate-50/50">
+                                                                                            {profile.highest_education || '—'}
+                                                                                        </td>
+                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-800 text-[14px]">
+                                                                                            {profile.specific_degree || '—'}
+                                                                                        </td>
+                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-700 text-[14px]">
+                                                                                            {profile.education_program || '—'}
+                                                                                        </td>
+                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[14px]">
+                                                                                            {profile.education_year_graduated || '—'}
+                                                                                        </td>
                                                                                     </tr>
-                                                                                    <tr className="hover:bg-slate-50/70">
-                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Previous Rating (2nd)</td>
-                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_2_period || '—'}</td>
-                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_2 || '—'}</td>
-                                                                                    </tr>
-                                                                                    <tr className="hover:bg-slate-50/70">
-                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Oldest Rating (3rd)</td>
-                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_3_period || '—'}</td>
-                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_3 || '—'}</td>
-                                                                                    </tr>
-                                                                                    <tr className="hover:bg-slate-50/70">
-                                                                                        <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">CSPMS 2nd Sem</td>
-                                                                                        <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.cespes_rating_2_period || '—'}</td>
-                                                                                        <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.cespes_2_rating || '—'}</td>
-                                                                                    </tr>
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div>
-
-                                                                        <div className="border-t-2 border-slate-200 p-6 bg-slate-50/30 space-y-4">
-                                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-xl border border-slate-200">
-                                                                                <span className="text-[13.5px] font-black text-slate-500 uppercase tracking-wider">Total Managerial Experience</span>
-                                                                                <span className="text-[18px] font-black text-[#08315F]">{formatExperienceTotal(profile.managerial_experience_total) || '0 mos.'}</span>
-                                                                            </div>
-                                                                            
-                                                                            <div>
-                                                                                <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest block mb-2">Notable Achievements</span>
-                                                                                {isAchievementsNA ? (
-                                                                                    <p className="text-[15px] font-bold text-slate-500 uppercase italic">Not Applicable (N/A)</p>
-                                                                                ) : Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0 ? (
-                                                                                    <div className="space-y-1 bg-white p-4 rounded-xl border border-slate-200">
-                                                                                        {profile.notable_achievements.map((item, i) => {
-                                                                                            const title = typeof item === 'object' && item !== null ? item.title : String(item || '');
-                                                                                            const year = typeof item === 'object' && item !== null ? item.year : '';
-                                                                                            if (!title) return null;
-                                                                                            return (
-                                                                                                <p key={i} className="text-[15px] font-bold text-slate-800 uppercase">
-                                                                                                    • {title} {year ? `(${year})` : ''}
-                                                                                                </p>
-                                                                                            );
-                                                                                        })}
-                                                                                    </div>
                                                                                 ) : (
-                                                                                    <p className="text-[15px] font-bold text-slate-400 uppercase">—</p>
+                                                                                    <tr>
+                                                                                        <td colSpan={4} className="px-6 py-4 text-center text-slate-400 font-bold uppercase tracking-wider">
+                                                                                            No degrees listed
+                                                                                        </td>
+                                                                                    </tr>
                                                                                 )}
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {prevPositions.length > 0 && (
-                                                                            <div className="border-t-2 border-slate-200">
-                                                                                <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
-                                                                                    Employment History ({prevPositions.length})
-                                                                                </div>
-                                                                                <div className="overflow-x-auto">
-                                                                                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                                                                        <thead>
-                                                                                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
-                                                                                                <th className="px-4 py-3 text-center w-12">#</th>
-                                                                                                <th className="px-6 py-3">Position Title</th>
-                                                                                                <th className="px-6 py-3">Office / Station</th>
-                                                                                                <th className="px-6 py-3">Inclusive Dates</th>
-                                                                                            </tr>
-                                                                                        </thead>
-                                                                                        <tbody className="divide-y divide-slate-100">
-                                                                                            {prevPositions.map((p, idx) => (
-                                                                                                <tr key={idx} className="hover:bg-slate-50/70">
-                                                                                                    <td className="px-4 py-3.5 text-center font-black text-slate-500">{idx + 1}</td>
-                                                                                                    <td className="px-6 py-3.5 font-black uppercase text-slate-800 text-[14px]">{p.position_name || '—'}</td>
-                                                                                                    <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{p.office || '—'}</td>
-                                                                                                    <td className="px-6 py-3.5 font-bold text-slate-700 text-[14px]">
-                                                                                                        {p.start_date ? `${p.start_date} - ${p.end_date || 'Present'}` : '—'}
-                                                                                                    </td>
-                                                                                                </tr>
-                                                                                            ))}
-                                                                                        </tbody>
-                                                                                    </table>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
+                                                                            </tbody>
+                                                                        </table>
                                                                     </div>
 
-                                                                    {/* 6. DOCUMENTS TABLE */}
-                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
-                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
-                                                                            <FiFileText className="text-[#08315F]" size={20} />
-                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Uploaded Documents</h3>
-                                                                        </div>
-                                                                        <div className="overflow-x-auto">
-                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                                                                <thead>
-                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
-                                                                                        <th className="px-6 py-3">Document Name</th>
-                                                                                        <th className="px-4 py-3 text-center">Type</th>
-                                                                                        <th className="px-4 py-3 text-center">Status</th>
-                                                                                        <th className="px-6 py-3 text-right">Actions</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody className="divide-y divide-slate-100">
-                                                                                    {[
-                                                                                        { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*', isApplication: false },
-                                                                                        { key: 'pds', dbKey: 'pds_binary_id', label: 'Personal Data Sheet (PDS)', accept: '.pdf,.doc,.docx', isApplication: false },
-                                                                                        { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf', isApplication: true },
-                                                                                        { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf', isApplication: true },
-                                                                                        { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf', isApplication: false },
-                                                                                        ...(hasPendingCases ? [
-                                                                                            { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf', isApplication: false }
-                                                                                        ] : []),
-                                                                                        ...(isApplyingForPosition ? [
-                                                                                            { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf', isApplication: true },
-                                                                                            { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf', isApplication: true },
-                                                                                            { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf', isApplication: true },
-                                                                                            { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf', isApplication: true },
-                                                                                            { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf', isApplication: true },
-                                                                                        ] : []),
-                                                                                    ].map(d => {
-                                                                                        const isUploaded = Boolean(profile[d.dbKey]);
-                                                                                        return (
-                                                                                            <tr key={d.key} className="hover:bg-slate-50/70">
-                                                                                                <td className="px-6 py-3.5 font-black uppercase text-slate-800 text-[14px]">
-                                                                                                    {d.label}
-                                                                                                </td>
-                                                                                                <td className="px-4 py-3.5 text-center">
-                                                                                                    {d.isApplication ? (
-                                                                                                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
-                                                                                                            Application
-                                                                                                        </span>
-                                                                                                    ) : (
-                                                                                                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
-                                                                                                            Standard
-                                                                                                        </span>
-                                                                                                    )}
-                                                                                                </td>
-                                                                                                <td className="px-4 py-3.5 text-center">
-                                                                                                    {isUploaded ? (
-                                                                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                                                                            <FiCheckCircle size={12} /> Uploaded
-                                                                                                        </span>
-                                                                                                    ) : (
-                                                                                                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-400 border border-slate-200">
-                                                                                                            Missing
-                                                                                                        </span>
-                                                                                                    )}
-                                                                                                </td>
-                                                                                                <td className="px-6 py-3.5 text-right">
-                                                                                                    <div className="flex items-center justify-end gap-2">
-                                                                                                        <div className="relative group/upload">
-                                                                                                            <input
-                                                                                                                disabled={!isEditing}
-                                                                                                                type="file"
-                                                                                                                accept={d.accept}
-                                                                                                                onChange={(e) => {
-                                                                                                                    const file = e.target.files[0];
-                                                                                                                    if (file) handleFileUpload(file, d.key);
-                                                                                                                }}
-                                                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full"
-                                                                                                            />
-                                                                                                            <button
-                                                                                                                type="button"
-                                                                                                                disabled={!isEditing}
-                                                                                                                className="flex items-center gap-1.5 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-[13px] font-bold transition-all bg-white text-blue-700 hover:border-blue-300 disabled:opacity-50"
-                                                                                                            >
-                                                                                                                <FiUpload size={13} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
-                                                                                                                <span>{uploadingDocs[d.key] ? '...' : 'Upload'}</span>
-                                                                                                            </button>
-                                                                                                        </div>
-                                                                                                        {isUploaded && (
-                                                                                                            <button
-                                                                                                                type="button"
-                                                                                                                onClick={() => handleViewDocument(profile[d.dbKey])}
-                                                                                                                className="flex items-center gap-1.5 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-[13px] font-bold transition-all bg-white hover:border-blue-300 text-blue-700"
-                                                                                                            >
-                                                                                                                <FiEye size={13} />
-                                                                                                                <span>View</span>
-                                                                                                            </button>
-                                                                                                        )}
-                                                                                                    </div>
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                        );
-                                                                                    })}
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* 7. LEGAL DISCLOSURES TABLE */}
-                                                                    <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
-                                                                        <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
-                                                                            <FiShield className="text-[#08315F]" size={20} />
-                                                                            <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Legal Disclosures</h3>
-                                                                        </div>
-                                                                        <div className="overflow-x-auto">
-                                                                            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                                                                                <thead>
-                                                                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
-                                                                                        <th className="px-6 py-3">Legal Disclosure Item</th>
-                                                                                        <th className="px-6 py-3 text-right">Declared Status</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody className="divide-y divide-slate-100">
-                                                                                    {[
-                                                                                        { label: 'Pending Administrative Cases', value: profile.pending_admin_case },
-                                                                                        { label: 'Guilty of Admin Offense', value: profile.guilty_admin_details },
-                                                                                        { label: 'Criminally Charged', value: profile.criminally_charged_details },
-                                                                                        { label: 'Convicted of Crime', value: profile.convicted_crime_details },
-                                                                                    ].map((item, idx) => {
-                                                                                        const isYes = item.value === 'Yes' || item.value === true || item.value === '1';
-                                                                                        return (
+                                                                    {profile.other_courses && profile.other_courses.length > 0 && (
+                                                                        <div className="border-t-2 border-slate-200">
+                                                                            <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
+                                                                                Other Courses & Executive Programs ({profile.other_courses.length})
+                                                                            </div>
+                                                                            <div className="overflow-x-auto">
+                                                                                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                    <thead>
+                                                                                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                            <th className="px-6 py-3">Course Title</th>
+                                                                                            <th className="px-6 py-3">Inclusive Dates</th>
+                                                                                            <th className="px-6 py-3">Details / Agency</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody className="divide-y divide-slate-100">
+                                                                                        {profile.other_courses.map((course, idx) => (
                                                                                             <tr key={idx} className="hover:bg-slate-50/70">
-                                                                                                <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">
-                                                                                                    {item.label}
+                                                                                                <td className="px-6 py-3.5 font-black uppercase text-blue-700 text-[14px]">
+                                                                                                    {course.course || '—'}
                                                                                                 </td>
-                                                                                                <td className="px-6 py-3.5 text-right">
-                                                                                                    <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-wider ${
-                                                                                                        isYes ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                                                                    }`}>
-                                                                                                        {isYes ? 'Yes' : 'No'}
-                                                                                                    </span>
+                                                                                                <td className="px-6 py-3.5 font-bold text-slate-700 text-[14px]">
+                                                                                                    {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
+                                                                                                </td>
+                                                                                                <td className="px-6 py-3.5 font-medium text-slate-600 text-[14px]">
+                                                                                                    {course.details || '—'}
                                                                                                 </td>
                                                                                             </tr>
+                                                                                        ))}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* 5. PERFORMANCE HISTORY & EXPERIENCE TABLE */}
+                                                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                    <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                        <FiBarChart2 className="text-[#08315F]" size={20} />
+                                                                        <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Performance History & Experience</h3>
+                                                                    </div>
+
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                            <thead>
+                                                                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                    <th className="px-6 py-3">Rating Type / Evaluation Period</th>
+                                                                                    <th className="px-6 py-3">Performance Period</th>
+                                                                                    <th className="px-4 py-3 text-center">Numerical Rating</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="divide-y divide-slate-100">
+                                                                                <tr className="hover:bg-slate-50/70">
+                                                                                    <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Latest Rating (1st)</td>
+                                                                                    <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_1_period || '—'}</td>
+                                                                                    <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_1 || '—'}</td>
+                                                                                </tr>
+                                                                                <tr className="hover:bg-slate-50/70">
+                                                                                    <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Previous Rating (2nd)</td>
+                                                                                    <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_2_period || '—'}</td>
+                                                                                    <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_2 || '—'}</td>
+                                                                                </tr>
+                                                                                <tr className="hover:bg-slate-50/70">
+                                                                                    <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">Oldest Rating (3rd)</td>
+                                                                                    <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.performance_rating_3_period || '—'}</td>
+                                                                                    <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.performance_rating_3 || '—'}</td>
+                                                                                </tr>
+                                                                                <tr className="hover:bg-slate-50/70">
+                                                                                    <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">CSPMS 2nd Sem</td>
+                                                                                    <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{profile.cespes_rating_2_period || '—'}</td>
+                                                                                    <td className="px-4 py-3.5 text-center font-black text-slate-800 text-[16px]">{profile.cespes_2_rating || '—'}</td>
+                                                                                </tr>
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+
+                                                                    <div className="border-t-2 border-slate-200 p-6 bg-slate-50/30 space-y-4">
+                                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-xl border border-slate-200">
+                                                                            <span className="text-[13.5px] font-black text-slate-500 uppercase tracking-wider">Total Managerial Experience</span>
+                                                                            <span className="text-[18px] font-black text-[#08315F]">{formatExperienceTotal(profile.managerial_experience_total) || '0 mos.'}</span>
+                                                                        </div>
+
+                                                                        <div>
+                                                                            <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest block mb-2">Notable Achievements</span>
+                                                                            {isAchievementsNA ? (
+                                                                                <p className="text-[15px] font-bold text-slate-500 uppercase italic">Not Applicable (N/A)</p>
+                                                                            ) : Array.isArray(profile.notable_achievements) && profile.notable_achievements.length > 0 ? (
+                                                                                <div className="space-y-1 bg-white p-4 rounded-xl border border-slate-200">
+                                                                                    {profile.notable_achievements.map((item, i) => {
+                                                                                        const title = typeof item === 'object' && item !== null ? item.title : String(item || '');
+                                                                                        const year = typeof item === 'object' && item !== null ? item.year : '';
+                                                                                        if (!title) return null;
+                                                                                        return (
+                                                                                            <p key={i} className="text-[15px] font-bold text-slate-800 uppercase">
+                                                                                                • {title} {year ? `(${year})` : ''}
+                                                                                            </p>
                                                                                         );
                                                                                     })}
-                                                                                </tbody>
-                                                                            </table>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <p className="text-[15px] font-bold text-slate-400 uppercase">—</p>
+                                                                            )}
                                                                         </div>
+                                                                    </div>
+
+                                                                    {prevPositions.length > 0 && (
+                                                                        <div className="border-t-2 border-slate-200">
+                                                                            <div className="bg-slate-100/70 px-6 py-2.5 text-[13px] font-black uppercase tracking-wider text-slate-600">
+                                                                                Employment History ({prevPositions.length})
+                                                                            </div>
+                                                                            <div className="overflow-x-auto">
+                                                                                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                                    <thead>
+                                                                                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                            <th className="px-4 py-3 text-center w-12">#</th>
+                                                                                            <th className="px-6 py-3">Position Title</th>
+                                                                                            <th className="px-6 py-3">Office / Station</th>
+                                                                                            <th className="px-6 py-3">Inclusive Dates</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody className="divide-y divide-slate-100">
+                                                                                        {prevPositions.map((p, idx) => (
+                                                                                            <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                                <td className="px-4 py-3.5 text-center font-black text-slate-500">{idx + 1}</td>
+                                                                                                <td className="px-6 py-3.5 font-black uppercase text-slate-800 text-[14px]">{p.position_name || '—'}</td>
+                                                                                                <td className="px-6 py-3.5 font-bold uppercase text-slate-600 text-[14px]">{p.office || '—'}</td>
+                                                                                                <td className="px-6 py-3.5 font-bold text-slate-700 text-[14px]">
+                                                                                                    {p.start_date ? `${p.start_date} - ${p.end_date || 'Present'}` : '—'}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        ))}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* 6. DOCUMENTS TABLE */}
+                                                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                    <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                        <FiFileText className="text-[#08315F]" size={20} />
+                                                                        <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Uploaded Documents</h3>
+                                                                    </div>
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                            <thead>
+                                                                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                    <th className="px-6 py-3">Document Name</th>
+                                                                                    <th className="px-4 py-3 text-center">Type</th>
+                                                                                    <th className="px-4 py-3 text-center">Status</th>
+                                                                                    <th className="px-6 py-3 text-right">Actions</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="divide-y divide-slate-100">
+                                                                                {[
+                                                                                    { key: 'photo', dbKey: 'photo_binary_id', label: '2x2 Photo', accept: 'image/*', isApplication: false },
+                                                                                    { key: 'pds', dbKey: 'pds_binary_id', label: 'Personal Data Sheet (PDS)', accept: '.pdf,.doc,.docx', isApplication: false },
+                                                                                    { key: 'wes', dbKey: 'wes_binary_id', label: 'Work Experience Sheet (WES)', accept: '.pdf', isApplication: true },
+                                                                                    { key: 'cv', dbKey: 'cv_binary_id', label: 'Curriculum Vitae (CV)', accept: '.pdf', isApplication: true },
+                                                                                    { key: 'service_records', dbKey: 'service_records_binary_id', label: 'Service Records', accept: '.pdf', isApplication: false },
+                                                                                    ...(hasPendingCases ? [
+                                                                                        { key: 'executive_summary', dbKey: 'executive_summary_binary_id', label: 'Executive Summary', accept: '.pdf', isApplication: false }
+                                                                                    ] : []),
+                                                                                    ...(isApplyingForPosition ? [
+                                                                                        { key: 'ombudsman_clearance', dbKey: 'ombudsman_clearance_binary_id', label: 'Ombudsman Clearance', accept: '.pdf', isApplication: true },
+                                                                                        { key: 'sandiganbayan_clearance', dbKey: 'sandiganbayan_clearance_binary_id', label: 'Sandiganbayan Clearance', accept: '.pdf', isApplication: true },
+                                                                                        { key: 'csc_clearance', dbKey: 'csc_clearance_binary_id', label: 'CSC Clearance', accept: '.pdf', isApplication: true },
+                                                                                        { key: 'nbi_clearance', dbKey: 'nbi_clearance_binary_id', label: 'NBI Clearance', accept: '.pdf', isApplication: true },
+                                                                                        { key: 'deped_clearance', dbKey: 'deped_clearance_binary_id', label: 'DepEd RO Clearance', accept: '.pdf', isApplication: true },
+                                                                                    ] : []),
+                                                                                ].map(d => {
+                                                                                    const isUploaded = Boolean(profile[d.dbKey]);
+                                                                                    return (
+                                                                                        <tr key={d.key} className="hover:bg-slate-50/70">
+                                                                                            <td className="px-6 py-3.5 font-black uppercase text-slate-800 text-[14px]">
+                                                                                                {d.label}
+                                                                                            </td>
+                                                                                            <td className="px-4 py-3.5 text-center">
+                                                                                                {d.isApplication ? (
+                                                                                                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                                                                                                        Application
+                                                                                                    </span>
+                                                                                                ) : (
+                                                                                                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                                                                                                        Standard
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </td>
+                                                                                            <td className="px-4 py-3.5 text-center">
+                                                                                                {isUploaded ? (
+                                                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                                                                        <FiCheckCircle size={12} /> Uploaded
+                                                                                                    </span>
+                                                                                                ) : (
+                                                                                                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-400 border border-slate-200">
+                                                                                                        Missing
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </td>
+                                                                                            <td className="px-6 py-3.5 text-right">
+                                                                                                <div className="flex items-center justify-end gap-2">
+                                                                                                    <div className="relative group/upload">
+                                                                                                        <input
+                                                                                                            disabled={!isEditing}
+                                                                                                            type="file"
+                                                                                                            accept={d.accept}
+                                                                                                            onChange={(e) => {
+                                                                                                                const file = e.target.files[0];
+                                                                                                                if (file) handleFileUpload(file, d.key);
+                                                                                                            }}
+                                                                                                            className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full"
+                                                                                                        />
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            disabled={!isEditing}
+                                                                                                            className="flex items-center gap-1.5 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-[13px] font-bold transition-all bg-white text-blue-700 hover:border-blue-300 disabled:opacity-50"
+                                                                                                        >
+                                                                                                            <FiUpload size={13} className={uploadingDocs[d.key] ? 'animate-bounce' : ''} />
+                                                                                                            <span>{uploadingDocs[d.key] ? '...' : 'Upload'}</span>
+                                                                                                        </button>
+                                                                                                    </div>
+                                                                                                    {isUploaded && (
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            onClick={() => handleViewDocument(profile[d.dbKey])}
+                                                                                                            className="flex items-center gap-1.5 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-[13px] font-bold transition-all bg-white hover:border-blue-300 text-blue-700"
+                                                                                                        >
+                                                                                                            <FiEye size={13} />
+                                                                                                            <span>View</span>
+                                                                                                        </button>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    );
+                                                                                })}
+                                                                            </tbody>
+                                                                        </table>
                                                                     </div>
                                                                 </div>
-                                                            
+
+                                                                {/* 7. LEGAL DISCLOSURES TABLE */}
+                                                                <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                                                                    <div className="bg-slate-50 border-b-2 border-slate-200 px-6 py-4 flex items-center gap-3">
+                                                                        <FiShield className="text-[#08315F]" size={20} />
+                                                                        <h3 className="text-[16px] font-black text-[#08315F] uppercase tracking-wider">Legal Disclosures</h3>
+                                                                    </div>
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                                                                            <thead>
+                                                                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[12px] uppercase font-black tracking-wider">
+                                                                                    <th className="px-6 py-3">Legal Disclosure Item</th>
+                                                                                    <th className="px-6 py-3 text-right">Declared Status</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="divide-y divide-slate-100">
+                                                                                {[
+                                                                                    { label: 'Pending Administrative Cases', value: profile.pending_admin_case },
+                                                                                    { label: 'Guilty of Admin Offense', value: profile.guilty_admin_details },
+                                                                                    { label: 'Criminally Charged', value: profile.criminally_charged_details },
+                                                                                    { label: 'Convicted of Crime', value: profile.convicted_crime_details },
+                                                                                ].map((item, idx) => {
+                                                                                    const isYes = item.value === 'Yes' || item.value === true || item.value === '1';
+                                                                                    return (
+                                                                                        <tr key={idx} className="hover:bg-slate-50/70">
+                                                                                            <td className="px-6 py-3.5 font-black uppercase text-slate-700 text-[14px]">
+                                                                                                {item.label}
+                                                                                            </td>
+                                                                                            <td className="px-6 py-3.5 text-right">
+                                                                                                <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-wider ${isYes ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                                                    }`}>
+                                                                                                    {isYes ? 'Yes' : 'No'}
+                                                                                                </span>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    );
+                                                                                })}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
 
 
                                                             {/* DATA PRIVACY & CERTIFICATION */}

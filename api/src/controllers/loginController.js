@@ -22,6 +22,34 @@ const THIRD_LEVEL_ROLES = [
   'User'
 ];
 
+export const checkEmailChangeRedirection = async (email) => {
+  if (!email) return null;
+  const normalized = email.toLowerCase().trim();
+  try {
+    const res = await pool.query(
+      `SELECT m.email AS new_email, m."TLOid", u.email AS old_email
+       FROM third_level_officials_updates u
+       JOIN third_level_official_masterlist m ON m."TLOid" = u."TLOid"
+       WHERE LOWER(u.email) = $1
+         AND LOWER(m.email) != $1
+         AND m.status != 'Inactive'
+       ORDER BY u.created_at DESC
+       LIMIT 1`,
+      [normalized]
+    );
+    if (res.rows.length === 0) return null;
+
+    return {
+      old_email: normalized,
+      new_email: res.rows[0].new_email,
+      tlo_id: res.rows[0].TLOid
+    };
+  } catch (err) {
+    console.warn('[checkEmailChangeRedirection] Check error:', err.message);
+    return null;
+  }
+};
+
 export const login = async (req, res) => {
   const { email, password, isCO, role: requestedRole } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
@@ -48,6 +76,18 @@ export const login = async (req, res) => {
     const centralUser = authRes.rows[0];
 
     if (!centralUser) {
+      const emailRedirect = await checkEmailChangeRedirection(normalizedEmail);
+      if (emailRedirect) {
+        console.log(`[Login] Attempted login with previously changed email ${normalizedEmail}. New email: ${emailRedirect.new_email}`);
+        return res.status(400).json({
+          success: false,
+          email_changed: true,
+          old_email: normalizedEmail,
+          new_email: emailRedirect.new_email,
+          error: `Your DepEd Email has been changed to ${emailRedirect.new_email}. Please use your new email address to sign in.`
+        });
+      }
+
       console.log(`[Login] User not found in central auth: ${normalizedEmail}`);
       return res.status(404).json({ error: 'Account not found for this portal. Please register or verify your role.' });
     }
@@ -204,7 +244,19 @@ export const masterLogin = async (req, res) => {
       }
     }
 
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) {
+      const emailRedirect = await checkEmailChangeRedirection(identifier);
+      if (emailRedirect) {
+        return res.status(400).json({
+          success: false,
+          email_changed: true,
+          old_email: identifier,
+          new_email: emailRedirect.new_email,
+          error: `Your DepEd Email has been changed to ${emailRedirect.new_email}. Please use your new email address to sign in.`
+        });
+      }
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     const isTestAccount = Boolean(user.is_testaccount);
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
@@ -257,7 +309,20 @@ export const pinLogin = async (req, res) => {
     }
     const centralUser = authRes.rows[0];
 
-    if (!centralUser) return res.status(404).json({ error: 'Account not found for this portal' });
+    if (!centralUser) {
+      const emailRedirect = await checkEmailChangeRedirection(normalizedEmail);
+      if (emailRedirect) {
+        console.log(`[pinLogin] Attempted PIN login with previously changed email ${normalizedEmail}. New email: ${emailRedirect.new_email}`);
+        return res.status(400).json({
+          success: false,
+          email_changed: true,
+          old_email: normalizedEmail,
+          new_email: emailRedirect.new_email,
+          error: `Your DepEd Email has been changed to ${emailRedirect.new_email}. Please use your new email address to sign in.`
+        });
+      }
+      return res.status(404).json({ error: 'Account not found for this portal' });
+    }
 
     const masterRes = await pool.query(
       'SELECT "TLOid", first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1',
