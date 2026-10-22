@@ -46,8 +46,21 @@ const Register = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const [masterlistCheckStatus, setMasterlistCheckStatus] = useState('idle'); // 'idle' | 'checking' | 'valid' | 'invalid' | 'has_existing_email'
-    const [existingMasterlistEmail, setExistingMasterlistEmail] = useState('');
+    const [masterlistCheckStatus, setMasterlistCheckStatus] = useState('idle'); // 'idle' | 'checking' | 'valid' | 'invalid' | 'invalid_domain' | 'already_registered'
+
+    // OTP email verification state
+    const [otpCode, setOtpCode] = useState('');
+    const [otpSending, setOtpSending] = useState(false);
+    const [otpVerifying, setOtpVerifying] = useState(false);
+    const [otpError, setOtpError] = useState('');
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const [verifiedEmail, setVerifiedEmail] = useState(''); // email that passed OTP verification
+
+    useEffect(() => {
+        if (resendCooldown <= 0) return;
+        const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+        return () => clearTimeout(t);
+    }, [resendCooldown]);
 
     // Debounced masterlist check for non-CO accounts
     useEffect(() => {
@@ -58,52 +71,29 @@ const Register = () => {
 
         if (!email || !isValidFormat) {
             setMasterlistCheckStatus('idle');
-            setExistingMasterlistEmail('');
             return;
         }
 
         if (!email.toLowerCase().endsWith('@deped.gov.ph')) {
             setMasterlistCheckStatus('invalid_domain');
-            setExistingMasterlistEmail('');
             return;
         }
 
         const checkMasterlist = async () => {
             setMasterlistCheckStatus('checking');
             try {
-                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}&isCO=${isCO}&firstName=${encodeURIComponent(formData.first_name)}&lastName=${encodeURIComponent(formData.last_name)}`));
+                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}&isCO=${isCO}`));
                 if (res.ok) {
                     const data = await res.json();
                     if (data.alreadyRegistered) {
                         setMasterlistCheckStatus('already_registered');
-                        setExistingMasterlistEmail('');
-                    } else if (data.hasExistingMasterlistEmail) {
-                        setMasterlistCheckStatus('has_existing_email');
-                        setExistingMasterlistEmail(data.existingEmail);
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Existing Email in Masterlist',
-                            html: `You already have an existing official email in the Masterlist:<br><br><span style="font-size: 1.15em; font-weight: 800; color: #08315F;">${data.existingEmail}</span><br><br>Please use this email instead.`,
-                            confirmButtonColor: '#08315F',
-                            confirmButtonText: 'Use This Email',
-                            showCancelButton: true,
-                            cancelButtonText: 'Modify Manually',
-                            allowOutsideClick: false
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                setFormData(prev => ({ ...prev, email: data.existingEmail }));
-                            }
-                        });
                     } else if (data.inMasterlist) {
                         setMasterlistCheckStatus('valid');
-                        setExistingMasterlistEmail('');
                     } else {
                         setMasterlistCheckStatus('invalid');
-                        setExistingMasterlistEmail('');
                     }
                 } else {
                     setMasterlistCheckStatus('idle');
-                    setExistingMasterlistEmail('');
                 }
             } catch (err) {
                 console.error("Masterlist check failed", err);
@@ -113,7 +103,7 @@ const Register = () => {
 
         const timer = setTimeout(checkMasterlist, 500);
         return () => clearTimeout(timer);
-    }, [formData.email, formData.first_name, formData.last_name, isCO, currentStep]);
+    }, [formData.email, isCO, currentStep]);
 
     useEffect(() => {
         if (!isCO) {
@@ -127,6 +117,66 @@ const Register = () => {
     };
 
 
+    const normalizedEmail = formData.email.toLowerCase().trim();
+
+    // Sends a 6-digit code to the entered email. Returns true if a valid code is (or was recently) sent.
+    const sendOtp = async () => {
+        setOtpSending(true);
+        setOtpError('');
+        try {
+            const res = await fetch(apiUrl('/api/auth/send-otp'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: normalizedEmail })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                setOtpCode('');
+                setResendCooldown(60);
+                return true;
+            }
+            if (res.status === 429) {
+                // A code was already sent moments ago and is still valid
+                setResendCooldown(data.retryAfter || 60);
+                return true;
+            }
+            Swal.fire('Error', data.error || 'Failed to send verification code.', 'error');
+            return false;
+        } catch (err) {
+            Swal.fire('Error', 'Unable to send verification code. Please try again.', 'error');
+            return false;
+        } finally {
+            setOtpSending(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!/^\d{6}$/.test(otpCode)) {
+            setOtpError('Please enter the 6-digit code.');
+            return;
+        }
+        setOtpVerifying(true);
+        setOtpError('');
+        try {
+            const res = await fetch(apiUrl('/api/auth/verify-otp'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: normalizedEmail, code: otpCode })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                setVerifiedEmail(normalizedEmail);
+                setCurrentStep(4);
+            } else {
+                setOtpError(data.error || 'Invalid or expired code');
+            }
+        } catch (err) {
+            setOtpError('Unable to verify code. Please try again.');
+        } finally {
+            setOtpVerifying(false);
+        }
+    };
+
     const handleFinalStep = async () => {
         if (!formData.email.toLowerCase().endsWith('@deped.gov.ph')) {
             Swal.fire('Notice', 'Only @deped.gov.ph emails are allowed for registration.', 'warning');
@@ -136,28 +186,17 @@ const Register = () => {
             Swal.fire('Notice', 'This email is already registered for this portal. Please login instead.', 'warning');
             return;
         }
-        if (masterlistCheckStatus === 'has_existing_email' || existingMasterlistEmail) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Existing Email in Masterlist',
-                html: `You already have an existing official email in the Masterlist:<br><br><span style="font-size: 1.15em; font-weight: 800; color: #08315F;">${existingMasterlistEmail}</span><br><br>Please use this email instead.`,
-                confirmButtonColor: '#08315F',
-                confirmButtonText: 'Use This Email',
-                showCancelButton: true,
-                cancelButtonText: 'Modify Manually',
-                allowOutsideClick: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    setFormData(prev => ({ ...prev, email: existingMasterlistEmail }));
-                }
-            });
-            return;
-        }
         if (isCO && formData.auth_code !== 'nVxCpLrTqWmK') {
             Swal.fire('Error', 'Invalid Authorization Code. Please ensure you have the correct code to register as an Administrator.', 'error');
             return;
         }
-        setCurrentStep(3);
+        // Email already verified and unchanged — skip straight to security step
+        if (verifiedEmail && verifiedEmail === normalizedEmail) {
+            setCurrentStep(4);
+            return;
+        }
+        const sent = await sendOtp();
+        if (sent) setCurrentStep(3);
     };
 
     const handleSubmit = async (e) => {
@@ -177,6 +216,7 @@ const Register = () => {
                     contactNumber: formData.contactNumber,
                     role: formData.role,
                     passcode: formData.passcode,
+                    otpCode,
                     isCO
                 })
             });
@@ -190,6 +230,12 @@ const Register = () => {
                     : '/official-profiling';
 
                 setTimeout(() => navigate(redirectPath), 2000);
+            } else if (data.code === 'OTP_INVALID') {
+                // Code expired or was invalidated before submitting — re-verify
+                setVerifiedEmail('');
+                setOtpCode('');
+                setOtpError(`${data.error}. Please request a new code.`.replace('..', '.'));
+                setCurrentStep(3);
             } else {
                 setError(data.error || "Registration failed");
             }
@@ -235,12 +281,12 @@ const Register = () => {
                                 </h1>
                                 <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-3 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-[#075985] animate-pulse"></span>
-                                    Step {currentStep} of 3 • {currentStep === 1 ? 'Identity' : currentStep === 2 ? 'Verify' : 'Security'}
+                                    Step {currentStep} of 4 • {currentStep === 1 ? 'Identity' : currentStep === 2 ? 'Contact' : currentStep === 3 ? 'Verify Email' : 'Security'}
                                 </p>
                             </div>
                             <div className="flex gap-2">
-                                {[1, 2, 3].map(s => (
-                                    <div key={s} className={`h-1.5 w-12 rounded-full transition-all duration-500 ${currentStep >= s ? 'bg-[#08315F] w-16 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-slate-200'}`}></div>
+                                {[1, 2, 3, 4].map(s => (
+                                    <div key={s} className={`h-1.5 w-8 rounded-full transition-all duration-500 ${currentStep >= s ? 'bg-[#08315F] w-12 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-slate-200'}`}></div>
                                 ))}
                             </div>
                         </div>
@@ -302,15 +348,10 @@ const Register = () => {
                                             value={formData.email} 
                                             onChange={(e) => {
                                                 setFormData({ ...formData, email: e.target.value });
-                                                if (masterlistCheckStatus === 'has_existing_email') {
-                                                    setMasterlistCheckStatus('idle');
-                                                    setExistingMasterlistEmail('');
-                                                }
                                             }} 
                                             placeholder="example@gmail.com" 
                                             className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${
                                                 masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : 
-                                                masterlistCheckStatus === 'has_existing_email' ? 'border-amber-500 focus:border-amber-600' :
                                                 masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 
                                                 'border-slate-100 focus:border-[#08315F]'
                                             }`} 
@@ -327,23 +368,6 @@ const Register = () => {
                                             </div>
                                         )}
                                     </div>
-                                    {!isCO && masterlistCheckStatus === 'has_existing_email' && (
-                                        <div className="mt-2 p-3.5 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5">
-                                            <FiShield className="text-amber-600 shrink-0 mt-0.5" size={16} />
-                                            <div className="text-[11px] font-bold text-amber-900 leading-relaxed">
-                                                You already have an existing official email in the Masterlist: <span className="font-black text-[#08315F] underline">{existingMasterlistEmail}</span>.
-                                                <div className="mt-2 flex items-center gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData(prev => ({ ...prev, email: existingMasterlistEmail }))}
-                                                        className="bg-[#08315F] text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-900 active:scale-95 transition-all shadow-sm"
-                                                    >
-                                                        Use {existingMasterlistEmail}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
                                     {!isCO && masterlistCheckStatus === 'invalid' && (
                                         <div className="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2">
                                             <FiShield className="text-amber-500 shrink-0 mt-0.5" />
@@ -388,13 +412,75 @@ const Register = () => {
 
                                 <div className="flex gap-4 pt-4">
                                     <button onClick={() => setCurrentStep(1)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
-                                    <button onClick={handleFinalStep} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Final Step</button>
+                                    <button onClick={handleFinalStep} disabled={otpSending} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest disabled:opacity-60 disabled:cursor-not-allowed">{otpSending ? 'Sending Code...' : 'Verify Email'}</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* STEP 3: SECURITY */}
+                        {/* STEP 3: EMAIL OTP VERIFICATION */}
                         {currentStep === 3 && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                                <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                                    <FiMail size={18} className="text-[#08315F] shrink-0 mt-0.5" />
+                                    <p className="text-xs font-bold text-[#08315F] leading-relaxed">
+                                        We sent a 6-digit verification code to <span className="font-black underline break-all">{normalizedEmail}</span>. Enter it below to confirm that this email belongs to you. The code expires in 10 minutes.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="register-otp-input" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Verification Code</label>
+                                    <div className="relative group">
+                                        <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
+                                        <input
+                                            id="register-otp-input"
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoComplete="one-time-code"
+                                            maxLength={6}
+                                            autoFocus
+                                            value={otpCode}
+                                            onChange={(e) => {
+                                                setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                                                setOtpError('');
+                                            }}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') handleVerifyOtp(); }}
+                                            placeholder="000000"
+                                            className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-4 text-xl text-center tracking-[0.5em] text-slate-800 font-black focus:outline-none transition-all shadow-sm ${otpError ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`}
+                                        />
+                                    </div>
+                                    {otpError && (
+                                        <p className="text-[10px] font-bold text-red-500 mt-1 ml-1">{otpError}</p>
+                                    )}
+                                </div>
+
+                                <div className="text-center">
+                                    <button
+                                        id="register-otp-resend"
+                                        type="button"
+                                        onClick={sendOtp}
+                                        disabled={resendCooldown > 0 || otpSending}
+                                        className="text-[10px] font-black uppercase tracking-widest text-[#075985] hover:text-blue-800 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        {otpSending ? 'Sending...' : resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Didn't get the code? Resend"}
+                                    </button>
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <button onClick={() => { setOtpError(''); setCurrentStep(2); }} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Change Email</button>
+                                    <button
+                                        id="register-otp-verify"
+                                        onClick={handleVerifyOtp}
+                                        disabled={otpVerifying || otpCode.length !== 6}
+                                        className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        {otpVerifying ? 'Verifying...' : 'Confirm Code'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 4: SECURITY */}
+                        {currentStep === 4 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
@@ -431,6 +517,10 @@ const Register = () => {
                                     </div>
                                 </div>
                                 {error && <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold">{error}</div>}
+                                <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                                    <FiCheckCircle className="text-emerald-500 shrink-0" size={14} />
+                                    <p className="text-[10px] font-bold text-emerald-700 break-all">Email verified: {verifiedEmail}</p>
+                                </div>
                                 <div className="flex gap-4">
                                     <button onClick={() => setCurrentStep(2)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
                                     <button onClick={handleSubmit} disabled={loading} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 text-xs uppercase italic tracking-widest">

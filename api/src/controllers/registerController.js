@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import pool from '../config/db.js';
@@ -35,20 +36,74 @@ const sendOTPEmail = async (email, code) => {
   return transporter.sendMail(mailOptions);
 };
 
+// ── OTP email verification helpers ──
+// Codes live in `verification_codes` (email PK, code, expires_at) and are valid for 10 minutes.
+// Failed attempts are tracked in memory; after OTP_MAX_ATTEMPTS the code is invalidated
+// (expires_at = NOW()) so a new one must be requested. Codes are never deleted, only expired.
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_RESEND_COOLDOWN_SECONDS = 60;
+const otpFailedAttempts = new Map();
+
+const checkOtpCode = async (cleanEmail, code) => {
+  const cleanCode = String(code || '').trim();
+  if (!/^\d{6}$/.test(cleanCode)) {
+    return { valid: false, error: 'Invalid or expired code' };
+  }
+
+  const result = await pool.query(
+    `SELECT 1 FROM verification_codes WHERE email = $1 AND code = $2 AND expires_at > NOW()`,
+    [cleanEmail, cleanCode]
+  );
+
+  if (result.rows.length === 0) {
+    const attempts = (otpFailedAttempts.get(cleanEmail) || 0) + 1;
+    if (attempts >= OTP_MAX_ATTEMPTS) {
+      otpFailedAttempts.delete(cleanEmail);
+      await pool.query(`UPDATE verification_codes SET expires_at = NOW() WHERE email = $1`, [cleanEmail]);
+      return { valid: false, error: 'Too many incorrect attempts. Please request a new code.' };
+    }
+    otpFailedAttempts.set(cleanEmail, attempts);
+    return { valid: false, error: 'Invalid or expired code' };
+  }
+
+  otpFailedAttempts.delete(cleanEmail);
+  return { valid: true };
+};
+
 export const sendOtp = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
 
+  const cleanEmail = String(email).toLowerCase().trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
   try {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Resend cooldown: a code expiring more than (10 min - cooldown) from now was sent within the cooldown window
+    const recent = await pool.query(
+      `SELECT CEIL(EXTRACT(EPOCH FROM (expires_at - (NOW() + INTERVAL '10 minutes' - make_interval(secs => $2))))) AS wait
+       FROM verification_codes
+       WHERE email = $1 AND expires_at > NOW() + INTERVAL '10 minutes' - make_interval(secs => $2)`,
+      [cleanEmail, OTP_RESEND_COOLDOWN_SECONDS]
+    );
+    if (recent.rows.length > 0) {
+      const retryAfter = Math.max(1, parseInt(recent.rows[0].wait, 10) || OTP_RESEND_COOLDOWN_SECONDS);
+      return res.status(429).json({ error: `Please wait ${retryAfter} seconds before requesting a new code.`, retryAfter });
+    }
+
+    const code = crypto.randomInt(100000, 1000000).toString();
     await pool.query(
       `INSERT INTO verification_codes (email, code, expires_at)
        VALUES ($1, $2, NOW() + INTERVAL '10 minutes')
        ON CONFLICT (email) DO UPDATE SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at`,
-      [email.toLowerCase().trim(), code]
+      [cleanEmail, code]
     );
+    otpFailedAttempts.delete(cleanEmail);
 
-    console.log(`[Development Fallback] OTP for ${email} is: ${code}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[Development Fallback] OTP for ${cleanEmail} is: ${code}`);
+    }
     
     // Respond immediately, don't wait for email to send
     res.json({ success: true, message: 'OTP sent successfully' });
@@ -84,30 +139,18 @@ export const sendOtp = async (req, res) => {
 
 export const verifyOtp = async (req, res) => {
   const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ error: 'Email and code are required' });
 
-  const cleanEmail = email.toLowerCase().trim();
-
-  console.log(cleanEmail, code);
+  const cleanEmail = String(email).toLowerCase().trim();
 
   try {
-    // Check if OTP exists and is not expired
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM verification_codes
-      WHERE email = $1
-      AND code = $2
-      AND expires_at > NOW()
-      `,
-      [cleanEmail, code]
-    );
-
-    console.log(result.rows);
+    // Check if OTP exists and is not expired (with brute-force attempt limit)
+    const otpCheck = await checkOtpCode(cleanEmail, code);
 
     // Invalid or expired OTP
-    if (result.rows.length === 0) {
+    if (!otpCheck.valid) {
       return res.status(400).json({
-        error: 'Invalid or expired code',
+        error: otpCheck.error,
       });
     }
 
@@ -174,7 +217,7 @@ export const checkEmail = async (req, res) => {
 };
 
 export const checkMasterlistEmail = async (req, res) => {
-  const { email, isCO, role, firstName, lastName } = req.query;
+  const { email, isCO, role } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
     const normalizedEmail = email.toLowerCase().trim();
@@ -189,58 +232,9 @@ export const checkMasterlistEmail = async (req, res) => {
       return res.json({ alreadyRegistered: true });
     }
 
-    // Check for existing base email in Masterlist (e.g. arlene.bermejo001@deped.gov.ph -> arlene.bermejo@deped.gov.ph)
-    let existingOfficial = null;
-    const numSuffixMatch = normalizedEmail.match(/^([^@]+?)(\d+)@deped\.gov\.ph$/);
-    if (numSuffixMatch) {
-      const baseEmail = `${numSuffixMatch[1]}@deped.gov.ph`;
-      const baseCheck = await pool.query(
-        `SELECT "TLOid", first_name, last_name, email, position_title, status 
-         FROM third_level_official_masterlist 
-         WHERE LOWER(email) = $1 AND (status IS NULL OR status != 'Rejected')
-         ORDER BY (status = 'Active') DESC, created_at DESC 
-         LIMIT 1`,
-        [baseEmail]
-      );
-      if (baseCheck.rows.length > 0) {
-        existingOfficial = baseCheck.rows[0];
-      }
-    }
-
     const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
-    if (!existingOfficial && check.rows.length > 0) {
+    if (check.rows.length > 0) {
       return res.json({ alreadyRegistered: false, inMasterlist: true, official: check.rows[0] });
-    }
-
-    // Secondary check: match by First Name & Last Name in masterlist if provided
-    if (!existingOfficial && firstName && lastName) {
-      const cleanFirst = String(firstName).trim().toUpperCase();
-      const cleanLast = String(lastName).trim().toUpperCase();
-      const nameCheck = await pool.query(
-        `SELECT "TLOid", first_name, last_name, email, position_title, status 
-         FROM third_level_official_masterlist 
-         WHERE UPPER(TRIM(last_name)) = $1 
-           AND UPPER(TRIM(first_name)) = $2 
-           AND email IS NOT NULL AND TRIM(email) != ''
-           AND LOWER(email) != $3
-           AND (status IS NULL OR status != 'Rejected')
-         ORDER BY (status = 'Active') DESC, created_at DESC 
-         LIMIT 1`,
-        [cleanLast, cleanFirst, normalizedEmail]
-      );
-      if (nameCheck.rows.length > 0) {
-        existingOfficial = nameCheck.rows[0];
-      }
-    }
-
-    if (existingOfficial) {
-      return res.json({
-        alreadyRegistered: false,
-        inMasterlist: false,
-        hasExistingMasterlistEmail: true,
-        existingEmail: existingOfficial.email,
-        official: existingOfficial
-      });
     }
 
     return res.json({ alreadyRegistered: false, inMasterlist: false });
@@ -250,7 +244,7 @@ export const checkMasterlistEmail = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division, passcode, isCO } = req.body;
+  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division, passcode, isCO, otpCode } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and Password are required' });
@@ -275,6 +269,13 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ error: 'Central Office Admin accounts must use an official @deped.gov.ph email' });
     }
 
+    // Email ownership verification: a valid, unexpired OTP sent to this exact email is required.
+    // Checked before BEGIN so a failed-attempt invalidation is not rolled back.
+    const otpCheck = await checkOtpCode(normalizedEmail, otpCode);
+    if (!otpCheck.valid) {
+      return res.status(400).json({ error: otpCheck.error, code: 'OTP_INVALID' });
+    }
+
     await client.query('BEGIN');
 
     const isAdminRole = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(assignedRole);
@@ -288,50 +289,6 @@ export const registerUser = async (req, res) => {
       await client.query('ROLLBACK');
       client.release();
       return res.status(400).json({ error: 'This email is already registered in InsightEd for this portal. Please Login instead.' });
-    }
-
-    // Check if registering under a variant email while an existing base email exists in Masterlist
-    const numSuffixMatch = normalizedEmail.match(/^([^@]+?)(\d+)@deped\.gov\.ph$/);
-    let existingMlOfficial = null;
-    if (numSuffixMatch) {
-      const baseEmail = `${numSuffixMatch[1]}@deped.gov.ph`;
-      const baseCheck = await client.query(
-        `SELECT "TLOid", first_name, last_name, email, position_title, status 
-         FROM third_level_official_masterlist 
-         WHERE LOWER(email) = $1 AND (status IS NULL OR status != 'Rejected')
-         ORDER BY (status = 'Active') DESC, created_at DESC 
-         LIMIT 1`,
-        [baseEmail]
-      );
-      if (baseCheck.rows.length > 0) {
-        existingMlOfficial = baseCheck.rows[0];
-      }
-    }
-
-    if (!existingMlOfficial && firstName && lastName) {
-      const nameCheck = await client.query(
-        `SELECT "TLOid", first_name, last_name, email, position_title, status 
-         FROM third_level_official_masterlist 
-         WHERE UPPER(TRIM(last_name)) = $1 
-           AND UPPER(TRIM(first_name)) = $2 
-           AND email IS NOT NULL AND TRIM(email) != ''
-           AND LOWER(email) != $3
-           AND (status IS NULL OR status != 'Rejected')
-         ORDER BY (status = 'Active') DESC, created_at DESC 
-         LIMIT 1`,
-        [lastName, firstName, normalizedEmail]
-      );
-      if (nameCheck.rows.length > 0) {
-        existingMlOfficial = nameCheck.rows[0];
-      }
-    }
-
-    if (existingMlOfficial) {
-      await client.query('ROLLBACK');
-      client.release();
-      return res.status(400).json({
-        error: `You already have an existing email in the Masterlist (${existingMlOfficial.email}). Please use ${existingMlOfficial.email} to register or login.`
-      });
     }
 
     const isTestAccount = Boolean(req.body.is_testaccount);
@@ -389,6 +346,9 @@ export const registerUser = async (req, res) => {
         [uid, firstName, lastName, normalizedEmail, contactNumber, isTestAccount]
       );
     }
+
+    // Consume the OTP (single-use) as part of the same transaction
+    await client.query(`UPDATE verification_codes SET expires_at = NOW() WHERE email = $1`, [normalizedEmail]);
 
     await client.query('COMMIT');
 

@@ -695,7 +695,7 @@ export const checkProfilingEmail = async (req, res) => {
           isCollision: true,
           reason: 'belongs_to_other',
           otherOfficial: match,
-          message: `Email already exists and belongs to applicant ${match.first_name || ''} ${match.last_name || ''} (${match.TLOid || match.application_id}).`
+          message: `The email already belongs to the other applicant.`
         });
       }
     }
@@ -911,7 +911,7 @@ export const updateProfile = async (req, res) => {
       const currentOfficialRes = await client.query(
         isMasterlist
           ? `SELECT "TLOid", email, status FROM third_level_official_masterlist WHERE "TLOid" = $1`
-          : `SELECT app_TLOid AS "TLOid", email, application_status AS status FROM third_level_officials_profiling_application WHERE application_id = $1 OR app_TLOid = $1`,
+          : `SELECT app_TLOid AS "TLOid", email, application_status AS status FROM third_level_officials_profiling_application WHERE application_id::text = $1 OR app_TLOid = $1`,
         [TLOid]
       );
       if (currentOfficialRes.rows.length > 0) {
@@ -931,12 +931,12 @@ export const updateProfile = async (req, res) => {
           const collisionCheck = await client.query(
             isMasterlist
               ? `SELECT "TLOid", first_name, last_name FROM third_level_official_masterlist WHERE LOWER(email) = $1 AND "TLOid" != $2 AND is_testaccount = $3`
-              : `SELECT app_TLOid AS "TLOid", first_name, last_name FROM third_level_officials_profiling_application WHERE LOWER(email) = $1 AND application_id != $2 AND app_TLOid != $2 AND is_testaccount = $3`,
+              : `SELECT app_TLOid AS "TLOid", first_name, last_name FROM third_level_officials_profiling_application WHERE LOWER(email) = $1 AND application_id::text != $2 AND app_TLOid != $2 AND is_testaccount = $3`,
             [normalizedEmail, TLOid, isTest]
           );
           if (collisionCheck.rows.length > 0) {
             const other = collisionCheck.rows[0];
-            throw new Error(`Email already belongs to official ${other.first_name || ''} ${other.last_name || ''} (${other.TLOid}).`);
+            throw new Error(isMasterlist ? `Email already belongs to official ${other.first_name || ''} ${other.last_name || ''} (${other.TLOid}).` : `The email already belongs to the other applicant.`);
           }
 
           const userCollisionCheck = await client.query(

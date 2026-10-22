@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 2026-10-22 — Registration: Removed "Existing Email in Masterlist" Suggestion & Added Mandatory Email OTP Verification
+
+### Removed (explicitly requested by user)
+- **"Existing Email in Masterlist" popup / banner** in [Register.jsx](file:///e:/christop/staging/ui/src/pages/Register.jsx) ("Use This Email" / "Modify Manually"), plus `existingMasterlistEmail` state and the `has_existing_email` status.
+- **Backend detection** in [registerController.js](file:///e:/christop/staging/api/src/controllers/registerController.js):
+  - `checkMasterlistEmail` no longer does the numeric-suffix base-email lookup or first/last-name lookup, and no longer returns `hasExistingMasterlistEmail` / `existingEmail`. It still returns `alreadyRegistered` and `inMasterlist` (still used by `RegisterPersonnelModal.jsx`).
+  - `registerUser` no longer blocks registration with "You already have an existing email in the Masterlist (...)".
+
+### Added — Email OTP Verification (core registration rule)
+- **New routes** ([registerRoutes.js](file:///e:/christop/staging/api/src/routes/registerRoutes.js)): `POST /api/auth/send-otp`, `POST /api/auth/verify-otp` (these wire up the existing `sendOtp` / `verifyOtp` handlers).
+- **`registerUser` now REQUIRES `otpCode`**: a valid, unexpired code in `verification_codes` for the exact email being registered. If it fails, the response is `400 { code: 'OTP_INVALID' }`. On success the code is used up inside the registration transaction (`expires_at = NOW()`).
+- **Hardening**: codes are generated with `crypto.randomInt`. Resend has a 60s cooldown (`429` + `retryAfter`). After 5 wrong attempts the code is invalidated (in-memory counter). The plaintext OTP console log only runs when `NODE_ENV !== 'production'`.
+- **Codes are never deleted.** They are only expired (`UPDATE ... SET expires_at = NOW()`), per the AGENTS.md no-delete rule.
+- **No schema change**: uses the existing `verification_codes (email PK, code, expires_at)` table.
+- **UI flow** is now 4 steps: Identity → Contact → **Verify Email (OTP)** → Security. If the code expires before submit, the user is sent back to the OTP step.
+
+> [!IMPORTANT]
+> Do not remove the OTP check from `registerUser`. If you only check on the frontend, anyone can register an email they don't own by calling `/register-user` directly.
+
+---
+
 ## 2026-10-20 — Bugfix: Database Backup Source Alignment (`tlo_database`) & Complete Table Export (`export-backup.js`)
 
 ### Database Backup System (`export-backup.js`, `.env`, `backup.bat`, `package.json`)
@@ -307,6 +328,19 @@ Added `delete_flg VARCHAR(3) NOT NULL DEFAULT 'No' CHECK (delete_flg IN ('Yes', 
 
 ### Frontend (OfficialProfiling.jsx)
 - `individual_accomplishments` — now loaded as `{ id, description, award_year }` objects (preserving DB row id)
+- Render logic updated to handle both legacy plain strings and new `{ id, description }` objects
+- id is preserved through edits so save round-trips use `UPDATE`, not `INSERT` + soft-delete
+
+---
+
+## Previous Changes (2026-08-07 earlier sessions)
+- Fixed `getByEmail` to call `fetchAllChildRecords` for both masterlist and staging sources
+- Removed "Record Not Found" blocking modal; auto-initializes profile
+- Added `formatDateStr` helper for safe date parsing
+- Fixed nested `<button>` hydration error in `NexusGate.jsx`
+- Fixed React unique `key` props across all mapped lists in `OfficialProfiling.jsx`
+- Fixed Documents tab checkmark (requires both PDS + Service Records, excludes `photo_binary_id`)
+- Fixed Education tab checkmark (recognizes any degree data, not just all 3 fields)
 - Render logic updated to handle both legacy plain strings and new `{ id, description }` objects
 - id is preserved through edits so save round-trips use `UPDATE`, not `INSERT` + soft-delete
 

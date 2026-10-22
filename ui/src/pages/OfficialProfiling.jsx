@@ -4675,12 +4675,6 @@ const OfficialProfiling = () => {
                                                                                     </div>
                                                                                 )}
                                                                             </div>
-                                                                            {isForApproval && (
-                                                                                <p className="text-[11px] font-bold text-amber-600 mt-1 flex items-center gap-1">
-                                                                                    <FiAlertTriangle size={13} className="shrink-0" />
-                                                                                    DepEd Email cannot be edited while status is For Approval.
-                                                                                </p>
-                                                                            )}
                                                                             {!isForApproval && isEditing && (
                                                                                 <>
                                                                                     {emailValidation.status === 'valid' && (profile.email || '').trim().toLowerCase() !== originalLoadedEmail && (
