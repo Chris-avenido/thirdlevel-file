@@ -2789,27 +2789,28 @@ const OfficialsRegistry = () => {
                                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                        className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border-2 border-slate-200 overflow-hidden flex flex-col max-h-[90vh] my-auto"
+                                        className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-5xl lg:max-w-6xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] my-auto"
                                     >
                                         {/* Modal Header */}
-                                        <div className="p-6 md:p-8 bg-slate-50 border-b-2 border-slate-200 flex justify-between items-start">
+                                        <div className="p-6 md:p-8 bg-white border-b border-slate-100 flex justify-between items-start gap-4">
                                             <div>
-                                                <div className="flex items-center gap-2 text-amber-600 text-[13.5px] font-black uppercase tracking-widest mb-1">
-                                                    <FiLink size={16} />
+                                                <div className="flex items-center gap-2 text-amber-500 text-[12px] sm:text-[13px] font-black uppercase tracking-wider mb-1">
+                                                    <FiLink size={16} className="shrink-0 text-amber-500" />
                                                     <span>Identity Reconciliation Verification</span>
                                                 </div>
-                                                <h2 className="text-[28px] md:text-[34px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight leading-tight">
+                                                <h2 className="text-[22px] sm:text-[28px] md:text-[32px] font-['Plus_Jakarta_Sans',sans-serif] font-black text-[#08315F] uppercase tracking-tight leading-tight">
                                                     Reconcile & Link Registration Identity
                                                 </h2>
-                                                <p className="text-slate-500 font-medium text-[15px] mt-1">
+                                                <p className="text-slate-500 font-medium text-[13.5px] sm:text-[15px] mt-1 leading-relaxed">
                                                     Please review both records carefully to confirm they represent the same real person before linking.
                                                 </p>
                                             </div>
                                             <button
                                                 onClick={() => setReconcileModalOpen(false)}
-                                                className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all border border-slate-200"
+                                                aria-label="Close modal"
+                                                className="p-2 sm:p-2.5 rounded-xl bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all border border-slate-200/90 shadow-xs shrink-0"
                                             >
-                                                <FiX size={20} />
+                                                <FiX size={20} className="text-[#0284c7]/75 hover:text-[#0284c7]" />
                                             </button>
                                         </div>
 
@@ -2847,148 +2848,196 @@ const OfficialsRegistry = () => {
                                             )}
 
                                             {/* Side-by-Side Comparison Cards */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6 items-stretch">
                                                 {/* Registration Record Card */}
-                                                <div className="p-5 bg-slate-50 rounded-2xl border-2 border-slate-200 space-y-3">
-                                                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-                                                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Registration Record (Pending)</span>
-                                                        <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-black uppercase tracking-wider">For Approval</span>
-                                                    </div>
-                                                    <div className="space-y-2 text-[14px]">
-                                                        <div>
-                                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Full Name</span>
-                                                            <span className="font-black text-[#08315F] text-[16px]">{reconcileTargetItem.first_name} {reconcileTargetItem.last_name || ''}</span>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Registration Email</span>
-                                                            <span className="font-mono font-semibold text-slate-800 break-all">{reconcileTargetItem.email || '—'}</span>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-2">
+                                                <div className="p-6 sm:p-7 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-4">
+                                                    <div>
+                                                        {/* Header: Title and Status Badge */}
+                                                        <div className="flex items-start justify-between gap-3 mb-4">
                                                             <div>
-                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">TLOid</span>
-                                                                <span className="font-mono font-bold text-[#075985]">{reconcileTargetItem.TLOid}</span>
+                                                                <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest block leading-tight">
+                                                                    REGISTRATION RECORD
+                                                                </span>
+                                                                <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest block leading-tight">
+                                                                    (PENDING)
+                                                                </span>
                                                             </div>
-                                                            <div>
-                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Registration Date</span>
-                                                                <span className="font-medium text-slate-700">{reconcileTargetItem.created_at ? new Date(reconcileTargetItem.created_at).toLocaleDateString() : '—'}</span>
-                                                            </div>
+                                                            <span className="px-3.5 py-1 rounded-full bg-[#fef3c7] text-[#b45309] text-[11px] font-black uppercase tracking-wider whitespace-nowrap shrink-0">
+                                                                FOR APPROVAL
+                                                            </span>
                                                         </div>
-                                                        <div>
-                                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Position Applied / Title</span>
-                                                            <span className="font-medium text-slate-700">{reconcileTargetItem.position_title || '(Applicant)'}</span>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-2">
+
+                                                        {/* Fields Container */}
+                                                        <div className="space-y-3.5 text-[14px]">
                                                             <div>
-                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Office / Division</span>
-                                                                <span className="font-medium text-slate-700">{[reconcileTargetItem.office, reconcileTargetItem.division].filter(Boolean).join(' / ') || '(Not Set)'}</span>
+                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">FULL NAME</span>
+                                                                <span className="font-black text-[#08315F] text-[17px] sm:text-[18px] uppercase tracking-tight block">
+                                                                    {reconcileTargetItem.first_name} {reconcileTargetItem.last_name || ''}
+                                                                </span>
                                                             </div>
+
                                                             <div>
-                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Region</span>
-                                                                <span className="font-medium text-slate-700">{reconcileTargetItem.region || reconcileTargetItem.strand || '(Not Set)'}</span>
+                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">REGISTRATION EMAIL</span>
+                                                                <span className="font-medium text-slate-800 break-all text-[14px] sm:text-[14.5px] block">
+                                                                    {reconcileTargetItem.email || '—'}
+                                                                </span>
                                                             </div>
-                                                        </div>
-                                                        {reconcileTargetItem.profile_completion != null && (() => {
-                                                            const pct = Math.min(100, Math.max(0, Math.round(reconcileTargetItem.profile_completion)));
-                                                            const colorClass = pct >= 100 ? 'text-emerald-600' : pct >= 70 ? 'text-[#08315F]' : 'text-amber-600';
-                                                            const barClass = pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-[#08315F]' : 'bg-amber-500';
-                                                            return (
-                                                                <div className="pt-2 border-t border-slate-200">
-                                                                    <div className="flex items-center justify-between mb-1.5">
-                                                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Profile Completion</span>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className={`text-[13px] font-black ${colorClass}`}>
-                                                                                {pct}%
-                                                                            </span>
-                                                                            {pct >= 100 && (
-                                                                                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-full leading-none">
-                                                                                    Complete
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden border border-slate-300/40">
-                                                                        <div
-                                                                            className={`h-full ${barClass} rounded-full transition-all duration-300`}
-                                                                            style={{ width: `${pct}%` }}
-                                                                        />
-                                                                    </div>
+
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">TLOID</span>
+                                                                    <span className="font-black text-[#0284c7] text-[15px] sm:text-[16px] block tracking-wide">
+                                                                        {reconcileTargetItem.TLOid}
+                                                                    </span>
                                                                 </div>
-                                                            );
-                                                        })()}
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">REGISTRATION DATE</span>
+                                                                    <span className="font-medium text-slate-800 text-[14px] sm:text-[14.5px] block">
+                                                                        {reconcileTargetItem.created_at ? new Date(reconcileTargetItem.created_at).toLocaleDateString() : '—'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div>
+                                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">POSITION APPLIED / TITLE</span>
+                                                                <span className="font-medium text-slate-800 text-[14px] sm:text-[14.5px] block">
+                                                                    {reconcileTargetItem.position_title || '(Applicant)'}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">OFFICE / DIVISION</span>
+                                                                    <span className="font-medium text-slate-800 text-[14px] sm:text-[14.5px] block">
+                                                                        {[reconcileTargetItem.office, reconcileTargetItem.division].filter(Boolean).join(' / ') || '(Not Set)'}
+                                                                    </span>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">REGION</span>
+                                                                    <span className="font-medium text-slate-800 text-[14px] sm:text-[14.5px] block">
+                                                                        {reconcileTargetItem.region || reconcileTargetItem.strand || '(Not Set)'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
+
+                                                    {/* Profile Completion Bar */}
+                                                    {reconcileTargetItem.profile_completion != null && (() => {
+                                                        const pct = Math.min(100, Math.max(0, Math.round(reconcileTargetItem.profile_completion)));
+                                                        return (
+                                                            <div className="pt-2">
+                                                                <div className="flex items-center justify-between mb-1.5">
+                                                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">PROFILE COMPLETION</span>
+                                                                    <span className="text-[13.5px] font-black text-[#0284c7]">{pct}%</span>
+                                                                </div>
+                                                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="h-full bg-[#08315F] rounded-full transition-all duration-500"
+                                                                        style={{ width: `${pct}%` }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </div>
 
                                                 {/* Canonical Candidate Record Card */}
-                                                <div className="p-5 bg-blue-50/60 rounded-2xl border-2 border-blue-200 space-y-3">
-                                                    <div className="flex items-center justify-between border-b border-blue-200 pb-2.5">
-                                                        <span className="text-[12px] font-black text-blue-800 uppercase tracking-widest">Existing Official Record (Active)</span>
-                                                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wider">Active Masterlist</span>
-                                                    </div>
+                                                <div className="p-6 sm:p-7 bg-[#f0f7ff] rounded-2xl border-2 border-[#bae6fd] shadow-xs flex flex-col justify-between space-y-4">
                                                     {selectedCandidate ? (
-                                                        <div className="space-y-2 text-[14px]">
+                                                        <>
                                                             <div>
-                                                                <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Canonical Name</span>
-                                                                <span className="font-black text-[#08315F] text-[16px]">{selectedCandidate.first_name} {selectedCandidate.last_name || ''}</span>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Canonical Masterlist Email</span>
-                                                                <span className="font-mono font-semibold text-slate-800 break-all">{selectedCandidate.email || '—'}</span>
-                                                            </div>
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                <div>
-                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Canonical TLOid</span>
-                                                                    <span className="font-mono font-bold text-[#075985]">{selectedCandidate.TLOid}</span>
+                                                                {/* Header: Title and Status Badge */}
+                                                                <div className="flex items-start justify-between gap-3 mb-4">
+                                                                    <div>
+                                                                        <span className="text-[12px] font-black text-[#0284c7] uppercase tracking-widest block leading-tight">
+                                                                            EXISTING OFFICIAL RECORD
+                                                                        </span>
+                                                                        <span className="text-[12px] font-black text-[#0284c7] uppercase tracking-widest block leading-tight">
+                                                                            (ACTIVE)
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="px-3.5 py-1 rounded-full bg-[#dcfce7] text-[#15803d] text-[11px] font-black uppercase tracking-wider whitespace-nowrap shrink-0">
+                                                                        ACTIVE MASTERLIST
+                                                                    </span>
                                                                 </div>
-                                                                <div>
-                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Plantilla Item No</span>
-                                                                    <span className="font-mono text-xs font-semibold text-slate-700 truncate block">{selectedCandidate.plantilla_item_no || '—'}</span>
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Position Title</span>
-                                                                <span className="font-medium text-slate-800">{selectedCandidate.position_title || '—'}</span>
-                                                            </div>
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                <div>
-                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Office / Division</span>
-                                                                    <span className="font-medium text-slate-700">{[selectedCandidate.office, selectedCandidate.division].filter(Boolean).join(' / ') || '—'}</span>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider block">Region</span>
-                                                                    <span className="font-medium text-slate-700">{selectedCandidate.region || selectedCandidate.strand || '—'}</span>
-                                                                </div>
-                                                            </div>
-                                                            {selectedCandidate.profile_completion != null && (() => {
-                                                                const pct = Math.min(100, Math.max(0, Math.round(selectedCandidate.profile_completion)));
-                                                                const colorClass = pct >= 100 ? 'text-emerald-600' : pct >= 70 ? 'text-[#08315F]' : 'text-amber-600';
-                                                                const barClass = pct >= 100 ? 'bg-emerald-500' : pct >= 70 ? 'bg-[#08315F]' : 'bg-amber-500';
-                                                                return (
-                                                                    <div className="pt-2 border-t border-blue-200">
-                                                                        <div className="flex items-center justify-between mb-1.5">
-                                                                            <span className="text-[11px] font-bold text-blue-900/60 uppercase tracking-wider">Profile Completion</span>
-                                                                            <div className="flex items-center gap-1.5">
-                                                                                <span className={`text-[13px] font-black ${colorClass}`}>
-                                                                                    {pct}%
-                                                                                </span>
-                                                                                {pct >= 100 && (
-                                                                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-full leading-none">
-                                                                                        Complete
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
+
+                                                                {/* Fields Container */}
+                                                                <div className="space-y-3.5 text-[14px]">
+                                                                    <div>
+                                                                        <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider block mb-0.5">CANONICAL NAME</span>
+                                                                        <span className="font-black text-[#08315F] text-[17px] sm:text-[18px] uppercase tracking-tight block">
+                                                                            {selectedCandidate.first_name} {selectedCandidate.last_name || ''}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <div>
+                                                                        <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider block mb-0.5">CANONICAL MASTERLIST EMAIL</span>
+                                                                        <span className="font-medium text-slate-800 break-all text-[14px] sm:text-[14.5px] block">
+                                                                            {selectedCandidate.email || '—'}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                                        <div>
+                                                                            <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider block mb-0.5">CANONICAL TLOID</span>
+                                                                            <span className="font-black text-[#0284c7] text-[15px] sm:text-[16px] block tracking-wide">
+                                                                                {selectedCandidate.TLOid}
+                                                                            </span>
                                                                         </div>
-                                                                        <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden border border-blue-200">
+                                                                        <div>
+                                                                            <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider block mb-0.5">PLANTILLA ITEM NO</span>
+                                                                            <span className="font-semibold text-slate-800 text-[13px] sm:text-[14px] break-all block">
+                                                                                {selectedCandidate.plantilla_item_no || '—'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div>
+                                                                        <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider block mb-0.5">POSITION TITLE</span>
+                                                                        <span className="font-bold text-slate-900 text-[14px] sm:text-[14.5px] uppercase block leading-snug">
+                                                                            {selectedCandidate.position_title || '—'}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                                        <div>
+                                                                            <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider block mb-0.5">OFFICE / DIVISION</span>
+                                                                            <span className="font-medium text-slate-800 text-[13.5px] sm:text-[14px] block">
+                                                                                {[selectedCandidate.office, selectedCandidate.division].filter(Boolean).join(' / ') || '—'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider block mb-0.5">REGION</span>
+                                                                            <span className="font-medium text-slate-800 text-[13.5px] sm:text-[14px] block">
+                                                                                {selectedCandidate.region || selectedCandidate.strand || '—'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Profile Completion Bar */}
+                                                            {(() => {
+                                                                const pct = selectedCandidate.profile_completion != null ? Math.min(100, Math.max(0, Math.round(selectedCandidate.profile_completion))) : 0;
+                                                                return (
+                                                                    <div className="pt-2">
+                                                                        <div className="flex items-center justify-between mb-1.5">
+                                                                            <span className="text-[11px] font-bold text-[#0284c7]/75 uppercase tracking-wider">PROFILE COMPLETION</span>
+                                                                            <span className="text-[13.5px] font-black text-[#0284c7]">{pct}%</span>
+                                                                        </div>
+                                                                        <div className="w-full h-2 bg-[#dbeafe]/80 rounded-full overflow-hidden border border-[#bfdbfe]/50">
                                                                             <div
-                                                                                className={`h-full ${barClass} rounded-full transition-all duration-300`}
+                                                                                className="h-full bg-[#08315F] rounded-full transition-all duration-500"
                                                                                 style={{ width: `${pct}%` }}
                                                                             />
                                                                         </div>
                                                                     </div>
                                                                 );
                                                             })()}
-                                                        </div>
+                                                        </>
                                                     ) : (
-                                                        <div className="text-center py-8 text-slate-400 font-medium">
+                                                        <div className="text-center py-12 text-slate-400 font-medium">
                                                             No candidate selected.
                                                         </div>
                                                     )}
@@ -3033,12 +3082,12 @@ const OfficialsRegistry = () => {
                                         </div>
 
                                         {/* Modal Footer */}
-                                        <div className="p-6 bg-slate-50 border-t-2 border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
+                                        <div className="p-3 sm:px-6 sm:py-3 bg-slate-50 border-t-2 border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3 shrink-0">
                                             <button
                                                 type="button"
                                                 onClick={() => setReconcileModalOpen(false)}
                                                 disabled={reconcileLoading}
-                                                className="w-full sm:w-auto px-6 py-3.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[15px] uppercase tracking-wider transition-all"
+                                                className="w-full sm:w-auto px-5 py-2.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[14px] uppercase tracking-wider transition-all"
                                             >
                                                 Cancel
                                             </button>
@@ -3046,7 +3095,7 @@ const OfficialsRegistry = () => {
                                                 type="button"
                                                 onClick={handleExecuteReconciliation}
                                                 disabled={!reconcileConfirmed || !reconcileRemarks.trim() || !selectedCandidate || reconcileLoading}
-                                                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#08315F] hover:bg-blue-800 text-white font-black text-[15px] uppercase tracking-wider shadow-lg shadow-blue-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                                                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#08315F] hover:bg-blue-800 text-white font-black text-[14px] uppercase tracking-wider shadow-md shadow-blue-900/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                                             >
                                                 {reconcileLoading ? (
                                                     <span>Processing Reconciliation...</span>

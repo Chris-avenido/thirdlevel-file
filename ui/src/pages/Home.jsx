@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import PageTransition from '../components/PageTransition';
@@ -137,6 +137,13 @@ const isThirdLevelPosition = (pos) => {
 const Home = () => {
   const navigate = useNavigate();
   const { user, token, logout } = useAuth();
+  const isCentralOffice = user?.role?.toLowerCase() === 'central office';
+
+  useEffect(() => {
+    if (user && !isCentralOffice) {
+      navigate('/official-profiling', { replace: true });
+    }
+  }, [user, isCentralOffice, navigate]);
 
   const [applications, setApplications] = useState([]);
   const [officials, setOfficials] = useState([]);
@@ -161,6 +168,7 @@ const Home = () => {
   const [drilldownViewType, setDrilldownViewType] = useState('stacked'); // stacked | heatmap
 
   useEffect(() => {
+    if (user && !isCentralOffice) return;
     const params = new URLSearchParams(location.search);
     if (params.get('action') === 'reassign') {
       const tloId = params.get('tloid');
@@ -170,9 +178,10 @@ const Home = () => {
       }
       setIsReassignModalOpen(true);
     }
-  }, [location.search, allOfficials]);
+  }, [location.search, allOfficials, user, isCentralOffice]);
 
   useEffect(() => {
+    if (user && !isCentralOffice) return;
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -202,7 +211,7 @@ const Home = () => {
     };
 
     if (token) fetchData();
-  }, [token, refreshTrigger]);
+  }, [token, refreshTrigger, user, isCentralOffice]);
 
   const retireesThisMonth = useMemo(() => {
     const today = new Date();
@@ -908,6 +917,10 @@ const Home = () => {
     const max = Math.max(...Object.values(groupMap).map(g => g.total), 1);
     return { groupKey: key, groups: groupMap, maxTotal: max };
   }, [allOfficials, drillLevel, drillPath]);
+
+  if (user && !isCentralOffice) {
+    return <Navigate to="/official-profiling" replace />;
+  }
 
   return (
     <PageTransition>
