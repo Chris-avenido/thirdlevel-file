@@ -21,6 +21,7 @@ const VacancySidebar = ({
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { logout } = useAuth();
     const [copiedUid, setCopiedUid] = useState(false);
 
     // Hover State for Collapsing / Minimizing (matches Central Office AdminSidebar)

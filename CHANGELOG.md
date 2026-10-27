@@ -21,6 +21,8 @@ Adjusted the Third Level Position Application modal ([`ApplyVacancyModal.jsx`](f
    - Fixed `tlo_users` sync by removing non-existent `updated_at` column from `UPDATE tlo_users SET contact_number = $1 WHERE LOWER(email) = $2`.
 3. [`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx):
    - Formats 11-digit contact numbers as `XXXX-XXX-XXXX`.
+4. [`VacancySidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancySidebar.jsx):
+   - Fixed `ReferenceError: logout is not defined` by destructuring `logout` from `useAuth()`.
 
 ---
 
