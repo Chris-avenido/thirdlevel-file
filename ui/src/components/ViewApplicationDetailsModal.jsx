@@ -97,7 +97,11 @@ const ViewApplicationDetailsModal = ({ isOpen, onClose, application }) => {
                             </div>
                             <div className="min-w-0">
                                 <span className="text-slate-500 block font-bold text-[10px] uppercase tracking-wider">Contact Number:</span>
-                                <span className="font-bold text-slate-900 break-words">{application.contact_number || '—'}</span>
+                                <span className="font-bold text-slate-900 break-words font-mono">
+                                    {application.contact_number && application.contact_number.length === 11 
+                                        ? `${application.contact_number.slice(0, 4)}-${application.contact_number.slice(4, 7)}-${application.contact_number.slice(7)}`
+                                        : (application.contact_number || '—')}
+                                </span>
                             </div>
                             <div className="min-w-0">
                                 <span className="text-slate-500 block font-bold text-[10px] uppercase tracking-wider">Date of Birth:</span>

@@ -416,6 +416,41 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
         setOverviewPage(1);
     };
 
+    const checkIsApplied = useCallback((v) => {
+        if (!v || !applications || applications.length === 0) return false;
+        const vId = String(v.TLOid || v.item_number || v.assignment_id || '').trim().toLowerCase();
+        const vTlo = String(v.TLOid || '').trim().toLowerCase();
+        const vItem = String(v.item_number || '').trim().toLowerCase();
+        const vAssign = String(v.assignment_id || '').trim().toLowerCase();
+        const vTitle = String(v.position_title || '').trim().toLowerCase();
+        const vOffice = String(v.office || '').trim().toLowerCase();
+
+        return applications.some(app => {
+            if (!app) return false;
+            const appTargetId = String(app.target_vacancy_id || '').trim().toLowerCase();
+
+            if (appTargetId && (
+                appTargetId === vId ||
+                appTargetId === vTlo ||
+                appTargetId === vItem ||
+                appTargetId === vAssign
+            )) {
+                return true;
+            }
+
+            if (
+                app.position_applying_for && vTitle &&
+                app.position_applying_for.trim().toLowerCase() === vTitle &&
+                app.plantilla_office && vOffice &&
+                app.plantilla_office.trim().toLowerCase() === vOffice
+            ) {
+                return true;
+            }
+
+            return false;
+        });
+    }, [applications]);
+
     const fullName = [
         applicantProfile?.first_name,
         applicantProfile?.middle_name,
@@ -983,16 +1018,19 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     {currentOverviewVacancies.map(v => {
                                                         const id = v.TLOid || v.item_number || v.assignment_id;
-                                                        const isTarget = applicantProfile?.target_vacancy_id === id;
+                                                        const isApplied = checkIsApplied(v);
+                                                        const isTarget = !isApplied && applicantProfile?.target_vacancy_id === id;
                                                         const sgInfo = getSalaryGradeBadge(v.salary_grade);
 
                                                         return (
                                                             <div 
                                                                 key={id} 
                                                                 className={`p-5 rounded-2xl border-2 transition-all flex flex-col justify-between gap-3 ${
-                                                                    isTarget 
-                                                                        ? 'bg-blue-50/80 border-[#075985] shadow-md ring-2 ring-[#075985]/30'
-                                                                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                                                                    isApplied
+                                                                        ? 'bg-slate-50/60 border-slate-200'
+                                                                        : isTarget 
+                                                                            ? 'bg-blue-50/80 border-[#075985] shadow-md ring-2 ring-[#075985]/30'
+                                                                            : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                                                                 }`}
                                                             >
                                                                 <div>
@@ -1013,11 +1051,15 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                                                 {v.office || 'Department of Education'}
                                                                             </p>
                                                                         </div>
-                                                                        {isTarget && (
+                                                                        {isApplied ? (
+                                                                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[8px] font-black uppercase shrink-0 shadow-xs flex items-center gap-1">
+                                                                                <FiCheckCircle size={10} className="text-emerald-600" /> Applied
+                                                                            </span>
+                                                                        ) : isTarget ? (
                                                                             <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[8px] font-black uppercase shrink-0 shadow-sm flex items-center gap-1">
                                                                                 <FiCheck size={10} /> Target
                                                                             </span>
-                                                                        )}
+                                                                        ) : null}
                                                                     </div>
 
                                                                     <div className="flex items-center gap-2 mt-2 text-[10px] font-bold text-slate-500 flex-wrap">
@@ -1036,33 +1078,46 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                                         {sgInfo.label}
                                                                     </span>
                                                                     <div className="flex items-center gap-1.5 shrink-0">
-                                                                        <button
-                                                                            onClick={() => handleOpenApplyModal(v)}
-                                                                            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-900 text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm flex items-center gap-1"
-                                                                        >
-                                                                            <FiFileText size={11} />
-                                                                            <span>Apply</span>
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleSelectVacancy(v)}
-                                                                            className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 ${
-                                                                                isTarget
-                                                                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
-                                                                                    : 'bg-[#08315F] hover:bg-blue-900 text-white shadow-sm'
-                                                                            }`}
-                                                                        >
-                                                                            {isTarget ? (
-                                                                                <>
-                                                                                    <FiCheck size={11} />
-                                                                                    <span>Target ✓</span>
-                                                                                </>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <FiBookmark size={11} />
-                                                                                    <span>Target</span>
-                                                                                </>
-                                                                            )}
-                                                                        </button>
+                                                                        {isApplied ? (
+                                                                            <button
+                                                                                disabled
+                                                                                className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-400 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 cursor-not-allowed border border-slate-200"
+                                                                                title="You have already applied for this position"
+                                                                            >
+                                                                                <FiCheckCircle size={11} className="text-emerald-500" />
+                                                                                <span>Applied</span>
+                                                                            </button>
+                                                                        ) : (
+                                                                            <>
+                                                                                <button
+                                                                                    onClick={() => handleOpenApplyModal(v)}
+                                                                                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-900 text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm flex items-center gap-1"
+                                                                                >
+                                                                                    <FiFileText size={11} />
+                                                                                    <span>Apply</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleSelectVacancy(v)}
+                                                                                    className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 ${
+                                                                                        isTarget
+                                                                                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                                                                                            : 'bg-[#08315F] hover:bg-blue-900 text-white shadow-sm'
+                                                                                    }`}
+                                                                                >
+                                                                                    {isTarget ? (
+                                                                                        <>
+                                                                                            <FiCheck size={11} />
+                                                                                            <span>Target ✓</span>
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        <>
+                                                                                            <FiBookmark size={11} />
+                                                                                            <span>Target</span>
+                                                                                        </>
+                                                                                    )}
+                                                                                </button>
+                                                                            </>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1362,17 +1417,18 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                     <th className="py-3.5 px-4 text-right">Target Action</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 text-xs">
+                                            <tbody className="divide-y divide-slate-100">
                                                 {currentVacancies.map((v, idx) => {
                                                     const id = v.TLOid || v.item_number || v.assignment_id;
-                                                    const isTarget = applicantProfile?.target_vacancy_id === id;
+                                                    const isApplied = checkIsApplied(v);
+                                                    const isTarget = !isApplied && applicantProfile?.target_vacancy_id === id;
                                                     const sgInfo = getSalaryGradeBadge(v.salary_grade);
 
                                                     return (
                                                         <tr 
-                                                            key={id}
+                                                            key={id} 
                                                             className={`transition-colors hover:bg-slate-50/80 ${
-                                                                isTarget ? 'bg-blue-50/70 font-semibold' : (idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30')
+                                                                isApplied ? 'bg-emerald-50/30' : isTarget ? 'bg-blue-50/70 font-semibold' : (idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30')
                                                             }`}
                                                         >
                                                             <td className="py-3.5 px-4 font-mono text-[11px] font-bold text-slate-700 whitespace-nowrap">
@@ -1383,11 +1439,15 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                                     <span className="font-black text-[#08315F] uppercase text-xs">
                                                                         {v.position_title}
                                                                     </span>
-                                                                    {isTarget && (
+                                                                    {isApplied ? (
+                                                                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[8px] font-black uppercase shrink-0 flex items-center gap-1">
+                                                                            <FiCheckCircle size={9} /> Applied
+                                                                        </span>
+                                                                    ) : isTarget ? (
                                                                         <span className="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[8px] font-black uppercase shrink-0">
                                                                             Target
                                                                         </span>
-                                                                    )}
+                                                                    ) : null}
                                                                 </div>
                                                             </td>
                                                             <td className="py-3.5 px-3 whitespace-nowrap">
@@ -1411,23 +1471,36 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                             </td>
                                                             <td className="py-3.5 px-4 text-right whitespace-nowrap">
                                                                 <div className="flex items-center justify-end gap-1.5">
-                                                                    <button
-                                                                        onClick={() => handleOpenApplyModal(v)}
-                                                                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-900 text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm flex items-center gap-1"
-                                                                    >
-                                                                        <FiFileText size={11} />
-                                                                        <span>Apply</span>
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleSelectVacancy(v)}
-                                                                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 ${
-                                                                            isTarget
-                                                                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
-                                                                                : 'bg-[#08315F] hover:bg-blue-900 text-white shadow-sm'
-                                                                        }`}
-                                                                    >
-                                                                        {isTarget ? 'Target ✓' : 'Target'}
-                                                                    </button>
+                                                                    {isApplied ? (
+                                                                        <button
+                                                                            disabled
+                                                                            className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 cursor-not-allowed border border-slate-200"
+                                                                            title="You have already applied for this position"
+                                                                        >
+                                                                            <FiCheckCircle size={11} className="text-emerald-500" />
+                                                                            <span>Applied</span>
+                                                                        </button>
+                                                                    ) : (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => handleOpenApplyModal(v)}
+                                                                                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-900 text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm flex items-center gap-1"
+                                                                            >
+                                                                                <FiFileText size={11} />
+                                                                                <span>Apply</span>
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleSelectVacancy(v)}
+                                                                                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 ${
+                                                                                    isTarget
+                                                                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                                                                                        : 'bg-[#08315F] hover:bg-blue-900 text-white shadow-sm'
+                                                                                }`}
+                                                                            >
+                                                                                {isTarget ? 'Target ✓' : 'Target'}
+                                                                            </button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -1441,14 +1514,17 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {currentVacancies.map(v => {
                                             const id = v.TLOid || v.item_number || v.assignment_id;
-                                            const isTarget = applicantProfile?.target_vacancy_id === id;
+                                            const isApplied = checkIsApplied(v);
+                                            const isTarget = !isApplied && applicantProfile?.target_vacancy_id === id;
                                             const sgInfo = getSalaryGradeBadge(v.salary_grade);
 
                                             return (
                                                 <div
                                                     key={id}
                                                     className={`p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col justify-between gap-4 ${
-                                                        isTarget
+                                                        isApplied
+                                                            ? 'bg-emerald-50/20 border-emerald-200'
+                                                            : isTarget
                                                             ? 'bg-blue-50/70 border-[#075985] shadow-md ring-2 ring-[#075985]/30'
                                                             : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                                                     }`}
@@ -1471,11 +1547,15 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                                     {v.office || 'Department of Education'}
                                                                 </p>
                                                             </div>
-                                                            {isTarget && (
+                                                            {isApplied ? (
+                                                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] font-black uppercase shadow-xs flex items-center gap-1 shrink-0">
+                                                                    <FiCheckCircle size={11} className="text-emerald-600" /> Applied
+                                                                </span>
+                                                            ) : isTarget ? (
                                                                 <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[9px] font-black uppercase shadow-sm flex items-center gap-1 shrink-0">
                                                                     <FiCheck size={11} /> Selected Target
                                                                 </span>
-                                                            )}
+                                                            ) : null}
                                                         </div>
 
                                                         <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs min-w-0">
@@ -1494,33 +1574,46 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                             {sgInfo.label}
                                                         </span>
                                                         <div className="flex items-center gap-2 shrink-0">
-                                                            <button
-                                                                onClick={() => handleOpenApplyModal(v)}
-                                                                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-900 text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                                                            >
-                                                                <FiFileText size={13} />
-                                                                <span>Apply Now</span>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleSelectVacancy(v)}
-                                                                className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5 active:scale-95 ${
-                                                                    isTarget
-                                                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                                                        : 'bg-[#08315F] hover:bg-blue-900 text-white'
-                                                                }`}
-                                                            >
-                                                                {isTarget ? (
-                                                                    <>
-                                                                        <FiCheck size={14} />
-                                                                        <span>Target ✓</span>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <FiBookmark size={14} />
-                                                                        <span>Target</span>
-                                                                    </>
-                                                                )}
-                                                            </button>
+                                                            {isApplied ? (
+                                                                <button
+                                                                    disabled
+                                                                    className="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-not-allowed border border-slate-200"
+                                                                    title="You have already applied for this position"
+                                                                >
+                                                                    <FiCheckCircle size={13} className="text-emerald-500" />
+                                                                    <span>Applied</span>
+                                                                </button>
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleOpenApplyModal(v)}
+                                                                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-900 text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                                                                    >
+                                                                        <FiFileText size={13} />
+                                                                        <span>Apply Now</span>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleSelectVacancy(v)}
+                                                                        className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5 active:scale-95 ${
+                                                                            isTarget
+                                                                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                                                                : 'bg-[#08315F] hover:bg-blue-900 text-white'
+                                                                        }`}
+                                                                    >
+                                                                        {isTarget ? (
+                                                                            <>
+                                                                                <FiCheck size={14} />
+                                                                                <span>Target ✓</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <FiBookmark size={14} />
+                                                                                <span>Target</span>
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

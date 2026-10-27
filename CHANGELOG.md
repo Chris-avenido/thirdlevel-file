@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 2026-10-27 — Application Modal Enhancements: Date Validations, Image-Only ID Picture, and Passcode Removal
+
+### Overview & User Adjustments
+Adjusted the Third Level Position Application modal ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx)) and backend controllers according to updated specifications:
+1. **CES Eligibility Stage Date**: Prevent future dates from being selected or submitted for "Date Appointed/Conferred/Passed the CESO/CES eligibility process [Highest Stage]" (`ces_stage_date`) via HTML `max`, real-time `handleChange` checks, step 4 validation, and backend API validation.
+2. **Account Passcode Removed**: Completely removed the "Account Passcode" input field and associated state/validation from the modal and review summary. Step 2 (Personal Details) restored to a clean 2-column layout.
+3. **ID Picture (Passport Size) — Image Only**: Updated document item 10 (`id_picture`) to allow image files only (`accept: 'image/jpeg,image/png,image/webp'`, `isImage: true`). All other 11 documents remain in PDF format.
+4. **Date of Birth & Telephone**: Retained Date of Birth future date prevention and 11-digit auto-dash telephone number formatting (`0917-123-4567`) saved as 11 digits without dashes in the database.
+
+### Files Updated
+1. [`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx):
+   - Added `max={today}` to `ces_stage_date` with validation preventing future date input in `handleChange` and `validateStep(4)`.
+   - Removed `passcode` state, toggle visibility, validation, and JSX inputs.
+   - Restored `id_picture` to `accept: 'image/jpeg,image/png,image/webp'` and `isImage: true`.
+   - Updated `handleFileUpload` to validate images for ID picture and PDFs for all other documents.
+2. [`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js):
+   - In `uploadVacancyDocument`: validates image type for `id_picture` and PDF type for all other documents.
+   - In `submitVacancyApplication`: validates both `date_of_birth` and `ces_stage_date` are not in the future.
+   - Fixed `tlo_users` sync by removing non-existent `updated_at` column from `UPDATE tlo_users SET contact_number = $1 WHERE LOWER(email) = $2`.
+3. [`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx):
+   - Formats 11-digit contact numbers as `XXXX-XXX-XXXX`.
+
+---
+
 ## 2026-10-27 — UI/UX: High-Contrast Input Readability & Theme Contrast Fix Across All Vacancy Pages
 
 ### Root Cause Analysis

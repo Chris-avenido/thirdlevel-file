@@ -126,7 +126,7 @@ export const updateVacancyApplicantProfile = async (req, res) => {
       }
       if (contact_number !== undefined) {
         updates.push(`contact_number = $${idx++}`);
-        values.push(contact_number ? contact_number.trim() : null);
+        values.push(contact_number ? String(contact_number).replace(/\D/g, '').slice(0, 11) : null);
       }
       if (target_vacancy_id !== undefined) {
         updates.push(`target_vacancy_id = $${idx++}`);
@@ -304,35 +304,106 @@ export const uploadVacancyDocument = async (req, res) => {
     const mimeType = req.file.mimetype;
     const originalName = req.file.originalname || 'document.pdf';
 
-    // 1. Initial registration in unified_binaries to get unique binary_id
-    const { binary_id } = await upsertBinary(client, rawBuffer, mimeType, rawBuffer.length);
-
-    // 2. Resolve vacancy_id for Azure folder naming
-    let vacancyId = req.body.vacancy_id || req.query.vacancy_id || req.params.vacancy_id;
+    let applicationId = req.body.application_id || req.query.application_id;
     const docType = req.body.doc_type || req.query.doc_type || req.params.docType || 'document';
+    let vacancyId = req.body.vacancy_id || req.query.vacancy_id || req.params.vacancy_id;
 
-    if (!vacancyId || !String(vacancyId).trim()) {
-      const email = req.user?.email ? req.user.email.toLowerCase().trim() : '';
-      const uid = req.user?.uid || '';
-      if (email || uid) {
-        const applicantRes = await client.query(
-          `SELECT target_vacancy_id, applicant_uid FROM vacancy_applicants WHERE LOWER(email) = $1 OR applicant_uid = $2 LIMIT 1`,
-          [email, uid]
-        );
-        if (applicantRes.rows.length > 0 && applicantRes.rows[0].target_vacancy_id) {
-          vacancyId = applicantRes.rows[0].target_vacancy_id;
-        } else if (applicantRes.rows.length > 0 && applicantRes.rows[0].applicant_uid) {
-          vacancyId = applicantRes.rows[0].applicant_uid;
-        }
+    // Validation: ID Picture allows image only; other document attachments require PDF only
+    if (docType === 'id_picture') {
+      const isImg = mimeType.startsWith('image/') || /\.(jpg|jpeg|png|webp)$/i.test(originalName);
+      if (!isImg) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid file type: ID Picture must be an image file (JPG, PNG, or WebP) only'
+        });
+      }
+    } else {
+      const isPdf = mimeType === 'application/pdf' || originalName.toLowerCase().endsWith('.pdf');
+      if (!isPdf) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid file type: Document attachments must be in PDF format (.pdf) only'
+        });
       }
     }
 
-    if (!vacancyId || !String(vacancyId).trim()) {
-      vacancyId = req.user?.uid || 'general-vacancy';
+    // 1. Initial registration in unified_binaries to get unique binary_id
+    const { binary_id } = await upsertBinary(client, rawBuffer, mimeType, rawBuffer.length);
+
+    const email = req.user?.email ? req.user.email.toLowerCase().trim() : '';
+    const uid = req.user?.uid || '';
+
+    let appRow = null;
+    if (applicationId) {
+      const resApp = await client.query('SELECT id FROM vacancy_applications WHERE id = $1', [applicationId]);
+      if (resApp.rows.length > 0) {
+        appRow = resApp.rows[0];
+      }
     }
 
-    // Clean vacancy_id so it is a safe folder name (replace path separators or illegal characters)
-    const cleanFolder = String(vacancyId).trim().replace(/[/\\?%*:|"<>]/g, '_');
+    if (!appRow && (email || uid)) {
+      const draftRes = await client.query(
+        `SELECT id FROM vacancy_applications 
+         WHERE (LOWER(email) = $1 OR applicant_uid = $2)
+           AND status = 'Draft'
+           AND (target_vacancy_id = $3 OR $3 IS NULL)
+         ORDER BY id DESC LIMIT 1`,
+        [email, uid, vacancyId || null]
+      );
+      if (draftRes.rows.length > 0) {
+        appRow = draftRes.rows[0];
+      }
+    }
+
+    if (!appRow) {
+      let applicantUid = uid || `VAC-${Date.now()}`;
+      let applicantId = null;
+      let firstName = 'APPLICANT';
+      let lastName = 'USER';
+      if (email || uid) {
+        const applicantRes = await client.query(
+          `SELECT id, applicant_uid, first_name, last_name FROM vacancy_applicants WHERE LOWER(email) = $1 OR applicant_uid = $2 LIMIT 1`,
+          [email, uid]
+        );
+        if (applicantRes.rows.length > 0) {
+          applicantId = applicantRes.rows[0].id;
+          applicantUid = applicantRes.rows[0].applicant_uid || applicantUid;
+          firstName = applicantRes.rows[0].first_name || firstName;
+          lastName = applicantRes.rows[0].last_name || lastName;
+        }
+      }
+
+      const tempAppNo = `APP-DRAFT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const insDraft = await client.query(
+        `INSERT INTO vacancy_applications (
+          application_no, applicant_uid, vacancy_applicant_id, email,
+          position_applying_for, target_vacancy_id,
+          surname, first_name, current_position, plantilla_office, current_designation,
+          ces_eligibility_stage, status, is_testaccount, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4,
+          $5, $6,
+          $7, $8, 'N/A', 'Department of Education', 'N/A',
+          'Stage 1 (CES Written Examination)', 'Draft', $9, NOW(), NOW()
+        ) RETURNING id`,
+        [
+          tempAppNo,
+          applicantUid,
+          applicantId,
+          email || 'applicant@deped.gov.ph',
+          req.body.position_title || 'Plantilla Position',
+          vacancyId || null,
+          lastName,
+          firstName,
+          Boolean(req.user?.is_testaccount)
+        ]
+      );
+      appRow = insDraft.rows[0];
+    }
+
+    applicationId = appRow.id;
+    // Folder name in Azure Blob Storage format: APP-vacancy_applications.id
+    const cleanFolder = `APP-${applicationId}`;
     const targetAzureContainer = process.env.AZURE_FOLDER_NAME || 'staging-tlo';
 
     console.log(`[VacancyUpload] Uploading ${docType} for vacancy folder '${cleanFolder}' to Azure Blob Storage container (${targetAzureContainer})...`);
@@ -370,6 +441,7 @@ export const uploadVacancyDocument = async (req, res) => {
         azure_blob_url: finalBlobUrl,
         mime_type: mimeType,
         size: rawBuffer.length,
+        application_id: applicationId,
         folder: `${targetAzureContainer}/${cleanFolder}/${docType}`
       }
     });
@@ -434,6 +506,29 @@ export const submitVacancyApplication = async (req, res) => {
     other_documents_binary_id,
     other_documents_filename
   } = req.body;
+
+  // Contact number clean (11 digits without dash)
+  const cleanContactNumber = contact_number ? String(contact_number).replace(/\D/g, '').slice(0, 11) : null;
+
+  // Date of birth validation: not allow future dates
+  if (date_of_birth) {
+    const dob = new Date(date_of_birth);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (dob > today) {
+      return res.status(400).json({ success: false, error: 'Date of Birth cannot be in the future' });
+    }
+  }
+
+  // CES stage date validation: not allow future dates
+  if (ces_stage_date) {
+    const stageDate = new Date(ces_stage_date);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (stageDate > today) {
+      return res.status(400).json({ success: false, error: 'Date Appointed/Conferred/Passed CESO/CES eligibility cannot be in the future' });
+    }
+  }
 
   // Form Validation
   if (!position_applying_for || !position_applying_for.trim()) {
@@ -586,24 +681,98 @@ export const submitVacancyApplication = async (req, res) => {
       Boolean(req.user?.is_testaccount)
     ];
 
-    const insertedAppRes = await client.query(insertAppQuery, appValues);
+    let finalAppRow = null;
+    const existingAppId = req.body.application_id;
 
-    // 4. Update target vacancy in vacancy_applicants
+    if (existingAppId) {
+      const checkDraft = await client.query('SELECT id FROM vacancy_applications WHERE id = $1', [existingAppId]);
+      if (checkDraft.rows.length > 0) {
+        const updateAppQuery = `
+          UPDATE vacancy_applications SET
+            application_no = $1,
+            applicant_uid = $2,
+            vacancy_applicant_id = $3,
+            email = $4,
+            contact_number = $5,
+            position_applying_for = $6,
+            target_vacancy_id = $7,
+            surname = $8,
+            first_name = $9,
+            middle_name = $10,
+            date_of_birth = $11,
+            current_position = $12,
+            plantilla_office = $13,
+            current_designation = $14,
+            assigned_oic_office = $15,
+            is_let_passer = $16,
+            is_emt_passer = $17,
+            ces_eligibility_stage = $18,
+            ces_stage_date = $19,
+            letter_of_intent_binary_id = $20,
+            letter_of_intent_filename = $21,
+            pds_binary_id = $22,
+            pds_filename = $23,
+            work_experience_sheet_binary_id = $24,
+            work_experience_sheet_filename = $25,
+            cv_binary_id = $26,
+            cv_filename = $27,
+            outstanding_accomplishments_binary_id = $28,
+            outstanding_accomplishments_filename = $29,
+            service_records_binary_id = $30,
+            service_records_filename = $31,
+            transcript_of_records_binary_id = $32,
+            transcript_of_records_filename = $33,
+            performance_eval_binary_id = $34,
+            performance_eval_filename = $35,
+            self_certification_binary_id = $36,
+            self_certification_filename = $37,
+            id_picture_binary_id = $38,
+            id_picture_filename = $39,
+            applicant_profile_doc_binary_id = $40,
+            applicant_profile_doc_filename = $41,
+            other_documents_binary_id = $42,
+            other_documents_filename = $43,
+            status = 'Submitted',
+            is_testaccount = $44,
+            updated_at = NOW()
+          WHERE id = $45
+          RETURNING *;
+        `;
+        const updatedAppRes = await client.query(updateAppQuery, [...appValues, existingAppId]);
+        finalAppRow = updatedAppRes.rows[0];
+      }
+    }
+
+    if (!finalAppRow) {
+      const insertedAppRes = await client.query(insertAppQuery, appValues);
+      finalAppRow = insertedAppRes.rows[0];
+    }
+
+    // 4. Update target vacancy and contact number in vacancy_applicants
     await client.query(
       `UPDATE vacancy_applicants
        SET target_vacancy_id = COALESCE($1, target_vacancy_id),
            target_position_title = COALESCE($2, target_position_title),
+           contact_number = COALESCE($3, contact_number),
            updated_at = NOW()
-       WHERE id = $3`,
-      [target_vacancy_id || null, position_applying_for.trim(), applicantRow.id]
+       WHERE id = $4`,
+      [target_vacancy_id || null, position_applying_for.trim(), cleanContactNumber, applicantRow.id]
     );
+
+    // Also sync contact_number to tlo_users if available
+    if (email && cleanContactNumber) {
+      await client.query(
+        `UPDATE tlo_users SET contact_number = $1 WHERE LOWER(email) = $2`,
+        [cleanContactNumber, email]
+      );
+    }
 
     await client.query('COMMIT');
 
     return res.status(201).json({
       success: true,
       message: 'Application successfully submitted!',
-      data: insertedAppRes.rows[0]
+      data: finalAppRow
     });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -628,7 +797,8 @@ export const getMyVacancyApplications = async (req, res) => {
   try {
     const query = `
       SELECT * FROM vacancy_applications
-      WHERE LOWER(email) = $1 OR applicant_uid = $2
+      WHERE (LOWER(email) = $1 OR applicant_uid = $2)
+        AND status != 'Draft'
       ORDER BY created_at DESC
     `;
     const result = await pool.query(query, [email, uid]);

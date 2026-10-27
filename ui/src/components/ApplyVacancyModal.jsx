@@ -104,7 +104,7 @@ const REQUIRED_DOCUMENTS = [
         binaryKey: 'id_picture_binary_id',
         nameKey: 'id_picture_filename',
         label: '10. ID Picture (Passport size)',
-        instruction: 'Recent passport-sized colored photo with white background (JPG/PNG/WebP)',
+        instruction: 'Recent passport-sized colored photo with white background (JPG/PNG/WebP only)',
         accept: 'image/jpeg,image/png,image/webp',
         isImage: true,
         required: true
@@ -114,8 +114,9 @@ const REQUIRED_DOCUMENTS = [
         binaryKey: 'applicant_profile_doc_binary_id',
         nameKey: 'applicant_profile_doc_filename',
         label: '11. Accomplished Applicant Profile',
-        instruction: 'Accomplished template from https://tinyurl.com/3rdLevelForms (PDF or Word format)',
-        accept: '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        instruction: 'Accomplished template from https://tinyurl.com/3rdLevelForms (PDF only)',
+        accept: '.pdf,application/pdf',
+        isPdf: true,
         templateUrl: 'https://tinyurl.com/3rdLevelForms',
         required: true
     },
@@ -148,6 +149,14 @@ const DESIGNATION_PRESETS = [
     'Other'
 ];
 
+// Helper to format telephone/contact number to 11 digits with auto dash: 0917-123-4567
+const formatContactNumber = (val) => {
+    const digits = (val || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
+};
+
 const STEPS = [
     { id: 1, title: 'Position & Item', icon: FiBriefcase },
     { id: 2, title: 'Personal Details', icon: FiUser },
@@ -170,6 +179,7 @@ const ApplyVacancyModal = ({
 
     // Form fields corresponding strictly to DepEd Google Form questions
     const [formData, setFormData] = useState({
+        application_id: null,
         position_applying_for: '',
         target_vacancy_id: '',
         surname: '',
@@ -222,12 +232,13 @@ const ApplyVacancyModal = ({
 
             setFormData(prev => ({
                 ...prev,
+                application_id: null,
                 position_applying_for: posTitle,
                 target_vacancy_id: vacId,
                 surname: (applicantProfile?.last_name || '').toUpperCase(),
                 first_name: (applicantProfile?.first_name || '').toUpperCase(),
                 middle_name: (applicantProfile?.middle_name || '').toUpperCase(),
-                contact_number: applicantProfile?.contact_number || '',
+                contact_number: formatContactNumber(applicantProfile?.contact_number || ''),
                 current_position: prev.current_position || '',
                 plantilla_office: prev.plantilla_office || (vacancy?.office || '')
             }));
@@ -245,6 +256,21 @@ const ApplyVacancyModal = ({
             finalValue = finalValue.toUpperCase();
         }
 
+        // Prevent future date selection in Date of Birth and CES Stage Date
+        if ((name === 'date_of_birth' || name === 'ces_stage_date') && value) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (value > todayStr) {
+                const fieldLabel = name === 'date_of_birth' ? 'Date of Birth' : 'CES Eligibility Date';
+                Swal.fire({
+                    icon: 'warning',
+                    title: `Invalid ${fieldLabel}`,
+                    text: `${fieldLabel} cannot be in the future.`,
+                    confirmButtonColor: '#08315F'
+                });
+                return;
+            }
+        }
+
         setFormData(prev => ({
             ...prev,
             [name]: finalValue
@@ -255,28 +281,25 @@ const ApplyVacancyModal = ({
     const handleFileUpload = async (docConfig, file) => {
         if (!file) return;
 
-        // Validation for PDF only
-        if (docConfig.isPdf) {
+        // Validation for image only (ID picture) vs PDF only (other 11 documents)
+        if (docConfig.isImage) {
+            const isImg = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp)$/i.test(file.name);
+            if (!isImg) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid File Type',
+                    text: `${docConfig.label} must be an image file (JPG, PNG, or WebP).`,
+                    confirmButtonColor: '#08315F'
+                });
+                return;
+            }
+        } else {
             const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
             if (!isPdf) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Invalid File Type',
-                    text: `${docConfig.label} must be a PDF file (.pdf).`,
-                    confirmButtonColor: '#08315F'
-                });
-                return;
-            }
-        }
-
-        // Validation for ID picture
-        if (docConfig.isImage) {
-            const isImg = file.type.startsWith('image/');
-            if (!isImg) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Invalid File Type',
-                    text: 'ID Picture must be an image file (JPG, PNG, or WebP).',
+                    text: `${docConfig.label} must be a PDF file (.pdf only).`,
                     confirmButtonColor: '#08315F'
                 });
                 return;
@@ -298,6 +321,10 @@ const ApplyVacancyModal = ({
                           'general-vacancy';
             uploadFormData.append('vacancy_id', vacId);
 
+            if (formData.application_id) {
+                uploadFormData.append('application_id', formData.application_id);
+            }
+
             const token = localStorage.getItem('token');
             const res = await fetch(apiUrl('/api/third-level/vacancy-applicant/upload-document'), {
                 method: 'POST',
@@ -311,6 +338,7 @@ const ApplyVacancyModal = ({
             if (data.success && data.data) {
                 setFormData(prev => ({
                     ...prev,
+                    application_id: data.data.application_id || prev.application_id,
                     [docConfig.binaryKey]: data.data.binary_id,
                     [docConfig.nameKey]: data.data.filename
                 }));
@@ -351,6 +379,32 @@ const ApplyVacancyModal = ({
                 Swal.fire({ icon: 'warning', title: 'Required Fields', text: 'Surname and First Name are required (DepEd ALL CAPS format).', confirmButtonColor: '#08315F' });
                 return false;
             }
+            if (formData.date_of_birth) {
+                const selectedDate = new Date(formData.date_of_birth);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                if (selectedDate > today) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Date of Birth',
+                        text: 'Date of Birth cannot be in the future.',
+                        confirmButtonColor: '#08315F'
+                    });
+                    return false;
+                }
+            }
+            if (formData.contact_number) {
+                const contactDigits = formData.contact_number.replace(/\D/g, '');
+                if (contactDigits.length > 0 && contactDigits.length !== 11) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Telephone Number',
+                        text: 'Telephone number must be exactly 11 digits (e.g. 0917-123-4567).',
+                        confirmButtonColor: '#08315F'
+                    });
+                    return false;
+                }
+            }
             if (!formData.current_position.trim()) {
                 Swal.fire({ icon: 'warning', title: 'Required Field', text: 'Current Position is required. Do not abbreviate.', confirmButtonColor: '#08315F' });
                 return false;
@@ -371,6 +425,20 @@ const ApplyVacancyModal = ({
             if (!formData.ces_eligibility_stage) {
                 Swal.fire({ icon: 'warning', title: 'Required Field', text: 'Please select your CES eligibility stage.', confirmButtonColor: '#08315F' });
                 return false;
+            }
+            if (formData.ces_stage_date) {
+                const stageDate = new Date(formData.ces_stage_date);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                if (stageDate > today) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Date',
+                        text: 'Date Appointed/Conferred/Passed the CESO/CES eligibility process cannot be in the future.',
+                        confirmButtonColor: '#08315F'
+                    });
+                    return false;
+                }
             }
         }
         if (step === 5) {
@@ -418,6 +486,7 @@ const ApplyVacancyModal = ({
             : formData.current_designation_preset;
 
         const payload = {
+            application_id: formData.application_id || null,
             position_applying_for: formData.position_applying_for.trim(),
             target_vacancy_id: formData.target_vacancy_id ? formData.target_vacancy_id.trim() : null,
             surname: formData.surname.trim(),
@@ -432,7 +501,8 @@ const ApplyVacancyModal = ({
             is_emt_passer: formData.is_emt_passer,
             ces_eligibility_stage: formData.ces_eligibility_stage,
             ces_stage_date: formData.ces_stage_date || null,
-            contact_number: formData.contact_number ? formData.contact_number.trim() : null,
+            // Telephone number saved in 11 digits without dash
+            contact_number: (formData.contact_number || '').replace(/\D/g, '').slice(0, 11) || null,
             // 12 documents
             letter_of_intent_binary_id: formData.letter_of_intent_binary_id,
             letter_of_intent_filename: formData.letter_of_intent_filename,
@@ -707,24 +777,31 @@ const ApplyVacancyModal = ({
                                     <input
                                         type="date"
                                         name="date_of_birth"
+                                        max={new Date().toISOString().split('T')[0]}
                                         value={formData.date_of_birth}
                                         onChange={handleChange}
                                         className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#08315F] text-xs font-bold text-slate-900 bg-white shadow-sm"
                                     />
+                                    <span className="text-[10px] text-slate-400 block mt-1">Cannot be a future date</span>
                                 </div>
 
                                 <div>
                                     <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                                        Contact Number
+                                        Telephone Number
                                     </label>
                                     <input
-                                        type="text"
+                                        type="tel"
                                         name="contact_number"
                                         value={formData.contact_number}
-                                        onChange={handleChange}
-                                        placeholder="0917-XXX-XXXX"
-                                        className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#08315F] text-xs font-bold text-slate-900 bg-white shadow-sm"
+                                        onChange={(e) => {
+                                            const formatted = formatContactNumber(e.target.value);
+                                            setFormData(prev => ({ ...prev, contact_number: formatted }));
+                                        }}
+                                        placeholder="0917-123-4567"
+                                        maxLength={13}
+                                        className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#08315F] text-xs font-bold text-slate-900 bg-white shadow-sm font-mono tracking-wide"
                                     />
+                                    <span className="text-[10px] text-slate-400 block mt-1">11 digits (saved without dash)</span>
                                 </div>
                             </div>
 
@@ -918,10 +995,12 @@ const ApplyVacancyModal = ({
                                     <input
                                         type="date"
                                         name="ces_stage_date"
+                                        max={new Date().toISOString().split('T')[0]}
                                         value={formData.ces_stage_date}
                                         onChange={handleChange}
                                         className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#08315F] text-xs font-bold text-slate-900 bg-white shadow-sm"
                                     />
+                                    <span className="text-[10px] text-slate-400 block mt-1">Cannot be a future date</span>
                                 </div>
                             </div>
                         </div>
@@ -935,7 +1014,7 @@ const ApplyVacancyModal = ({
                                     <FiInfo size={20} className="text-blue-700 mt-0.5 shrink-0" />
                                     <div className="text-xs text-blue-900 space-y-1">
                                         <p className="font-bold">12 Required Document Attachments</p>
-                                        <p>Please upload all required PDF/image documents according to DepEd specifications. Files are stored securely and encrypted in the official document registry.</p>
+                                        <p>Please upload all required document attachments according to DepEd specifications. ID Picture must be an image file (JPG/PNG/WebP); all other documents must be in PDF format.</p>
                                     </div>
                                 </div>
                                 <a
@@ -1034,7 +1113,7 @@ const ApplyVacancyModal = ({
                                                         ) : (
                                                             <>
                                                                 <FiUploadCloud size={16} />
-                                                                <span>Choose {doc.isImage ? 'Image' : 'File'}</span>
+                                                                <span>Choose {doc.isImage ? 'Image' : 'PDF File'}</span>
                                                             </>
                                                         )}
                                                         <input
@@ -1090,6 +1169,10 @@ const ApplyVacancyModal = ({
                                     <div>
                                         <span className="text-slate-400 block font-medium">Date of Birth:</span>
                                         <span className="font-bold text-slate-800">{formData.date_of_birth || '—'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-400 block font-medium">Telephone Number:</span>
+                                        <span className="font-bold text-slate-800 font-mono">{formData.contact_number || '—'}</span>
                                     </div>
                                     <div>
                                         <span className="text-slate-400 block font-medium">Current Position:</span>
