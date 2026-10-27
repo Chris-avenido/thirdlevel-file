@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
     FiGrid, FiBriefcase, FiUser, FiLogOut, FiX, FiCheck, 
-    FiCopy, FiBookmark, FiEdit3
+    FiCopy, FiBookmark, FiEdit3, FiFileText
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import modernLogo from '../assets/modern_logo.png';
@@ -14,12 +14,13 @@ const VacancySidebar = ({
     activeTab = 'overview',
     setActiveTab,
     vacanciesCount = 0,
+    applicationsCount = 0,
     onOpenEditModal,
     isMobileOpen = false,
     setIsMobileOpen
 }) => {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const location = useLocation();
     const [copiedUid, setCopiedUid] = useState(false);
 
     // Hover State for Collapsing / Minimizing (matches Central Office AdminSidebar)
@@ -64,21 +65,40 @@ const VacancySidebar = ({
             id: 'overview',
             label: 'Applicant Dashboard',
             icon: FiGrid,
+            path: '/vacancy-dashboard',
             badge: null
         },
         {
             id: 'vacancies',
             label: 'List of Vacancies',
             icon: FiBriefcase,
+            path: '/all-vacancies',
             badge: vacanciesCount > 0 ? vacanciesCount : null
+        },
+        {
+            id: 'applications',
+            label: 'My Applications',
+            icon: FiFileText,
+            path: '/my-applications',
+            badge: applicationsCount > 0 ? applicationsCount : null
         },
         {
             id: 'profile',
             label: 'My Applicant Data',
             icon: FiUser,
+            path: '/my-applicant-data',
             badge: applicantProfile?.target_vacancy_id ? 'Target Set' : null
         }
     ];
+
+    const currentPath = location.pathname.toLowerCase();
+    const isItemActive = (item) => {
+        if (item.id === 'overview' && (currentPath === '/vacancy-dashboard' || currentPath === '/applicant-dashboard')) return true;
+        if (item.id === 'vacancies' && (currentPath === '/all-vacancies' || currentPath === '/vacancies')) return true;
+        if (item.id === 'applications' && (currentPath === '/my-applications' || currentPath === '/vacancy-applications')) return true;
+        if (item.id === 'profile' && (currentPath === '/my-applicant-data' || currentPath === '/applicant-profile')) return true;
+        return activeTab === item.id;
+    };
 
     return (
         <>
@@ -97,10 +117,10 @@ const VacancySidebar = ({
             <div
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-[#08315F] border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
+                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-[#08315F] border-r border-blue-900 flex-col pt-6 sm:pt-8 shadow-2xl transition-all duration-300 transform overflow-y-auto scrollbar-thin
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:translate-x-0 
-                ${sidebarCollapsed ? 'w-[320px] lg:w-[96px]' : 'w-[320px]'}`}
+                ${sidebarCollapsed ? 'w-[85vw] max-w-[320px] sm:w-[320px] lg:w-[96px]' : 'w-[85vw] max-w-[320px] sm:w-[320px]'}`}
             >
                 {/* Mobile Close Button */}
                 <button
@@ -210,12 +230,13 @@ const VacancySidebar = ({
                 <nav className={`flex flex-col gap-3 flex-1 ${sidebarCollapsed ? 'lg:px-4' : 'px-4'}`}>
                     {navItems.map((item) => {
                         const Icon = item.icon;
-                        const active = activeTab === item.id;
+                        const active = isItemActive(item);
                         return (
                             <button
                                 key={item.id}
                                 onClick={() => {
                                     if (setActiveTab) setActiveTab(item.id);
+                                    if (item.path) navigate(item.path);
                                     if (setIsMobileOpen) setIsMobileOpen(false);
                                 }}
                                 title={item.label}

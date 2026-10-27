@@ -125,8 +125,20 @@
   font-family: "Plus Jakarta Sans", Poppins, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
+  color-scheme: light;
   background-color: #f8fafc;
+}
+
+/* Force light color-scheme on all form controls to ensure high contrast and readability */
+input, select, textarea {
+  color-scheme: light !important;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+input:disabled, select:disabled, textarea:disabled {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
 }
 
 body {

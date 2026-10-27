@@ -103,7 +103,7 @@ const EditVacancyApplicantModal = ({
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4">
                 {/* Backdrop */}
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -118,31 +118,31 @@ const EditVacancyApplicantModal = ({
                     initial={{ scale: 0.95, opacity: 0, y: 15 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 15 }}
-                    className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-10 flex flex-col max-h-[90vh]"
+                    className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-10 flex flex-col max-h-[94vh]"
                 >
                     {/* Header Banner */}
-                    <div className="bg-[#08315F] text-white px-6 py-5 flex items-center justify-between shrink-0">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-black">
+                    <div className="bg-[#08315F] text-white px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-black shrink-0">
                                 <FiUser size={18} />
                             </div>
-                            <div>
-                                <h3 className="text-sm font-black uppercase tracking-tight">Edit Applicant Data</h3>
-                                <p className="text-[10px] text-blue-200 uppercase tracking-widest font-mono">
+                            <div className="min-w-0">
+                                <h3 className="text-sm font-black uppercase tracking-tight truncate">Edit Applicant Data</h3>
+                                <p className="text-[10px] text-blue-200 uppercase tracking-widest font-mono truncate">
                                     Table: vacancy_applicants • UID: {applicantProfile?.applicant_uid}
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors shrink-0 ml-2"
                         >
                             <FiX size={18} />
                         </button>
                     </div>
 
                     {/* Scrollable Form Body */}
-                    <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+                    <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
                         
                         {/* Name Grid */}
                         <div>
@@ -159,7 +159,7 @@ const EditVacancyApplicantModal = ({
                                         required
                                         value={formData.first_name}
                                         onChange={e => setFormData({ ...formData, first_name: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-800 outline-none uppercase transition-all"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-900 outline-none uppercase transition-all shadow-sm"
                                         placeholder="e.g. JUAN"
                                     />
                                 </div>
@@ -171,7 +171,7 @@ const EditVacancyApplicantModal = ({
                                         type="text"
                                         value={formData.middle_name}
                                         onChange={e => setFormData({ ...formData, middle_name: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-800 outline-none uppercase transition-all"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-900 outline-none uppercase transition-all shadow-sm"
                                         placeholder="e.g. SANTOS"
                                     />
                                 </div>
@@ -184,7 +184,7 @@ const EditVacancyApplicantModal = ({
                                         required
                                         value={formData.last_name}
                                         onChange={e => setFormData({ ...formData, last_name: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-800 outline-none uppercase transition-all"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-900 outline-none uppercase transition-all shadow-sm"
                                         placeholder="e.g. DELA CRUZ"
                                     />
                                 </div>
@@ -196,7 +196,7 @@ const EditVacancyApplicantModal = ({
                                         type="text"
                                         value={formData.suffix}
                                         onChange={e => setFormData({ ...formData, suffix: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-800 outline-none uppercase transition-all"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-900 outline-none uppercase transition-all shadow-sm"
                                         placeholder="e.g. Jr., III, Ph.D."
                                     />
                                 </div>
@@ -217,7 +217,7 @@ const EditVacancyApplicantModal = ({
                                         type="email"
                                         disabled
                                         value={applicantProfile?.email || ''}
-                                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-500 cursor-not-allowed outline-none"
+                                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 cursor-not-allowed outline-none"
                                     />
                                 </div>
                                 <div>
@@ -228,7 +228,7 @@ const EditVacancyApplicantModal = ({
                                         type="tel"
                                         value={formData.contact_number}
                                         onChange={e => setFormData({ ...formData, contact_number: e.target.value })}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-800 outline-none transition-all"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-bold text-slate-900 outline-none transition-all shadow-sm"
                                         placeholder="09123456789"
                                     />
                                 </div>
@@ -283,25 +283,25 @@ const EditVacancyApplicantModal = ({
                                 rows={4}
                                 value={formData.notes}
                                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-semibold text-slate-800 outline-none transition-all resize-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 text-xs font-semibold text-slate-900 outline-none transition-all resize-none shadow-sm"
                                 placeholder="State your qualifications, eligibility (CESO / CSEE / Career Service), relevant experience, or motivation for applying..."
                             />
                         </div>
 
                         {/* Modal Footer Actions */}
-                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-slate-200">
                             <button
                                 type="button"
                                 onClick={onClose}
                                 disabled={saving}
-                                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                                className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 text-center"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="px-6 py-2.5 rounded-xl bg-[#08315F] hover:bg-blue-900 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center gap-2 active:scale-95 disabled:opacity-60"
+                                className="w-full sm:w-auto justify-center px-6 py-2.5 rounded-xl bg-[#08315F] hover:bg-blue-900 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center gap-2 active:scale-95 disabled:opacity-60"
                             >
                                 {saving ? (
                                     <>

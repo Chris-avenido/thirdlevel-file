@@ -214,7 +214,7 @@ const VacancyLogin = () => {
                                             value={email}
                                             onChange={e => setEmail(e.target.value)}
                                             placeholder="deped or personal email (e.g. gmail.com)"
-                                            className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/10 outline-none text-xs font-bold text-slate-800 placeholder:text-slate-400 transition-all"
+                                            className="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 bg-white focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/10 outline-none text-xs font-bold text-slate-900 placeholder:text-slate-400 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -266,7 +266,7 @@ const VacancyLogin = () => {
                                                     onChange={e => setPassword(e.target.value)}
                                                     placeholder="Enter your account password"
                                                     autoComplete="current-password"
-                                                    className="w-full pl-11 pr-12 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/10 outline-none text-xs font-bold text-slate-800 placeholder:text-slate-400 transition-all"
+                                                    className="w-full pl-11 pr-12 py-3.5 rounded-2xl border-2 border-slate-200 bg-white focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/10 outline-none text-xs font-bold text-slate-900 placeholder:text-slate-400 transition-all"
                                                 />
                                                 <button
                                                     type="button"
@@ -291,7 +291,7 @@ const VacancyLogin = () => {
                                                         setPasscode(val);
                                                     }}
                                                     placeholder="•••••• (6-digit passcode)"
-                                                    className="w-full pl-11 pr-20 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/10 outline-none text-xs font-bold text-slate-800 placeholder:text-slate-400 transition-all tracking-wider font-mono"
+                                                    className="w-full pl-11 pr-20 py-3.5 rounded-2xl border-2 border-slate-200 bg-white focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/10 outline-none text-xs font-bold text-slate-900 placeholder:text-slate-400 transition-all tracking-wider font-mono"
                                                 />
                                                 <button
                                                     type="button"

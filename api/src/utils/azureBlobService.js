@@ -50,11 +50,12 @@ export const uploadToAzure = async (fileBuffer, originalName, mimeType, tloId, d
 
     // Generate unique filename: <docType>_<ReferenceNo>_<Timestamp>.<extension>
     const timestamp = getFormattedTimestamp();
-    const filename = `${docType}_${tloId}_${timestamp}${ext}`;
+    const docPrefix = docType ? `${docType}_` : '';
+    const filename = `${docPrefix}${tloId}_${timestamp}${ext}`;
 
-    // Generate virtual folder path: <TLOid>/<docType>/
+    // Generate virtual folder path: <TLOid>/<docType>/ or <TLOid>/
     // Blob path example: TLO-0408/photo/photo_TLO-0408_20260725_143015.jpg
-    const blobPath = `${tloId}/${docType}/${filename}`;
+    const blobPath = docType ? `${tloId}/${docType}/${filename}` : `${tloId}/${filename}`;
 
     const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
 
@@ -70,7 +71,8 @@ export const uploadToAzure = async (fileBuffer, originalName, mimeType, tloId, d
     return {
         blobName: blobPath,
         blobUrl: blockBlobClient.url,
-        folder: `${containerName}/${tloId}/${docType}`,
+        url: blockBlobClient.url,
+        folder: `${containerName}/${tloId}${docType ? `/${docType}` : ''}`,
         filename: filename
     };
 };

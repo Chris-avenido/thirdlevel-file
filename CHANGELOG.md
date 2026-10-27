@@ -1,5 +1,189 @@
 # CHANGELOG
 
+## 2026-10-27 — UI/UX: High-Contrast Input Readability & Theme Contrast Fix Across All Vacancy Pages
+
+### Root Cause Analysis
+- In [`ui/src/index.css`](file:///e:/christop/staging/ui/src/index.css), `:root` had `color-scheme: light dark;`.
+- On client workstations running Windows with OS-level or browser Dark Mode enabled, Chromium/Edge forced native form controls (`<input>`, `<select>`, `<textarea>`) to adopt browser default dark backgrounds (`#242424`/`#333333`).
+- Because input elements in modals and forms lacked explicit `bg-white`, they displayed dark slate text (`text-slate-800`) directly against dark gray backgrounds, resulting in unreadable near-zero contrast text (as reported by user screenshot in `ApplyVacancyModal.jsx` for "Target Vacancy Item Number / Identifier").
+
+### Changes & Standardizations
+- **Global Color Scheme Enforcement ([`ui/src/index.css`](file:///e:/christop/staging/ui/src/index.css))**:
+  - Replaced `:root` `color-scheme: light dark;` with `color-scheme: light;`.
+  - Added global stylesheet rules forcing `color-scheme: light !important; background-color: #ffffff; color: #0f172a;` for all `input`, `select`, and `textarea` elements, and crisp `#f1f5f9` / `#334155` for disabled form controls.
+- **Vacancy Application Modal ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx))**:
+  - Added explicit `bg-white text-slate-900 shadow-sm` across all inputs in all steps:
+    - Step 1: `target_vacancy_id`
+    - Step 2: `surname`, `first_name`, `middle_name`, `date_of_birth`, `contact_number`, `current_position`, `plantilla_office`
+    - Step 3: `current_designation_custom`, `assigned_oic_office`
+    - Step 4: `ces_stage_date`
+- **Edit Applicant Profile Modal ([`EditVacancyApplicantModal.jsx`](file:///e:/christop/staging/ui/src/components/EditVacancyApplicantModal.jsx))**:
+  - Added explicit `bg-white text-slate-900 shadow-sm` to `first_name`, `middle_name`, `last_name`, `suffix`, `contact_number`, and `notes` textarea.
+  - Upgraded disabled email styling to `bg-slate-100 border-slate-300 text-slate-700` for clear readability.
+- **View Application Details Modal ([`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx))**:
+  - Upgraded all metadata labels from muted `text-slate-400` to high-contrast `text-slate-500 font-bold text-[10px] uppercase tracking-wider`.
+  - Upgraded all applicant profile and position values to bold `text-slate-900`.
+  - Improved contrast of unattached and attached document status tags.
+- **List of Vacancies Page ([`AllVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AllVacancies.jsx))**:
+  - Updated search bar container to `bg-white border-slate-300 shadow-xs` with `text-slate-900 font-bold`.
+  - Updated office filter dropdown to `bg-white border-slate-300 text-slate-800 shadow-xs`.
+- **Applicant Dashboard ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Updated top search input and filter dropdowns (Position, Region) to `bg-white border-slate-300 text-slate-800/900 shadow-xs`.
+  - Updated catalog table filter bar inputs and selects (Position, Region, Office, Salary Grade, Items Per Page) to high-contrast `bg-white border-slate-300 text-slate-800/900 shadow-xs`.
+- **Sidebar & Login ([`VacancyApplicantSidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancyApplicantSidebar.jsx), [`VacancyLogin.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyLogin.jsx))**:
+  - Added explicit `bg-white text-slate-900 shadow-sm` to all profile edit inputs, quick vacancy search filter, and login/passcode input fields.
+
+---
+
+## 2026-10-27 — UI/UX: Streamlined Header Actions and Removed Redundant Apply Buttons
+
+### Overview & Changes
+- **Modal Step Navigation Cleaned Up ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx))**:
+  - Removed `overflow-x-auto` and native horizontal scrollbar from the 5-step application navigation bar (`[1 POSITION & ITEM] [2 PERSONAL DETAILS] [3 DESIGNATION & OIC] [4 ELIGIBILITIES] [5 DOCUMENTS (12)]`).
+  - Added `overflow-x-hidden` and `no-scrollbar` with responsive spacing, eliminating the dark native browser scrollbar track while maintaining clean step pill layout across all devices.
+- **Header Actions Streamlined ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Removed "Apply Now" and "Edit Profile" buttons from the top executive sticky header to eliminate visual clutter and ensure full focus on the applicant user pill (`fullName` and `applicant_uid`).
+  - Removed redundant "Apply for Vacancy" button from the top of the "List of Vacancies" (`/all-vacancies`) page header. Applicants apply directly for specific vacancies using the contextual "Apply Now" buttons on each individual vacancy card or table row.
+
+---
+
+## 2026-10-27 — UI/UX: Full Responsive Design & Layout Optimization for Vacancy Portal
+
+### Overview & Architecture
+- **Complete Responsiveness Across All Viewports (320px Mobile to 4K Ultrawide)**:
+  - Adhered strictly to [`.agents/master-designer.md`](file:///e:/christop/staging/.agents/master-designer.md) and [`.agents/AGENTS.md`](file:///e:/christop/staging/.agents/AGENTS.md) to ensure readable typography, spatial harmony, zero clipping, zero awkward word wrapping, and zero overlapping elements.
+  - Enhanced all vacancy views, tables, grids, cards, action bars, pagination, and modals.
+- **Vacancy Sidebar Navigation ([`VacancySidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancySidebar.jsx))**:
+  - Replaced hardcoded `320px` width on mobile with responsive fluid width `w-[85vw] max-w-[320px] sm:w-[320px]`, preventing overflow on 320px-360px small screens.
+  - Added `overflow-y-auto scrollbar-thin` to guarantee full scrollability in mobile landscape viewports.
+- **Top Executive Header & Navigation ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Implemented responsive padding `px-4 sm:px-6 lg:px-10 py-3 sm:py-4`, flex-gap `gap-3`, title truncation with `min-w-0`, and adaptive user identity pill so header controls never wrap or push items out of view.
+- **Main Container & Welcome Banner ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Scaled outer workspace padding from hardcoded values to responsive `p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8`.
+  - Welcome Banner updated with responsive padding `p-5 sm:p-7 lg:p-9`, fluid typography `text-xl sm:text-2xl lg:text-3xl`, and mobile-stacked action buttons (`flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3`).
+  - KPI summary metric cards configured with `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5` and `min-w-0` to guarantee zero card clipping.
+- **Section A (Profile Overview) & Tab 4 (Applicant Profile) ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Grid layouts converted to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5`.
+  - Implemented `break-words` on all candidate labels, titles, and remarks, and `break-all` on Email addresses and UIDs to avoid horizontal overflow.
+  - Target vacancy banner formatted with responsive stacking on small viewports.
+- **Catalog View (List of Vacancies, [`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Search and filter controls adapted for mobile (`flex-col sm:flex-row`, `w-full sm:w-auto`).
+  - Table View wrapped in horizontal touch-scrolling container with `<table className="w-full text-left border-collapse min-w-[700px]">` and `whitespace-nowrap` on badges and buttons, ensuring columns remain legible and never overlap on small screens.
+  - Grid View cards updated with `min-w-0`, `break-words`, and responsive footer action buttons (`flex-col sm:flex-row items-start sm:items-center justify-between gap-3`).
+  - Pagination controls equipped with responsive stacking (`flex-col sm:flex-row items-center justify-between gap-3`).
+- **Tab 3: My Submitted Applications ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Container padding upgraded to `p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6`.
+  - Application cards fitted with `min-w-0`, `break-words` on position and office titles, 2-column responsive meta details, and responsive footer buttons (`flex-col sm:flex-row`).
+- **Modal Dialogs ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx), [`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx), [`EditVacancyApplicantModal.jsx`](file:///e:/christop/staging/ui/src/components/EditVacancyApplicantModal.jsx))**:
+  - Backdrop and container padding optimized to `p-2 sm:p-4` with `max-h-[94vh]`.
+  - Step navigation in `ApplyVacancyModal.jsx` enabled with touch horizontal scrolling and compact badges.
+  - Modal body padding standardized to `p-4 sm:p-6 lg:p-8`.
+  - Action footer buttons configured with `flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3` and `w-full sm:w-auto`, preventing button overlap or squeezed touch targets on smartphones.
+
+---
+
+## 2026-10-27 — Feature: Dedicated Per-Page Routing for Applicant Portal
+
+### Overview & Architecture
+- **Per-Page Routing Architecture**:
+  - Transformed the single-page tabbed Applicant Portal into distinct, standalone page routes:
+    - **Applicant Dashboard (`FiGrid`)**: `/vacancy-dashboard` (alias: `/applicant-dashboard`). Renders the applicant overview, welcome banner, live KPI summary cards, registered profile data (`vacancy_applicants`), and top target vacancy.
+    - **List of Vacancies (`FiBriefcase`)**: `/all-vacancies` (alias: `/vacancies`). Renders the complete catalog of third level executive plantilla positions with search, regional filters, rank chips, and application modals.
+    - **My Applications (`FiFileText`)**: `/my-applications` (alias: `/vacancy-applications`). Renders the applicant's submitted applications, tracking statuses, and submitted 12 mandatory documents.
+    - **My Applicant Data (`FiUser`)**: `/my-applicant-data` (alias: `/applicant-profile`). Renders the applicant's official registered personal details, contact credentials, and qualifications/notes.
+- **Router Configuration ([`App.jsx`](file:///e:/christop/staging/ui/src/App.jsx))**:
+  - Registered dedicated protected routes for `/vacancy-dashboard`, `/applicant-dashboard`, `/all-vacancies`, `/vacancies`, `/my-applications`, `/vacancy-applications`, `/my-applicant-data`, and `/applicant-profile`.
+- **Sidebar Navigation & URL Synchronization ([`VacancySidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancySidebar.jsx))**:
+  - Updated sidebar navigation items with path definitions.
+  - Bound navigation clicks directly to `navigate(item.path)` and route-aware active state highlighting with `useLocation()`, matching the user's active sidebar styling.
+- **Page Header & View Rendering ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+  - Header title dynamically adapts per route (e.g. *Applicant Dashboard*, *List of Vacancies*, *My Applications*, *My Applicant Data*).
+  - Welcome Banner and KPI metric cards are scoped exclusively to `/vacancy-dashboard`.
+  - Added dedicated per-page headers for `/all-vacancies`, `/my-applications`, and `/my-applicant-data` with contextual titles, subtitles, and primary action buttons.
+  - Updated all internal links (e.g. "Browse Vacancies", "Change Position", "Full Catalog", "Browse Catalog") to call `handleNavigateTab`, synchronizing both browser history and URL routes.
+  - Converted the horizontal scrolling category buttons and scrollbar into a clean **Position Dropdown** (`<select>`) inside the Multi-Filter Controls Bar, displaying `All Positions (${vacancies.length})` along with each position title and its respective vacancy count (e.g. `Schools Division Superintendent (28)`, `Assistant Secretary (4)`).
+  - Added real-time active filter tag indicators with one-click removal and "Clear All" reset buttons.
+
+---
+
+## 2026-10-27 — Feature: Full Vacancy Application System Matching DepEd Application Form (`vacancy_applications`)
+
+### Overview & Architecture
+- **Dedicated Application System for Vacant Third Level Positions (SDS & ASDS)**:
+  - Built full application submission pipeline based on the official DepEd Application Form (`https://docs.google.com/forms/d/1JewT5sKZssgGtnaPIxZBoz1YIaX3E9OcJ3fy-SOqVHo/edit?ts=6adef10f`, *"Applications for Third Level Positions (SDS & ASDS)"*).
+  - Candidates can now officially apply for any vacant executive position with full personal/employment background, examination/CES eligibilities, and 12 mandatory document attachments.
+- **Database Schema Migration ([`20261027_056_create_vacancy_applications_table.sql`](file:///e:/christop/staging/database/migrations/20261027_056_create_vacancy_applications_table.sql))**:
+  - Created dedicated table `vacancy_applications` with 49 columns:
+    - Application Reference: `application_no` (format `APP-VAC-2026-####`), `applicant_uid` (`VAC-2026-####`), `vacancy_applicant_id`, `email`, `contact_number`.
+    - Position Info: `position_applying_for` (e.g. SDS, ASDS), `target_vacancy_id`.
+    - Personal & Plantilla Info: `surname`, `first_name`, `middle_name` (ALL CAPS per DepEd standard), `date_of_birth`, `current_position` (unabbreviated), `plantilla_office` (SDO/RO or agency assignment).
+    - Third Level Designation: `current_designation` (OIC-SDS, OIC-ASDS, N/A, or full unabbreviated designation), `assigned_oic_office`.
+    - Examination & CES Status: `is_let_passer` (BOOLEAN), `is_emt_passer` (BOOLEAN), `ces_eligibility_stage` (CESO Rank, Conferred CES Eligibility, Stage 1-4, None), `ces_stage_date`.
+    - 12 Document Attachments (UUIDs referencing `unified_binaries` + original filenames):
+      1. `letter_of_intent_binary_id` & `letter_of_intent_filename` (addressed to Sec. Sonny Angara, PDF)
+      2. `pds_binary_id` & `pds_filename` (CSC Form 212 notarized, PDF)
+      3. `work_experience_sheet_binary_id` & `work_experience_sheet_filename` (PDF)
+      4. `cv_binary_id` & `cv_filename` (Comprehensive CV, PDF)
+      5. `outstanding_accomplishments_binary_id` & `outstanding_accomplishments_filename` (PDF)
+      6. `service_records_binary_id` & `service_records_filename` (PDF)
+      7. `transcript_of_records_binary_id` & `transcript_of_records_filename` (PDF)
+      8. `performance_eval_binary_id` & `performance_eval_filename` (CESPES, OPCRF, IPCRF, PDF)
+      9. `self_certification_binary_id` & `self_certification_filename` (notarized, PDF)
+      10. `id_picture_binary_id` & `id_picture_filename` (Passport size image)
+      11. `applicant_profile_doc_binary_id` & `applicant_profile_doc_filename` (Template from tinyurl.com/3rdLevelForms, PDF/Word)
+      12. `other_documents_binary_id` & `other_documents_filename` (PDF)
+    - Workflow & Audit: `status` (default `'Submitted'`), `remarks`, `is_testaccount`, `created_at`, `updated_at`.
+  - Added indexes on `application_no`, `applicant_uid`, `vacancy_applicant_id`, `LOWER(email)`, `position_applying_for`, `status`, and `is_testaccount`.
+  - Updated Drizzle ORM schemas in both [`api/src/db/schema.js`](file:///e:/christop/staging/api/src/db/schema.js) and [`api/src/db/schema.ts`](file:///e:/christop/staging/api/src/db/schema.ts).
+  - Updated `initDB` in [`api/src/config/db.js`](file:///e:/christop/staging/api/src/config/db.js) to ensure table existence on startup.
+- **Backend API Endpoints ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js) & [`officialProfilingRoutes.js`](file:///e:/christop/staging/api/src/routes/officialProfilingRoutes.js))**:
+  - `POST /api/third-level/vacancy-applicant/upload-document`: Uploads individual application files directly to Azure Blob Storage under the container specified by `AZURE_FOLDER_NAME` (`staging-tlo`), using `vacancy_id` as the virtual folder path (`${vacancy_id}/${doc_type}/${filename}`). Populates `azure_blob_url` and sets `content = NULL` in `unified_binaries` (storing 0 bytes of raw binary payload in the PostgreSQL database). Downloads and views stream seamlessly via authenticated SDK at `/api/binary/:id`.
+  - `POST /api/third-level/vacancy-applicant/application`: Validates form fields, auto-generates sequential `APP-VAC-2026-####` reference number, inserts into `vacancy_applications`, synchronizes target vacancy in `vacancy_applicants`, and returns full submitted record.
+  - `GET /api/third-level/vacancy-applicant/applications`: Retrieves all submitted applications for the authenticated applicant sorted by `created_at DESC`.
+  - `GET /api/third-level/vacancy-applicant/application/:id`: Fetches a single application by ID or application reference number.
+- **Frontend Components & Pages**:
+  - **Apply Vacancy Modal ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx))**:
+    - 6-step multi-step application workflow:
+      1. Position & Plantilla Item
+      2. Personal Details (SURNAME, FIRST NAME, MIDDLE NAME [ALL CAPS auto-formatting], Date of Birth, Current Position, Plantilla Office)
+      3. Third Level Designation & Assigned SDO as OIC
+      4. Examination (LET, EMT) & Highest CES Eligibility Stage
+      5. 12 Mandatory Document Uploads with individual progress indicators, size validation, and preview/remove controls
+      6. Review & Final Submission summary
+  - **View Application Details Modal ([`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx))**:
+    - Modal for inspecting submitted applications with status badges, applicant details, designation information, and direct download/preview links for all 12 attached files via `/api/binary/:id`.
+  - **Updated Vacancy Dashboard ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+    - Added "Apply Now" buttons in the Header, Welcome Banner, Tab 1 Vacancy Cards, Tab 2 Table View, and Tab 2 Grid View.
+    - Updated KPI cards: Card 3 now shows real-time count of filed applications (`My Applications: X Filed`), linking directly to the applications tab.
+    - Cleaned up redundant horizontal tab strip in main content, leaving primary navigation exclusively to [`VacancySidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancySidebar.jsx).
+    - Added "My Applications" tab rendering all submitted applications with application reference number, position title, office, date, status, attached document count, and "View Details" action.
+  - **Updated Sidebar ([`VacancySidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancySidebar.jsx))**:
+    - Added "My Applications" navigation item with live application counter badge.
+  - **Updated Catalog ([`AllVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AllVacancies.jsx))**:
+    - Added "Apply Now" action button on every vacancy card opening the application workflow.
+
+---
+
+### Overview & Architecture
+- **Complete Vacancy Positions Catalog on `vacancy-dashboard`**:
+  - Enhanced [`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx) at `/vacancy-dashboard` to display all 85 vacant positions from the official DepEd Career Executive Service (CES) plantilla.
+  - **Overview Tab ("Dashboard & Data")**:
+    - Replaced the previous 4-item static preview with a full, interactive "DepEd Vacant Plantilla Positions" explorer displaying all matching vacant positions.
+    - Added quick category rank filter pills: All Positions (85), Undersecretary (1), Assistant Secretary (4), Assistant Regional Director (1), Schools Division Superintendent (28), and Assistant Schools Division Superintendent (51).
+    - Added instant search and Region filter dropdown directly in the Overview tab.
+    - Each position card displays position title, salary grade badge (`SG 25` to `SG 30`), bureau/office, region with map pin, DBM plantilla item number, green `VACANT` badge, and 1-click `Select Target Position` action.
+  - **List of Vacancies Tab ("Dedicated Catalog View")**:
+    - Complete full-page catalog with dual view modes:
+      - **Card Grid View**: 2-column executive cards with rank-specific salary grade colorization (Gold for SG 30, Indigo for SG 29, Purple for SG 27, Blue for SG 26, Emerald for SG 25), item code copy, active target indicator, and single-click target selection.
+      - **Compact Table View**: High-density executive table with DBM Item Code, Position Title, SG, Bureau/Division, Region, Status, and Action.
+    - Configurable items per page: defaults to `Show All (85)` so all positions are immediately visible on one scrollable page without pagination hurdles, with optional `12`, `24`, and `48` per page pagination options.
+    - Comprehensive multi-filter bar: Search input, Region filter (Central Office and Regions I to XIII, CAR, NCR, NIR), Office/Bureau filter, Salary Grade filter, and a single-click "Clear All Filters" button.
+- **Backend Plantilla Query ([`thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js))**:
+  - `getVacancies` queries `ces_plantilla WHERE is_vacant = true AND is_section_header = false` combined with any unassigned positions from `tlo_assignments`.
+  - Accurately returns all 85 official DepEd executive vacancies with item numbers, positions, salary grades, bureaus, and regions.
+
+---
+
 ## 2026-10-27 — Feature: Dedicated Vacancy Applicant Dashboard (`VacancyDashboard.jsx`) & Full-Height Workspace Sidebar (`VacancySidebar.jsx`)
 
 ### Overview & Architecture

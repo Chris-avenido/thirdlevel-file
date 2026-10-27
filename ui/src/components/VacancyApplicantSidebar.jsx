@@ -22,6 +22,13 @@ const VacancyApplicantSidebar = ({
     const [copiedUid, setCopiedUid] = useState(false);
     const [saving, setSaving] = useState(false);
     const [vacancySearch, setVacancySearch] = useState('');
+    const [sidebarPage, setSidebarPage] = useState(1);
+    const sidebarPageSize = 10;
+
+    // Reset sidebar page when search query changes
+    useEffect(() => {
+        setSidebarPage(1);
+    }, [vacancySearch]);
 
     const [formData, setFormData] = useState({
         first_name: '',
@@ -116,6 +123,12 @@ const VacancyApplicantSidebar = ({
             (v.strand && v.strand.toLowerCase().includes(q))
         );
     });
+
+    const totalSidebarPages = Math.ceil(filteredSidebarVacancies.length / sidebarPageSize) || 1;
+    const currentSidebarVacancies = filteredSidebarVacancies.slice(
+        (sidebarPage - 1) * sidebarPageSize,
+        sidebarPage * sidebarPageSize
+    );
 
     const fullName = [
         formData.first_name,
@@ -343,7 +356,7 @@ const VacancyApplicantSidebar = ({
                                             type="text"
                                             value={formData.first_name}
                                             onChange={e => setFormData({ ...formData, first_name: e.target.value })}
-                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-800 outline-none transition-all uppercase"
+                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-900 outline-none transition-all uppercase shadow-sm"
                                             placeholder="First Name"
                                             required
                                         />
@@ -356,7 +369,7 @@ const VacancyApplicantSidebar = ({
                                             type="text"
                                             value={formData.middle_name}
                                             onChange={e => setFormData({ ...formData, middle_name: e.target.value })}
-                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-800 outline-none transition-all uppercase"
+                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-900 outline-none transition-all uppercase shadow-sm"
                                             placeholder="Middle Name"
                                         />
                                     </div>
@@ -371,7 +384,7 @@ const VacancyApplicantSidebar = ({
                                             type="text"
                                             value={formData.last_name}
                                             onChange={e => setFormData({ ...formData, last_name: e.target.value })}
-                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-800 outline-none transition-all uppercase"
+                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-900 outline-none transition-all uppercase shadow-sm"
                                             placeholder="Last Name"
                                             required
                                         />
@@ -384,7 +397,7 @@ const VacancyApplicantSidebar = ({
                                             type="text"
                                             value={formData.suffix}
                                             onChange={e => setFormData({ ...formData, suffix: e.target.value })}
-                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-800 outline-none transition-all uppercase"
+                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-900 outline-none transition-all uppercase shadow-sm"
                                             placeholder="Jr., III, etc."
                                         />
                                     </div>
@@ -398,7 +411,7 @@ const VacancyApplicantSidebar = ({
                                         type="tel"
                                         value={formData.contact_number}
                                         onChange={e => setFormData({ ...formData, contact_number: e.target.value })}
-                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-800 outline-none transition-all"
+                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-bold text-slate-900 outline-none transition-all shadow-sm"
                                         placeholder="09123456789"
                                     />
                                 </div>
@@ -411,7 +424,7 @@ const VacancyApplicantSidebar = ({
                                         rows={3}
                                         value={formData.notes}
                                         onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-semibold text-slate-800 outline-none transition-all resize-none"
+                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/20 text-xs font-semibold text-slate-900 outline-none transition-all resize-none shadow-sm"
                                         placeholder="Briefly state your qualifications, eligibility (e.g. CESO/CSEE), or career objective..."
                                     />
                                 </div>
@@ -456,7 +469,7 @@ const VacancyApplicantSidebar = ({
                                 placeholder="Filter vacancies..."
                                 value={vacancySearch}
                                 onChange={e => setVacancySearch(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs font-semibold text-slate-800 outline-none focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 transition-all"
+                                className="w-full bg-white border border-slate-300 rounded-xl py-2 pl-9 pr-3 text-xs font-semibold text-slate-900 outline-none focus:border-[#08315F] focus:ring-2 focus:ring-[#08315F]/15 transition-all shadow-xs"
                             />
                         </div>
 
@@ -466,43 +479,71 @@ const VacancyApplicantSidebar = ({
                                     <p className="text-[11px] font-bold uppercase tracking-wider">No matching vacancies</p>
                                 </div>
                             ) : (
-                                filteredSidebarVacancies.map(v => {
-                                    const isTarget = applicantProfile?.target_vacancy_id === v.TLOid || applicantProfile?.target_vacancy_id === v.item_number;
-                                    return (
-                                        <div
-                                            key={v.assignment_id || v.TLOid || v.id}
-                                            onClick={() => onSelectVacancy && onSelectVacancy(v)}
-                                            className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative group ${
-                                                isTarget 
-                                                    ? 'bg-blue-50/80 border-[#075985] shadow-sm ring-1 ring-[#075985]/30' 
-                                                    : 'bg-white border-slate-200/80 hover:border-blue-300 hover:bg-slate-50/60'
-                                            }`}
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0 flex-1">
-                                                    <h4 className="text-xs font-black text-[#08315F] uppercase tracking-tight truncate group-hover:text-[#075985] transition-colors">
-                                                        {v.position_title}
-                                                    </h4>
-                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
-                                                        {v.office || 'Department of Education'}
-                                                    </p>
+                                <>
+                                    {currentSidebarVacancies.map(v => {
+                                        const isTarget = applicantProfile?.target_vacancy_id === v.TLOid || applicantProfile?.target_vacancy_id === v.item_number;
+                                        return (
+                                            <div
+                                                key={v.assignment_id || v.TLOid || v.id}
+                                                onClick={() => onSelectVacancy && onSelectVacancy(v)}
+                                                className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative group ${
+                                                    isTarget 
+                                                        ? 'bg-blue-50/80 border-[#075985] shadow-sm ring-1 ring-[#075985]/30' 
+                                                        : 'bg-white border-slate-200/80 hover:border-blue-300 hover:bg-slate-50/60'
+                                                }`}
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0 flex-1">
+                                                        <h4 className="text-xs font-black text-[#08315F] uppercase tracking-tight truncate group-hover:text-[#075985] transition-colors">
+                                                            {v.position_title}
+                                                        </h4>
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
+                                                            {v.office || 'Department of Education'}
+                                                        </p>
+                                                    </div>
+                                                    {isTarget && (
+                                                        <span className="shrink-0 p-1 rounded-full bg-emerald-100 text-emerald-600" title="Selected Target Position">
+                                                            <FiCheckCircle size={14} />
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                {isTarget && (
-                                                    <span className="shrink-0 p-1 rounded-full bg-emerald-100 text-emerald-600" title="Selected Target Position">
-                                                        <FiCheckCircle size={14} />
-                                                    </span>
-                                                )}
-                                            </div>
 
-                                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-[9px] font-bold">
-                                                <span className="text-slate-400">SG: {v.salary_grade || 'Third Level'}</span>
-                                                <span className={`uppercase tracking-wider flex items-center gap-1 ${isTarget ? 'text-emerald-700 font-black' : 'text-[#075985]'}`}>
-                                                    {isTarget ? 'Selected' : 'Select'} <FiChevronRight size={12} />
-                                                </span>
+                                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-[9px] font-bold">
+                                                    <span className="text-slate-400">SG: {v.salary_grade || 'Third Level'}</span>
+                                                    <span className={`uppercase tracking-wider flex items-center gap-1 ${isTarget ? 'text-emerald-700 font-black' : 'text-[#075985]'}`}>
+                                                        {isTarget ? 'Selected' : 'Select'} <FiChevronRight size={12} />
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {totalSidebarPages > 1 && (
+                                        <div className="flex items-center justify-between pt-2 px-1 text-xs">
+                                            <span className="text-[10px] font-bold text-slate-400">
+                                                Page {sidebarPage} of {totalSidebarPages} ({filteredSidebarVacancies.length})
+                                            </span>
+                                            <div className="flex items-center gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSidebarPage(p => Math.max(1, p - 1))}
+                                                    disabled={sidebarPage === 1}
+                                                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold disabled:opacity-40 transition-colors"
+                                                >
+                                                    Prev
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSidebarPage(p => Math.min(totalSidebarPages, p + 1))}
+                                                    disabled={sidebarPage === totalSidebarPages}
+                                                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold disabled:opacity-40 transition-colors"
+                                                >
+                                                    Next
+                                                </button>
                                             </div>
                                         </div>
-                                    );
-                                })
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

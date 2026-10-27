@@ -1702,52 +1702,74 @@ export const getVacancies = async (req, res) => {
   try {
     const { region, division, office, strand, search } = req.query;
     const params = [];
+    const conditions = [];
 
-    // Official architecture: query vacant positions from tlo_assignments
-    let query = `
-      SELECT 
-        a.id AS assignment_id,
-        a.id,
-        COALESCE(a.tlo_position_id, '') AS "TLOid",
-        COALESCE(a.tlo_position_id, '') AS item_number,
-        COALESCE(pos.position_title, i.position_title, '') AS position_title,
-        COALESCE(pos.salary_grade, i.salary_grade, '') AS salary_grade,
-        COALESCE(pos.bureau, '') AS office,
-        '' AS strand,
-        COALESCE(pos.region, '') AS region,
-        COALESCE(pos.division, '') AS division,
-        'VACANT' AS status
-      FROM tlo_assignments a
-      LEFT JOIN tlo_positions pos ON pos.id = a.position_id
-      LEFT JOIN tlo_items i ON i.item_number = a.tlo_position_id
-      WHERE a.tlo_masterlist_id IS NULL
-        AND UPPER(TRIM(COALESCE(a.tlo_position_id, ''))) NOT IN ('NEW ITEM', 'N/A (DETAILED)')
+    // Official architecture: query vacant positions from ces_plantilla where is_vacant = true,
+    // combined with any unassigned positions from tlo_assignments.
+    let baseQuery = `
+      WITH CombinedVacancies AS (
+        SELECT 
+          id AS assignment_id,
+          id,
+          COALESCE(dbm_item_no, '') AS "TLOid",
+          COALESCE(dbm_item_no, '') AS item_number,
+          COALESCE(position_title, '') AS position_title,
+          COALESCE(salary_grade, '') AS salary_grade,
+          COALESCE(office_bureau_division, '') AS office,
+          '' AS strand,
+          COALESCE(region, '') AS region,
+          COALESCE(office_bureau_division, '') AS division,
+          'VACANT' AS status
+        FROM ces_plantilla
+        WHERE is_vacant = true AND is_section_header = false
+
+        UNION ALL
+
+        SELECT 
+          a.id AS assignment_id,
+          a.id,
+          COALESCE(a.tlo_position_id, '') AS "TLOid",
+          COALESCE(a.tlo_position_id, '') AS item_number,
+          COALESCE(pos.position_title, i.position_title, '') AS position_title,
+          COALESCE(pos.salary_grade, i.salary_grade, '') AS salary_grade,
+          COALESCE(pos.bureau, '') AS office,
+          '' AS strand,
+          COALESCE(pos.region, '') AS region,
+          COALESCE(pos.division, '') AS division,
+          'VACANT' AS status
+        FROM tlo_assignments a
+        LEFT JOIN tlo_positions pos ON pos.id = a.position_id
+        LEFT JOIN tlo_items i ON i.item_number = a.tlo_position_id
+        WHERE a.tlo_masterlist_id IS NULL
+          AND UPPER(TRIM(COALESCE(a.tlo_position_id, ''))) NOT IN ('NEW ITEM', 'N/A (DETAILED)')
+      )
+      SELECT * FROM CombinedVacancies
     `;
 
     if (office && office !== 'All') {
       params.push(office);
-      query += ` AND (COALESCE(pos.bureau, '') = $${params.length})`;
+      conditions.push(`office = $${params.length}`);
     }
     if (region && region !== 'All') {
       params.push(region);
-      query += ` AND (COALESCE(pos.region, '') = $${params.length})`;
+      conditions.push(`region ILIKE $${params.length}`);
     }
     if (division && division !== 'All') {
       params.push(division);
-      query += ` AND (COALESCE(pos.division, '') = $${params.length})`;
-    }
-    if (strand && strand !== 'All') {
-      params.push(strand);
-      query += ` AND (1 = 1)`;
+      conditions.push(`division ILIKE $${params.length}`);
     }
     if (search && search.trim()) {
       params.push(`%${search.trim()}%`);
-      query += ` AND (pos.position_title ILIKE $${params.length} OR i.position_title ILIKE $${params.length} OR pos.bureau ILIKE $${params.length} OR a.tlo_position_id ILIKE $${params.length})`;
+      conditions.push(`(position_title ILIKE $${params.length} OR office ILIKE $${params.length} OR item_number ILIKE $${params.length})`);
     }
 
-    query += ` ORDER BY a.tlo_position_id ASC NULLS LAST, a.id ASC`;
+    if (conditions.length > 0) {
+      baseQuery += ` WHERE ${conditions.join(' AND ')}`;
+    }
 
-    const result = await pool.query(query, params);
+    baseQuery += ` ORDER BY salary_grade DESC NULLS LAST, position_title ASC, item_number ASC`;
+
+    const result = await pool.query(baseQuery, params);
     res.json({
       success: true,
       data: result.rows.map(row => ({

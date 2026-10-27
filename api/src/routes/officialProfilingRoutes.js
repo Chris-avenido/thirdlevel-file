@@ -18,7 +18,11 @@ import {
 import {
   getVacancyApplicantProfile,
   updateVacancyApplicantProfile,
-  applyVacancy
+  applyVacancy,
+  uploadVacancyDocument,
+  submitVacancyApplication,
+  getMyVacancyApplications,
+  getVacancyApplicationById
 } from '../controllers/vacancyApplicantController.js';
 
 const router = express.Router();
@@ -37,6 +41,10 @@ router.get('/vacancies', authMiddleware, getVacancies);
 router.get('/vacancy-applicant/profile', authMiddleware, getVacancyApplicantProfile);
 router.put('/vacancy-applicant/profile', authMiddleware, updateVacancyApplicantProfile);
 router.post('/vacancy-applicant/apply', authMiddleware, applyVacancy);
+router.post('/vacancy-applicant/upload-document', authMiddleware, memoryUpload.single('file'), uploadVacancyDocument);
+router.post('/vacancy-applicant/application', authMiddleware, submitVacancyApplication);
+router.get('/vacancy-applicant/applications', authMiddleware, getMyVacancyApplications);
+router.get('/vacancy-applicant/application/:id', authMiddleware, getVacancyApplicationById);
 router.get('/positions', authMiddleware, getPositions);
 router.get('/notable-achievements', authMiddleware, getNotableAchievements);
 router.get('/:TLOid/career-path', authMiddleware, getCareerPath);

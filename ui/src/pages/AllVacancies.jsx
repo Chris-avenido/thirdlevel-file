@@ -3,11 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FiChevronLeft, FiBriefcase, FiSearch, FiLoader, FiAlertTriangle, 
-    FiUser, FiLock, FiCheckCircle, FiSidebar, FiFilter, FiBookmark 
+    FiUser, FiLock, FiCheckCircle, FiSidebar, FiFilter, FiBookmark,
+    FiFileText
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import VacancyApplicantSidebar from '../components/VacancyApplicantSidebar';
+import ApplyVacancyModal from '../components/ApplyVacancyModal';
 import { apiUrl } from '../utils/api';
 import Swal from 'sweetalert2';
 
@@ -21,12 +23,19 @@ const AllVacancies = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [officeFilter, setOfficeFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 6;
+    const [itemsPerPage, setItemsPerPage] = useState('10'); // '10' (default) | '20' | '50' | 'all'
+
+    // Reset to page 1 whenever search, office filter, or itemsPerPage changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, officeFilter, itemsPerPage]);
 
     // Applicant Profile State (for Sidebar Display & Editing)
     const [applicantProfile, setApplicantProfile] = useState(null);
     const [profileLoading, setProfileLoading] = useState(true);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    const [selectedVacancyForApply, setSelectedVacancyForApply] = useState(null);
 
     // Fetch Vacancies
     useEffect(() => {
@@ -93,10 +102,6 @@ const AllVacancies = () => {
     useEffect(() => {
         fetchApplicantProfile();
     }, [fetchApplicantProfile]);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery, officeFilter]);
 
     // Handle Updating Profile Data
     const handleUpdateProfile = async (formData) => {
@@ -237,8 +242,24 @@ const AllVacancies = () => {
         return matchesQuery && matchesOffice;
     });
 
-    const totalPages = Math.ceil(filteredVacancies.length / itemsPerPage);
-    const currentVacancies = filteredVacancies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const pageSizeNumber = itemsPerPage === 'all' ? filteredVacancies.length : Number(itemsPerPage);
+    const totalPages = itemsPerPage === 'all' || pageSizeNumber <= 0 ? 1 : Math.ceil(filteredVacancies.length / pageSizeNumber);
+    const currentVacancies = itemsPerPage === 'all'
+        ? filteredVacancies
+        : filteredVacancies.slice((currentPage - 1) * pageSizeNumber, currentPage * pageSizeNumber);
+
+    const getPageNumbers = (current, total) => {
+        if (total <= 7) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+        if (current <= 3) {
+            return [1, 2, 3, 4, '...', total];
+        }
+        if (current >= total - 2) {
+            return [1, '...', total - 3, total - 2, total - 1, total];
+        }
+        return [1, '...', current - 1, current, current + 1, '...', total];
+    };
 
     return (
         <PageTransition>
@@ -340,14 +361,14 @@ const AllVacancies = () => {
                             {/* Search and Filters Bar */}
                             <div className="bg-white p-4 rounded-[22px] border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                                 {/* Search Input */}
-                                <div className="flex items-center gap-3 w-full md:w-auto md:flex-1 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200/80 focus-within:border-[#08315F] focus-within:ring-2 focus-within:ring-[#08315F]/15 transition-all">
+                                <div className="flex items-center gap-3 w-full md:w-auto md:flex-1 bg-white px-4 py-2.5 rounded-xl border border-slate-300 focus-within:border-[#08315F] focus-within:ring-2 focus-within:ring-[#08315F]/15 transition-all shadow-xs">
                                     <FiSearch className="text-slate-400 shrink-0" size={18} />
                                     <input 
                                         type="text"
                                         placeholder="Search by position title, item number, office, or strand..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full bg-transparent border-none text-xs md:text-sm font-semibold text-slate-800 placeholder:text-slate-400 outline-none"
+                                        className="w-full bg-transparent border-none text-xs md:text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none"
                                     />
                                     {searchQuery && (
                                         <button 
@@ -359,22 +380,40 @@ const AllVacancies = () => {
                                     )}
                                 </div>
 
-                                {/* Office Filter Pills (or Dropdown) */}
-                                {officeOptions.length > 2 && (
-                                    <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
-                                        <FiFilter className="text-slate-400 shrink-0" size={14} />
+                                <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
+                                    {/* Office Filter Pills (or Dropdown) */}
+                                    {officeOptions.length > 2 && (
+                                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                                            <FiFilter className="text-slate-400 shrink-0" size={14} />
+                                            <select
+                                                value={officeFilter}
+                                                onChange={e => setOfficeFilter(e.target.value)}
+                                                className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#08315F] transition-all cursor-pointer w-full sm:w-auto shadow-xs"
+                                            >
+                                                <option value="All">All Offices ({vacancies.length})</option>
+                                                {officeOptions.filter(o => o !== 'All').map(office => (
+                                                    <option key={office} value={office}>{office}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {/* Items Per Page Dropdown (Default 10) */}
+                                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">Per page:</span>
                                         <select
-                                            value={officeFilter}
-                                            onChange={e => setOfficeFilter(e.target.value)}
-                                            className="bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-[#08315F] transition-all cursor-pointer w-full md:w-auto"
+                                            value={itemsPerPage}
+                                            onChange={e => setItemsPerPage(e.target.value)}
+                                            className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#08315F] transition-all cursor-pointer w-full sm:w-auto shadow-xs"
+                                            title="Items to display per page"
                                         >
-                                            <option value="All">All Offices ({vacancies.length})</option>
-                                            {officeOptions.filter(o => o !== 'All').map(office => (
-                                                <option key={office} value={office}>{office}</option>
-                                            ))}
+                                            <option value="10">10 / page (Default)</option>
+                                            <option value="20">20 / page</option>
+                                            <option value="50">50 / page</option>
+                                            <option value="all">Show All ({filteredVacancies.length})</option>
                                         </select>
                                     </div>
-                                )}
+                                </div>
                             </div>
 
                             {/* Vacancies Cards Container */}
@@ -385,7 +424,9 @@ const AllVacancies = () => {
                                             Vacant Positions Catalog
                                         </h3>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                                            Showing {filteredVacancies.length} of {vacancies.length} Available Items
+                                            {itemsPerPage === 'all'
+                                                ? `Showing all ${filteredVacancies.length} of ${vacancies.length} Available Items`
+                                                : `Showing ${filteredVacancies.length === 0 ? 0 : (currentPage - 1) * pageSizeNumber + 1} to ${Math.min(currentPage * pageSizeNumber, filteredVacancies.length)} of ${filteredVacancies.length} Available Items`}
                                         </p>
                                     </div>
 
@@ -495,10 +536,20 @@ const AllVacancies = () => {
                                                             </div>
 
                                                             {/* Actions Row */}
-                                                            <div className="flex items-center gap-3 self-end md:self-center shrink-0">
+                                                            <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedVacancyForApply(v);
+                                                                        setIsApplyModalOpen(true);
+                                                                    }}
+                                                                    className="px-4 py-3 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-900 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-1.5"
+                                                                >
+                                                                    <FiFileText size={13} />
+                                                                    <span>Apply Now</span>
+                                                                </button>
                                                                 <button
                                                                     onClick={() => handleSelectVacancy(v)}
-                                                                    className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2 ${
+                                                                    className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2 ${
                                                                         isSelectedTarget
                                                                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
                                                                             : 'bg-[#08315F] hover:bg-blue-900 text-white'
@@ -507,12 +558,12 @@ const AllVacancies = () => {
                                                                     {isSelectedTarget ? (
                                                                         <>
                                                                             <FiCheckCircle size={13} />
-                                                                            <span>Selected Target</span>
+                                                                            <span>Target ✓</span>
                                                                         </>
                                                                     ) : (
                                                                         <>
                                                                             <FiBookmark size={13} />
-                                                                            <span>Apply / Select</span>
+                                                                            <span>Select Target</span>
                                                                         </>
                                                                     )}
                                                                 </button>
@@ -523,38 +574,42 @@ const AllVacancies = () => {
                                             </AnimatePresence>
 
                                             {/* Pagination Controls */}
-                                            {totalPages > 1 && (
+                                            {itemsPerPage !== 'all' && totalPages > 1 && (
                                                 <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-slate-100 mt-4 gap-4">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                        Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredVacancies.length)} of {filteredVacancies.length}
+                                                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                                        Showing {(currentPage - 1) * pageSizeNumber + 1} to {Math.min(currentPage * pageSizeNumber, filteredVacancies.length)} of {filteredVacancies.length} Vacancies (Page {currentPage} of {totalPages})
                                                     </p>
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-2 flex-wrap justify-center">
                                                         <button 
                                                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                                             disabled={currentPage === 1}
-                                                            className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-bold disabled:opacity-50 transition-colors"
+                                                            className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold disabled:opacity-40 transition-colors shadow-xs"
                                                         >
                                                             Previous
                                                         </button>
-                                                        <div className="flex gap-1">
-                                                            {[...Array(totalPages)].map((_, i) => (
-                                                                <button
-                                                                    key={i + 1}
-                                                                    onClick={() => setCurrentPage(i + 1)}
-                                                                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                                                                        currentPage === i + 1 
-                                                                            ? 'bg-[#08315F] text-white shadow-sm' 
-                                                                            : 'bg-transparent text-slate-500 hover:bg-slate-100'
-                                                                    }`}
-                                                                >
-                                                                    {i + 1}
-                                                                </button>
+                                                        <div className="flex items-center gap-1">
+                                                            {getPageNumbers(currentPage, totalPages).map((p, idx) => (
+                                                                p === '...' ? (
+                                                                    <span key={`ellipsis-${idx}`} className="px-1.5 text-xs font-bold text-slate-400">...</span>
+                                                                ) : (
+                                                                    <button
+                                                                        key={p}
+                                                                        onClick={() => setCurrentPage(p)}
+                                                                        className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                                                                            currentPage === p 
+                                                                                ? 'bg-[#08315F] text-white shadow-sm font-black' 
+                                                                                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs'
+                                                                        }`}
+                                                                    >
+                                                                        {p}
+                                                                    </button>
+                                                                )
                                                             ))}
                                                         </div>
                                                         <button 
                                                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                                             disabled={currentPage === totalPages}
-                                                            className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-bold disabled:opacity-50 transition-colors"
+                                                            className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold disabled:opacity-40 transition-colors shadow-xs"
                                                         >
                                                             Next
                                                         </button>
@@ -569,6 +624,27 @@ const AllVacancies = () => {
 
                     </div>
                 </main>
+
+                {/* Apply Vacancy Modal */}
+                <ApplyVacancyModal
+                    isOpen={isApplyModalOpen}
+                    onClose={() => {
+                        setIsApplyModalOpen(false);
+                        setSelectedVacancyForApply(null);
+                    }}
+                    vacancy={selectedVacancyForApply}
+                    applicantProfile={applicantProfile}
+                    onSuccess={() => {
+                        // Refresh profile
+                        if (applicantProfile) {
+                            setApplicantProfile(prev => ({
+                                ...prev,
+                                target_vacancy_id: selectedVacancyForApply?.TLOid || selectedVacancyForApply?.item_number || prev.target_vacancy_id,
+                                target_position_title: selectedVacancyForApply?.position_title || prev.target_position_title
+                            }));
+                        }
+                    }}
+                />
             </div>
         </PageTransition>
     );

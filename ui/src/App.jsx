@@ -124,7 +124,15 @@ const App = () => {
                 path="/vacancy-dashboard" 
                 element={
                     <ProtectedRoute>
-                        <VacancyDashboard />
+                        <VacancyDashboard defaultTab="overview" />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/applicant-dashboard" 
+                element={
+                    <ProtectedRoute>
+                        <VacancyDashboard defaultTab="overview" />
                     </ProtectedRoute>
                 } 
             />
@@ -133,6 +141,46 @@ const App = () => {
                 element={
                     <ProtectedRoute>
                         <VacancyDashboard defaultTab="vacancies" />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/vacancies" 
+                element={
+                    <ProtectedRoute>
+                        <VacancyDashboard defaultTab="vacancies" />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/my-applications" 
+                element={
+                    <ProtectedRoute>
+                        <VacancyDashboard defaultTab="applications" />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/vacancy-applications" 
+                element={
+                    <ProtectedRoute>
+                        <VacancyDashboard defaultTab="applications" />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/my-applicant-data" 
+                element={
+                    <ProtectedRoute>
+                        <VacancyDashboard defaultTab="profile" />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/applicant-profile" 
+                element={
+                    <ProtectedRoute>
+                        <VacancyDashboard defaultTab="profile" />
                     </ProtectedRoute>
                 } 
             />
