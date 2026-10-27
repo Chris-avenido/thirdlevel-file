@@ -24,8 +24,9 @@ const Register = () => {
     const location = useLocation();
     const { login } = useAuth();
 
-    // Detect if arriving from Central Office auth gate
+    // Detect if arriving from Central Office auth gate or Vacancies recruitment
     const isCO = location.state?.isCO || false;
+    const isVacancies = location.state?.portal === 'vacancies' || location.state?.isVacancies || false;
     const coAuthCode = location.state?.authCode || '';
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -38,7 +39,7 @@ const Register = () => {
         password: '',
         confirmPassword: '',
         passcode: '',
-        role: isCO ? 'Central Office' : 'TLO Applicant'
+        role: isCO ? 'Central Office' : (isVacancies ? 'Vacancy Applicant' : 'TLO Applicant')
     });
 
 
@@ -62,7 +63,7 @@ const Register = () => {
         return () => clearTimeout(t);
     }, [resendCooldown]);
 
-    // Debounced masterlist check for non-CO accounts
+    // Debounced masterlist check for non-CO accounts (bypassed for Vacancies applicants)
     useEffect(() => {
         if (isCO || currentStep !== 2) return;
 
@@ -74,7 +75,7 @@ const Register = () => {
             return;
         }
 
-        if (!email.toLowerCase().endsWith('@deped.gov.ph')) {
+        if (!isVacancies && !email.toLowerCase().endsWith('@deped.gov.ph')) {
             setMasterlistCheckStatus('invalid_domain');
             return;
         }
@@ -82,12 +83,13 @@ const Register = () => {
         const checkMasterlist = async () => {
             setMasterlistCheckStatus('checking');
             try {
-                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}&isCO=${isCO}`));
+                const portalParam = isVacancies ? '&portal=vacancies' : '';
+                const res = await fetch(apiUrl(`/api/auth/check-masterlist-email?email=${encodeURIComponent(email)}&isCO=${isCO}${portalParam}`));
                 if (res.ok) {
                     const data = await res.json();
                     if (data.alreadyRegistered) {
                         setMasterlistCheckStatus('already_registered');
-                    } else if (data.inMasterlist) {
+                    } else if (isVacancies || data.inMasterlist) {
                         setMasterlistCheckStatus('valid');
                     } else {
                         setMasterlistCheckStatus('invalid');
@@ -103,13 +105,13 @@ const Register = () => {
 
         const timer = setTimeout(checkMasterlist, 500);
         return () => clearTimeout(timer);
-    }, [formData.email, isCO, currentStep]);
+    }, [formData.email, isCO, isVacancies, currentStep]);
 
     useEffect(() => {
         if (!isCO) {
-            setFormData(prev => ({ ...prev, role: 'TLO Applicant' }));
+            setFormData(prev => ({ ...prev, role: isVacancies ? 'Vacancy Applicant' : 'TLO Applicant' }));
         }
-    }, []);
+    }, [isCO, isVacancies]);
 
     const handlePhoneChange = (e) => {
         const val = e.target.value.replace(/\D/g, '').slice(0, 11);
@@ -178,8 +180,12 @@ const Register = () => {
     };
 
     const handleFinalStep = async () => {
-        if (!formData.email.toLowerCase().endsWith('@deped.gov.ph')) {
+        if (!isVacancies && !formData.email.toLowerCase().endsWith('@deped.gov.ph')) {
             Swal.fire('Notice', 'Only @deped.gov.ph emails are allowed for registration.', 'warning');
+            return;
+        }
+        if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+            Swal.fire('Notice', 'Please enter a valid email address.', 'warning');
             return;
         }
         if (masterlistCheckStatus === 'already_registered') {
@@ -188,6 +194,11 @@ const Register = () => {
         }
         if (isCO && formData.auth_code !== 'nVxCpLrTqWmK') {
             Swal.fire('Error', 'Invalid Authorization Code. Please ensure you have the correct code to register as an Administrator.', 'error');
+            return;
+        }
+        // Vacancy Applicants skip email OTP verification completely
+        if (isVacancies) {
+            setCurrentStep(4);
             return;
         }
         // Email already verified and unchanged — skip straight to security step
@@ -216,8 +227,9 @@ const Register = () => {
                     contactNumber: formData.contactNumber,
                     role: formData.role,
                     passcode: formData.passcode,
-                    otpCode,
-                    isCO
+                    otpCode: isVacancies ? undefined : otpCode,
+                    isCO,
+                    portal: isVacancies ? 'vacancies' : undefined
                 })
             });
             const data = await res.json();
@@ -227,10 +239,10 @@ const Register = () => {
 
                 const redirectPath = (['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'CO_PD', 'RO_HRMO', 'SDO_HRMO'].includes(data.user.role))
                     ? '/home'
-                    : '/official-profiling';
+                    : (data.user.role === 'Vacancy Applicant' ? '/vacancy-dashboard' : '/official-profiling');
 
                 setTimeout(() => navigate(redirectPath), 2000);
-            } else if (data.code === 'OTP_INVALID') {
+            } else if (data.code === 'OTP_INVALID' && !isVacancies) {
                 // Code expired or was invalidated before submitting — re-verify
                 setVerifiedEmail('');
                 setOtpCode('');
@@ -277,17 +289,20 @@ const Register = () => {
                                     <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                                 </div>
                                 <h1 className="text-4xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic leading-none uppercase">
-                                    Join <span className="text-[#075985] not-italic">Registry</span>
+                                    {isVacancies ? 'Vacancy ' : 'Join '}<span className="text-[#075985] not-italic">{isVacancies ? 'Applicant' : 'Registry'}</span>
                                 </h1>
                                 <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-3 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-[#075985] animate-pulse"></span>
-                                    Step {currentStep} of 4 • {currentStep === 1 ? 'Identity' : currentStep === 2 ? 'Contact' : currentStep === 3 ? 'Verify Email' : 'Security'}
+                                    Step {isVacancies ? (currentStep === 4 ? 3 : currentStep) : currentStep} of {isVacancies ? 3 : 4} • {currentStep === 1 ? 'Identity' : currentStep === 2 ? 'Contact' : currentStep === 3 ? 'Verify Email' : 'Security'}
                                 </p>
                             </div>
                             <div className="flex gap-2">
-                                {[1, 2, 3, 4].map(s => (
-                                    <div key={s} className={`h-1.5 w-8 rounded-full transition-all duration-500 ${currentStep >= s ? 'bg-[#08315F] w-12 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-slate-200'}`}></div>
-                                ))}
+                                {(isVacancies ? [1, 2, 3] : [1, 2, 3, 4]).map(s => {
+                                    const activeStep = isVacancies ? (currentStep === 4 ? 3 : currentStep) : currentStep;
+                                    return (
+                                        <div key={s} className={`h-1.5 w-8 rounded-full transition-all duration-500 ${activeStep >= s ? 'bg-[#08315F] w-12 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-slate-200'}`}></div>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -338,6 +353,14 @@ const Register = () => {
                                         </p>
                                     </div>
                                 )}
+                                {isVacancies && (
+                                    <div className="flex items-center gap-3 p-4 bg-sky-50 rounded-2xl border border-sky-100">
+                                        <FiShield size={16} className="text-[#08315F] shrink-0" />
+                                        <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">
+                                            Vacancies Portal: You may register with your DepEd or personal email address.
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
@@ -368,7 +391,7 @@ const Register = () => {
                                             </div>
                                         )}
                                     </div>
-                                    {!isCO && masterlistCheckStatus === 'invalid' && (
+                                    {!isCO && !isVacancies && masterlistCheckStatus === 'invalid' && (
                                         <div className="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2">
                                             <FiShield className="text-amber-500 shrink-0 mt-0.5" />
                                             <p className="text-[10px] font-bold text-amber-600 leading-relaxed">
@@ -376,7 +399,7 @@ const Register = () => {
                                             </p>
                                         </div>
                                     )}
-                                    {masterlistCheckStatus === 'invalid_domain' && (
+                                    {!isVacancies && masterlistCheckStatus === 'invalid_domain' && (
                                         <p className="text-[10px] font-bold text-red-500 mt-1 ml-1">
                                             Only @deped.gov.ph emails are allowed for registration.
                                         </p>
@@ -412,7 +435,9 @@ const Register = () => {
 
                                 <div className="flex gap-4 pt-4">
                                     <button onClick={() => setCurrentStep(1)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
-                                    <button onClick={handleFinalStep} disabled={otpSending} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest disabled:opacity-60 disabled:cursor-not-allowed">{otpSending ? 'Sending Code...' : 'Verify Email'}</button>
+                                    <button onClick={handleFinalStep} disabled={otpSending} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest disabled:opacity-60 disabled:cursor-not-allowed">
+                                        {otpSending ? 'Sending Code...' : (isVacancies ? 'Continue to Security' : 'Verify Email')}
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -517,10 +542,12 @@ const Register = () => {
                                     </div>
                                 </div>
                                 {error && <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold">{error}</div>}
-                                <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                                    <FiCheckCircle className="text-emerald-500 shrink-0" size={14} />
-                                    <p className="text-[10px] font-bold text-emerald-700 break-all">Email verified: {verifiedEmail}</p>
-                                </div>
+                                {!isVacancies && (
+                                    <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                                        <FiCheckCircle className="text-emerald-500 shrink-0" size={14} />
+                                        <p className="text-[10px] font-bold text-emerald-700 break-all">Email verified: {verifiedEmail}</p>
+                                    </div>
+                                )}
                                 <div className="flex gap-4">
                                     <button onClick={() => setCurrentStep(2)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
                                     <button onClick={handleSubmit} disabled={loading} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 text-xs uppercase italic tracking-widest">
@@ -534,7 +561,7 @@ const Register = () => {
                         {/* FOOTER */}
                         <div className="mt-10 pt-8 border-t border-slate-100 text-center">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                Already have an account? <Link to="/login" className="text-[#075985] hover:text-blue-800 ml-1">Sign In Instead</Link>
+                                Already have an account? <Link to="/login" state={isVacancies ? { redirectTo: '/all-vacancies', isCO: false } : undefined} className="text-[#075985] hover:text-blue-800 ml-1">Sign In Instead</Link>
                             </p>
                         </div>
                     </div>

@@ -1,5 +1,86 @@
 # CHANGELOG
 
+## 2026-10-27 — Feature: Dedicated Vacancy Applicant Dashboard (`VacancyDashboard.jsx`) & Full-Height Workspace Sidebar (`VacancySidebar.jsx`)
+
+### Overview & Architecture
+- **Dedicated Vacancy Applicant Workspace & Dashboard**:
+  - Implemented [VacancyDashboard.jsx](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx) at `/vacancy-dashboard`.
+  - Gives Vacancy Applicants their own executive dashboard and full-height application sidebar matching the system's design language.
+  - Features KPI metric cards: Registration Status (`Active`, UID), Target Position (`target_position_title`, item code), Total Available Vacancies, and Profile Completeness progress indicator.
+  - Multi-tab view system:
+    - **Dashboard & Data**: Displays comprehensive registered applicant data based on `vacancy_applicants` alongside featured open positions preview.
+    - **List of Vacancies**: Complete interactive catalog with live search, bureau/office filtering, salary grade badges, item numbers, and instant "Select Target" position application.
+    - **Applicant Profile**: Full profile overview of `vacancy_applicants` database fields with direct modal editing.
+- **Dedicated Full-Height Application Sidebar ([`VacancySidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancySidebar.jsx))**:
+  - Styled after the Central Office role's executive navigation bar in Deep Navy `#08315F`.
+  - Added collapsible/minimizing functionality matching the Central Office role (`AdminSidebar.jsx`):
+    - Desktop collapsed state: defaults to `lg:w-[96px]` with a `w-[96px]` desktop spacer, maximizing main workspace area.
+    - Hover expand state: smoothly expands to `w-[320px]` on mouse hover (`onMouseEnter`/`onMouseLeave`) with `shadow-2xl` and `z-[100]`.
+    - Compact collapsed state: shows centered DepEd logo, centered applicant avatar with live emerald pulse indicator, and centered icon buttons.
+    - Expanded state: displays InsightED portal branding, full applicant card based on `vacancy_applicants` (Full Name, Applicant UID with copy button, email, target vacancy, and "Edit Applicant Data" button), nav labels, badges, and Department of Education footer caption.
+  - Prominently showcases applicant data based on `vacancy_applicants`: Full Name, Applicant UID (`VAC-2026-####` with copy button), official email, active status badge, target vacancy pill, and quick "Edit Applicant Data" button.
+  - Navigation items: "Applicant Dashboard", "List of Vacancies" (with live badge counter), and "My Applicant Data".
+- **Applicant Data Edit Modal ([`EditVacancyApplicantModal.jsx`](file:///e:/christop/staging/ui/src/components/EditVacancyApplicantModal.jsx))**:
+  - Modal allowing applicant updates for First Name, Middle Name, Last Name, Suffix, Contact Number, Target Vacancy dropdown, and Notes/Qualifications.
+  - Real-time persistence to `vacancy_applicants` table in PostgreSQL with state synchronization across the dashboard and sidebar.
+- **Dedicated Vacancies Recruitment Login Page ([`VacancyLogin.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyLogin.jsx))**:
+  - Implemented a standalone, distinctively designed login page at `/vacancy-login` dedicated exclusively to the Vacancies Recruitment portal.
+  - Added dual authentication method support:
+    - **Password Mode**: Sign in with registered email and account password.
+    - **6-Digit Passcode Mode**: Sign in with registered email and secure 6-digit numeric passcode.
+    - **Interactive On-Screen Dialpad Modal**: Includes a phone keypad modal with 6 dot progress indicators and physical keyboard support (numeric keys, backspace, delete).
+  - Automatically initializes session with `sessionStorage.setItem('active_portal', 'vacancies')` upon successful login.
+- **Strict Post-Login Redirection & Pure `vacancy_applicants` Isolation**:
+  - Completely decoupled the Vacancy Recruitment Portal from `third_level_official_masterlist` and `third_level_officials_profiling_application`.
+  - In [`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js), requests with `portal: 'vacancies'` isolate execution to query and return data **strictly and exclusively from `vacancy_applicants`**, bypassing any matching against `third_level_official_masterlist` or other tables.
+  - Applied migration [`20261027_055_sanitize_vacancy_applicants_uids.sql`](file:///e:/christop/staging/database/migrations/20261027_055_sanitize_vacancy_applicants_uids.sql) standardizing all applicant identifiers in `vacancy_applicants` to `VAC-2026-####`, eliminating any legacy `TLO-` ID display.
+  - In [`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js), profile fetching and seeding only generate `VAC-2026-####` UIDs and read strictly from `vacancy_applicants`.
+  - In [`App.jsx`](file:///e:/christop/staging/ui/src/App.jsx) `PublicRoute`, authenticated users from the vacancies portal (`active_portal === 'vacancies'` or `roleLower === 'vacancy applicant'`) are strictly routed to `/vacancy-dashboard`, preventing any redirection to `/official-profiling`.
+  - Updated [`NexusGate.jsx`](file:///e:/christop/staging/ui/src/pages/NexusGate.jsx) to route the "Vacancies: OPEN POSITIONS & OPPORTUNITIES" portal card directly to `/vacancy-login`.
+
+---
+
+## 2026-10-26 — Feature: Vacancy Applicants Table & Registration Flow (`vacancy_applicants`)
+
+### Overview & Architecture
+- **New Table for Vacancy Applicants**:
+  - Implemented migration [20261026_054_create_vacancy_applicants_table.sql](file:///e:/christop/staging/database/migrations/20261026_054_create_vacancy_applicants_table.sql) creating the `vacancy_applicants` table in PostgreSQL.
+  - Dedicated storage for external and internal applicants applying through the "Vacancies: OPEN POSITIONS & OPPORTUNITIES" portal, decoupling job applicants from the Third Level Officials profiling and registry approval pipeline (`third_level_officials_profiling_application` and `third_level_official_masterlist`).
+  - Stores applicant contact information (`first_name`, `last_name`, `email`, `contact_number`), target vacancy details (`target_vacancy_id`, `target_position_title`), active `registration_status = 'Active'`, and system audit metadata.
+  - Added indexes on `LOWER(email)`, `applicant_uid`, and `is_testaccount`.
+
+### Database & ORM Definitions
+- **Migration Execution**:
+  - Migration script executed safely with `BEGIN; ... COMMIT;` transaction and rollback instructions.
+- **Drizzle ORM & Database Init**:
+  - Registered `vacancyApplicants` in [schema.js](file:///e:/christop/staging/api/src/db/schema.js) and [schema.ts](file:///e:/christop/staging/api/src/db/schema.ts).
+  - Added table creation DDL with indexes to `initDB` in [db.js](file:///e:/christop/staging/api/src/config/db.js).
+
+### Backend Authentication & Registration (`registerController.js` & `loginController.js`)
+- **Role Assignment & Identification**:
+  - Added `'Vacancy Applicant'` role to `THIRD_LEVEL_ROLES`.
+  - Added UID generator formatting for vacancy accounts: `VAC-2026-####`.
+  - Allowed personal emails (Gmail, Yahoo, Outlook, etc.) and DepEd emails for Vacancy Applicant registrations while preserving the strict `@deped.gov.ph` requirement for Central Office and Third Level Official accounts.
+  - Vacancy registrations insert into `tlo_users` and `vacancy_applicants` directly, leaving masterlist tables untouched and avoiding unneeded 'For Approval' pending masterlist rows.
+- **Login Verification**:
+  - Updated `loginStandalone` and `loginByPasscode` in [loginController.js](file:///e:/christop/staging/api/src/controllers/loginController.js) to resolve accounts from `vacancy_applicants` when not found in TLO masterlist, preserving login access and passcode authentication.
+
+### Frontend Portal Integration (`NexusGate.jsx`, `Register.jsx`, `Login.jsx`, `App.jsx`)
+- **NexusGate Access Gate**:
+  - Card 2 ("Vacancies") now displays an access modal with two clear paths: "Sign In" (redirecting to `/all-vacancies`) and "Register New Account" (navigating to `/register` with `portal: 'vacancies'`).
+- **Registration Form**:
+  - [Register.jsx](file:///e:/christop/staging/ui/src/pages/Register.jsx) dynamically configures validation rules and role assignment for `portal: 'vacancies'`, allowing any valid email format, skipping masterlist pre-approval warnings, and redirecting authenticated applicants to `/all-vacancies`.
+- **Login & Route Guards**:
+  - [Login.jsx](file:///e:/christop/staging/ui/src/pages/Login.jsx) and [App.jsx](file:///e:/christop/staging/ui/src/App.jsx) allow the `'Vacancy Applicant'` role and automatically route vacancy applicants to `/all-vacancies`.
+
+### Registration Verification Rules (Updated)
+- **Removed Email Verification for "Vacancy Applicant" (Explicitly Requested)**:
+  - In [registerController.js](file:///e:/christop/staging/api/src/controllers/registerController.js), bypassed `checkOtpCode` and OTP consumption for `isVacancyApplicant` accounts.
+  - In [Register.jsx](file:///e:/christop/staging/ui/src/pages/Register.jsx), clicking "Continue to Security" immediately advances Vacancy Applicants to Step 3 (Security/Password setup), bypassing the OTP email verification step completely.
+  - Mandatory Email OTP verification remains strictly enforced for Central Office and Third Level Official registrations.
+
+---
+
 ## 2026-10-22 — Registration: Removed "Existing Email in Masterlist" Suggestion & Added Mandatory Email OTP Verification
 
 ### Removed (explicitly requested by user)

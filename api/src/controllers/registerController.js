@@ -195,16 +195,18 @@ const THIRD_LEVEL_ROLES = [
   'TLO Applicant',
   'Third Level Official',
   'Third Level Applicant',
-  'User'
+  'User',
+  'Vacancy Applicant'
 ];
 
 export const checkEmail = async (req, res) => {
-  const { email, isCO, role } = req.query;
+  const { email, isCO, role, portal } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
     const normalizedEmail = email.toLowerCase().trim();
+    const isVacancyApplicant = portal === 'vacancies' || role === 'Vacancy Applicant';
     const isCOBool = isCO === 'true' || isCO === true || ADMIN_ROLES.includes(role);
-    const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+    const targetRoles = isCOBool ? ADMIN_ROLES : (isVacancyApplicant ? ['Vacancy Applicant'] : THIRD_LEVEL_ROLES);
 
     const check = await pool.query(
       'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
@@ -217,12 +219,13 @@ export const checkEmail = async (req, res) => {
 };
 
 export const checkMasterlistEmail = async (req, res) => {
-  const { email, isCO, role } = req.query;
+  const { email, isCO, role, portal } = req.query;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
     const normalizedEmail = email.toLowerCase().trim();
+    const isVacancyApplicant = portal === 'vacancies' || role === 'Vacancy Applicant';
     const isCOBool = isCO === 'true' || isCO === true || ADMIN_ROLES.includes(role);
-    const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+    const targetRoles = isCOBool ? ADMIN_ROLES : (isVacancyApplicant ? ['Vacancy Applicant'] : THIRD_LEVEL_ROLES);
 
     const userCheck = await pool.query(
       'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
@@ -230,6 +233,10 @@ export const checkMasterlistEmail = async (req, res) => {
     );
     if (userCheck.rows.length > 0) {
       return res.json({ alreadyRegistered: true });
+    }
+
+    if (isVacancyApplicant) {
+      return res.json({ alreadyRegistered: false, inMasterlist: false, isVacancy: true });
     }
 
     const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
@@ -244,7 +251,7 @@ export const checkMasterlistEmail = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division, passcode, isCO, otpCode } = req.body;
+  let { email, password, firstName, lastName, contactNumber, role, assigned_region, assigned_division, passcode, isCO, otpCode, portal } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and Password are required' });
@@ -258,7 +265,9 @@ export const registerUser = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    let assignedRole = role || 'TLO Applicant';
+    const isVacancyApplicant = portal === 'vacancies' || role === 'Vacancy Applicant';
+    let assignedRole = role || (isVacancyApplicant ? 'Vacancy Applicant' : 'TLO Applicant');
+    if (isVacancyApplicant) assignedRole = 'Vacancy Applicant';
     if (assignedRole === 'Third Level Applicant') assignedRole = 'TLO Applicant';
     if (assignedRole === 'CO_PD') assignedRole = 'Central Office';
     if (assignedRole === 'RO_HRMO') assignedRole = 'Regional Office';
@@ -271,15 +280,18 @@ export const registerUser = async (req, res) => {
 
     // Email ownership verification: a valid, unexpired OTP sent to this exact email is required.
     // Checked before BEGIN so a failed-attempt invalidation is not rolled back.
-    const otpCheck = await checkOtpCode(normalizedEmail, otpCode);
-    if (!otpCheck.valid) {
-      return res.status(400).json({ error: otpCheck.error, code: 'OTP_INVALID' });
+    // Skipped for Vacancy Applicants per system rules.
+    if (!isVacancyApplicant) {
+      const otpCheck = await checkOtpCode(normalizedEmail, otpCode);
+      if (!otpCheck.valid) {
+        return res.status(400).json({ error: otpCheck.error, code: 'OTP_INVALID' });
+      }
     }
 
     await client.query('BEGIN');
 
     const isAdminRole = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(assignedRole);
-    const targetRoles = isAdminRole ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+    const targetRoles = isAdminRole ? ADMIN_ROLES : (isVacancyApplicant ? ['Vacancy Applicant'] : THIRD_LEVEL_ROLES);
 
     const userCheck = await client.query(
       'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
@@ -320,15 +332,18 @@ export const registerUser = async (req, res) => {
               updated_at = NOW()
         `, [newTloId, firstName, lastName]);
       }
+    } else if (isVacancyApplicant) {
+      userRegistrationStatus = 'Active';
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const uidPrefix = isVacancyApplicant ? 'VAC' : 'TLO';
     const uidRes = await client.query(`
       SELECT COALESCE(MAX(CAST(SUBSTRING(uid FROM 10) AS INTEGER)), 0) AS max_num
-      FROM tlo_users WHERE uid ~ '^TLO-2026-[0-9]{4}$'
+      FROM tlo_users WHERE uid ~ '^${uidPrefix}-2026-[0-9]{4}$'
     `);
     const nextNum = parseInt(uidRes.rows[0].max_num) + 1;
-    const uid = `TLO-2026-${String(nextNum).padStart(4, '0')}`;
+    const uid = `${uidPrefix}-2026-${String(nextNum).padStart(4, '0')}`;
 
     await client.query(
       `INSERT INTO tlo_users (
@@ -337,18 +352,29 @@ export const registerUser = async (req, res) => {
       [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division, passcode || null, userRegistrationStatus, isTestAccount]
     );
 
-    const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
-    if (!adminRoles.includes(assignedRole)) {
+    if (isVacancyApplicant) {
       await client.query(
-        `INSERT INTO third_level_officials_profiling_application (
-          application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, is_testaccount, created_at, updated_at
-        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, $6, NOW(), NOW())`,
+        `INSERT INTO vacancy_applicants (
+          applicant_uid, first_name, last_name, email, contact_number, registration_status, is_testaccount, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, 'Active', $6, NOW(), NOW())`,
         [uid, firstName, lastName, normalizedEmail, contactNumber, isTestAccount]
       );
+    } else {
+      const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
+      if (!adminRoles.includes(assignedRole)) {
+        await client.query(
+          `INSERT INTO third_level_officials_profiling_application (
+            application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, is_testaccount, created_at, updated_at
+          ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, $6, NOW(), NOW())`,
+          [uid, firstName, lastName, normalizedEmail, contactNumber, isTestAccount]
+        );
+      }
     }
 
     // Consume the OTP (single-use) as part of the same transaction
-    await client.query(`UPDATE verification_codes SET expires_at = NOW() WHERE email = $1`, [normalizedEmail]);
+    if (!isVacancyApplicant) {
+      await client.query(`UPDATE verification_codes SET expires_at = NOW() WHERE email = $1`, [normalizedEmail]);
+    }
 
     await client.query('COMMIT');
 

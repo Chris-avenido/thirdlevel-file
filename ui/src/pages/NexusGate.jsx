@@ -89,6 +89,8 @@ const NexusGate = () => {
                 navigate('/login', { state: { redirectTo: '/home', isCO: true } });
             } else if (portalId === 'records') {
                 navigate('/login', { state: { redirectTo: '/official-profiling', isCO: false } });
+            } else if (portalId === 'vacancies') {
+                navigate('/vacancy-login');
             } else {
                 navigate('/login');
             }
@@ -303,12 +305,12 @@ const NexusGate = () => {
                     </div>
                 </motion.div>
 
-                {/* ── CARD 2: VACANCIES (LOCKED) ── */}
+                {/* ── CARD 2: VACANCIES ── */}
                 <motion.div
                     variants={direction === 'right' ? itemRight : itemLeft}
                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleLockedVacanciesClick}
+                    onClick={() => setShowRecruitModal(true)}
                     className="nexus-card nexus-card-vacancies"
                 >
                     {/* Watermark Executive Chair Background Graphic */}
@@ -332,10 +334,6 @@ const NexusGate = () => {
                         <div className="nexus-card-badge nexus-badge-blue">
                             <FiBriefcase size={22} className="text-[#0284C7]" />
                         </div>
-                        <div className="nexus-locked-pill">
-                            <FiLock size={12} className="text-[#FCD116]" />
-                            <span>LOCKED</span>
-                        </div>
                     </div>
 
                     <div className="nexus-card-body">
@@ -345,6 +343,12 @@ const NexusGate = () => {
                         <p className="nexus-card-desc mt-1">
                             Explore official Third Level executive position vacancies, qualification standards, application requirements, and recruitment announcements across the Department.
                         </p>
+                    </div>
+
+                    <div className="nexus-card-footer">
+                        <span className="nexus-action-link text-[#08315F]">
+                            CONTINUE <FiArrowRight size={16} />
+                        </span>
                     </div>
                 </motion.div>
             </div>
@@ -392,29 +396,58 @@ const NexusGate = () => {
                 <AnimatePresence>
                     {showRecruitModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRecruitModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[22px] shadow-2xl border-2 border-[#08315F] overflow-hidden">
-                                <div className="p-10">
-                                    <div className="flex justify-between items-start mb-8">
-                                        <div className="space-y-1">
-                                            <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">Application Access</h2>
-                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Verify your InsightED account status</p>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRecruitModal(false)} className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" />
+                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-[22px] shadow-2xl border-2 border-[#08315F] overflow-hidden">
+                                {/* Header bar */}
+                                <div className="bg-[#08315F] px-10 py-8 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                                            <FiBriefcase size={22} className="text-[#0284C7]" />
                                         </div>
-                                        <button onClick={() => setShowRecruitModal(false)} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
-                                            <FiX size={24} className="text-slate-400" />
-                                        </button>
+                                        <div>
+                                            <p className="text-white font-black text-sm uppercase tracking-widest leading-none">Vacancies Recruitment</p>
+                                            <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest mt-1">Open Positions & Opportunities</p>
+                                        </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <button onClick={() => navigate('/login')} className="group p-6 bg-blue-50 hover:bg-blue-600 rounded-3xl border border-blue-100 transition-all duration-300 text-left">
-                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform shadow-sm"><FiLogIn size={24} /></div>
-                                            <h3 className="font-black text-blue-900 group-hover:text-white uppercase tracking-tight italic">I have an account</h3>
-                                            <p className="text-[10px] font-bold text-blue-600 group-hover:text-blue-100 uppercase tracking-wide mt-1">Sign in to continue</p>
-                                        </button>
-                                        <button onClick={() => navigate('/register')} className="group p-6 bg-slate-50 hover:bg-[#075985] rounded-3xl border border-slate-200 transition-all duration-300 text-left">
-                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 mb-4 group-hover:scale-110 transition-transform shadow-sm"><FiUserPlus size={24} /></div>
-                                            <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Portal Registration</h3>
-                                            <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-1">Personnel & Applicants</p>
-                                        </button>
+                                    <button onClick={() => setShowRecruitModal(false)} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                                        <FiX size={20} className="text-white/70" />
+                                    </button>
+                                </div>
+
+                                <div className="p-10">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your account or register as a vacancy applicant</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <button
+                                                onClick={() => navigate('/vacancy-login')}
+                                                className="group p-6 bg-blue-50 hover:bg-[#08315F] rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
+                                            >
+                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#08315F] shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                    <FiLogIn size={22} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Sign In</h3>
+                                                    <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">I already have an account</p>
+                                                </div>
+                                            </button>
+
+                                            <button
+                                                onClick={() => navigate('/register', { state: { portal: 'vacancies', isCO: false } })}
+                                                className="group p-6 bg-slate-50 hover:bg-[#08315F] rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
+                                            >
+                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                    <FiUserPlus size={22} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Register New Account</h3>
+                                                    <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-0.5">Apply for open vacancies</p>
+                                                </div>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>

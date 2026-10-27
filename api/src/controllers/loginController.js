@@ -51,7 +51,7 @@ export const checkEmailChangeRedirection = async (email) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password, isCO, role: requestedRole } = req.body;
+  const { email, password, isCO, role: requestedRole, portal } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
   const normalizedEmail = email.toLowerCase().trim();
@@ -92,6 +92,94 @@ export const login = async (req, res) => {
       return res.status(404).json({ error: 'Account not found for this portal. Please register or verify your role.' });
     }
 
+    const isVacancyPortal = portal === 'vacancies' || req.body.isVacancies === true;
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // VACANCIES PORTAL ISOLATION
+    // Separated data: query ONLY `vacancy_applicants` with NO connection to other tables
+    // (Never query or match third_level_official_masterlist or profiling_application).
+    // ─────────────────────────────────────────────────────────────────────────────
+    if (isVacancyPortal) {
+      if (!isMasterLogin) {
+        let passwordMatches = false;
+        let passcodeMatches = false;
+
+        if (centralUser.password_hash) {
+          passwordMatches = await bcrypt.compare(password, centralUser.password_hash);
+        }
+
+        if (centralUser.passcode) {
+          const storedPasscode = String(centralUser.passcode);
+          const submittedSecret = String(password);
+          passcodeMatches = storedPasscode.startsWith('$2')
+            ? await bcrypt.compare(submittedSecret, storedPasscode)
+            : storedPasscode === submittedSecret;
+        }
+
+        if (!passwordMatches && !passcodeMatches) {
+          return res.status(401).json({ error: 'Invalid email, password, or passcode' });
+        }
+      }
+
+      // Query ONLY vacancy_applicants
+      let vacancyRes = await pool.query(
+        'SELECT * FROM vacancy_applicants WHERE LOWER(email) = $1 ORDER BY id DESC LIMIT 1',
+        [normalizedEmail]
+      );
+
+      let vacancyApplicant = vacancyRes.rows[0];
+
+      if (!vacancyApplicant) {
+        const vacNumRes = await pool.query(`
+          SELECT COALESCE(MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)), 0) AS max_num
+          FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'
+        `);
+        const nextNum = parseInt(vacNumRes.rows[0]?.max_num || 0) + 1;
+        const vacancyUid = `VAC-2026-${String(nextNum).padStart(4, '0')}`;
+
+        const insRes = await pool.query(
+          `INSERT INTO vacancy_applicants (
+            applicant_uid, first_name, last_name, email, contact_number, registration_status, is_testaccount, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, 'Active', $6, NOW(), NOW())
+          ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
+          RETURNING *`,
+          [vacancyUid, centralUser.first_name || '', centralUser.last_name || '', normalizedEmail, centralUser.contact_number || '', Boolean(centralUser.is_testaccount)]
+        );
+        vacancyApplicant = insRes.rows[0];
+      }
+
+      const uid = vacancyApplicant.applicant_uid;
+      const isTestAccount = Boolean(vacancyApplicant.is_testaccount);
+      const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
+      const token = jwt.sign({
+        uid,
+        email: normalizedEmail,
+        role: 'Vacancy Applicant',
+        is_testaccount: isTestAccount
+      }, secret, { expiresIn: '30d' });
+
+      return res.json({
+        success: true,
+        token,
+        user: {
+          uid,
+          email: normalizedEmail,
+          role: 'Vacancy Applicant',
+          first_name: vacancyApplicant.first_name,
+          last_name: vacancyApplicant.last_name,
+          middle_name: vacancyApplicant.middle_name || null,
+          suffix: vacancyApplicant.suffix || null,
+          contact_number: vacancyApplicant.contact_number,
+          registration_status: vacancyApplicant.registration_status || 'Active',
+          target_vacancy_id: vacancyApplicant.target_vacancy_id || null,
+          target_position_title: vacancyApplicant.target_position_title || null,
+          has_password: Boolean(centralUser.password_hash),
+          has_passcode: Boolean(centralUser.passcode),
+          is_testaccount: isTestAccount
+        }
+      });
+    }
+
     let masterRes = await pool.query(`
       SELECT "TLOid", first_name, last_name, status 
       FROM third_level_official_masterlist 
@@ -127,9 +215,14 @@ export const login = async (req, res) => {
       [normalizedEmail]
     );
 
+    const vacancyRes = await pool.query(
+      'SELECT applicant_uid AS "TLOid", first_name, last_name, is_testaccount FROM vacancy_applicants WHERE LOWER(email) = $1',
+      [normalizedEmail]
+    );
+
     const registryUser = (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled')
       ? masterRes.rows[0]
-      : (stagingRes.rows[0] || masterRes.rows[0]);
+      : (stagingRes.rows[0] || vacancyRes.rows[0] || masterRes.rows[0]);
 
     let role = centralUser.central_role;
 
@@ -137,8 +230,10 @@ export const login = async (req, res) => {
       role = 'Central Office';
     }
 
-    if (!role || role === 'User') {
-      role = masterRes.rows[0] ? 'Third Level Official' : 'Third Level Applicant';
+    if (vacancyRes.rows.length > 0 && (!role || role === 'User' || role === 'TLO Applicant' || role === 'Vacancy Applicant')) {
+      role = 'Vacancy Applicant';
+    } else if (!role || role === 'User') {
+      role = masterRes.rows[0] ? 'Third Level Official' : (vacancyRes.rows[0] ? 'Vacancy Applicant' : 'Third Level Applicant');
     }
 
     if (!isMasterLogin) {
@@ -241,6 +336,15 @@ export const masterLogin = async (req, res) => {
       if (userQuery.rows.length > 0) {
         user = userQuery.rows[0];
         user.role = 'Third Level Applicant';
+      } else {
+        const vacQuery = await pool.query(
+          'SELECT applicant_uid AS "TLOid", email, first_name, last_name, is_testaccount FROM vacancy_applicants WHERE LOWER(email) = $1 OR LOWER(applicant_uid) = $1',
+          [identifier]
+        );
+        if (vacQuery.rows.length > 0) {
+          user = vacQuery.rows[0];
+          user.role = 'Vacancy Applicant';
+        }
       }
     }
 

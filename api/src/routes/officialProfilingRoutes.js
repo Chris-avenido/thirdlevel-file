@@ -15,6 +15,11 @@ import {
   getPositions,
   getActiveAssignments
 } from '../controllers/thirdLevelController.js';
+import {
+  getVacancyApplicantProfile,
+  updateVacancyApplicantProfile,
+  applyVacancy
+} from '../controllers/vacancyApplicantController.js';
 
 const router = express.Router();
 const memoryUpload = multer({ storage: multer.memoryStorage() });
@@ -29,6 +34,9 @@ router.put('/:TLOid/profile', authMiddleware, updateProfile);
 router.get('/submit-application', authMiddleware, submitApplication);
 router.post('/submit-application', authMiddleware, submitApplication);
 router.get('/vacancies', authMiddleware, getVacancies);
+router.get('/vacancy-applicant/profile', authMiddleware, getVacancyApplicantProfile);
+router.put('/vacancy-applicant/profile', authMiddleware, updateVacancyApplicantProfile);
+router.post('/vacancy-applicant/apply', authMiddleware, applyVacancy);
 router.get('/positions', authMiddleware, getPositions);
 router.get('/notable-achievements', authMiddleware, getNotableAchievements);
 router.get('/:TLOid/career-path', authMiddleware, getCareerPath);

@@ -179,13 +179,13 @@ export const AuthProvider = ({ children }) => {
         setToken(token);
     };
 
-    const loginWithCredentials = async (email, password, isCO) => {
+    const loginWithCredentials = async (email, password, isCO, portal) => {
         const targetUrl = apiUrl('/api/auth/login');
         try {
             const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, isCO })
+                body: JSON.stringify({ email, password, isCO, portal })
             });
 
             if (!response.ok) {
@@ -206,6 +206,9 @@ export const AuthProvider = ({ children }) => {
 
             const data = await response.json();
             if (data.success) {
+                if (portal === 'vacancies' || data.user?.role === 'Vacancy Applicant') {
+                    sessionStorage.setItem('active_portal', 'vacancies');
+                }
                 login(data.user, data.token);
                 return { success: true, user: data.user };
             } else {

@@ -876,3 +876,22 @@ export const tloItems = pgTable("tlo_items", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
+
+export const vacancyApplicants = pgTable("vacancy_applicants", {
+	id: serial("id").primaryKey().notNull(),
+	applicantUid: varchar("applicant_uid", { length: 64 }).unique(),
+	firstName: varchar("first_name", { length: 150 }).notNull(),
+	lastName: varchar("last_name", { length: 150 }).notNull(),
+	middleName: varchar("middle_name", { length: 150 }),
+	suffix: varchar("suffix", { length: 50 }),
+	email: varchar("email", { length: 255 }).unique().notNull(),
+	contactNumber: varchar("contact_number", { length: 50 }),
+	registrationStatus: varchar("registration_status", { length: 50 }).default('Active').notNull(),
+	targetVacancyId: varchar("target_vacancy_id", { length: 100 }),
+	targetPositionTitle: varchar("target_position_title", { length: 255 }),
+	notes: text("notes"),
+	isTestaccount: boolean("is_testaccount").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+

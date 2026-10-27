@@ -57,7 +57,7 @@ const Login = () => {
                 const roleLower = user.role?.toLowerCase() || '';
                 const isAllowed = isCOPortal
                     ? (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower))
-                    : (roleLower === 'tlo applicant');
+                    : (['tlo applicant', 'vacancy applicant'].includes(roleLower));
 
                 if (isAllowed) return user;
 
@@ -181,10 +181,10 @@ const Login = () => {
                         return Swal.fire('Access Denied', 'This portal is restricted to Administrative Personnel.', 'error');
                     }
                 } else {
-                    if (!['tlo applicant', 'third level official', 'third level applicant', 'user'].includes(roleLower)) {
+                    if (!['tlo applicant', 'vacancy applicant', 'third level official', 'third level applicant', 'user'].includes(roleLower)) {
                         setLoading(false);
                         logout();
-                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Personnel.', 'error');
+                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Personnel and Vacancy Applicants.', 'error');
                     }
                 }
 
@@ -198,6 +198,8 @@ const Login = () => {
                 // Role-based redirection
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
+                } else if (location.state?.portal === 'vacancies' || roleLower === 'vacancy applicant' || sessionStorage.getItem('active_portal') === 'vacancies') {
+                    navigate('/vacancy-dashboard');
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
                     navigate('/home');
                 } else {
@@ -231,10 +233,10 @@ const Login = () => {
                         return Swal.fire('Access Denied', 'This portal is restricted to Administrative Personnel.', 'error');
                     }
                 } else {
-                    if (!['tlo applicant', 'third level official', 'third level applicant', 'user'].includes(roleLower)) {
+                    if (!['tlo applicant', 'vacancy applicant', 'third level official', 'third level applicant', 'user'].includes(roleLower)) {
                         setLoading(false);
                         logout();
-                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Personnel.', 'error');
+                        return Swal.fire('Access Denied', 'This portal is restricted to Third Level Personnel and Vacancy Applicants.', 'error');
                     }
                 }
 
@@ -248,6 +250,8 @@ const Login = () => {
                 // Role-based redirection
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
+                } else if (location.state?.portal === 'vacancies' || roleLower === 'vacancy applicant' || sessionStorage.getItem('active_portal') === 'vacancies') {
+                    navigate('/vacancy-dashboard');
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
                     navigate('/home');
                 } else {
@@ -473,7 +477,7 @@ const Login = () => {
                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">OR</span>
                                 <div className="h-px bg-slate-200 flex-1"></div>
                             </div>
-                            <Link to="/register" state={{ isCO }} className="w-full bg-white border-2 border-blue-100 hover:border-blue-600 hover:bg-blue-50 text-blue-700 font-black py-5 rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center">
+                            <Link to="/register" state={{ isCO, portal: (location.state?.portal === 'vacancies' || location.state?.redirectTo === '/all-vacancies') ? 'vacancies' : undefined }} className="w-full bg-white border-2 border-blue-100 hover:border-blue-600 hover:bg-blue-50 text-blue-700 font-black py-5 rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center">
                                 Create Account
                             </Link>
                         </div>

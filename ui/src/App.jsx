@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -7,6 +7,7 @@ import 'aos/dist/aos.css';
 // Pages
 import NexusGate from './pages/NexusGate';
 import Login from './pages/Login';
+import VacancyLogin from './pages/VacancyLogin';
 import Register from './pages/Register';
 import OfficialProfiling from './pages/OfficialProfiling';
 import OfficialsRegistry from './pages/OfficialsRegistry';
@@ -16,6 +17,7 @@ import Settings from './pages/Settings';
 import NotableAchievements from './pages/NotableAchievements';
 import LoadingScreen from './components/LoadingScreen';
 import AllVacancies from './pages/AllVacancies';
+import VacancyDashboard from './pages/VacancyDashboard';
 import ResetPassword from './pages/ResetPassword';
 import CesPlantilla from './pages/CesPlantilla';
 import PositionAssignments from './pages/PositionAssignments';
@@ -26,10 +28,17 @@ import MainDashboard from './pages/MainDashboard';
 // Public Route Component
 const PublicRoute = ({ children }) => {
     const { user, loading } = useAuth();
+    const location = useLocation();
     if (loading) return <LoadingScreen />;
     if (user) {
+        if (location.state?.redirectTo) {
+            return <Navigate to={location.state.redirectTo} replace />;
+        }
+        const activePortal = sessionStorage.getItem('active_portal') || localStorage.getItem('active_portal');
         const roleLower = user.role?.toLowerCase() || '';
-        if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
+        if (activePortal === 'vacancies' || roleLower === 'vacancy applicant') {
+            return <Navigate to="/vacancy-dashboard" replace />;
+        } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
             return <Navigate to="/home" replace />;
         } else {
             return <Navigate to="/official-profiling" replace />;
@@ -58,6 +67,7 @@ const App = () => {
             
             {/* Auth Routes */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/vacancy-login" element={<PublicRoute><VacancyLogin /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             
@@ -111,10 +121,18 @@ const App = () => {
                 } 
             />
             <Route 
+                path="/vacancy-dashboard" 
+                element={
+                    <ProtectedRoute>
+                        <VacancyDashboard />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
                 path="/all-vacancies" 
                 element={
                     <ProtectedRoute>
-                        <AllVacancies />
+                        <VacancyDashboard defaultTab="vacancies" />
                     </ProtectedRoute>
                 } 
             />

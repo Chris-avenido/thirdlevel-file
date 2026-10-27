@@ -66,6 +66,25 @@ export const initDB = async () => {
       (process.env.APP_AUTH_CODE || 'mXqWpLsKdJfN').toUpperCase().trim(),
       'Third Level Applicant'
     ]);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vacancy_applicants (
+        id SERIAL PRIMARY KEY,
+        applicant_uid VARCHAR(64) UNIQUE,
+        first_name VARCHAR(150) NOT NULL,
+        last_name VARCHAR(150) NOT NULL,
+        middle_name VARCHAR(150),
+        suffix VARCHAR(50),
+        email VARCHAR(255) NOT NULL UNIQUE,
+        contact_number VARCHAR(50),
+        registration_status VARCHAR(50) DEFAULT 'Active' NOT NULL,
+        target_vacancy_id VARCHAR(100),
+        target_position_title VARCHAR(255),
+        notes TEXT,
+        is_testaccount BOOLEAN DEFAULT FALSE NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+    `);
     console.log('[Database] Schema verified.');
   } catch (err) {
     console.warn('[Database] Initialization warning:', err.message);
