@@ -22,7 +22,9 @@ import {
   uploadVacancyDocument,
   submitVacancyApplication,
   getMyVacancyApplications,
-  getVacancyApplicationById
+  getVacancyApplicationById,
+  getAllVacancyApplications,
+  updateVacancyApplicationStatus
 } from '../controllers/vacancyApplicantController.js';
 
 const router = express.Router();
@@ -45,6 +47,8 @@ router.post('/vacancy-applicant/upload-document', authMiddleware, memoryUpload.s
 router.post('/vacancy-applicant/application', authMiddleware, submitVacancyApplication);
 router.get('/vacancy-applicant/applications', authMiddleware, getMyVacancyApplications);
 router.get('/vacancy-applicant/application/:id', authMiddleware, getVacancyApplicationById);
+router.get('/vacancy-applications/all', authMiddleware, getAllVacancyApplications);
+router.patch('/vacancy-applications/:id/status', authMiddleware, updateVacancyApplicationStatus);
 router.get('/positions', authMiddleware, getPositions);
 router.get('/notable-achievements', authMiddleware, getNotableAchievements);
 router.get('/:TLOid/career-path', authMiddleware, getCareerPath);

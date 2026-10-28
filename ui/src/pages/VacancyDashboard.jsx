@@ -1777,9 +1777,22 @@ const VacancyDashboard = ({ defaultTab = 'overview' }) => {
                                                                 </p>
                                                             </div>
 
-                                                            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider shrink-0">
-                                                                {app.status || 'Submitted'}
-                                                            </span>
+                                                            <div className="flex flex-col items-end gap-1 shrink-0">
+                                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0 border ${
+                                                                    app.status === 'Appointed' || app.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                                    app.status === 'Shortlisted' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                                    app.status === 'Under Review' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                                    app.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                                                    'bg-blue-50 text-blue-700 border-blue-200'
+                                                                }`}>
+                                                                    {app.status || 'Submitted'}
+                                                                </span>
+                                                                {app.appointed_tlo_id && (
+                                                                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-mono font-black border border-emerald-300">
+                                                                        Official: {app.appointed_tlo_id}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
 
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">

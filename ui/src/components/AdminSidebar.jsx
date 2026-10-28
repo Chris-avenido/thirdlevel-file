@@ -1,7 +1,7 @@
 // Force HMR
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle, FiGrid, FiBookmark, FiBriefcase, FiLayers } from 'react-icons/fi';
+import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle, FiGrid, FiBookmark, FiBriefcase, FiLayers, FiFileText } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import newLogo from '../assets/modern_logo.png';
 
@@ -48,6 +48,14 @@ const AdminSidebar = () => {
             path: '/tlo-positions',
             icon: FiLayers,
             isActive: (pathname, search) => pathname === '/tlo-positions',
+            hidden: false,
+        },
+        {
+            id: 'vacancies',
+            label: 'Vacancies',
+            path: '/admin-vacancies',
+            icon: FiFileText,
+            isActive: (pathname, search) => pathname === '/admin-vacancies' || pathname === '/vacancies',
             hidden: false,
         },
         {

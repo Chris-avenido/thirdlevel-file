@@ -1,6 +1,216 @@
 # CHANGELOG
 
-## 2026-10-27 — Application Modal Enhancements: Date Validations, Image-Only ID Picture, and Passcode Removal
+## 2026-10-28 — Policy & UI Enforcement: Prohibit Reappointment to Other Positions When Applicant is in Masterlist
+
+### Requirement & User Directive
+> "do not to reappoint to other position 
+> you can check in the materlist table if the id of vacancy_applicant is already there so disable in the page of admin-vacancies table"
+
+### Architectural & Business Logic Changes
+1. **Lateral Masterlist Link Check in Application Queries ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))**:
+   - Updated `getAllVacancyApplications`, `getVacancyApplicationById`, and `getMyVacancyApplications` to join `third_level_official_masterlist` via `LEFT JOIN LATERAL` using `vacancy_applicant_id` (with fallback to `email`).
+   - Computes:
+     - `appointed_tlo_id`: Official TLO ID in the masterlist (e.g. `TLO-0627`).
+     - `masterlist_position_title`: Position title assigned in the masterlist.
+     - `masterlist_plantilla_item_no`: Plantilla item number assigned in the masterlist.
+     - `is_applicant_in_masterlist`: `true` if applicant has an active record in `third_level_official_masterlist`.
+     - `is_already_appointed_elsewhere`: `true` if applicant is in masterlist and this specific application is not the appointed one.
+
+2. **Backend Appointment Validation ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))**:
+   - In `updateVacancyApplicationStatus`: When evaluating an application for appointment (`status = 'Appointed'`), queries `third_level_official_masterlist` for `vacancy_applicant_id`.
+   - If an existing masterlist record is found and its assigned plantilla item differs from the target vacancy ID (or is already appointed), rejects with HTTP 400:
+     `Cannot reappoint to other position. This applicant is already appointed as ${assignedTloId} for position "${existingMasterRecord.position_title || existingMasterRecord.plantilla_item_no}" in the Official Masterlist.`
+
+3. **Admin Vacancies Table UI ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - In the Table:
+     - Table rows for applicants already appointed elsewhere are styled as disabled (`bg-slate-100/60 opacity-60 cursor-not-allowed select-none`).
+     - Clicking the row does NOT open the application details modal (`if (app.is_already_appointed_elsewhere) return;`).
+     - The Action button renders as an explicitly disabled button (`<button disabled>` with `cursor-not-allowed opacity-60 bg-slate-100 text-slate-400` and label `Disabled`) with clear tooltip explaining why reappointment is disabled.
+     - Applicant Name column displays a distinct amber badge: `In Masterlist (TLO-####)` when appointed elsewhere, or emerald badge when this record is the appointed one.
+     - Status column displays an additional indicator: `Reappoint Disabled` with warning icon when `app.is_already_appointed_elsewhere` is true.
+
+4. **Application Details Modal ([`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx))**:
+   - Displays an alert banner at the top of Central Office evaluation when the applicant is already in the masterlist.
+   - Completely omits the `"Appointed"` option from the status dropdown when `application.is_already_appointed_elsewhere` is true so it cannot be selected.
+   - Blocks save attempts with a SweetAlert2 warning dialog if reappointment is attempted.
+
+## 2026-10-28 — Adjustment: Set Appointed User Role in `tlo_users` to "TLO Applicant"
+
+### Requirement
+The user explicitly requested that upon successful appointment of a vacancy applicant, their account role created/updated in `tlo_users` should be `"TLO Applicant"` instead of `"Third Level Official"`.
+
+### Changes Applied ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))
+- In `updateVacancyApplicationStatus`: Updated the `tlo_users` `INSERT` and `UPDATE` queries to assign `role = 'TLO Applicant'`.
+- Updated existing appointed test record (`james@gmail.com`) in `tlo_users` to have `role = 'TLO Applicant'`.
+
+## 2026-10-28 — Feature & Schema Migration: Add `passcode` Column to `vacancy_applicants` Table
+
+### Objective
+Enable Vacancy Applicants to register and sign in using their 6-digit passcode in addition to their password on the Vacancies portal.
+
+### Changes Applied
+1. **Database Schema Migration ([`20261028_059_add_passcode_to_vacancy_applicants.sql`](file:///e:/christop/staging/database/migrations/20261028_059_add_passcode_to_vacancy_applicants.sql))**:
+   - Added `passcode VARCHAR(255)` column to table `vacancy_applicants`.
+   - Synchronized existing passcodes from `tlo_users` for existing vacancy applicant accounts.
+   - Updated idempotent startup check in [`db.js`](file:///e:/christop/staging/api/src/config/db.js).
+2. **Registration Controller ([`registerController.js`](file:///e:/christop/staging/api/src/controllers/registerController.js))**:
+   - Stored clean `passcode` in `vacancy_applicants` during Vacancy Applicant registration.
+   - Returned `has_passcode: Boolean(cleanPasscode)` in auth response.
+3. **Login Controller ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js))**:
+   - In `login` (`/api/auth/login`): Verified submitted secret against `vacancy_applicants.passcode` (both plain and bcrypt formats).
+   - In `pinLogin` (`/api/auth/login-passcode`): Added isolated vacancy applicant lookup and validation against `vacancy_applicants.passcode`.
+   - Returned `has_passcode: Boolean(vacancyApplicant.passcode || legacyUser?.passcode)`.
+4. **User Settings Controller ([`userController.js`](file:///e:/christop/staging/api/src/controllers/userController.js))**:
+   - Updated `updateSettings` to target `vacancy_applicants` when `req.user.role === 'Vacancy Applicant'`.
+5. **Official Appointment Workflow ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))**:
+   - Preserved and synced applicant's `passcode` into `tlo_users` upon appointment.
+
+## 2026-10-28 — Bugfix: Column `id` Does Not Exist on `tlo_users` During Application Appointment
+
+### Root Cause
+When an application status was updated to "Appointed" in `admin-vacancies`, [`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js) attempted to verify if an existing user record existed in table `tlo_users` using:
+```sql
+SELECT id FROM tlo_users WHERE LOWER(email) = LOWER($1)
+```
+In PostgreSQL, `tlo_users` does not have a column named `id` (its primary key is `uid`). Consequently, PostgreSQL aborted the transaction and returned:
+`Internal server error while updating application status: column "id" does not exist`.
+
+Additionally, the subsequent update/insert queries on `tlo_users` referenced columns that do not exist on `tlo_users` (`updated_at`, `middle_name`) as well as an invalid `ON CONFLICT (email)` clause (`tlo_users` does not have a unique constraint on `email`).
+
+### Resolution & Changes Applied ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))
+1. Changed `SELECT id FROM tlo_users` to `SELECT uid FROM tlo_users`.
+2. Removed references to `updated_at` and `middle_name` on `tlo_users`, aligning columns to actual schema: `uid, email, password_hash, hash_version, first_name, last_name, contact_number, role, registration_status, is_testaccount, created_at`.
+3. Removed the invalid `ON CONFLICT (email)` clause from `INSERT INTO tlo_users`, relying on the prior `SELECT uid` existence check.
+
+### User Requirement & Architectural Objective
+The user explicitly specified:
+> "do not insert data in the table of 'tlo_users' registration of vacancies. only inserted in the 'vacancy_applicants'"
+
+Under this updated architecture:
+1. Vacancy Applicant registration exclusively inserts into `vacancy_applicants`. No records are inserted into `tlo_users` during registration.
+2. Vacancy portal authentication verifies credentials directly against `vacancy_applicants` (using `vacancy_applicants.password_hash` with bcrypt, with legacy fallback to `tlo_users`).
+3. Vacancy applicants cannot access the Central Office or Third Level Official portals until and unless they are officially appointed.
+4. When an applicant is officially appointed (promoted to the Masterlist), an account is provisioned in `tlo_users` with role `'Third Level Official'` carrying over their password hash.
+
+### Key Changes
+1. **Database Schema Migration ([`20261028_058_add_password_hash_to_vacancy_applicants.sql`](file:///e:/christop/staging/database/migrations/20261028_058_add_password_hash_to_vacancy_applicants.sql))**:
+   - Added `password_hash VARCHAR(255)` column to `vacancy_applicants`.
+   - Backfilled password hashes from `tlo_users` for existing vacancy applicant accounts.
+   - Updated startup initialization in [`db.js`](file:///e:/christop/staging/api/src/config/db.js).
+2. **Registration Controller ([`registerController.js`](file:///e:/christop/staging/api/src/controllers/registerController.js))**:
+   - When registering as a Vacancy Applicant (`isVacancyApplicant`), the controller checks email uniqueness against `vacancy_applicants`.
+   - Generates sequential UID (`VAC-2026-####`) across `vacancy_applicants` and `vacancy_applications`.
+   - Hashes password using bcrypt.
+   - Inserts **ONLY** into `vacancy_applicants`.
+   - Completely omits any insert into `tlo_users`.
+   - Issues a 30-day JWT token with role `'Vacancy Applicant'`.
+3. **Login Controller ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js))**:
+   - For Vacancies portal logins (`portal === 'vacancies'` or `role === 'Vacancy Applicant'`), directly queries `vacancy_applicants` first.
+   - Verifies submitted password against `vacancy_applicants.password_hash`.
+   - Fallback checks `tlo_users` only for legacy compatibility.
+   - Issues session JWT token and profile data purely from `vacancy_applicants`.
+4. **Official Appointment Provisioning ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))**:
+   - When an application status is set to `'Appointed'`, if the user does not exist in `tlo_users`, provisions an account in `tlo_users` with role `'Third Level Official'` and `registration_status = 'Active'`, copying their `password_hash` from `vacancy_applicants`.
+
+## 2026-10-28 — Bugfix: Vacancy Applicant Registration Unique Constraint Violation on `applicant_uid`
+
+### Root Cause
+During Vacancy Applicant registration in `registerController.js`, the sequential identifier generator calculated the next `uid` by selecting `MAX` from `tlo_users WHERE uid ~ '^VAC-2026-[0-9]{4}$'`. Because some users registered with different roles or had their role promoted, `tlo_users` only contained `VAC-2026-0001`, causing the generator to calculate `max_num = 1` and produce `VAC-2026-0002`. However, table `vacancy_applicants` already contained `VAC-2026-0002` (which has a strict `UNIQUE` constraint on `applicant_uid`). Attempting to insert into `vacancy_applicants` triggered a PostgreSQL unique constraint violation: `duplicate key value violates unique constraint "vacancy_applicants_applicant_uid_key"`.
+
+### Resolution & Changes Applied
+1. **Multi-Table `GREATEST` UID Generation ([`registerController.js`](file:///e:/christop/staging/api/src/controllers/registerController.js))**:
+   - Querying the true maximum sequential number across all relevant tables: `tlo_users`, `vacancy_applicants`, and `vacancy_applications`.
+   - Checks if a profile already exists for the email in `vacancy_applicants` to reuse the existing canonical `applicant_uid`.
+   - Added `ON CONFLICT (email) DO UPDATE` fallback on `vacancy_applicants` to maintain idempotent user profile linking.
+2. **Alignment Across Controllers ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js), [`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))**:
+   - Standardized UID calculation in `loginController.js` and `vacancyApplicantController.js` to also query `GREATEST` across `tlo_users`, `vacancy_applicants`, and `vacancy_applications`.
+   - Verified that subsequent registrations produce guaranteed sequential UIDs (`VAC-2026-0003`, `VAC-2026-0004`, etc.) without collision.
+
+## 2026-10-28 — Bugfix: Auto-Vacate/Occupy Plantilla Vacancy Positions Upon Appointment & Query Protection
+
+### Root Cause
+When a vacancy application was marked as "Appointed" in `admin-vacancies`, the appointment transaction promoted the candidate into `third_level_official_masterlist` and synced `tlo_masterlist`, but did not update the underlying target vacancy record (`ces_plantilla` or `tlo_assignments`). In `ces_plantilla`, `is_vacant` remained `true` and `incumbent_name` remained `'VACANT'`. Consequently, `getVacancies` (which queries `ces_plantilla WHERE is_vacant = true AND is_section_header = false`) continued to include the filled position in the list displayed on the `/all-vacancies` page.
+
+### Resolution & Changes Applied
+1. **Target Vacancy Status Synchronization in `vacancyApplicantController.js`**:
+   - Inside `updateVacancyApplicationStatus`, when an applicant is set to `'Appointed'`:
+     - Updates `ces_plantilla`: sets `is_vacant = false`, `incumbent_name = '<LASTNAME>, <FIRSTNAME> <M.>'`, and `status_of_appointment = 'Appointed'` for `dbm_item_no = target_vacancy_id`.
+     - Updates `tlo_assignments`: sets `tlo_masterlist_id` to the newly appointed official's numeric ID, `status = 'Active'`, `capacity = 'Full'`, and `start_date = CURRENT_DATE` for `tlo_position_id = target_vacancy_id`.
+     - Links `plantilla_item_no` in `third_level_official_masterlist` and `tlo_masterlist`.
+   - If an application was previously `'Appointed'` and is transitioned away to another status (e.g., reverted or rejected), it automatically restores the position in `ces_plantilla` (`is_vacant = true`, `incumbent_name = 'VACANT'`), unlinks `tlo_assignments`, and resets the applicant's registration status.
+2. **Defensive Vacancy Query in `thirdLevelController.js`**:
+   - Updated `getVacancies` (`CombinedVacancies` CTE):
+     - Added `AND NOT EXISTS` subqueries to explicitly exclude any position whose item number or ID is currently held by an application with `status = 'Appointed'`, or is assigned in `third_level_official_masterlist` (`status != 'Inactive'`).
+     - Added check `AND UPPER(TRIM(COALESCE(incumbent_name, ''))) IN ('', 'VACANT')` in `ces_plantilla`.
+3. **Database Data Alignment**:
+   - Reconciled existing appointed application (`APP-VAC-2026-0003`, target item `OSEC-DECSB-DASEC-3-1998`) in `ces_plantilla` and `third_level_official_masterlist`. The position is immediately removed from the open vacancies list.
+
+## 2026-10-28 — Feature: Vacancy Applicant "Appointed" Workflow & Masterlist Promotion Pipeline
+
+### Overview & User Objective
+Updated the Central Office evaluation workflow for Third Level vacant positions (`admin-vacancies`). Replaced the status option "Approved" with "Appointed" to conform with official DepEd and Civil Service Commission (CSC) executive appointment protocols. When an applicant is marked as "Appointed", the system atomically promotes their application and profile into the official TLO Masterlist (`third_level_official_masterlist` and `tlo_masterlist`), generates a canonical `TLO-####` identifier, establishes foreign-key cross-references, escalates their `tlo_users` account role to `Third Level Official`, and asynchronously relocates their documentary attachments in Azure Blob Storage under the new TLO ID folder.
+
+### Key Additions & Features
+1. **Database Schema Migration ([`20261028_057_add_tloid_link_to_vacancy_applicants.sql`](file:///e:/christop/staging/database/migrations/20261028_057_add_tloid_link_to_vacancy_applicants.sql))**:
+   - Added `vacancy_applicant_id INTEGER REFERENCES vacancy_applicants(id) ON DELETE SET NULL` to table `third_level_official_masterlist` exclusively.
+   - Preserved original, untouched schemas for `vacancy_applicants` and `vacancy_applications` (no extra columns added).
+   - Added B-tree index `idx_tlo_masterlist_vacancy_applicant_id` on `third_level_official_masterlist(vacancy_applicant_id)`.
+   - Updated startup initialization in [`db.js`](file:///e:/christop/staging/api/src/config/db.js) with idempotent `ADD COLUMN IF NOT EXISTS vacancy_applicant_id INTEGER` check on `third_level_official_masterlist`.
+
+2. **Backend Transaction-Safe Promotion Pipeline ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))**:
+   - Upgraded `updateVacancyApplicationStatus`: Wrapped appointment execution in a strict ACID transaction (`BEGIN` / `COMMIT` / `ROLLBACK`).
+   - Automatically checks for existing masterlist associations using `vacancy_applicant_id` and email to guarantee idempotency and avoid duplicate appointments.
+   - Calculates the next sequential canonical `TLO-####` identifier from `third_level_official_masterlist`.
+   - Inserts/updates `third_level_official_masterlist` storing `vacancy_applicant_id`, official names, birth date, appointment date, position title, office, and binary attachment UUIDs (`photo_binary_id`, `pds_binary_id`, `wes_binary_id`, `cv_binary_id`, `service_records_binary_id`, `profile_word_binary_id`).
+   - Synchronizes demographic records in `tlo_masterlist` with `ON CONFLICT (tloid) DO UPDATE`.
+   - Dynamically exposes `appointed_tlo_id` to the frontend across `getAllVacancyApplications`, `getMyVacancyApplications`, and `getVacancyApplicationById` via `LEFT JOIN third_level_official_masterlist m ON m.vacancy_applicant_id = va.vacancy_applicant_id`.
+   - Escalates the user's role in `tlo_users` from applicant tiers (`Third Level Applicant`, `Vacancy Applicant`, `TLO Applicant`) to `Third Level Official` and sets `registration_status = 'Active'` keyed by `email`.
+   - Updated `getAllVacancyApplications` KPI query to count both `Appointed` and legacy `Approved` under `appointed`.
+
+3. **Cloud Document Relocation Service ([`azureBlobService.js`](file:///e:/christop/staging/api/src/utils/azureBlobService.js))**:
+   - Added `copyBlobToTloid(sourceBlobUrlOrPath, targetTloId, docType)` leveraging Azure Blob Storage SDK.
+   - Asynchronously copies uploaded application files (`APP-<id>/...`) to the canonical official folder structure (`<TLOid>/<docType>/<docType>_<TLOid>_<timestamp>.<ext>`) in the background, updating `unified_binaries.azure_blob_url` without blocking or slowing down HTTP responses.
+
+4. **UI Modal & Evaluation Panel Updates ([`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx))**:
+   - Replaced `<option value="Approved">` with `<option value="Appointed">`.
+   - Added `Appointed` badge color mapping (`bg-emerald-50 text-emerald-700 border-emerald-200`).
+   - Added header badge showing official Masterlist ID (`Official: TLO-####`) once appointed.
+   - Custom success confirmation displaying the generated TLO ID upon appointment.
+
+5. **Admin Vacancies Dashboard & Filters ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Updated Card 5 from "Approved" to "Appointed" with live count of appointed applicants.
+   - Updated Status Filter dropdown option from "Approved" to "Appointed".
+   - Supported backward compatibility in filter predicates (`status IN ('Appointed', 'Approved')`).
+
+6. **Candidate Dashboard Tracking ([`VacancyDashboard.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyDashboard.jsx))**:
+   - Updated application status badge renderer to display `Appointed` styling and prominently display the official assigned `TLO ID` on the card.
+
+---
+
+## 2026-10-27 — Central Office: Vacancy Applications Management & Registry Page
+
+### Overview & User Objective
+Added a dedicated Central Office "Vacancies" navigation item and page ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx)) allowing Central Office, Super User, and Personnel Admin roles to view, search, filter, export, and evaluate all data in the `vacancy_applications` database table.
+
+### Key Additions & Features
+1. **Central Office Sidebar Navigation ([`AdminSidebar.jsx`](file:///e:/christop/staging/ui/src/components/AdminSidebar.jsx))**:
+   - Added `Vacancies` nav item (`path: '/admin-vacancies'`) with `FiFileText` icon, placed in the main operational section alongside Positions Library and Pending Approvals.
+2. **Central Office Vacancies Page ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Displays all records from `vacancy_applications` in a responsive table with DepEd brand styling (`#08315F`, `#BAE6FD`).
+   - Includes real-time search across Application No, Applicant Name, Email, Contact, Position Applying For, Plantilla Office, and Target Vacancy Item.
+   - Interactive KPI metric cards (Total Applications, Submitted, Under Review, Shortlisted, Approved) with click-to-filter capability.
+   - Status filters, CES Eligibility Stage dropdown, and quick-filter pills for LET and EMT passers.
+   - Full CSV export button that extracts all 22+ columns from `vacancy_applications`.
+   - Pagination controls with customizable page size (10, 20, 50, 100).
+3. **Application Review & Modal Enhancements ([`ViewApplicationDetailsModal.jsx`](file:///e:/christop/staging/ui/src/components/ViewApplicationDetailsModal.jsx))**:
+   - Added passport ID picture display thumbnail.
+   - Added Central Office evaluation panel permitting evaluator status updates (`Submitted`, `Under Review`, `Shortlisted`, `Approved`, `Rejected`) and remarks recording with instant local and server synchronization.
+4. **Backend API Endpoints ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js) & [`officialProfilingRoutes.js`](file:///e:/christop/staging/api/src/routes/officialProfilingRoutes.js))**:
+   - `GET /api/third-level/vacancy-applications/all`: Returns all records from `vacancy_applications` sorted by `created_at DESC` along with status breakdown KPIs.
+   - `PATCH /api/third-level/vacancy-applications/:id/status`: Updates application status and remarks with timestamp tracking.
+5. **Route Configuration ([`App.jsx`](file:///e:/christop/staging/ui/src/App.jsx))**:
+   - Registered `/admin-vacancies` protected route.
+   - Updated `/vacancies` route with role-aware dispatching to route Central Office / Admin users to `AdminVacancies` while preserving applicant access to `VacancyDashboard`.
 
 ### Overview & User Adjustments
 Adjusted the Third Level Position Application modal ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx)) and backend controllers according to updated specifications:

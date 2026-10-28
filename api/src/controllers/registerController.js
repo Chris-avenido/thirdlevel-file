@@ -205,8 +205,16 @@ export const checkEmail = async (req, res) => {
   try {
     const normalizedEmail = email.toLowerCase().trim();
     const isVacancyApplicant = portal === 'vacancies' || role === 'Vacancy Applicant';
+    if (isVacancyApplicant) {
+      const check = await pool.query(
+        'SELECT id FROM vacancy_applicants WHERE LOWER(email) = $1',
+        [normalizedEmail]
+      );
+      return res.json({ exists: check.rows.length > 0 });
+    }
+
     const isCOBool = isCO === 'true' || isCO === true || ADMIN_ROLES.includes(role);
-    const targetRoles = isCOBool ? ADMIN_ROLES : (isVacancyApplicant ? ['Vacancy Applicant'] : THIRD_LEVEL_ROLES);
+    const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
 
     const check = await pool.query(
       'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
@@ -224,8 +232,20 @@ export const checkMasterlistEmail = async (req, res) => {
   try {
     const normalizedEmail = email.toLowerCase().trim();
     const isVacancyApplicant = portal === 'vacancies' || role === 'Vacancy Applicant';
+
+    if (isVacancyApplicant) {
+      const vaCheck = await pool.query(
+        'SELECT id FROM vacancy_applicants WHERE LOWER(email) = $1',
+        [normalizedEmail]
+      );
+      if (vaCheck.rows.length > 0) {
+        return res.json({ alreadyRegistered: true });
+      }
+      return res.json({ alreadyRegistered: false, inMasterlist: false, isVacancy: true });
+    }
+
     const isCOBool = isCO === 'true' || isCO === true || ADMIN_ROLES.includes(role);
-    const targetRoles = isCOBool ? ADMIN_ROLES : (isVacancyApplicant ? ['Vacancy Applicant'] : THIRD_LEVEL_ROLES);
+    const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
 
     const userCheck = await pool.query(
       'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
@@ -233,10 +253,6 @@ export const checkMasterlistEmail = async (req, res) => {
     );
     if (userCheck.rows.length > 0) {
       return res.json({ alreadyRegistered: true });
-    }
-
-    if (isVacancyApplicant) {
-      return res.json({ alreadyRegistered: false, inMasterlist: false, isVacancy: true });
     }
 
     const check = await pool.query('SELECT first_name, last_name, position_title FROM third_level_official_masterlist WHERE LOWER(email) = $1', [normalizedEmail]);
@@ -290,8 +306,74 @@ export const registerUser = async (req, res) => {
 
     await client.query('BEGIN');
 
+    // ─────────────────────────────────────────────────────────────────────────────
+    // VACANCY APPLICANT REGISTRATION: STRICTLY IN `vacancy_applicants` ONLY
+    // (Never inserted into tlo_users table per system architecture)
+    // ─────────────────────────────────────────────────────────────────────────────
+    if (isVacancyApplicant) {
+      // 1. Check if email already registered in vacancy_applicants
+      const vaCheck = await client.query(
+        'SELECT id FROM vacancy_applicants WHERE LOWER(email) = $1 LIMIT 1',
+        [normalizedEmail]
+      );
+      if (vaCheck.rows.length > 0) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'This email is already registered as a Vacancy Applicant. Please Login instead.' });
+      }
+
+      // 2. Generate sequential VAC UID from vacancy_applicants and vacancy_applications
+      const uidRes = await client.query(`
+        SELECT GREATEST(
+          COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0),
+          COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applications WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0)
+        ) AS max_num
+      `);
+      const nextNum = parseInt(uidRes.rows[0].max_num) + 1;
+      const uid = `VAC-2026-${String(nextNum).padStart(4, '0')}`;
+      const passwordHash = await bcrypt.hash(password, 10);
+      const cleanPasscode = passcode ? String(passcode).trim() : null;
+      const isTestAccount = Boolean(req.body.is_testaccount);
+
+      // 3. ONLY INSERT INTO vacancy_applicants (NO insert into tlo_users)
+      await client.query(
+        `INSERT INTO vacancy_applicants (
+          applicant_uid, first_name, last_name, email, contact_number, password_hash, passcode, registration_status, is_testaccount, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), NOW())`,
+        [uid, firstName, lastName, normalizedEmail, contactNumber, passwordHash, cleanPasscode, isTestAccount]
+      );
+
+      await client.query('COMMIT');
+      client.release();
+
+      const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
+      const token = jwt.sign(
+        { uid, email: normalizedEmail, role: 'Vacancy Applicant', is_testaccount: isTestAccount },
+        secret,
+        { expiresIn: '30d' }
+      );
+
+      return res.json({
+        success: true,
+        token,
+        user: {
+          uid,
+          email: normalizedEmail,
+          role: 'Vacancy Applicant',
+          first_name: firstName,
+          last_name: lastName,
+          has_password: Boolean(passwordHash),
+          has_passcode: Boolean(cleanPasscode),
+          is_testaccount: isTestAccount
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // STANDARD REGISTRATION FLOW: `tlo_users` (Central Office & TLO Officials)
+    // ─────────────────────────────────────────────────────────────────────────────
     const isAdminRole = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(assignedRole);
-    const targetRoles = isAdminRole ? ADMIN_ROLES : (isVacancyApplicant ? ['Vacancy Applicant'] : THIRD_LEVEL_ROLES);
+    const targetRoles = isAdminRole ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
 
     const userCheck = await client.query(
       'SELECT uid FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
@@ -332,18 +414,15 @@ export const registerUser = async (req, res) => {
               updated_at = NOW()
         `, [newTloId, firstName, lastName]);
       }
-    } else if (isVacancyApplicant) {
-      userRegistrationStatus = 'Active';
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const uidPrefix = isVacancyApplicant ? 'VAC' : 'TLO';
     const uidRes = await client.query(`
       SELECT COALESCE(MAX(CAST(SUBSTRING(uid FROM 10) AS INTEGER)), 0) AS max_num
-      FROM tlo_users WHERE uid ~ '^${uidPrefix}-2026-[0-9]{4}$'
+      FROM tlo_users WHERE uid ~ '^TLO-2026-[0-9]{4}$'
     `);
     const nextNum = parseInt(uidRes.rows[0].max_num) + 1;
-    const uid = `${uidPrefix}-2026-${String(nextNum).padStart(4, '0')}`;
+    const uid = `TLO-2026-${String(nextNum).padStart(4, '0')}`;
 
     await client.query(
       `INSERT INTO tlo_users (
@@ -352,29 +431,18 @@ export const registerUser = async (req, res) => {
       [uid, normalizedEmail, passwordHash, firstName, lastName, contactNumber, assignedRole, assigned_region, assigned_division, passcode || null, userRegistrationStatus, isTestAccount]
     );
 
-    if (isVacancyApplicant) {
+    const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
+    if (!adminRoles.includes(assignedRole)) {
       await client.query(
-        `INSERT INTO vacancy_applicants (
-          applicant_uid, first_name, last_name, email, contact_number, registration_status, is_testaccount, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, 'Active', $6, NOW(), NOW())`,
+        `INSERT INTO third_level_officials_profiling_application (
+          application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, is_testaccount, created_at, updated_at
+        ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, $6, NOW(), NOW())`,
         [uid, firstName, lastName, normalizedEmail, contactNumber, isTestAccount]
       );
-    } else {
-      const adminRoles = ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office'];
-      if (!adminRoles.includes(assignedRole)) {
-        await client.query(
-          `INSERT INTO third_level_officials_profiling_application (
-            application_id, app_TLOid, first_name, last_name, email, contact_details, application_status, is_testaccount, created_at, updated_at
-          ) VALUES (DEFAULT, $1, $2, $3, $4, $5, NULL, $6, NOW(), NOW())`,
-          [uid, firstName, lastName, normalizedEmail, contactNumber, isTestAccount]
-        );
-      }
     }
 
     // Consume the OTP (single-use) as part of the same transaction
-    if (!isVacancyApplicant) {
-      await client.query(`UPDATE verification_codes SET expires_at = NOW() WHERE email = $1`, [normalizedEmail]);
-    }
+    await client.query(`UPDATE verification_codes SET expires_at = NOW() WHERE email = $1`, [normalizedEmail]);
 
     await client.query('COMMIT');
 

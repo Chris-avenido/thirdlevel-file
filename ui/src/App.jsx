@@ -22,8 +22,19 @@ import ResetPassword from './pages/ResetPassword';
 import CesPlantilla from './pages/CesPlantilla';
 import PositionAssignments from './pages/PositionAssignments';
 import TloPositions from './pages/TloPositions';
+import AdminVacancies from './pages/AdminVacancies';
 
 import MainDashboard from './pages/MainDashboard';
+
+// Vacancies Route Handler: Serves AdminVacancies for Central Office / Admin roles
+const VacanciesRoute = () => {
+    const { user } = useAuth();
+    const roleLower = user?.role?.toLowerCase() || '';
+    if (['central office', 'super user', 'personnel admin'].includes(roleLower)) {
+        return <AdminVacancies />;
+    }
+    return <VacancyDashboard defaultTab="vacancies" />;
+};
 
 // Public Route Component
 const PublicRoute = ({ children }) => {
@@ -137,6 +148,14 @@ const App = () => {
                 } 
             />
             <Route 
+                path="/admin-vacancies" 
+                element={
+                    <ProtectedRoute>
+                        <AdminVacancies />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
                 path="/all-vacancies" 
                 element={
                     <ProtectedRoute>
@@ -148,7 +167,7 @@ const App = () => {
                 path="/vacancies" 
                 element={
                     <ProtectedRoute>
-                        <VacancyDashboard defaultTab="vacancies" />
+                        <VacanciesRoute />
                     </ProtectedRoute>
                 } 
             />

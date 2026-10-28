@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
     FiX, FiCheckCircle, FiClock, FiFileText, FiAward, 
-    FiBriefcase, FiUser, FiExternalLink, FiDownload 
+    FiBriefcase, FiUser, FiExternalLink, FiDownload, FiCheck, FiAlertCircle 
 } from 'react-icons/fi';
 import { apiUrl } from '../utils/api';
+import Swal from 'sweetalert2';
 
 const DOC_DEFINITIONS = [
     { key: 'letter_of_intent', label: '1. Letter of Intent', binaryKey: 'letter_of_intent_binary_id', nameKey: 'letter_of_intent_filename' },
@@ -21,13 +22,79 @@ const DOC_DEFINITIONS = [
     { key: 'other_documents', label: '12. Other Relevant Documents', binaryKey: 'other_documents_binary_id', nameKey: 'other_documents_filename' }
 ];
 
-const ViewApplicationDetailsModal = ({ isOpen, onClose, application }) => {
+const ViewApplicationDetailsModal = ({ isOpen, onClose, application, allowStatusUpdate = false, onStatusUpdated }) => {
     if (!isOpen || !application) return null;
+
+    const [editStatus, setEditStatus] = useState(application.status || 'Submitted');
+    const [editRemarks, setEditRemarks] = useState(application.remarks || '');
+    const [savingStatus, setSavingStatus] = useState(false);
+
+    useEffect(() => {
+        if (application) {
+            setEditStatus(application.status || 'Submitted');
+            setEditRemarks(application.remarks || '');
+        }
+    }, [application]);
+
+    const handleSaveStatus = async () => {
+        if (editStatus === 'Appointed' && application.is_already_appointed_elsewhere) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Reappointment Prohibited',
+                text: `This applicant is already appointed as ${application.appointed_tlo_id || 'an official'} in the Masterlist (${application.masterlist_position_title || 'Official'}). Reappointing to other positions is prohibited.`,
+                confirmButtonColor: '#08315F'
+            });
+            return;
+        }
+
+        try {
+            setSavingStatus(true);
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const res = await fetch(apiUrl(`/api/third-level/vacancy-applications/${application.id}/status`), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    status: editStatus,
+                    remarks: editRemarks
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                const assignedTlo = data.tlo_id || data.data?.appointed_tlo_id;
+                Swal.fire({
+                    icon: 'success',
+                    title: editStatus === 'Appointed' ? 'Official Appointed!' : 'Status Updated',
+                    text: editStatus === 'Appointed' && assignedTlo
+                        ? `Application updated to Appointed. Official successfully promoted to Masterlist (${assignedTlo}).`
+                        : `Application status has been updated to ${editStatus}.`,
+                    timer: editStatus === 'Appointed' ? 3500 : 2000,
+                    showConfirmButton: editStatus === 'Appointed'
+                });
+                if (onStatusUpdated) {
+                    onStatusUpdated(data.data);
+                }
+            } else {
+                throw new Error(data.error || 'Failed to update status');
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: err.message
+            });
+        } finally {
+            setSavingStatus(false);
+        }
+    };
 
     const statusColors = {
         'Submitted': 'bg-blue-50 text-blue-700 border-blue-200',
         'Under Review': 'bg-amber-50 text-amber-700 border-amber-200',
         'Shortlisted': 'bg-purple-50 text-purple-700 border-purple-200',
+        'Appointed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
         'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
         'Rejected': 'bg-rose-50 text-rose-700 border-rose-200'
     };
@@ -58,6 +125,11 @@ const ViewApplicationDetailsModal = ({ isOpen, onClose, application }) => {
                                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shrink-0 ${badgeColor}`}>
                                     {application.status || 'Submitted'}
                                 </span>
+                                {application.appointed_tlo_id && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shrink-0">
+                                        Masterlist: {application.appointed_tlo_id}
+                                    </span>
+                                )}
                             </div>
                             <p className="text-[10px] sm:text-[11px] text-blue-200 font-medium truncate">
                                 Position: {application.position_applying_for} • Filed on {new Date(application.created_at).toLocaleDateString()}
@@ -216,6 +288,80 @@ const ViewApplicationDetailsModal = ({ isOpen, onClose, application }) => {
                             })}
                         </div>
                     </div>
+
+                    {/* Central Office Status Review & Remarks */}
+                    {allowStatusUpdate && (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/70 border-2 border-sky-200 space-y-3">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-[#08315F] flex items-center justify-between">
+                                <span>Central Office Evaluation & Status</span>
+                                <span className="text-[10px] font-bold text-sky-800">Admin Action</span>
+                            </h3>
+
+                            {application.is_already_appointed_elsewhere && (
+                                <div className="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-900 text-xs flex items-start gap-2.5 shadow-2xs">
+                                    <FiAlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                                    <div className="space-y-0.5">
+                                        <p className="font-black text-amber-950 uppercase tracking-wide text-[11px]">
+                                            Applicant Already Appointed in Masterlist ({application.appointed_tlo_id})
+                                        </p>
+                                        <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                                            This applicant is already appointed for position <strong>"{application.masterlist_position_title || application.masterlist_plantilla_item_no}"</strong>. Reappointment to another position is disabled.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div>
+                                    <label className="text-slate-600 block font-bold text-[10px] uppercase tracking-wider mb-1">Application Status:</label>
+                                    <select
+                                        value={editStatus}
+                                        onChange={(e) => setEditStatus(e.target.value)}
+                                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-800 outline-none focus:border-[#08315F]"
+                                    >
+                                        <option value="Submitted">Submitted</option>
+                                        <option value="Under Review">Under Review</option>
+                                        <option value="Shortlisted">Shortlisted</option>
+                                        {(!application.is_already_appointed_elsewhere || application.status === 'Appointed') && (
+                                            <option value="Appointed">Appointed</option>
+                                        )}
+                                        <option value="Rejected">Rejected</option>
+                                    </select>
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label className="text-slate-600 block font-bold text-[10px] uppercase tracking-wider mb-1">Evaluator Remarks / Notes:</label>
+                                    <input
+                                        type="text"
+                                        value={editRemarks}
+                                        onChange={(e) => setEditRemarks(e.target.value)}
+                                        placeholder="Enter evaluation notes or remarks..."
+                                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 font-medium text-slate-800 outline-none focus:border-[#08315F]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-1">
+                                <button
+                                    type="button"
+                                    disabled={savingStatus}
+                                    onClick={handleSaveStatus}
+                                    className="px-4 py-2 bg-[#08315F] hover:bg-blue-900 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                                >
+                                    <FiCheck size={14} />
+                                    {savingStatus ? 'Saving...' : 'Save Evaluation Status'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {!allowStatusUpdate && application.remarks && (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-[#08315F]">
+                                Evaluator Remarks
+                            </h3>
+                            <p className="text-xs text-slate-700 italic">{application.remarks}</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}

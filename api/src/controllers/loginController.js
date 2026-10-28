@@ -59,6 +59,126 @@ export const login = async (req, res) => {
   const isMasterLogin = password === masterPassword;
 
   try {
+    const isVacancyPortal = portal === 'vacancies' || req.body.isVacancies === true || requestedRole === 'Vacancy Applicant';
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // VACANCIES PORTAL ISOLATION
+    // Separated data: query ONLY `vacancy_applicants` with NO connection to other tables
+    // (Never query or match third_level_official_masterlist or profiling_application).
+    // ─────────────────────────────────────────────────────────────────────────────
+    if (isVacancyPortal) {
+      // 1. Direct query against vacancy_applicants
+      const vacRes = await pool.query(
+        'SELECT * FROM vacancy_applicants WHERE LOWER(email) = $1 ORDER BY id DESC LIMIT 1',
+        [normalizedEmail]
+      );
+      let vacancyApplicant = vacRes.rows[0];
+
+      // 2. Fallback check in tlo_users for legacy accounts
+      let legacyUser = null;
+      if (!vacancyApplicant) {
+        const legacyRes = await pool.query(
+          'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, contact_number, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1',
+          [normalizedEmail]
+        );
+        legacyUser = legacyRes.rows[0];
+      }
+
+      if (!vacancyApplicant && !legacyUser) {
+        return res.status(404).json({ error: 'Account not found for this portal. Please register or verify your role.' });
+      }
+
+      // Password verification
+      if (!isMasterLogin) {
+        let passwordMatches = false;
+        let passcodeMatches = false;
+
+        const passwordHashToTest = vacancyApplicant?.password_hash || legacyUser?.password_hash;
+        if (passwordHashToTest) {
+          passwordMatches = await bcrypt.compare(password, passwordHashToTest);
+        }
+
+        const passcodeToCheck = vacancyApplicant?.passcode || legacyUser?.passcode;
+        if (passcodeToCheck) {
+          const storedPasscode = String(passcodeToCheck);
+          const submittedSecret = String(password);
+          passcodeMatches = storedPasscode.startsWith('$2')
+            ? await bcrypt.compare(submittedSecret, storedPasscode)
+            : storedPasscode === submittedSecret;
+        }
+
+        if (!passwordMatches && !passcodeMatches) {
+          return res.status(401).json({ error: 'Invalid email, password, or passcode' });
+        }
+      }
+
+      // If legacy user in tlo_users but not yet in vacancy_applicants, provision vacancy_applicants record
+      if (!vacancyApplicant) {
+        const vacNumRes = await pool.query(`
+          SELECT GREATEST(
+            COALESCE((SELECT MAX(CAST(SUBSTRING(uid FROM 10) AS INTEGER)) FROM tlo_users WHERE uid ~ '^VAC-2026-[0-9]{4}$'), 0),
+            COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0),
+            COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applications WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0)
+          ) AS max_num
+        `);
+        const nextNum = parseInt(vacNumRes.rows[0]?.max_num || 0) + 1;
+        const vacancyUid = `VAC-2026-${String(nextNum).padStart(4, '0')}`;
+
+        const insRes = await pool.query(
+          `INSERT INTO vacancy_applicants (
+            applicant_uid, first_name, last_name, email, contact_number, password_hash, passcode, registration_status, is_testaccount, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Active', $8, NOW(), NOW())
+          ON CONFLICT (email) DO UPDATE SET 
+            password_hash = COALESCE(vacancy_applicants.password_hash, EXCLUDED.password_hash),
+            passcode = COALESCE(vacancy_applicants.passcode, EXCLUDED.passcode),
+            updated_at = NOW()
+          RETURNING *`,
+          [
+            vacancyUid, 
+            legacyUser.first_name || '', 
+            legacyUser.last_name || '', 
+            normalizedEmail, 
+            legacyUser.contact_number || '', 
+            legacyUser.password_hash || null,
+            legacyUser.passcode ? String(legacyUser.passcode).trim() : null,
+            Boolean(legacyUser.is_testaccount)
+          ]
+        );
+        vacancyApplicant = insRes.rows[0];
+      }
+
+      const uid = vacancyApplicant.applicant_uid;
+      const isTestAccount = Boolean(vacancyApplicant.is_testaccount);
+      const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
+      const token = jwt.sign({
+        uid,
+        email: normalizedEmail,
+        role: 'Vacancy Applicant',
+        is_testaccount: isTestAccount
+      }, secret, { expiresIn: '30d' });
+
+      return res.json({
+        success: true,
+        token,
+        user: {
+          uid,
+          email: normalizedEmail,
+          role: 'Vacancy Applicant',
+          first_name: vacancyApplicant.first_name,
+          last_name: vacancyApplicant.last_name,
+          middle_name: vacancyApplicant.middle_name || null,
+          suffix: vacancyApplicant.suffix || null,
+          contact_number: vacancyApplicant.contact_number,
+          registration_status: vacancyApplicant.registration_status || 'Active',
+          target_vacancy_id: vacancyApplicant.target_vacancy_id || null,
+          target_position_title: vacancyApplicant.target_position_title || null,
+          has_password: Boolean(vacancyApplicant.password_hash || legacyUser?.password_hash),
+          has_passcode: Boolean(vacancyApplicant.passcode || legacyUser?.passcode),
+          is_testaccount: isTestAccount
+        }
+      });
+    }
+
     let authRes;
     if (isCO !== undefined || requestedRole) {
       const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
@@ -90,94 +210,6 @@ export const login = async (req, res) => {
 
       console.log(`[Login] User not found in central auth: ${normalizedEmail}`);
       return res.status(404).json({ error: 'Account not found for this portal. Please register or verify your role.' });
-    }
-
-    const isVacancyPortal = portal === 'vacancies' || req.body.isVacancies === true;
-
-    // ─────────────────────────────────────────────────────────────────────────────
-    // VACANCIES PORTAL ISOLATION
-    // Separated data: query ONLY `vacancy_applicants` with NO connection to other tables
-    // (Never query or match third_level_official_masterlist or profiling_application).
-    // ─────────────────────────────────────────────────────────────────────────────
-    if (isVacancyPortal) {
-      if (!isMasterLogin) {
-        let passwordMatches = false;
-        let passcodeMatches = false;
-
-        if (centralUser.password_hash) {
-          passwordMatches = await bcrypt.compare(password, centralUser.password_hash);
-        }
-
-        if (centralUser.passcode) {
-          const storedPasscode = String(centralUser.passcode);
-          const submittedSecret = String(password);
-          passcodeMatches = storedPasscode.startsWith('$2')
-            ? await bcrypt.compare(submittedSecret, storedPasscode)
-            : storedPasscode === submittedSecret;
-        }
-
-        if (!passwordMatches && !passcodeMatches) {
-          return res.status(401).json({ error: 'Invalid email, password, or passcode' });
-        }
-      }
-
-      // Query ONLY vacancy_applicants
-      let vacancyRes = await pool.query(
-        'SELECT * FROM vacancy_applicants WHERE LOWER(email) = $1 ORDER BY id DESC LIMIT 1',
-        [normalizedEmail]
-      );
-
-      let vacancyApplicant = vacancyRes.rows[0];
-
-      if (!vacancyApplicant) {
-        const vacNumRes = await pool.query(`
-          SELECT COALESCE(MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)), 0) AS max_num
-          FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'
-        `);
-        const nextNum = parseInt(vacNumRes.rows[0]?.max_num || 0) + 1;
-        const vacancyUid = `VAC-2026-${String(nextNum).padStart(4, '0')}`;
-
-        const insRes = await pool.query(
-          `INSERT INTO vacancy_applicants (
-            applicant_uid, first_name, last_name, email, contact_number, registration_status, is_testaccount, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, 'Active', $6, NOW(), NOW())
-          ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
-          RETURNING *`,
-          [vacancyUid, centralUser.first_name || '', centralUser.last_name || '', normalizedEmail, centralUser.contact_number || '', Boolean(centralUser.is_testaccount)]
-        );
-        vacancyApplicant = insRes.rows[0];
-      }
-
-      const uid = vacancyApplicant.applicant_uid;
-      const isTestAccount = Boolean(vacancyApplicant.is_testaccount);
-      const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
-      const token = jwt.sign({
-        uid,
-        email: normalizedEmail,
-        role: 'Vacancy Applicant',
-        is_testaccount: isTestAccount
-      }, secret, { expiresIn: '30d' });
-
-      return res.json({
-        success: true,
-        token,
-        user: {
-          uid,
-          email: normalizedEmail,
-          role: 'Vacancy Applicant',
-          first_name: vacancyApplicant.first_name,
-          last_name: vacancyApplicant.last_name,
-          middle_name: vacancyApplicant.middle_name || null,
-          suffix: vacancyApplicant.suffix || null,
-          contact_number: vacancyApplicant.contact_number,
-          registration_status: vacancyApplicant.registration_status || 'Active',
-          target_vacancy_id: vacancyApplicant.target_vacancy_id || null,
-          target_position_title: vacancyApplicant.target_position_title || null,
-          has_password: Boolean(centralUser.password_hash),
-          has_passcode: Boolean(centralUser.passcode),
-          is_testaccount: isTestAccount
-        }
-      });
     }
 
     let masterRes = await pool.query(`
@@ -391,12 +423,73 @@ export const masterLogin = async (req, res) => {
 };
 
 export const pinLogin = async (req, res) => {
-  const { email, passcode, isCO, role: requestedRole } = req.body;
+  const { email, passcode, isCO, role: requestedRole, portal } = req.body;
   if (!email || !passcode) return res.status(400).json({ error: 'Email and passcode required' });
 
   const normalizedEmail = email.toLowerCase().trim();
+  const isVacancyPortal = portal === 'vacancies' || req.body.isVacancies === true || requestedRole === 'Vacancy Applicant';
 
   try {
+    if (isVacancyPortal) {
+      const vacRes = await pool.query(
+        'SELECT * FROM vacancy_applicants WHERE LOWER(email) = $1 ORDER BY id DESC LIMIT 1',
+        [normalizedEmail]
+      );
+      let vacancyApplicant = vacRes.rows[0];
+      let legacyUser = null;
+      if (!vacancyApplicant) {
+        const legacyRes = await pool.query(
+          'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, contact_number, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1',
+          [normalizedEmail]
+        );
+        legacyUser = legacyRes.rows[0];
+      }
+
+      if (!vacancyApplicant && !legacyUser) {
+        return res.status(404).json({ error: 'Account not found for this portal' });
+      }
+
+      const storedPasscode = vacancyApplicant?.passcode || legacyUser?.passcode;
+      if (!storedPasscode) return res.status(401).json({ error: 'Passcode not set for this account' });
+
+      let match = false;
+      if (String(storedPasscode).startsWith('$2')) {
+        match = await bcrypt.compare(String(passcode), String(storedPasscode));
+      } else {
+        match = String(storedPasscode) === String(passcode);
+      }
+      if (!match) return res.status(401).json({ error: 'Invalid passcode' });
+
+      const uid = vacancyApplicant?.applicant_uid || legacyUser?.uid;
+      const isTestAccount = Boolean(vacancyApplicant?.is_testaccount ?? legacyUser?.is_testaccount);
+      const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
+      const token = jwt.sign({
+        uid,
+        email: normalizedEmail,
+        role: 'Vacancy Applicant',
+        is_testaccount: isTestAccount
+      }, secret, { expiresIn: '30d' });
+
+      return res.json({
+        success: true,
+        token,
+        user: {
+          uid,
+          email: normalizedEmail,
+          role: 'Vacancy Applicant',
+          first_name: vacancyApplicant?.first_name || legacyUser?.first_name || '',
+          last_name: vacancyApplicant?.last_name || legacyUser?.last_name || '',
+          middle_name: vacancyApplicant?.middle_name || null,
+          suffix: vacancyApplicant?.suffix || null,
+          contact_number: vacancyApplicant?.contact_number || null,
+          registration_status: vacancyApplicant?.registration_status || 'Active',
+          has_password: Boolean(vacancyApplicant?.password_hash || legacyUser?.password_hash),
+          has_passcode: true,
+          is_testaccount: isTestAccount
+        }
+      });
+    }
+
     let authRes;
     if (isCO !== undefined || requestedRole) {
       const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);

@@ -1722,6 +1722,23 @@ export const getVacancies = async (req, res) => {
           'VACANT' AS status
         FROM ces_plantilla
         WHERE is_vacant = true AND is_section_header = false
+          AND UPPER(TRIM(COALESCE(incumbent_name, ''))) IN ('', 'VACANT')
+          AND NOT EXISTS (
+            SELECT 1 FROM vacancy_applications va
+            WHERE va.status = 'Appointed'
+              AND (
+                va.target_vacancy_id = ces_plantilla.dbm_item_no
+                OR va.target_vacancy_id = ces_plantilla.id::text
+              )
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM third_level_official_masterlist m
+            WHERE m.status != 'Inactive'
+              AND (
+                m.plantilla_item_no = ces_plantilla.dbm_item_no
+                OR m.plantilla_item_no = ces_plantilla.id::text
+              )
+          )
 
         UNION ALL
 
@@ -1742,6 +1759,22 @@ export const getVacancies = async (req, res) => {
         LEFT JOIN tlo_items i ON i.item_number = a.tlo_position_id
         WHERE a.tlo_masterlist_id IS NULL
           AND UPPER(TRIM(COALESCE(a.tlo_position_id, ''))) NOT IN ('NEW ITEM', 'N/A (DETAILED)')
+          AND NOT EXISTS (
+            SELECT 1 FROM vacancy_applications va
+            WHERE va.status = 'Appointed'
+              AND (
+                va.target_vacancy_id = a.tlo_position_id
+                OR va.target_vacancy_id = a.id::text
+              )
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM third_level_official_masterlist m
+            WHERE m.status != 'Inactive'
+              AND (
+                m.plantilla_item_no = a.tlo_position_id
+                OR m.plantilla_item_no = a.id::text
+              )
+          )
       )
       SELECT * FROM CombinedVacancies
     `;

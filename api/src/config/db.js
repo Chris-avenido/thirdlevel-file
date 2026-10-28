@@ -38,8 +38,8 @@ export const initDB = async () => {
     await pool.query('ALTER TABLE third_level_official_masterlist ADD COLUMN IF NOT EXISTS deped_clearance_binary_id UUID;');
     await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS wes_binary_id UUID;');
     await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS cv_binary_id UUID;');
-    await pool.query('ALTER TABLE third_level_officials_profiling_application ADD COLUMN IF NOT EXISTS deped_clearance_binary_id UUID;');
     await pool.query('ALTER TABLE unified_binaries ADD COLUMN IF NOT EXISTS content BYTEA;');
+    await pool.query('ALTER TABLE third_level_official_masterlist ADD COLUMN IF NOT EXISTS vacancy_applicant_id INTEGER;');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS authorization_codes (
         id SERIAL PRIMARY KEY,
@@ -76,6 +76,8 @@ export const initDB = async () => {
         suffix VARCHAR(50),
         email VARCHAR(255) NOT NULL UNIQUE,
         contact_number VARCHAR(50),
+        password_hash VARCHAR(255),
+        passcode VARCHAR(255),
         registration_status VARCHAR(50) DEFAULT 'Active' NOT NULL,
         target_vacancy_id VARCHAR(100),
         target_position_title VARCHAR(255),
@@ -84,6 +86,9 @@ export const initDB = async () => {
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
       );
+
+      ALTER TABLE vacancy_applicants ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
+      ALTER TABLE vacancy_applicants ADD COLUMN IF NOT EXISTS passcode VARCHAR(255);
 
       CREATE TABLE IF NOT EXISTS vacancy_applications (
         id SERIAL PRIMARY KEY,

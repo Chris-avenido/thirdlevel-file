@@ -1,6 +1,6 @@
 import pool from '../config/db.js';
 import { upsertBinary } from '../utils/binaryPipeline.js';
-import { uploadToAzure } from '../utils/azureBlobService.js';
+import { uploadToAzure, copyBlobToTloid } from '../utils/azureBlobService.js';
 
 /**
  * Get vacancy applicant profile data for the authenticated user.
@@ -39,8 +39,11 @@ export const getVacancyApplicantProfile = async (req, res) => {
       let vacUid = u.uid && u.uid.startsWith('VAC-') ? u.uid : null;
       if (!vacUid) {
         const uidRes = await pool.query(`
-          SELECT COALESCE(MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)), 0) AS max_num
-          FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'
+          SELECT GREATEST(
+            COALESCE((SELECT MAX(CAST(SUBSTRING(uid FROM 10) AS INTEGER)) FROM tlo_users WHERE uid ~ '^VAC-2026-[0-9]{4}$'), 0),
+            COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0),
+            COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applications WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0)
+          ) AS max_num
         `);
         const nextNum = parseInt(uidRes.rows[0]?.max_num || 0) + 1;
         vacUid = `VAC-2026-${String(nextNum).padStart(4, '0')}`;
@@ -569,8 +572,11 @@ export const submitVacancyApplication = async (req, res) => {
     } else {
       // Find next VAC uid
       const uidRes = await client.query(`
-        SELECT COALESCE(MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)), 0) AS max_num
-        FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'
+        SELECT GREATEST(
+          COALESCE((SELECT MAX(CAST(SUBSTRING(uid FROM 10) AS INTEGER)) FROM tlo_users WHERE uid ~ '^VAC-2026-[0-9]{4}$'), 0),
+          COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applicants WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0),
+          COALESCE((SELECT MAX(CAST(SUBSTRING(applicant_uid FROM 10) AS INTEGER)) FROM vacancy_applications WHERE applicant_uid ~ '^VAC-2026-[0-9]{4}$'), 0)
+        ) AS max_num
       `);
       const nextNum = parseInt(uidRes.rows[0]?.max_num || 0) + 1;
       const vacUid = `VAC-2026-${String(nextNum).padStart(4, '0')}`;
@@ -796,10 +802,25 @@ export const getMyVacancyApplications = async (req, res) => {
 
   try {
     const query = `
-      SELECT * FROM vacancy_applications
-      WHERE (LOWER(email) = $1 OR applicant_uid = $2)
-        AND status != 'Draft'
-      ORDER BY created_at DESC
+      SELECT 
+        va.*, 
+        m."TLOid" AS appointed_tlo_id,
+        m.position_title AS masterlist_position_title,
+        m.plantilla_item_no AS masterlist_plantilla_item_no,
+        (m."TLOid" IS NOT NULL) AS is_applicant_in_masterlist,
+        (m."TLOid" IS NOT NULL AND va.status != 'Appointed') AS is_already_appointed_elsewhere
+      FROM vacancy_applications va
+      LEFT JOIN LATERAL (
+        SELECT "TLOid", position_title, plantilla_item_no
+        FROM third_level_official_masterlist
+        WHERE (vacancy_applicant_id = va.vacancy_applicant_id OR (va.vacancy_applicant_id IS NULL AND LOWER(email) = LOWER(va.email)))
+          AND status != 'Inactive'
+        ORDER BY created_at DESC NULLS LAST
+        LIMIT 1
+      ) m ON true
+      WHERE (LOWER(va.email) = $1 OR va.applicant_uid = $2)
+        AND va.status != 'Draft'
+      ORDER BY va.created_at DESC
     `;
     const result = await pool.query(query, [email, uid]);
     return res.json({
@@ -820,8 +841,40 @@ export const getVacancyApplicationById = async (req, res) => {
   try {
     const isIdNum = !isNaN(parseInt(id));
     const query = isIdNum
-      ? `SELECT * FROM vacancy_applications WHERE id = $1 LIMIT 1`
-      : `SELECT * FROM vacancy_applications WHERE application_no = $1 LIMIT 1`;
+      ? `SELECT 
+           va.*, 
+           m."TLOid" AS appointed_tlo_id,
+           m.position_title AS masterlist_position_title,
+           m.plantilla_item_no AS masterlist_plantilla_item_no,
+           (m."TLOid" IS NOT NULL) AS is_applicant_in_masterlist,
+           (m."TLOid" IS NOT NULL AND va.status != 'Appointed') AS is_already_appointed_elsewhere
+         FROM vacancy_applications va
+         LEFT JOIN LATERAL (
+           SELECT "TLOid", position_title, plantilla_item_no
+           FROM third_level_official_masterlist
+           WHERE (vacancy_applicant_id = va.vacancy_applicant_id OR (va.vacancy_applicant_id IS NULL AND LOWER(email) = LOWER(va.email)))
+             AND status != 'Inactive'
+           ORDER BY created_at DESC NULLS LAST
+           LIMIT 1
+         ) m ON true
+         WHERE va.id = $1 LIMIT 1`
+      : `SELECT 
+           va.*, 
+           m."TLOid" AS appointed_tlo_id,
+           m.position_title AS masterlist_position_title,
+           m.plantilla_item_no AS masterlist_plantilla_item_no,
+           (m."TLOid" IS NOT NULL) AS is_applicant_in_masterlist,
+           (m."TLOid" IS NOT NULL AND va.status != 'Appointed') AS is_already_appointed_elsewhere
+         FROM vacancy_applications va
+         LEFT JOIN LATERAL (
+           SELECT "TLOid", position_title, plantilla_item_no
+           FROM third_level_official_masterlist
+           WHERE (vacancy_applicant_id = va.vacancy_applicant_id OR (va.vacancy_applicant_id IS NULL AND LOWER(email) = LOWER(va.email)))
+             AND status != 'Inactive'
+           ORDER BY created_at DESC NULLS LAST
+           LIMIT 1
+         ) m ON true
+         WHERE va.application_no = $1 LIMIT 1`;
     const result = await pool.query(query, [isIdNum ? parseInt(id) : id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Application not found' });
@@ -835,3 +888,486 @@ export const getVacancyApplicationById = async (req, res) => {
     return res.status(500).json({ success: false, error: 'Internal server error while fetching application' });
   }
 };
+
+/**
+ * Fetch all vacancy applications for Central Office / Admin review.
+ * Can filter by status, search (name, email, position, application_no, plantilla_office).
+ */
+export const getAllVacancyApplications = async (req, res) => {
+  try {
+    const { status, search } = req.query;
+    let query = `
+      SELECT 
+        va.*, 
+        m."TLOid" AS appointed_tlo_id,
+        m.position_title AS masterlist_position_title,
+        m.plantilla_item_no AS masterlist_plantilla_item_no,
+        (m."TLOid" IS NOT NULL) AS is_applicant_in_masterlist,
+        (m."TLOid" IS NOT NULL AND va.status != 'Appointed') AS is_already_appointed_elsewhere
+      FROM vacancy_applications va
+      LEFT JOIN LATERAL (
+        SELECT "TLOid", position_title, plantilla_item_no
+        FROM third_level_official_masterlist
+        WHERE (vacancy_applicant_id = va.vacancy_applicant_id OR (va.vacancy_applicant_id IS NULL AND LOWER(email) = LOWER(va.email)))
+          AND status != 'Inactive'
+        ORDER BY created_at DESC NULLS LAST
+        LIMIT 1
+      ) m ON true
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (status && status !== 'All') {
+      params.push(status);
+      query += ` AND va.status = $${params.length}`;
+    }
+
+    if (search && search.trim()) {
+      params.push(`%${search.trim().toLowerCase()}%`);
+      query += ` AND (
+        LOWER(va.surname) LIKE $${params.length} OR 
+        LOWER(va.first_name) LIKE $${params.length} OR 
+        LOWER(COALESCE(va.middle_name, '')) LIKE $${params.length} OR
+        LOWER(va.application_no) LIKE $${params.length} OR 
+        LOWER(va.position_applying_for) LIKE $${params.length} OR 
+        LOWER(va.email) LIKE $${params.length} OR
+        LOWER(COALESCE(va.plantilla_office, '')) LIKE $${params.length}
+      )`;
+    }
+
+    query += ` ORDER BY va.created_at DESC`;
+
+    const result = await pool.query(query, params);
+
+    // Also get KPI counts for all applications across statuses
+    const kpiRes = await pool.query(`
+      SELECT 
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE status = 'Submitted') AS submitted,
+        COUNT(*) FILTER (WHERE status = 'Under Review') AS under_review,
+        COUNT(*) FILTER (WHERE status = 'Shortlisted') AS shortlisted,
+        COUNT(*) FILTER (WHERE status IN ('Appointed', 'Approved')) AS appointed,
+        COUNT(*) FILTER (WHERE status = 'Approved') AS approved,
+        COUNT(*) FILTER (WHERE status = 'Rejected') AS rejected
+      FROM vacancy_applications
+    `);
+
+    return res.json({
+      success: true,
+      data: result.rows,
+      kpis: kpiRes.rows[0] || {
+        total: result.rowCount,
+        submitted: 0,
+        under_review: 0,
+        shortlisted: 0,
+        appointed: 0,
+        approved: 0,
+        rejected: 0
+      }
+    });
+  } catch (err) {
+    console.error('[getAllVacancyApplications Error]:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error while fetching all vacancy applications' });
+  }
+};
+
+/**
+ * Update vacancy application status and remarks (Central Office Review).
+ * When status is set to 'Appointed', atomically promotes the applicant to
+ * third_level_official_masterlist and tlo_masterlist, links IDs, escalates
+ * user role, and schedules cloud blob relocation to the new TLO prefix.
+ */
+export const updateVacancyApplicationStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, remarks } = req.body;
+  const isIdNum = !isNaN(parseInt(id));
+  const client = await pool.connect();
+
+  try {
+    // 1. Fetch the application
+    const appQuery = isIdNum
+      ? `SELECT * FROM vacancy_applications WHERE id = $1`
+      : `SELECT * FROM vacancy_applications WHERE application_no = $1`;
+    const appRes = await client.query(appQuery, [isIdNum ? parseInt(id) : id]);
+    if (appRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Application not found' });
+    }
+
+    const application = appRes.rows[0];
+    const previousStatus = application.status;
+    const targetVacId = application.target_vacancy_id ? application.target_vacancy_id.trim() : null;
+
+    // If status is NOT 'Appointed', perform standard status update (or revert if was previously Appointed)
+    if (status !== 'Appointed') {
+      await client.query('BEGIN');
+      const updateQuery = isIdNum
+        ? `UPDATE vacancy_applications SET status = COALESCE($1, status), remarks = COALESCE($2, remarks), updated_at = NOW() WHERE id = $3 RETURNING *`
+        : `UPDATE vacancy_applications SET status = COALESCE($1, status), remarks = COALESCE($2, remarks), updated_at = NOW() WHERE application_no = $3 RETURNING *`;
+      const updateRes = await client.query(updateQuery, [status, remarks, isIdNum ? parseInt(id) : id]);
+
+      // If application was previously Appointed and is now being reverted:
+      if (previousStatus === 'Appointed' && targetVacId) {
+        // Revert ces_plantilla position to vacant
+        await client.query(`
+          UPDATE ces_plantilla
+          SET 
+            is_vacant = true,
+            incumbent_name = 'VACANT',
+            status_of_appointment = NULL,
+            updated_at = NOW()
+          WHERE (dbm_item_no = $1 OR id::text = $1)
+        `, [targetVacId]);
+
+        // Revert tlo_assignments if applicable
+        await client.query(`
+          UPDATE tlo_assignments
+          SET 
+            tlo_masterlist_id = NULL,
+            status = 'Inactive',
+            updated_at = NOW()
+          WHERE (tlo_position_id = $1 OR id::text = $1)
+        `, [targetVacId]);
+
+        // Revert vacancy_applicants registration_status
+        if (application.vacancy_applicant_id) {
+          await client.query(`
+            UPDATE vacancy_applicants
+            SET registration_status = 'Active', updated_at = NOW()
+            WHERE id = $1
+          `, [application.vacancy_applicant_id]);
+        }
+      }
+
+      await client.query('COMMIT');
+      return res.json({ success: true, data: updateRes.rows[0] });
+    }
+
+    // --- APPOINTMENT WORKFLOW ---
+    await client.query('BEGIN');
+
+    // Check applicant profile in vacancy_applicants
+    let applicantRow = null;
+    if (application.vacancy_applicant_id) {
+      const vAppRes = await client.query('SELECT * FROM vacancy_applicants WHERE id = $1', [application.vacancy_applicant_id]);
+      if (vAppRes.rows.length > 0) applicantRow = vAppRes.rows[0];
+    }
+    if (!applicantRow && (application.email || application.applicant_uid)) {
+      const vAppRes = await client.query(
+        'SELECT * FROM vacancy_applicants WHERE LOWER(email) = LOWER($1) OR applicant_uid = $2 ORDER BY id DESC LIMIT 1',
+        [application.email, application.applicant_uid]
+      );
+      if (vAppRes.rows.length > 0) applicantRow = vAppRes.rows[0];
+    }
+
+    const vacancyApplicantId = applicantRow?.id || application.vacancy_applicant_id || null;
+
+    // Check if official is already recorded in third_level_official_masterlist by vacancy_applicant_id or email
+    let assignedTloId = null;
+    let existingMasterRecord = null;
+    if (vacancyApplicantId) {
+      const existingMasterById = await client.query(
+        `SELECT "TLOid", position_title, plantilla_item_no FROM third_level_official_masterlist WHERE vacancy_applicant_id = $1 AND status != 'Inactive' LIMIT 1`,
+        [vacancyApplicantId]
+      );
+      if (existingMasterById.rows.length > 0) {
+        assignedTloId = existingMasterById.rows[0].TLOid;
+        existingMasterRecord = existingMasterById.rows[0];
+      }
+    }
+
+    if (!assignedTloId && application.email) {
+      const existingMasterByEmail = await client.query(
+        `SELECT "TLOid", position_title, plantilla_item_no FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' LIMIT 1`,
+        [application.email]
+      );
+      if (existingMasterByEmail.rows.length > 0) {
+        assignedTloId = existingMasterByEmail.rows[0].TLOid;
+        existingMasterRecord = existingMasterByEmail.rows[0];
+      }
+    }
+
+    // STRICT POLICY: Do NOT allow reappointing applicant to other positions if already in masterlist
+    if (existingMasterRecord) {
+      const isSamePlantilla = existingMasterRecord.plantilla_item_no && targetVacId && String(existingMasterRecord.plantilla_item_no).trim() === String(targetVacId).trim();
+      if (!isSamePlantilla && previousStatus !== 'Appointed') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          error: `Cannot reappoint to other position. This applicant is already appointed as ${assignedTloId} for position "${existingMasterRecord.position_title || existingMasterRecord.plantilla_item_no}" in the Official Masterlist.`
+        });
+      }
+    }
+
+    // Generate new TLOid if none exists
+    if (!assignedTloId) {
+      const mlUidRes = await client.query(`
+        SELECT COALESCE(MAX(CAST(SUBSTRING("TLOid" FROM 5) AS INTEGER)), 0) AS max_num
+        FROM third_level_official_masterlist WHERE "TLOid" ~ '^TLO-[0-9]{4}$'
+      `);
+      const nextNum = parseInt(mlUidRes.rows[0].max_num) + 1;
+      assignedTloId = `TLO-${String(nextNum).padStart(4, '0')}`;
+    }
+
+    const isTest = Boolean(application.is_testaccount || applicantRow?.is_testaccount || req.user?.is_testaccount);
+    const firstName = application.first_name || applicantRow?.first_name || 'OFFICIAL';
+    const lastName = application.surname || applicantRow?.last_name || 'USER';
+    const middleName = application.middle_name || applicantRow?.middle_name || null;
+    const suffix = applicantRow?.suffix || null;
+    const email = (application.email || applicantRow?.email || '').toLowerCase().trim();
+    const contact = application.contact_number || applicantRow?.contact_number || null;
+    const positionTitle = application.position_applying_for || applicantRow?.target_position_title || 'Third Level Official';
+    const office = application.assigned_oic_office || application.plantilla_office || 'Department of Education';
+
+    // Format full incumbent name for plantilla assignment
+    const middleInitial = middleName && middleName.trim() ? ` ${middleName.trim().charAt(0).toUpperCase()}.` : '';
+    const incumbentName = `${lastName.toUpperCase().trim()}, ${firstName.toUpperCase().trim()}${middleInitial}`.trim();
+
+    // Insert or update third_level_official_masterlist (stores vacancy_applicant_id and plantilla_item_no)
+    const existingCheck = await client.query(
+      'SELECT "TLOid" FROM third_level_official_masterlist WHERE "TLOid" = $1',
+      [assignedTloId]
+    );
+
+    if (existingCheck.rows.length > 0) {
+      await client.query(`
+        UPDATE third_level_official_masterlist SET
+          vacancy_applicant_id = COALESCE($1, vacancy_applicant_id),
+          first_name = COALESCE($2, first_name),
+          last_name = COALESCE($3, last_name),
+          middle_name = COALESCE($4, middle_name),
+          suffix = COALESCE($5, suffix),
+          date_of_birth = COALESCE($6, date_of_birth),
+          position_title = COALESCE($7, position_title),
+          office = COALESCE($8, office),
+          status = 'Active',
+          appointment_status = 'Appointed',
+          appointment_date = COALESCE(appointment_date, CURRENT_DATE),
+          plantilla_item_no = COALESCE($9, plantilla_item_no),
+          email = COALESCE($10, email),
+          contact_details = COALESCE($11, contact_details),
+          emt_passer = COALESCE($12, emt_passer),
+          ces_stage = COALESCE($13, ces_stage),
+          ces_conferment_date = COALESCE($14, ces_conferment_date),
+          photo_binary_id = COALESCE($15, photo_binary_id),
+          pds_binary_id = COALESCE($16, pds_binary_id),
+          wes_binary_id = COALESCE($17, wes_binary_id),
+          cv_binary_id = COALESCE($18, cv_binary_id),
+          service_records_binary_id = COALESCE($19, service_records_binary_id),
+          profile_word_binary_id = COALESCE($20, profile_word_binary_id),
+          updated_at = NOW()
+        WHERE "TLOid" = $21
+      `, [
+        vacancyApplicantId,
+        firstName, lastName, middleName, suffix,
+        application.date_of_birth || null,
+        positionTitle, office,
+        targetVacId,
+        email, contact,
+        Boolean(application.is_emt_passer),
+        application.ces_eligibility_stage || null,
+        application.ces_stage_date || null,
+        application.id_picture_binary_id || null,
+        application.pds_binary_id || null,
+        application.work_experience_sheet_binary_id || null,
+        application.cv_binary_id || null,
+        application.service_records_binary_id || null,
+        application.applicant_profile_doc_binary_id || null,
+        assignedTloId
+      ]);
+    } else {
+      await client.query(`
+        INSERT INTO third_level_official_masterlist (
+          "TLOid", vacancy_applicant_id, first_name, last_name, middle_name, suffix,
+          date_of_birth, position_title, office,
+          status, appointment_status, appointment_date, plantilla_item_no,
+          email, contact_details,
+          emt_passer, ces_stage, ces_conferment_date,
+          photo_binary_id, pds_binary_id, wes_binary_id, cv_binary_id,
+          service_records_binary_id, profile_word_binary_id,
+          is_testaccount, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9,
+          'Active', 'Appointed', CURRENT_DATE, $10,
+          $11, $12,
+          $13, $14, $15,
+          $16, $17, $18, $19,
+          $20, $21,
+          $22, NOW(), NOW()
+        )
+      `, [
+        assignedTloId, vacancyApplicantId, firstName, lastName, middleName, suffix,
+        application.date_of_birth || null,
+        positionTitle, office,
+        targetVacId,
+        email, contact,
+        Boolean(application.is_emt_passer),
+        application.ces_eligibility_stage || null,
+        application.ces_stage_date || null,
+        application.id_picture_binary_id || null,
+        application.pds_binary_id || null,
+        application.work_experience_sheet_binary_id || null,
+        application.cv_binary_id || null,
+        application.service_records_binary_id || null,
+        application.applicant_profile_doc_binary_id || null,
+        isTest
+      ]);
+    }
+
+    // Insert or update tlo_masterlist demographic sync table
+    const tmInsertRes = await client.query(`
+      INSERT INTO tlo_masterlist (
+        tloid, first_name, last_name, middle_name, suffix, plantilla_item_no, is_testaccount, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+      )
+      ON CONFLICT (tloid) DO UPDATE SET
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        middle_name = EXCLUDED.middle_name,
+        suffix = EXCLUDED.suffix,
+        plantilla_item_no = COALESCE(EXCLUDED.plantilla_item_no, tlo_masterlist.plantilla_item_no),
+        updated_at = NOW()
+      RETURNING id
+    `, [assignedTloId, firstName, lastName, middleName, suffix, targetVacId, isTest]);
+
+    const numericMasterlistId = tmInsertRes.rows[0]?.id || null;
+
+    // Update target vacancy status in plantilla / assignments
+    if (targetVacId) {
+      // 1. Mark position as occupied in ces_plantilla
+      await client.query(`
+        UPDATE ces_plantilla
+        SET 
+          is_vacant = false,
+          incumbent_name = $1,
+          status_of_appointment = 'Appointed',
+          updated_at = NOW()
+        WHERE (dbm_item_no = $2 OR id::text = $2)
+      `, [incumbentName, targetVacId]);
+
+      // 2. Occupy vacant position in tlo_assignments if present
+      if (numericMasterlistId) {
+        await client.query(`
+          UPDATE tlo_assignments
+          SET 
+            tlo_masterlist_id = $1,
+            status = 'Active',
+            capacity = 'Full',
+            start_date = CURRENT_DATE,
+            end_date = NULL,
+            remarks = 'Appointed via Vacancy Application',
+            updated_at = NOW()
+          WHERE (tlo_position_id = $2 OR id::text = $2) AND tlo_masterlist_id IS NULL
+        `, [numericMasterlistId, targetVacId]);
+      }
+    }
+
+    // Update registration_status on vacancy_applicants
+    if (applicantRow?.id) {
+      await client.query(`
+        UPDATE vacancy_applicants SET
+          registration_status = 'Appointed',
+          updated_at = NOW()
+        WHERE id = $1
+      `, [applicantRow.id]);
+    }
+
+    // Update vacancy_applications (clean update with no extra columns)
+    const updatedAppRes = await client.query(`
+      UPDATE vacancy_applications SET
+        status = 'Appointed',
+        remarks = COALESCE($1, remarks),
+        updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [remarks, application.id]);
+
+    // Escalate user role or provision account in tlo_users as TLO Applicant so appointed official can access the TLO portal
+    if (email) {
+      const existingUserRes = await client.query(
+        `SELECT uid FROM tlo_users WHERE LOWER(email) = LOWER($1)`,
+        [email]
+      );
+      if (existingUserRes.rows.length > 0) {
+        await client.query(`
+          UPDATE tlo_users 
+          SET role = 'TLO Applicant', 
+              registration_status = 'Active',
+              passcode = COALESCE(tlo_users.passcode, $2)
+          WHERE LOWER(email) = LOWER($1)
+        `, [email, applicantRow?.passcode || null]);
+      } else {
+        await client.query(`
+          INSERT INTO tlo_users (
+            uid, email, password_hash, hash_version, first_name, last_name, contact_number, passcode,
+            role, registration_status, is_testaccount, created_at
+          ) VALUES ($1, $2, $3, 'bcrypt', $4, $5, $6, $7, 'TLO Applicant', 'Active', $8, NOW())
+        `, [
+          assignedTloId,
+          email.toLowerCase().trim(),
+          applicantRow?.password_hash || null,
+          applicantRow?.first_name || application.first_name || '',
+          applicantRow?.last_name || application.surname || '',
+          applicantRow?.contact_number || application.contact_number || null,
+          applicantRow?.passcode || null,
+          Boolean(application.is_testaccount)
+        ]);
+      }
+    }
+
+    await client.query('COMMIT');
+
+    // 4. Background cloud document relocation (Non-blocking async)
+    const docsToRelocate = [
+      { docType: 'id_picture', binaryId: application.id_picture_binary_id },
+      { docType: 'pds', binaryId: application.pds_binary_id },
+      { docType: 'work_experience_sheet', binaryId: application.work_experience_sheet_binary_id },
+      { docType: 'cv', binaryId: application.cv_binary_id },
+      { docType: 'service_records', binaryId: application.service_records_binary_id },
+      { docType: 'applicant_profile_doc', binaryId: application.applicant_profile_doc_binary_id },
+      { docType: 'letter_of_intent', binaryId: application.letter_of_intent_binary_id },
+      { docType: 'outstanding_accomplishments', binaryId: application.outstanding_accomplishments_binary_id },
+      { docType: 'transcript_of_records', binaryId: application.transcript_of_records_binary_id },
+      { docType: 'performance_eval', binaryId: application.performance_eval_binary_id },
+      { docType: 'self_certification', binaryId: application.self_certification_binary_id },
+      { docType: 'other_documents', binaryId: application.other_documents_binary_id }
+    ].filter(d => d.binaryId);
+
+    (async () => {
+      try {
+        for (const doc of docsToRelocate) {
+          const binRes = await pool.query('SELECT id, azure_blob_url FROM unified_binaries WHERE id = $1', [doc.binaryId]);
+          if (binRes.rows.length > 0 && binRes.rows[0].azure_blob_url) {
+            const oldUrl = binRes.rows[0].azure_blob_url;
+            const copyRes = await copyBlobToTloid(oldUrl, assignedTloId, doc.docType);
+            if (copyRes && copyRes.blobUrl) {
+              await pool.query('UPDATE unified_binaries SET azure_blob_url = $1 WHERE id = $2', [copyRes.blobUrl, doc.binaryId]);
+              console.log(`[Appointed Relocate] Updated binary ${doc.binaryId} to ${copyRes.blobUrl}`);
+            }
+          }
+        }
+      } catch (bgErr) {
+        console.error('[Background Blob Relocation Error]:', bgErr.message);
+      }
+    })();
+
+    return res.json({
+      success: true,
+      message: `Applicant successfully appointed as ${assignedTloId} and promoted to Masterlist`,
+      data: {
+        ...updatedAppRes.rows[0],
+        appointed_tlo_id: assignedTloId
+      },
+      tlo_id: assignedTloId
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[updateVacancyApplicationStatus Error]:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error while updating application status: ' + err.message });
+  } finally {
+    client.release();
+  }
+};
+
+

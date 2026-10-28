@@ -56,6 +56,22 @@ export const updateSettings = async (req, res) => {
     const isTest = Boolean(req.user?.is_testaccount);
     values.push(email.toLowerCase().trim(), isTest);
     
+    if (req.user?.role === 'Vacancy Applicant') {
+      const updateQuery = `
+        UPDATE vacancy_applicants 
+        SET ${updates.join(', ')} 
+        WHERE LOWER(email) = $${queryIndex} AND is_testaccount = $${queryIndex + 1}
+        RETURNING applicant_uid AS uid, first_name, last_name, email;
+      `;
+      const result = await client.query(updateQuery, values);
+      if (result.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Vacancy applicant not found' });
+      }
+      await client.query('COMMIT');
+      return res.json({ success: true, message: 'Settings updated successfully', user: { ...result.rows[0], role: 'Vacancy Applicant' } });
+    }
+
     const updateQuery = `
       UPDATE tlo_users 
       SET ${updates.join(', ')} 

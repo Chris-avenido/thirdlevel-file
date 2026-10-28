@@ -126,3 +126,77 @@ export const downloadFromAzure = async (blobUrlOrPath) => {
     }
 };
 
+/**
+ * Copies an existing blob (e.g. from APP-<id>/<docType>/...) to the canonical TLO prefix:
+ * <targetTloId>/<docType>/<docType>_<targetTloId>_<timestamp>.<ext>
+ * and returns the new blob metadata.
+ * 
+ * @param {string} sourceBlobUrlOrPath 
+ * @param {string} targetTloId e.g. 'TLO-0790'
+ * @param {string} docType e.g. 'pds', 'wes', 'cv'
+ * @returns {Promise<{ blobUrl: string, blobName: string, container: string, filename: string }|null>}
+ */
+export const copyBlobToTloid = async (sourceBlobUrlOrPath, targetTloId, docType) => {
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    const defaultContainerName = process.env.AZURE_FOLDER_NAME || 'tlo-main';
+
+    if (!connectionString || !sourceBlobUrlOrPath || !targetTloId) {
+        return null;
+    }
+
+    try {
+        let sourceContainer = defaultContainerName;
+        let sourceBlobPath = sourceBlobUrlOrPath;
+
+        if (sourceBlobUrlOrPath.startsWith('http://') || sourceBlobUrlOrPath.startsWith('https://')) {
+            const urlObj = new URL(sourceBlobUrlOrPath);
+            const pathParts = urlObj.pathname.split('/').filter(Boolean);
+            if (pathParts.length > 1) {
+                sourceContainer = pathParts[0];
+                sourceBlobPath = pathParts.slice(1).join('/');
+            } else if (pathParts.length === 1) {
+                sourceBlobPath = pathParts[0];
+            }
+        }
+
+        const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+        const sourceContainerClient = blobServiceClient.getContainerClient(sourceContainer);
+        const sourceBlockBlobClient = sourceContainerClient.getBlockBlobClient(sourceBlobPath);
+
+        // Verify source blob exists
+        const exists = await sourceBlockBlobClient.exists();
+        if (!exists) {
+            console.warn(`[AzureCopy] Source blob does not exist: ${sourceContainer}/${sourceBlobPath}`);
+            return null;
+        }
+
+        // Determine target path: <targetTloId>/<docType>/<docType>_<targetTloId>_<timestamp>.<ext>
+        const ext = path.extname(sourceBlobPath) || '.pdf';
+        const timestamp = getFormattedTimestamp();
+        const docPrefix = docType ? `${docType}_` : '';
+        const targetFilename = `${docPrefix}${targetTloId}_${timestamp}${ext}`;
+        const targetBlobPath = docType ? `${targetTloId}/${docType}/${targetFilename}` : `${targetTloId}/${targetFilename}`;
+
+        const targetContainer = defaultContainerName;
+        const targetContainerClient = blobServiceClient.getContainerClient(targetContainer);
+        const targetBlockBlobClient = targetContainerClient.getBlockBlobClient(targetBlobPath);
+
+        // Copy source blob to target
+        const copyPoller = await targetBlockBlobClient.beginCopyFromURL(sourceBlockBlobClient.url);
+        await copyPoller.pollUntilDone();
+
+        console.log(`[AzureCopy] Successfully copied ${sourceBlobPath} -> ${targetContainer}/${targetBlobPath}`);
+
+        return {
+            blobUrl: targetBlockBlobClient.url,
+            blobName: targetBlobPath,
+            container: targetContainer,
+            filename: targetFilename
+        };
+    } catch (err) {
+        console.error(`[AzureCopy] Error copying blob (${sourceBlobUrlOrPath} -> ${targetTloId}):`, err.message);
+        return null;
+    }
+};
+
+
