@@ -934,8 +934,8 @@ const Home = () => {
                 <FiGrid size={20} />
               </div>
               <div>
-                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
-                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">InsightED Top-Level Metrics</p>
+                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">TIMON <span className="text-blue-300 not-italic">Dashboard</span></h1>
+                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">Third Level Incumbent and Management Operations Network</p>
               </div>
             </div>
 

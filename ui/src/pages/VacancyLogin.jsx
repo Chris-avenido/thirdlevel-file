@@ -7,7 +7,7 @@ import {
     FiUserPlus, FiSmartphone, FiX, FiKey 
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import modernLogo from '../assets/modern_logo.png';
+import modernLogo from '../assets/tlo_logo.png';
 import PageTransition from '../components/PageTransition';
 import Swal from 'sweetalert2';
 

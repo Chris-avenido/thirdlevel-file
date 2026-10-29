@@ -1424,7 +1424,7 @@ const PositionAssignments = () => {
                   Position <span className="text-blue-300 not-italic">Assignments</span>
                 </h1>
                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                  Plantilla Deployment & Staffing • Third Level Officials Command Dashboard
+                  Plantilla Deployment & Staffing • TIMON (Third Level Incumbent and Management Operations Network)
                 </p>
               </div>
             </div>

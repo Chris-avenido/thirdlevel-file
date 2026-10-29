@@ -22,7 +22,7 @@ import { apiUrl } from '../utils/api';
 import { expandAcronym, formatPositionTitle, isThirdLevelPosition } from '../utils/officialsUtils';
 import ModernDatePicker from '../components/ModernDatePicker';
 import sgMap from '../utils/sgMap.json';
-import newLogo from '../assets/modern_logo.png';
+import newLogo from '../assets/tlo_logo.png';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
 const JustificationInput = ({ value, onChange, placeholder }) => {
     const [local, setLocal] = useState(value);
@@ -253,6 +253,7 @@ const OfficialsRegistry = () => {
     const [reconcileModalOpen, setReconcileModalOpen] = useState(false);
     const [reconcileTargetItem, setReconcileTargetItem] = useState(null);
     const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [reconcileApprovedTarget, setReconcileApprovedTarget] = useState('registration'); // 'registration' or 'candidate'
     const [reconcileConfirmed, setReconcileConfirmed] = useState(false);
     const [reconcileRemarks, setReconcileRemarks] = useState('');
     const [reconcileLoading, setReconcileLoading] = useState(false);
@@ -379,6 +380,7 @@ const OfficialsRegistry = () => {
         setReconcileTargetItem(item);
         const defaultCandidate = candidate || (item.potential_matches && item.potential_matches[0]) || null;
         setSelectedCandidate(defaultCandidate);
+        setReconcileApprovedTarget('registration');
         setReconcileConfirmed(false);
         setReconcileRemarks('');
         setReconcileModalOpen(true);
@@ -407,16 +409,22 @@ const OfficialsRegistry = () => {
                     TLOid: reconcileTargetItem.TLOid,
                     action: 'reconcile',
                     target_TLOid: selectedCandidate.TLOid,
+                    approved_record: reconcileApprovedTarget,
+                    approved_TLOid: reconcileApprovedTarget === 'candidate' ? selectedCandidate.TLOid : reconcileTargetItem.TLOid,
                     confirmed_same_person: true,
                     remarks: reconcileRemarks.trim()
                 })
             });
             const data = await res.json();
             if (data.success) {
-                Swal.fire('Reconciliation Complete', `Official registration ${reconcileTargetItem.TLOid} was successfully activated with official details from ${selectedCandidate.TLOid}, and ${selectedCandidate.TLOid} has been marked as Inactive.`, 'success');
+                const successMsg = reconcileApprovedTarget === 'candidate'
+                    ? `Official record ${selectedCandidate.TLOid} was successfully approved and retained as Active, linked with registration credentials ${reconcileTargetItem.email}. Record ${reconcileTargetItem.TLOid} has been marked as Inactive.`
+                    : `Official registration ${reconcileTargetItem.TLOid} was successfully activated with official details from ${selectedCandidate.TLOid}, and ${selectedCandidate.TLOid} has been marked as Inactive.`;
+                Swal.fire('Reconciliation Complete', successMsg, 'success');
                 setReconcileModalOpen(false);
                 setReconcileTargetItem(null);
                 setSelectedCandidate(null);
+                setReconcileApprovedTarget('registration');
                 fetchOfficials();
                 fetchKpiSummary();
             } else {
@@ -1256,65 +1264,66 @@ const OfficialsRegistry = () => {
     };
 
     const isCentralOfficeView = levelFilter === 'Central Office' || regionFilter === 'Central Office' || tableFilters['region'] === 'Central Office';
+    const isForApproval = statusTab === 'For Approval';
 
     const tableColumns = useMemo(() => ([
         {
             key: 'region',
             label: 'Region',
-            width: 'w-[9%]',
+            width: isForApproval ? 'w-[8%]' : 'w-[9%] min-w-[105px]',
             value: (item) => getOfficialRegion(item),
             filterValue: (item) => getOfficialRegion(item)
         },
         {
             key: 'division',
             label: isCentralOfficeView ? 'Strand' : 'Division',
-            width: 'w-[13%]',
+            width: isForApproval ? 'w-[11%]' : 'w-[13%] min-w-[135px]',
             value: (item) => (item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || item.office || '') : (item.division || item.office || ''),
             filterValue: (item) => (item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || item.office || 'No Division') : (item.division || item.office || 'No Division')
         },
         {
             key: 'name',
             label: 'Official Profile',
-            width: 'w-[22%]',
+            width: isForApproval ? 'w-[27%]' : 'w-[22%] min-w-[260px]',
             value: (item) => `${item.first_name || 'VACANT POSITION'} ${item.last_name || ''}`,
             filterValue: (item) => item.first_name ? `${item.first_name} ${item.last_name || ''}`.trim() : 'VACANT POSITION'
         },
         {
             key: 'profile_completion',
             label: 'Profile Completion',
-            width: 'w-[14%]',
+            width: isForApproval ? 'w-[13%]' : 'w-[14%] min-w-[140px]',
             value: (item) => item.profile_completion != null ? `${Math.round(item.profile_completion)}%` : '—',
             filterValue: (item) => item.profile_completion != null ? `${Math.round(item.profile_completion)}%` : '—'
         },
         {
             key: 'position_title',
             label: 'Position',
-            width: 'w-[16%]',
+            width: isForApproval ? 'w-[13%]' : 'w-[16%] min-w-[160px]',
             value: (item) => (item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || '',
             filterValue: (item) => (item.position_title || 'Unassigned').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned'
         },
         {
             key: 'designation',
             label: 'Designation',
-            width: 'w-[11%]',
+            width: isForApproval ? 'w-[11%]' : 'w-[11%] min-w-[130px]',
             value: (item) => (item.designation || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || '',
             filterValue: (item) => (item.designation || 'No Designation').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation'
         },
         {
             key: 'is_oic',
             label: 'OIC',
-            width: 'w-[5%]',
+            width: isForApproval ? 'w-[5%]' : 'w-[5%] min-w-[70px]',
             value: (item) => (item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? 'Yes' : 'No',
             filterValue: (item) => (item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? 'Yes' : 'No'
         },
         {
             key: 'status',
             label: 'Status',
-            width: 'w-[10%]',
+            width: isForApproval ? 'w-[12%]' : 'w-[10%] min-w-[160px]',
             value: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || ''),
             filterValue: (item) => item.status === 'Vacated' ? 'Vacant' : (item.status || 'Unknown')
         }
-    ]), [levelFilter, regionFilter, tableFilters]);
+    ]), [levelFilter, regionFilter, tableFilters, isCentralOfficeView, isForApproval]);
 
     const tableFilterOptions = useMemo(() => {
         return tableColumns.reduce((options, column) => {
@@ -1566,7 +1575,7 @@ const OfficialsRegistry = () => {
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
+                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-4 sm:px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
                         <div className="flex items-center gap-4 text-white">
                             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
                                 <FiUsers size={20} />
@@ -1576,7 +1585,7 @@ const OfficialsRegistry = () => {
                                     Personnel <span className="text-blue-300 not-italic">Registry</span>
                                 </h1>
                                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                                    Official Leadership Management • Third Level Officials Command Dashboard
+                                    Official Leadership Management • TIMON (Third Level Incumbent and Management Operations Network)
                                 </p>
                             </div>
                         </div>
@@ -1593,13 +1602,13 @@ const OfficialsRegistry = () => {
                         </div>
                     </header>
 
-                    <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
+                    <main className="flex-1 px-3 sm:px-6 lg:px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* UNIFIED DATA CONTROLS TAB */}
                         <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
                             {/* TOP ROW: FILTERS */}
                             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full">
                                 {/* DROPDOWNS */}
-                                <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                     {/* Level Dropdown */}
                                     <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
                                         <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
@@ -1864,20 +1873,19 @@ const OfficialsRegistry = () => {
                                 </div>
                             ) : viewMode === 'table' ? (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden">
-                                    <div className="w-full">
-                                        <table className="hidden md:table w-full text-left border-collapse table-fixed">
+                                    <div className={`w-full ${isForApproval ? 'overflow-hidden' : 'overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100'}`}>
+                                        <table className={`hidden md:table w-full ${isForApproval ? '' : 'min-w-[1190px]'} text-left border-collapse table-fixed`}>
                                             <thead>
                                                 <tr className="bg-white border-b-2 border-slate-200">
                                                     {tableColumns.map((column, index) => (
-                                                        <th key={column.key} className={`px-2 py-4 text-left align-top relative ${column.width || ''}`}>
-
-                                                            <div className={`flex flex-col gap-3 mt-1 ${column.key === 'is_oic' ? 'pr-1' : 'pr-4'}`}>
+                                                        <th key={column.key} className={`${isForApproval ? 'px-2 py-3' : 'px-2.5 py-3.5'} text-left align-top relative ${column.width || ''}`}>
+                                                            <div className={`flex flex-col gap-2 mt-0.5 ${column.key === 'is_oic' ? 'pr-0.5' : 'pr-1'}`}>
                                                                 <button
                                                                     onClick={() => handleSort(column.key)}
-                                                                    className="flex items-center justify-between h-5 text-[13.5px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left group"
+                                                                    className={`flex items-center justify-between h-5 ${isForApproval ? 'text-[11.5px]' : 'text-[12.5px]'} font-black text-slate-400 uppercase tracking-wider hover:text-slate-600 transition-colors w-full text-left group`}
                                                                 >
-                                                                    <span>{column.label}</span>
-                                                                    <span className={`text-base leading-none flex items-center w-3 justify-end transition-colors ${sortConfig.key === column.key ? 'text-[#08315F]' : 'text-slate-200 group-hover:text-slate-400'}`}>
+                                                                    <span className="truncate">{column.label}</span>
+                                                                    <span className={`text-sm leading-none flex items-center w-3 justify-end shrink-0 transition-colors ${sortConfig.key === column.key ? 'text-[#08315F]' : 'text-slate-200 group-hover:text-slate-400'}`}>
                                                                         {sortConfig.key === column.key
                                                                             ? (sortConfig.direction === 'asc' ? '↑' : '↓')
                                                                             : '↓'}
@@ -1886,7 +1894,7 @@ const OfficialsRegistry = () => {
                                                                 <select
                                                                     value={tableFilters[column.key] || ''}
                                                                     onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                                                                    className={`w-full bg-white border-2 border-sky-200 rounded-lg py-1.5 font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors ${column.key === 'is_oic' ? 'px-1 text-[13.5px] text-center' : 'px-3 text-[16.5px]'}`}
+                                                                    className={`w-full bg-white border-2 border-sky-200 rounded-lg ${isForApproval ? 'h-[30px] px-1 text-[12px]' : 'h-[34px] px-2 text-[13.5px]'} font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors text-ellipsis ${column.key === 'is_oic' ? 'text-center' : ''}`}
                                                                 >
                                                                     <option value="">All</option>
                                                                     {(tableFilterOptions[column.key] || []).map(option => (
@@ -1912,17 +1920,17 @@ const OfficialsRegistry = () => {
                                                     pagedRecords.map((item) => (
                                                     <React.Fragment key={item.TLOid}>
                                                     <tr className="group transition-colors relative hover:bg-slate-50/80">
-                                                        <td className="px-3 py-4 align-middle max-w-[120px]">
-                                                            <div className="font-black text-[#08315F] text-[15px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}>
+                                                        <td className="px-2.5 py-3.5 align-middle">
+                                                            <div className="font-black text-[#08315F] text-[14.5px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}>
                                                                 <span>{item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-2 py-4 align-middle max-w-[200px]">
-                                                            <div className="text-[15px] font-bold text-slate-700 uppercase tracking-widest truncate" title={item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}>
+                                                        <td className="px-2.5 py-3.5 align-middle">
+                                                            <div className="text-[14.5px] font-bold text-slate-700 uppercase tracking-wider truncate" title={item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}>
                                                                 {item.status === 'Inactive' ? 'N/A' : ((item.region || getOfficialRegion(item)) === 'Central Office' ? (item.strand || item.division || 'N/A') : (item.division || 'N/A'))}
                                                             </div>
                                                         </td>
-                                                        <td className="px-2 py-4 align-middle">
+                                                        <td className="px-2.5 py-3.5 align-middle">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-400 font-black text-sm border-2 border-white shadow-sm overflow-hidden shrink-0">
                                                                     {item.photo_binary_id ? (
@@ -1933,30 +1941,30 @@ const OfficialsRegistry = () => {
                                                                     <div className="flex items-center gap-2 flex-wrap">
                                                                         <div
                                                                             onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}&tloid=${encodeURIComponent(item.TLOid)}`)}
-                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] ${isForApproval ? 'text-[16px] xl:text-[18px]' : 'text-[18px] sm:text-[19px]'} leading-tight transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                             title={item.email ? "View Official Profile" : ""}
                                                                         >
-                                                                            {(!item.first_name || item.first_name === 'VACANT') ? <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span> : `${item.first_name} ${item.last_name || ''}`}
+                                                                            {(!item.first_name || item.first_name === 'VACANT') ? <span className="text-rose-500 italic tracking-widest text-[14px]">VACANT POSITION</span> : `${item.first_name} ${item.last_name || ''}`}
                                                                         </div>
                                                                         {item.is_testaccount && (
-                                                                            <span title="Test Account" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100/90 border-2 border-purple-300 text-purple-700 text-[13.5px] font-black uppercase tracking-wider shrink-0 shadow-sm">
-                                                                                <FaVial size={12} className="text-purple-600 shrink-0" />
+                                                                            <span title="Test Account" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100/90 border-2 border-purple-300 text-purple-700 text-[12px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                                                                <FaVial size={11} className="text-purple-600 shrink-0" />
                                                                                 <span>TEST ACCOUNT</span>
                                                                             </span>
                                                                         )}
                                                                     </div>
-                                                                    <div className="text-[13.5px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 truncate">
+                                                                    <div className="text-[12.5px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 flex items-center gap-1.5 truncate">
                                                                         <FiArrowRight className="text-[#075985] shrink-0" size={10} />
                                                                         <span className="truncate">{item.email}</span>
                                                                         {item.plantilla_item_no && (
                                                                             <>
-                                                                                <span className="mx-1">•</span>
+                                                                                <span className="mx-0.5">•</span>
                                                                                 <span className="text-[#075985] font-black tracking-normal" title="Plantilla Item No.">{item.plantilla_item_no}</span>
                                                                             </>
                                                                         )}
                                                                         {item.status !== 'Inactive' && item.effectivity_date && (
                                                                             <>
-                                                                                <span className="mx-1">•</span>
+                                                                                <span className="mx-0.5">•</span>
                                                                                 <FiCalendar className="text-slate-300 shrink-0" size={10} />
                                                                                 {(() => {
                                                                                     const effDate = new Date(item.effectivity_date);
@@ -1982,9 +1990,9 @@ const OfficialsRegistry = () => {
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-2 py-4 align-middle max-w-[150px]">
+                                                        <td className="px-2.5 py-3.5 align-middle">
                                                             {(!item.first_name || item.first_name === 'VACANT' || item.status === 'Vacated' || item.profile_completion == null) ? (
-                                                                <span className="text-slate-300 font-bold text-[18px]">—</span>
+                                                                <span className="text-slate-300 font-bold text-[16px]">—</span>
                                                             ) : (() => {
                                                                 const pct = Math.min(100, Math.max(0, Math.round(item.profile_completion)));
                                                                 const colorClass = pct >= 100 ? 'text-emerald-600' : pct >= 70 ? 'text-[#08315F]' : 'text-amber-600';
@@ -1992,7 +2000,7 @@ const OfficialsRegistry = () => {
                                                                 return (
                                                                     <div className="flex flex-col gap-1.5 w-full pr-2" title={`${pct}% Completed`}>
                                                                         <div className="flex items-center justify-between">
-                                                                            <span className={`text-[17px] font-bold ${colorClass} leading-none`}>
+                                                                            <span className={`text-[15px] font-bold ${colorClass} leading-none`}>
                                                                                 {pct}%
                                                                             </span>
                                                                             {pct >= 100 && (
@@ -2011,34 +2019,34 @@ const OfficialsRegistry = () => {
                                                                 );
                                                             })()}
                                                         </td>
-                                                        <td className="px-1 py-4 align-middle max-w-[200px]">
+                                                        <td className="px-2 py-3.5 align-middle">
                                                             <div
                                                                 onClick={() => handlePositionClick(item)}
                                                                 title={item.status === 'Inactive' ? 'N/A' : ((item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned')}
-                                                                className="flex w-fit max-w-full items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50/80 border-2 border-amber-300 text-amber-600 text-[13.5px] font-black uppercase tracking-widest shadow-sm cursor-pointer hover:bg-amber-100 hover:border-amber-400 transition-colors"
+                                                                className="flex w-fit max-w-full items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50/80 border-2 border-amber-300 text-amber-600 text-[12.5px] font-black uppercase tracking-wider shadow-xs cursor-pointer hover:bg-amber-100 hover:border-amber-400 transition-colors"
                                                             >
                                                                 <span className="truncate">{item.status === 'Inactive' ? 'N/A' : ((item.position_title || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'Unassigned')}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-1 py-4 align-middle max-w-[120px]">
+                                                        <td className="px-2 py-3.5 align-middle">
                                                             <div
                                                                 onClick={() => handlePositionClick(item)}
                                                                 title={item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
-                                                                className="text-[15px] font-black text-[#08315F] uppercase tracking-widest truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
+                                                                className="text-[13.5px] font-black text-[#08315F] uppercase tracking-wider truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
                                                             >
                                                                 {item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
                                                             </div>
                                                         </td>
-                                                        <td className="px-1 py-4 align-middle text-center max-w-[60px]">
-                                                            <div className="flex justify-start items-center ml-2">
+                                                        <td className="px-1.5 py-3.5 align-middle text-center">
+                                                            <div className="flex justify-center items-center">
                                                                 {(item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? (
-                                                                    <span className="px-2 py-1 rounded-full bg-[#FCD116]/20 border-2 border-[#FCD116] text-[#0038A8] text-[13.5px] font-black uppercase tracking-widest shadow-sm">Yes</span>
+                                                                    <span className="px-2 py-0.5 rounded-full bg-[#FCD116]/20 border-2 border-[#FCD116] text-[#0038A8] text-[12px] font-black uppercase tracking-wider shadow-xs">Yes</span>
                                                                 ) : (
-                                                                    <span className="px-2 py-1 rounded-full bg-slate-100 border-2 border-slate-200 text-slate-400 text-[13.5px] font-black uppercase tracking-widest shadow-sm">No</span>
+                                                                    <span className="px-2 py-0.5 rounded-full bg-slate-100 border-2 border-slate-200 text-slate-400 text-[12px] font-black uppercase tracking-wider shadow-xs">No</span>
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        <td className="px-1 py-4 align-middle static md:relative">
+                                                        <td className="px-2.5 py-3.5 align-middle static md:relative">
                                                             <StatusBadge status={item.status} rejectionReason={item.rejection_reason} onShowReason={() => handleViewRejectionReason(item)} />
 
                                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border-2 border-slate-200 pointer-events-none group-hover:pointer-events-auto">
@@ -2847,10 +2855,125 @@ const OfficialsRegistry = () => {
                                                 </div>
                                             )}
 
+                                            {/* Select Who to Approve Section */}
+                                            <div className="p-4 sm:p-5 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 rounded-2xl border-2 border-blue-200/90 shadow-xs space-y-3">
+                                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <FiCheckCircle className="text-[#08315F] shrink-0" size={18} />
+                                                        <span className="text-[13px] sm:text-[14px] font-black text-[#08315F] uppercase tracking-wider">
+                                                            Select Who to Approve & Retain as Active Official
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[11.5px] font-bold text-slate-500 uppercase tracking-wider bg-white/80 px-2.5 py-1 rounded-md border border-slate-200">
+                                                        Active Decision Required
+                                                    </span>
+                                                </div>
+                                                <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
+                                                    Choose which official record will be approved and designated as the canonical <strong>Active</strong> identity in the masterlist. The other record will be deactivated and reconciled.
+                                                </p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                                    {/* Option 1: Registration Record */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setReconcileApprovedTarget('registration')}
+                                                        className={`p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 ${
+                                                            reconcileApprovedTarget === 'registration'
+                                                                ? 'bg-emerald-50/80 border-emerald-500 shadow-md ring-2 ring-emerald-500/25'
+                                                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                                                        }`}
+                                                    >
+                                                        <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                                                            reconcileApprovedTarget === 'registration'
+                                                                ? 'border-emerald-600 bg-emerald-600 text-white'
+                                                                : 'border-slate-300 bg-white'
+                                                        }`}>
+                                                            {reconcileApprovedTarget === 'registration' && <div className="w-2 h-2 rounded-full bg-white" />}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                                                                <span className="font-black text-[14.5px] text-[#08315F]">
+                                                                    Approve Registration ({reconcileTargetItem.TLOid})
+                                                                </span>
+                                                                {reconcileApprovedTarget === 'registration' ? (
+                                                                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10.5px] font-black uppercase tracking-wider shadow-xs">
+                                                                        Will Be Active
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                                                        Will Be Inactive
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-[12.5px] text-slate-700 font-semibold truncate">
+                                                                {reconcileTargetItem.first_name} {reconcileTargetItem.last_name || ''}
+                                                            </div>
+                                                            <div className="text-[11.5px] text-slate-500 truncate mt-0.5">
+                                                                {reconcileTargetItem.email || 'No email'} • {reconcileTargetItem.position_title || 'Applicant'}
+                                                            </div>
+                                                            <div className="text-[11px] text-emerald-800/80 font-medium mt-1.5 pt-1.5 border-t border-emerald-200/60 leading-snug">
+                                                                Activates {reconcileTargetItem.TLOid}, inherits canonical details from {selectedCandidate?.TLOid || 'existing official'}, and sets {selectedCandidate?.TLOid || 'existing official'} to Inactive.
+                                                            </div>
+                                                        </div>
+                                                    </button>
+
+                                                    {/* Option 2: Existing Official Record */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => selectedCandidate && setReconcileApprovedTarget('candidate')}
+                                                        disabled={!selectedCandidate}
+                                                        className={`p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 ${
+                                                            reconcileApprovedTarget === 'candidate'
+                                                                ? 'bg-emerald-50/80 border-emerald-500 shadow-md ring-2 ring-emerald-500/25'
+                                                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 disabled:opacity-50'
+                                                        }`}
+                                                    >
+                                                        <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                                                            reconcileApprovedTarget === 'candidate'
+                                                                ? 'border-emerald-600 bg-emerald-600 text-white'
+                                                                : 'border-slate-300 bg-white'
+                                                        }`}>
+                                                            {reconcileApprovedTarget === 'candidate' && <div className="w-2 h-2 rounded-full bg-white" />}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                                                                <span className="font-black text-[14.5px] text-[#08315F]">
+                                                                    Approve Existing Official ({selectedCandidate?.TLOid || 'Candidate'})
+                                                                </span>
+                                                                {reconcileApprovedTarget === 'candidate' ? (
+                                                                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10.5px] font-black uppercase tracking-wider shadow-xs">
+                                                                        Will Be Active
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                                                        Will Be Inactive
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-[12.5px] text-slate-700 font-semibold truncate">
+                                                                {selectedCandidate ? `${selectedCandidate.first_name} ${selectedCandidate.last_name || ''}` : 'No candidate selected'}
+                                                            </div>
+                                                            <div className="text-[11.5px] text-slate-500 truncate mt-0.5">
+                                                                {selectedCandidate?.email || 'No email'} • {selectedCandidate?.position_title || 'No Position'}
+                                                            </div>
+                                                            <div className="text-[11px] text-emerald-800/80 font-medium mt-1.5 pt-1.5 border-t border-emerald-200/60 leading-snug">
+                                                                Retains {selectedCandidate?.TLOid || 'existing official'} Active, links registration credentials ({reconcileTargetItem.email}), and sets {reconcileTargetItem.TLOid} to Inactive.
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </div>
+                                            </div>
+
                                             {/* Side-by-Side Comparison Cards */}
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6 items-stretch">
                                                 {/* Registration Record Card */}
-                                                <div className="p-6 sm:p-7 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-4">
+                                                <div
+                                                    onClick={() => setReconcileApprovedTarget('registration')}
+                                                    className={`p-6 sm:p-7 rounded-2xl border-2 shadow-xs flex flex-col justify-between space-y-4 cursor-pointer transition-all ${
+                                                        reconcileApprovedTarget === 'registration'
+                                                            ? 'bg-emerald-50/20 border-emerald-500 ring-2 ring-emerald-500/25 shadow-md'
+                                                            : 'bg-white border-slate-200/90 hover:border-slate-300'
+                                                    }`}
+                                                >
                                                     <div>
                                                         {/* Header: Title and Status Badge */}
                                                         <div className="flex items-start justify-between gap-3 mb-4">
@@ -2862,9 +2985,20 @@ const OfficialsRegistry = () => {
                                                                     (PENDING)
                                                                 </span>
                                                             </div>
-                                                            <span className="px-3.5 py-1 rounded-full bg-[#fef3c7] text-[#b45309] text-[11px] font-black uppercase tracking-wider whitespace-nowrap shrink-0">
-                                                                FOR APPROVAL
-                                                            </span>
+                                                            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                                                <span className="px-3.5 py-1 rounded-full bg-[#fef3c7] text-[#b45309] text-[11px] font-black uppercase tracking-wider whitespace-nowrap">
+                                                                    FOR APPROVAL
+                                                                </span>
+                                                                {reconcileApprovedTarget === 'registration' ? (
+                                                                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-200">
+                                                                        <FiCheckCircle size={11} className="text-emerald-600" /> Selected to Approve
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                                                        Will be Inactive
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
 
                                                         {/* Fields Container */}
@@ -2943,7 +3077,16 @@ const OfficialsRegistry = () => {
                                                 </div>
 
                                                 {/* Canonical Candidate Record Card */}
-                                                <div className="p-6 sm:p-7 bg-[#f0f7ff] rounded-2xl border-2 border-[#bae6fd] shadow-xs flex flex-col justify-between space-y-4">
+                                                <div
+                                                    onClick={() => selectedCandidate && setReconcileApprovedTarget('candidate')}
+                                                    className={`p-6 sm:p-7 rounded-2xl border-2 shadow-xs flex flex-col justify-between space-y-4 transition-all ${
+                                                        selectedCandidate ? 'cursor-pointer' : ''
+                                                    } ${
+                                                        reconcileApprovedTarget === 'candidate'
+                                                            ? 'bg-emerald-50/20 border-emerald-500 ring-2 ring-emerald-500/25 shadow-md'
+                                                            : 'bg-[#f0f7ff] border-[#bae6fd] hover:border-blue-300'
+                                                    }`}
+                                                >
                                                     {selectedCandidate ? (
                                                         <>
                                                             <div>
@@ -2957,9 +3100,20 @@ const OfficialsRegistry = () => {
                                                                             (ACTIVE)
                                                                         </span>
                                                                     </div>
-                                                                    <span className="px-3.5 py-1 rounded-full bg-[#dcfce7] text-[#15803d] text-[11px] font-black uppercase tracking-wider whitespace-nowrap shrink-0">
-                                                                        ACTIVE MASTERLIST
-                                                                    </span>
+                                                                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                                                        <span className="px-3.5 py-1 rounded-full bg-[#dcfce7] text-[#15803d] text-[11px] font-black uppercase tracking-wider whitespace-nowrap">
+                                                                            ACTIVE MASTERLIST
+                                                                        </span>
+                                                                        {reconcileApprovedTarget === 'candidate' ? (
+                                                                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-200">
+                                                                                <FiCheckCircle size={11} className="text-emerald-600" /> Selected to Approve
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                                                                Will be Inactive
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* Fields Container */}
@@ -3051,7 +3205,15 @@ const OfficialsRegistry = () => {
                                                     <span>Is this the same person?</span>
                                                 </div>
                                                 <p className="text-[14px] text-amber-950/80 font-medium leading-relaxed">
-                                                    Please verify that the registration record and the existing official record belong to the same person before proceeding. This action will activate registration record <strong>{reconcileTargetItem.TLOid}</strong>, inherit official position, plantilla item no., and profile details from <strong>{selectedCandidate?.TLOid || 'the existing official'}</strong>, and mark <strong>{selectedCandidate?.TLOid || 'the existing official record'}</strong> as Inactive.
+                                                    {reconcileApprovedTarget === 'candidate' ? (
+                                                        <>
+                                                            Please verify that the registration record and the existing official record belong to the same person before proceeding. This action will retain existing official record <strong>{selectedCandidate?.TLOid || 'the existing official'}</strong> as <strong>Active</strong>, link login credentials for <strong>{reconcileTargetItem.email}</strong>, and mark registration record <strong>{reconcileTargetItem.TLOid}</strong> as Inactive.
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            Please verify that the registration record and the existing official record belong to the same person before proceeding. This action will activate registration record <strong>{reconcileTargetItem.TLOid}</strong>, inherit official position, plantilla item no., and profile details from <strong>{selectedCandidate?.TLOid || 'the existing official'}</strong>, and mark <strong>{selectedCandidate?.TLOid || 'the existing official record'}</strong> as Inactive.
+                                                        </>
+                                                    )}
                                                 </p>
                                                 <label className="flex items-start gap-3 pt-2 cursor-pointer select-none">
                                                     <input
@@ -3061,7 +3223,7 @@ const OfficialsRegistry = () => {
                                                         className="mt-1 w-5 h-5 rounded border-2 border-amber-400 text-[#08315F] focus:ring-[#08315F] cursor-pointer"
                                                     />
                                                     <span className="text-[14px] font-black text-amber-950 uppercase tracking-wide">
-                                                        Yes, I have verified that these records belong to the same person.
+                                                        Yes, I have verified that these records belong to the same person and approve {reconcileApprovedTarget === 'candidate' ? (selectedCandidate?.TLOid || 'existing official') : reconcileTargetItem.TLOid}.
                                                     </span>
                                                 </label>
                                             </div>
@@ -3102,7 +3264,11 @@ const OfficialsRegistry = () => {
                                                 ) : (
                                                     <>
                                                         <FiUserCheck size={18} />
-                                                        <span>Yes, This Is the Same Person — Proceed</span>
+                                                        <span>
+                                                            {reconcileApprovedTarget === 'candidate'
+                                                                ? `Yes, Approve & Retain ${selectedCandidate?.TLOid || 'Official'} — Proceed`
+                                                                : `Yes, Approve ${reconcileTargetItem.TLOid} — Proceed`}
+                                                        </span>
                                                     </>
                                                 )}
                                             </button>

@@ -20,7 +20,7 @@ import {
 import Swal from 'sweetalert2';
 import PageTransition from '../components/PageTransition';
 import './NexusGate.css';
-import modernLogo from '../assets/modern_logo.png';
+import modernLogo from '../assets/tlo_logo.png';
 import depedLogo from '../assets/DepED-Logo.png';
 import buildingBg from '../assets/deped_building_bg.png';
 // import buildingBg from '../assets/deped_building_bg.jpeg';
@@ -159,7 +159,7 @@ const NexusGate = () => {
                             <div className="nexus-admin-shield-icon">
                                 <FiShield size={18} className="text-[#08315F]" />
                             </div>
-                            <span className="nexus-admin-capsule-title">Records Management</span>
+                            <span className="nexus-admin-capsule-title">TIMON Records Management</span>
                             <span className="nexus-admin-access-badge">ADMIN ACCESS</span>
                             <span className="nexus-admin-arrow">→</span>
                         </motion.div>
@@ -292,9 +292,9 @@ const NexusGate = () => {
 
                     <div className="nexus-card-body">
                         <span className="nexus-role-tag text-[#D97706]">FOR THIRD LEVEL PERSONNEL</span>
-                        <h2 className="nexus-card-title">Third Level Officials</h2>
+                        <h2 className="nexus-card-title">TIMON Portal</h2>
                         <p className="nexus-card-desc">
-                            Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.
+                            Third Level Incumbent and Management Operations Network. Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.
                         </p>
                     </div>
 
@@ -467,8 +467,8 @@ const NexusGate = () => {
                                             <FiShield size={22} className="text-white" />
                                         </div>
                                         <div>
-                                            <p className="text-white font-black text-sm uppercase tracking-widest leading-none">Third Level</p>
-                                            <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest mt-1">Administrative Portal</p>
+                                            <p className="text-white font-black text-sm uppercase tracking-widest leading-none">TIMON</p>
+                                            <p className="text-blue-200 text-[9px] font-bold uppercase tracking-widest mt-1">Third Level Incumbent &amp; Management Operations Network</p>
                                         </div>
                                     </div>
                                     <button onClick={closeCOGate} className="p-2 rounded-full hover:bg-white/10 transition-colors">

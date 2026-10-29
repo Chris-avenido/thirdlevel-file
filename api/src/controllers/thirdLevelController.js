@@ -2019,6 +2019,9 @@ export const processRegistration = async (req, res) => {
 
   const client = await pool.connect();
   let targetOfficial = null;
+  let candidateOfficial = null;
+  let recordToApprove = 'registration';
+  let candidateTLOid = null;
   try {
     await client.query('BEGIN');
 
@@ -2118,7 +2121,7 @@ export const processRegistration = async (req, res) => {
         throw new Error('Failed to enrich trigger-generated retrieval audit record.');
       }
     } else if (action === 'reconcile') {
-      const { target_TLOid, confirmed_same_person, remarks } = req.body;
+      const { target_TLOid, confirmed_same_person, remarks, approved_record, approved_TLOid } = req.body;
       if (!target_TLOid || typeof target_TLOid !== 'string') {
         throw new Error('target_TLOid is required for reconciliation.');
       }
@@ -2129,12 +2132,17 @@ export const processRegistration = async (req, res) => {
         throw new Error('Administrative remarks/justification are required for reconciliation.');
       }
 
-      const candidateTLOid = target_TLOid.trim();
+      candidateTLOid = target_TLOid.trim();
       const registrationTLOid = TLOid.trim();
 
       if (candidateTLOid.toUpperCase() === registrationTLOid.toUpperCase()) {
         throw new Error('Candidate TLOid cannot be identical to the registration TLOid.');
       }
+
+      // Determine which record is selected to be approved: 'registration' or 'candidate'
+      recordToApprove = approved_record === 'candidate' || (approved_TLOid && approved_TLOid.trim().toUpperCase() === candidateTLOid.toUpperCase())
+        ? 'candidate'
+        : 'registration';
 
       // 1. Acquire targeted masterlist row locks in strictly ascending TLOid order to prevent deadlocks
       const sortedTloIds = [registrationTLOid, candidateTLOid].sort();
@@ -2154,6 +2162,7 @@ export const processRegistration = async (req, res) => {
 
       const regRow = lockedMasterlistMap.get(registrationTLOid);
       const candRow = lockedMasterlistMap.get(candidateTLOid);
+      candidateOfficial = candRow;
 
       // 2. Preflight State Validations
       if (regRow.status !== 'For Approval') {
@@ -2201,8 +2210,91 @@ export const processRegistration = async (req, res) => {
       }
 
       // 5. Execute State Transitions & Data Inheritance
-      // 5a. Activate Registration Record and inherit all canonical official/plantilla details from candRow
-      const updateRegMl = await client.query(`
+      if (recordToApprove === 'candidate') {
+        // Option B: Candidate Official Record is approved/retained as Active; Registration Record is deactivated
+        // 5a. Retain candidate official as Active and merge newly filled contact/bio details from registration
+        const updateCandMl = await client.query(`
+          UPDATE third_level_official_masterlist AS target
+          SET 
+            photo_binary_id = COALESCE(target.photo_binary_id, reg.photo_binary_id),
+            pds_binary_id = COALESCE(target.pds_binary_id, reg.pds_binary_id),
+            contact_details = COALESCE(NULLIF(target.contact_details, ''), reg.contact_details),
+            alt_contact_details_1 = COALESCE(NULLIF(target.alt_contact_details_1, ''), reg.alt_contact_details_1),
+            alt_contact_details_2 = COALESCE(NULLIF(target.alt_contact_details_2, ''), reg.alt_contact_details_2),
+            temporary_address = COALESCE(NULLIF(target.temporary_address, ''), reg.temporary_address),
+            permanent_address = COALESCE(NULLIF(target.permanent_address, ''), reg.permanent_address),
+            civil_status = COALESCE(NULLIF(target.civil_status, ''), reg.civil_status),
+            blood_type = COALESCE(NULLIF(target.blood_type, ''), reg.blood_type),
+            religion = COALESCE(NULLIF(target.religion, ''), reg.religion),
+            email = COALESCE(NULLIF(target.email, ''), reg.email),
+            alt_email_1 = CASE 
+              WHEN target.email IS NOT NULL AND LOWER(target.email) = LOWER(reg.email) THEN target.alt_email_1
+              WHEN target.alt_email_1 IS NOT NULL AND LOWER(target.alt_email_1) = LOWER(reg.email) THEN target.alt_email_1
+              WHEN target.alt_email_1 IS NULL OR target.alt_email_1 = '' THEN reg.email
+              ELSE target.alt_email_1
+            END,
+            alt_email_2 = CASE 
+              WHEN target.email IS NOT NULL AND LOWER(target.email) = LOWER(reg.email) THEN target.alt_email_2
+              WHEN target.alt_email_1 IS NOT NULL AND LOWER(target.alt_email_1) = LOWER(reg.email) THEN target.alt_email_2
+              WHEN target.alt_email_2 IS NOT NULL AND LOWER(target.alt_email_2) = LOWER(reg.email) THEN target.alt_email_2
+              WHEN (target.alt_email_1 IS NOT NULL AND target.alt_email_1 != '') AND (target.alt_email_2 IS NULL OR target.alt_email_2 = '') THEN reg.email
+              ELSE target.alt_email_2
+            END,
+            status = 'Active',
+            updated_at = NOW()
+          FROM third_level_official_masterlist AS reg
+          WHERE target."TLOid" = $1 AND reg."TLOid" = $2 AND target.is_testaccount = $3 AND target.status = 'Active'
+        `, [candidateTLOid, registrationTLOid, isTest]);
+
+        if (updateCandMl.rowCount !== 1) {
+          throw new Error(`Failed to retain active candidate official ${candidateTLOid}.`);
+        }
+
+        // 5b. Transition duplicate Registration Record to 'Inactive'
+        const updateRegMl = await client.query(`
+          UPDATE third_level_official_masterlist 
+          SET status = 'Inactive', updated_at = NOW() 
+          WHERE "TLOid" = $1 AND is_testaccount = $2 AND status = 'For Approval'
+        `, [registrationTLOid, isTest]);
+
+        if (updateRegMl.rowCount !== 1) {
+          throw new Error(`Failed to set registration record ${registrationTLOid} to 'Inactive'.`);
+        }
+
+        // 5c. Clone child tables from registration record to candidate official (if any were submitted during registration)
+        await cloneMasterlistChildTables(client, registrationTLOid, candidateTLOid, adminEmail);
+
+        // 5d. Approve registrant tlo_users account so login works
+        await client.query(`
+          UPDATE tlo_users 
+          SET registration_status = 'Approved', role = 'Third Level Official', alt_email = $1 
+          WHERE LOWER(email) = $2 AND is_testaccount = $3
+        `, [candEmail || null, regEmail, isTest]);
+
+        // 5e. Update Profiling Staging Application Target to point to candidate official
+        await client.query(`
+          UPDATE third_level_officials_profiling_application 
+          SET "target_TLOid" = $1, updated_at = NOW() 
+          WHERE (LOWER(email) = $2 OR LOWER(email) = $3) AND is_testaccount = $4
+        `, [candidateTLOid, regEmail, candEmail || regEmail, isTest]);
+
+        // 5f. Explicit Non-Sequence-Dependent Audit Logging
+        const formattedRemarks = `Reconciled and retained canonical official record ${candidateTLOid}. Registration ${registrationTLOid} linked. Admin Confirmed: ${remarks.trim()}`;
+        await client.query(`
+          INSERT INTO third_level_officials_updates (
+              "TLOid", change_type, updated_by, remarks, status, email, created_at, updated_at
+          ) VALUES ($1, 'REGISTRATION_RECONCILED', $2, $3, 'Active', $4, NOW(), NOW())
+        `, [candidateTLOid, adminEmail, formattedRemarks, candEmail || regEmail]);
+
+        await client.query(`
+          INSERT INTO third_level_officials_updates (
+              "TLOid", change_type, updated_by, remarks, status, email, created_at, updated_at
+          ) VALUES ($1, 'RECONCILED_INACTIVE', $2, $3, 'Inactive', $4, NOW(), NOW())
+        `, [registrationTLOid, adminEmail, `Deactivated duplicate registration record superseded by canonical official ${candidateTLOid}`, regEmail]);
+      } else {
+        // Option A: Registration Record is approved & activated; Candidate Record is deactivated
+        // 5a. Activate Registration Record and inherit all canonical official/plantilla details from candRow
+        const updateRegMl = await client.query(`
         UPDATE third_level_official_masterlist AS target
         SET 
           position_title = COALESCE(NULLIF(cand.position_title, ''), target.position_title),
@@ -2391,6 +2483,7 @@ export const processRegistration = async (req, res) => {
             "TLOid", change_type, updated_by, remarks, status, email, created_at, updated_at
         ) VALUES ($1, 'RECONCILED_INACTIVE', $2, $3, 'Inactive', $4, NOW(), NOW())
       `, [candidateTLOid, adminEmail, `Deactivated duplicate official record superseded by registration reconciliation of ${registrationTLOid}`, candRow.email]);
+      }
     }
 
     await client.query('COMMIT');
@@ -2398,13 +2491,15 @@ export const processRegistration = async (req, res) => {
     // Email notification dispatch
     if (targetOfficial && targetOfficial.email) {
       if (action === 'approve' || action === 'reconcile') {
+        const approvedOfficialTloId = (action === 'reconcile' && recordToApprove === 'candidate' && candidateTLOid) ? candidateTLOid : TLOid;
+        const approvedOfficialDetails = (action === 'reconcile' && recordToApprove === 'candidate' && candidateOfficial) ? candidateOfficial : targetOfficial;
         sendOfficialApprovalEmail({
           email: targetOfficial.email,
-          firstName: targetOfficial.first_name,
-          lastName: targetOfficial.last_name,
-          positionTitle: targetOfficial.position_title,
-          office: targetOfficial.office,
-          tloId: TLOid
+          firstName: approvedOfficialDetails.first_name || targetOfficial.first_name,
+          lastName: approvedOfficialDetails.last_name || targetOfficial.last_name,
+          positionTitle: approvedOfficialDetails.position_title || targetOfficial.position_title,
+          office: approvedOfficialDetails.office || targetOfficial.office,
+          tloId: approvedOfficialTloId
         }).catch(err => console.error('[processRegistration] Approval email error:', err));
       } else if (action === 'reject') {
         sendOfficialRejectionEmail({

@@ -39,9 +39,9 @@ const Gate = () => {
                     Secure Personnel Portal
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight italic">
-                    Third Level <span className="text-[#004A99] not-italic">Officials</span>
+                    TIMON <span className="text-[#004A99] not-italic">Portal</span>
                 </h1>
-                <p className="text-slate-500 font-medium mt-3">Personnel Division • TLM Section Recruitment Hub</p>
+                <p className="text-slate-500 font-medium mt-3">Third Level Incumbent and Management Operations Network</p>
             </motion.div>
 
             {/* Choice Cards */}

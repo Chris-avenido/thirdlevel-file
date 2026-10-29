@@ -5,7 +5,7 @@ import {
     FiCopy, FiBookmark, FiEdit3, FiFileText
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import modernLogo from '../assets/modern_logo.png';
+import modernLogo from '../assets/tlo_logo.png';
 import Swal from 'sweetalert2';
 
 const VacancySidebar = ({

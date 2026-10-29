@@ -1,5 +1,143 @@
 # CHANGELOG
 
+## 2026-10-29 — Asset Update: Replace "modern_logo.png" with "tlo_logo.png"
+
+### Requirement & User Directive
+> "replace "modern_logo.png" with "tlo_logo.png""
+
+### Summary of Changes
+Replaced all imports and references to `modern_logo.png` with `tlo_logo.png` across the application frontend and asset directories:
+1. **Public Favicon & Static Assets**:
+   - Copied `ui/src/assets/tlo_logo.png` to [`ui/public/tlo_logo.png`](file:///e:/christop/staging/ui/public/tlo_logo.png).
+   - Updated favicon link in [`ui/index.html`](file:///e:/christop/staging/ui/index.html) to `<link rel="icon" type="image/png" href="/tlo_logo.png" />`.
+2. **Components**:
+   - [`AdminSidebar.jsx`](file:///e:/christop/staging/ui/src/components/AdminSidebar.jsx): Updated import to `tlo_logo.png`.
+   - [`LoadingScreen.jsx`](file:///e:/christop/staging/ui/src/components/LoadingScreen.jsx): Updated import to `tlo_logo.png`.
+   - [`VacancySidebar.jsx`](file:///e:/christop/staging/ui/src/components/VacancySidebar.jsx): Updated import to `tlo_logo.png`.
+3. **Pages**:
+   - [`Login.jsx`](file:///e:/christop/staging/ui/src/pages/Login.jsx): Updated import to `tlo_logo.png`.
+   - [`NexusGate.jsx`](file:///e:/christop/staging/ui/src/pages/NexusGate.jsx): Updated import to `tlo_logo.png`.
+   - [`OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx): Updated import to `tlo_logo.png`.
+   - [`OfficialsRegistry.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialsRegistry.jsx): Updated import to `tlo_logo.png`.
+   - [`Register.jsx`](file:///e:/christop/staging/ui/src/pages/Register.jsx): Updated import to `tlo_logo.png`.
+   - [`ResetPassword.jsx`](file:///e:/christop/staging/ui/src/pages/ResetPassword.jsx): Updated import to `tlo_logo.png`.
+   - [`VacancyLogin.jsx`](file:///e:/christop/staging/ui/src/pages/VacancyLogin.jsx): Updated import to `tlo_logo.png`.
+
+## 2026-10-29 — System Branding Update: Rename TLO Dashboard to TIMON
+
+### Requirement & User Directive
+> "Change TLO Dashboard to TIMON (Third Level Incumbent and Management Operations Network)"
+
+### Architectural & Branding Changes
+1. **Document & Meta Titles**:
+   - Updated [`ui/index.html`](file:///e:/christop/staging/ui/index.html) title to `TIMON | Third Level Incumbent and Management Operations Network`.
+   - Updated [`ui/public/briefing.html`](file:///e:/christop/staging/ui/public/briefing.html) title to include `TIMON (Third Level Incumbent and Management Operations Network)`.
+
+2. **Navigation & Dashboard Headers**:
+   - **Admin Sidebar ([`AdminSidebar.jsx`](file:///e:/christop/staging/ui/src/components/AdminSidebar.jsx))**:
+     - Updated top brand name to `TIMON` with subtitle `Admin Workspace`.
+     - Renamed primary navigation dashboard label to `TIMON Dashboard`.
+     - Updated footer watermark to `TIMON • Department of Education`.
+   - **Executive Dashboard ([`Home.jsx`](file:///e:/christop/staging/ui/src/pages/Home.jsx))**:
+     - Updated top header to `TIMON Dashboard` with subtitle `Third Level Incumbent and Management Operations Network`.
+   - **Main Dashboard ([`DashboardHeader.jsx`](file:///e:/christop/staging/ui/src/pages/MainDashboard/components/DashboardHeader.jsx))**:
+     - Updated header to `TIMON Dashboard` with subtitle `Third Level Incumbent and Management Operations Network • {recordCount} Records Loaded`.
+   - **Personnel Registry ([`OfficialsRegistry.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialsRegistry.jsx))**:
+     - Updated subtitle to `Official Leadership Management • TIMON (Third Level Incumbent and Management Operations Network)`.
+   - **Position Assignments ([`PositionAssignments.jsx`](file:///e:/christop/staging/ui/src/pages/PositionAssignments.jsx))**:
+     - Updated subtitle to `Plantilla Deployment & Staffing • TIMON (Third Level Incumbent and Management Operations Network)`.
+   - **Positions Library ([`TloPositions.jsx`](file:///e:/christop/staging/ui/src/pages/TloPositions.jsx))**:
+     - Updated subtitle to `Plantilla Inventory & Catalog • TIMON (Third Level Incumbent and Management Operations Network)`.
+   - **CES Plantilla ([`CesPlantilla.jsx`](file:///e:/christop/staging/ui/src/pages/CesPlantilla.jsx))**:
+     - Updated subtitle to `Plantilla Management • TIMON (Third Level Incumbent and Management Operations Network)`.
+
+3. **Portal Gates & Authentication**:
+   - **Nexus Gate ([`NexusGate.jsx`](file:///e:/christop/staging/ui/src/pages/NexusGate.jsx))**:
+     - Updated admin access capsule hover text to `TIMON Records Management`.
+     - Updated Third Level card to `TIMON Portal` with description emphasizing `Third Level Incumbent and Management Operations Network`.
+     - Updated Central Office Administrative Portal gate modal to `TIMON • Third Level Incumbent & Management Operations Network`.
+   - **Gate ([`Gate.jsx`](file:///e:/christop/staging/ui/src/pages/Gate.jsx))**:
+     - Updated portal headline to `TIMON Portal` and subtitle to `Third Level Incumbent and Management Operations Network`.
+
+## 2026-10-29 — Officials Registry: Remove Scrollable in Table for "For Approval" Status
+
+### Requirement & User Directive
+> "remove scrollable in the table of 'officials-registry?status=For%20Approval'"
+
+### Root Cause
+When accessing `officials-registry?status=For%20Approval`, the table wrapper was applying `overflow-x-auto scrollbar-thin` with `min-w-[1190px]` on the `<table>` element and `min-w-[...]` bounds across all table columns. This forced horizontal scrolling on the page when viewing records pending approval.
+
+### Architectural & UI Fixes
+1. **Conditional Scrollable Wrapper & Table Sizing ([`OfficialsRegistry.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialsRegistry.jsx))**:
+   - Detects `isForApproval = statusTab === 'For Approval'`.
+   - When `statusTab === 'For Approval'`:
+     - Sets the container wrapper to `overflow-hidden` instead of `overflow-x-auto scrollbar-thin`, removing the horizontal scrollbar completely.
+     - Removes `min-w-[1190px]` from `<table className="hidden md:table w-full text-left border-collapse table-fixed">` so the table naturally fits 100% of the container width without scrolling.
+   - For all other status tabs, preserves `min-w-[1190px]` and `overflow-x-auto` to prevent data squishing when rendering full records.
+
+2. **Proportional Column Widths & Compact Controls for "For Approval"**:
+   - Removed `min-w-[...]` restrictions from `tableColumns` when `isForApproval` is true.
+   - Distributed clean proportional widths totaling exactly 100%:
+     - `region`: `w-[8%]`
+     - `division`: `w-[11%]`
+     - `name`: `w-[27%]`
+     - `profile_completion`: `w-[13%]`
+     - `position_title`: `w-[13%]`
+     - `designation`: `w-[11%]`
+     - `is_oic`: `w-[5%]`
+     - `status`: `w-[12%]`
+   - Adjusted `<th>` padding (`px-2 py-3`) and inline `<select>` filter dropdowns to compact height (`h-[30px] px-1 text-[12px]`) when in "For Approval" view to eliminate overlapping controls.
+   - Adjusted official name typography to `text-[16px] xl:text-[18px]` to ensure optimal legibility.
+
+## 2026-10-29 — Responsiveness Fix: Personnel Registry Table Horizontal Scroll & Responsive Layout
+
+### Requirement & User Directive
+> "not responsive attached iamge make it responsive"
+
+### Root Cause
+In [`OfficialsRegistry.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialsRegistry.jsx), the desktop `<table>` utilized `table-fixed w-full` inside an outer card container with `overflow-hidden` without an `overflow-x-auto` wrapper or column minimum widths (`min-w-[...]`). When the viewport width was restricted (e.g. tablet screens, laptops, or browser half-screen with DevTools open), the 8 columns were compressed proportionally into narrow widths (under 40-75px each), causing header text, dropdown filters, badges, and action buttons to collide, overlap, and clip off the right edge under the floating action button.
+
+### Architectural & UI Fixes
+1. **Horizontal Scroll Wrapper ([`OfficialsRegistry.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialsRegistry.jsx))**:
+   - Wrapped the table element in `<div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">`.
+   - Set `min-w-[1190px]` on `<table className="hidden md:table w-full min-w-[1190px] text-left border-collapse table-fixed">` ensuring columns preserve their readable layout and never crush.
+2. **Column Width & Padding Optimization**:
+   - Enhanced `tableColumns` to include explicit minimum widths (`min-w-[105px]` for Region, `min-w-[135px]` for Division, `min-w-[260px]` for Official Profile, `min-w-[140px]` for Profile Completion, `min-w-[160px]` for Position, `min-w-[130px]` for Designation, `min-w-[70px]` for OIC, `min-w-[160px]` for Status).
+   - Streamlined `<th>` inline filter dropdowns with responsive font size (`text-[12.5px] - text-[13.5px]`), height (`h-[34px]`), and padding (`px-2`) so select controls no longer overlap adjacent headers.
+   - Removed conflicting artificial `max-w-[...]` bounds from `<td>` elements that forced premature truncation.
+3. **Adaptive Page Container**:
+   - Updated main content padding from fixed `px-8` to responsive `px-3 sm:px-6 lg:px-8`.
+   - Updated navigation header padding to `px-4 sm:px-8`.
+   - Updated top filter grid to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5`.
+
+## 2026-10-29 — Identity Reconciliation Decision: Selectable Approval Target (Registration vs Existing Official)
+
+### Requirement & User Directive
+> "in the modal of 'Reconcile & Link Registration Identity' add function where i can select who is approve"
+
+### Architectural & Business Logic Changes
+1. **Interactive Decision Selection UI ([`OfficialsRegistry.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialsRegistry.jsx))**:
+   - Added `reconcileApprovedTarget` state (`'registration'` or `'candidate'`, default `'registration'`).
+   - Integrated a dedicated **"Select Who to Approve & Retain as Active Official"** decision selector directly in the reconciliation modal:
+     - **Option 1: Approve Registration Record (`reconcileTargetItem.TLOid`)**: Retains and activates the newly submitted registration identity as `Active`, inherits canonical masterlist profile details, and deactivates the existing canonical candidate record.
+     - **Option 2: Approve Existing Official Record (`selectedCandidate.TLOid`)**: Retains the existing official masterlist record as `Active`, links the registrant's login credentials (`reconcileTargetItem.email`) to the active canonical record, and deactivates the duplicate registration record.
+   - Enhanced the side-by-side comparison cards to be interactive and clickable, showing dynamic visual focus rings (`ring-emerald-500`) and badges (`SELECTED TO APPROVE (ACTIVE)` vs `WILL BE SET TO INACTIVE`).
+   - Dynamically formatted the verification declaration banner, checkbox confirmation label, and action submit button to explicitly state which record is being approved and which is being deactivated.
+
+2. **Backend Reconciliation Handler Enhancement ([`thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js))**:
+   - Enhanced `action === 'reconcile'` in `processRegistration`:
+     - Reads `approved_record` and `approved_TLOid` from `req.body`.
+     - When `recordToApprove === 'candidate'`:
+       - Updates existing official record (`candidateTLOid`) with any newly submitted contact/bio/photo data from registration record, preserves/links `regEmail` via `alt_email_1` / `alt_email_2`, and retains `status = 'Active'`.
+       - Transitions registration record (`registrationTLOid`) to `status = 'Inactive'`.
+       - Clones any newly submitted registration child tables to `candidateTLOid` via `cloneMasterlistChildTables`.
+       - Approves `tlo_users` account for `regEmail` (`role = 'Third Level Official'`, `registration_status = 'Approved'`).
+       - Repoints profiling staging application target to `candidateTLOid`.
+       - Records non-sequence-dependent audit logs in `third_level_officials_updates` for both records.
+       - Dispatches approval email with the retained `candidateTLOid`.
+     - When `recordToApprove === 'registration'`:
+       - Preserves the existing retain-and-activate flow for backward compatibility.
+
 ## 2026-10-28 — Policy & UI Enforcement: Prohibit Reappointment to Other Positions When Applicant is in Masterlist
 
 ### Requirement & User Directive

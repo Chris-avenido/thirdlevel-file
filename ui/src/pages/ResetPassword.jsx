@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import PageTransition from '../components/PageTransition';
-import logo from '../assets/modern_logo.png';
+import logo from '../assets/tlo_logo.png';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();

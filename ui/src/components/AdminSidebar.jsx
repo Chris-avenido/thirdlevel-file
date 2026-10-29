@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle, FiGrid, FiBookmark, FiBriefcase, FiLayers, FiFileText } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import newLogo from '../assets/modern_logo.png';
+import newLogo from '../assets/tlo_logo.png';
 
 const AdminSidebar = () => {
     const navigate = useNavigate();
@@ -28,7 +28,7 @@ const AdminSidebar = () => {
     const navItems = [
         {
             id: 'dashboard',
-            label: 'Executive Dashboard',
+            label: 'TIMON Dashboard',
             path: '/home',
             icon: FiGrid,
             isActive: (pathname, search) => pathname === '/home',
@@ -141,7 +141,7 @@ const AdminSidebar = () => {
                             <img src={newLogo} alt="Logo" className="w-8 h-8 object-contain" />
                         </div>
                         <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-32 opacity-100'}`}>
-                            <h2 className="text-sm font-black text-white uppercase tracking-tight italic leading-none">InsightED</h2>
+                            <h2 className="text-sm font-black text-white uppercase tracking-tight italic leading-none">TIMON</h2>
                             <p className="text-[10px] text-blue-300 font-bold tracking-widest uppercase mt-1">Admin Workspace</p>
                         </div>
                     </div>
@@ -177,7 +177,7 @@ const AdminSidebar = () => {
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Sign Out</span>
                     </button>
                     <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:h-0 lg:opacity-0' : 'h-6 opacity-100'}`}>
-                        <p className="text-[9px] font-black text-blue-400/50 uppercase tracking-[0.2em] text-center whitespace-nowrap">Department of Education</p>
+                        <p className="text-[9px] font-black text-blue-400/50 uppercase tracking-[0.2em] text-center whitespace-nowrap">TIMON • Department of Education</p>
                     </div>
                 </div>
             </div>

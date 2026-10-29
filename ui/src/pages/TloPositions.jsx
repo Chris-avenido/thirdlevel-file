@@ -543,7 +543,7 @@ const TloPositions = () => {
                   Positions <span className="text-blue-300 not-italic">Library</span>
                 </h1>
                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                  Plantilla Inventory & Catalog • Third Level Officials Command Dashboard
+                  Plantilla Inventory & Catalog • TIMON (Third Level Incumbent and Management Operations Network)
                 </p>
               </div>
             </div>

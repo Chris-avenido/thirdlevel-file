@@ -16,7 +16,7 @@ import PageTransition from '../components/PageTransition';
 import html2pdf from 'html2pdf.js';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
-import newLogo from '../assets/modern_logo.png';
+import newLogo from '../assets/tlo_logo.png';
 import depedLogo from '../assets/DepED-Logo.png';
 import { apiUrl } from '../utils/api';
 import { compressImageClientSide } from '../utils/imageCompressor';

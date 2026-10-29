@@ -481,7 +481,7 @@ const CesPlantilla = () => {
                                     CES Plantilla <span className="text-blue-300 not-italic">Registry</span>
                                 </h1>
                                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                                    Plantilla Management • Career Executive Service Command Dashboard
+                                    Plantilla Management • TIMON (Third Level Incumbent and Management Operations Network)
                                 </p>
                             </div>
                         </div>
