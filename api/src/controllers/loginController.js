@@ -15,6 +15,8 @@ const ADMIN_ROLES = [
   'SDO_HRMO'
 ];
 
+const ADMIN_ROLES_LOWER = ADMIN_ROLES.map(r => r.toLowerCase());
+
 const THIRD_LEVEL_ROLES = [
   'TLO Applicant',
   'Third Level Official',
@@ -187,22 +189,40 @@ export const login = async (req, res) => {
       });
     }
 
+    const isAdminLogin = isCO === true || isCO === 'true' || (requestedRole && ADMIN_ROLES_LOWER.includes(String(requestedRole).toLowerCase().trim()));
+
     let authRes;
-    if (isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole)) {
+    if (isAdminLogin) {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND role = ANY($2)',
-        [normalizedEmail, ADMIN_ROLES]
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND LOWER(TRIM(role)) = ANY($2) ORDER BY created_at DESC NULLS LAST, uid DESC',
+        [normalizedEmail, ADMIN_ROLES_LOWER]
       );
     } else {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1',
-        [normalizedEmail]
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 ORDER BY CASE WHEN LOWER(TRIM(role)) = ANY($2) THEN 2 ELSE 1 END, created_at DESC NULLS LAST, uid DESC',
+        [normalizedEmail, ADMIN_ROLES_LOWER]
       );
     }
     let centralUser = authRes.rows[0];
 
+    // Cross-row credential enrichment if centralUser is missing password_hash or passcode
+    if (centralUser && (!centralUser.password_hash || !centralUser.passcode)) {
+      const anyUserRes = await pool.query(
+        'SELECT password_hash, passcode FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND (password_hash IS NOT NULL OR passcode IS NOT NULL) ORDER BY created_at DESC NULLS LAST, uid DESC LIMIT 1',
+        [normalizedEmail]
+      );
+      if (anyUserRes.rows.length > 0) {
+        if (!centralUser.password_hash && anyUserRes.rows[0].password_hash) {
+          centralUser.password_hash = anyUserRes.rows[0].password_hash;
+        }
+        if (!centralUser.passcode && anyUserRes.rows[0].passcode) {
+          centralUser.passcode = anyUserRes.rows[0].passcode;
+        }
+      }
+    }
+
     // Fallback or credential enrichment for TIMON Portal (non-CO)
-    if (!isCO || isCO === 'false') {
+    if (!isAdminLogin) {
       const vacRes = await pool.query(
         `SELECT applicant_uid AS uid, password_hash, passcode, first_name, last_name, 'Third Level Official' as central_role, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1 ORDER BY id DESC LIMIT 1`,
         [normalizedEmail]
@@ -303,22 +323,26 @@ export const login = async (req, res) => {
 
     let role = centralUser.central_role;
 
-    if (normalizedEmail === 'admin_co@deped.gov.ph') {
-      role = 'Central Office';
-    }
-
-    if (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled') {
-      role = 'Third Level Official';
-    } else if (vacancyRes.rows.length > 0 && (!role || role === 'User' || role === 'TLO Applicant' || role === 'Vacancy Applicant')) {
-      role = 'Vacancy Applicant';
-    } else if (!role || role === 'User') {
-      role = masterRes.rows[0] ? 'Third Level Official' : (vacancyRes.rows[0] ? 'Vacancy Applicant' : 'Third Level Applicant');
+    if (isAdminLogin && ADMIN_ROLES_LOWER.includes(String(centralUser.central_role || '').toLowerCase().trim())) {
+      // PRESERVE ADMINISTRATIVE ROLE for Central Office / Records Management logins!
+      role = centralUser.central_role;
+    } else {
+      if (normalizedEmail === 'admin_co@deped.gov.ph') {
+        role = 'Central Office';
+      } else if (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled') {
+        role = 'Third Level Official';
+      } else if (vacancyRes.rows.length > 0 && (!role || role === 'User' || role === 'TLO Applicant' || role === 'Vacancy Applicant')) {
+        role = 'Vacancy Applicant';
+      } else if (!role || role === 'User') {
+        role = masterRes.rows[0] ? 'Third Level Official' : (vacancyRes.rows[0] ? 'Vacancy Applicant' : 'Third Level Applicant');
+      }
     }
 
     if (!isMasterLogin) {
       let passwordMatches = false;
       let passcodeMatches = false;
 
+      // 1. Direct check against centralUser
       if (centralUser.password_hash) {
         passwordMatches = await bcrypt.compare(password, centralUser.password_hash);
       }
@@ -331,15 +355,59 @@ export const login = async (req, res) => {
           : storedPasscode === submittedSecret;
       }
 
+      // 2. Cross-row fallback across all duplicate rows in tlo_users for this email
+      if (!passwordMatches && !passcodeMatches) {
+        const otherRowsRes = await pool.query(
+          'SELECT password_hash, passcode FROM tlo_users WHERE LOWER(TRIM(email)) = $1',
+          [normalizedEmail]
+        );
+        for (const row of otherRowsRes.rows) {
+          if (row.password_hash) {
+            const matches = await bcrypt.compare(password, row.password_hash);
+            if (matches) { passwordMatches = true; break; }
+          }
+          if (row.passcode) {
+            const storedPasscode = String(row.passcode);
+            const submittedSecret = String(password);
+            const matches = storedPasscode.startsWith('$2')
+              ? await bcrypt.compare(submittedSecret, storedPasscode)
+              : storedPasscode === submittedSecret;
+            if (matches) { passcodeMatches = true; break; }
+          }
+        }
+      }
+
+      // 3. Cross-table fallback in vacancy_applicants
+      if (!passwordMatches && !passcodeMatches) {
+        const vacOtherRes = await pool.query(
+          'SELECT password_hash, passcode FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1',
+          [normalizedEmail]
+        );
+        for (const row of vacOtherRes.rows) {
+          if (row.password_hash) {
+            const matches = await bcrypt.compare(password, row.password_hash);
+            if (matches) { passwordMatches = true; break; }
+          }
+          if (row.passcode) {
+            const storedPasscode = String(row.passcode);
+            const submittedSecret = String(password);
+            const matches = storedPasscode.startsWith('$2')
+              ? await bcrypt.compare(submittedSecret, storedPasscode)
+              : storedPasscode === submittedSecret;
+            if (matches) { passcodeMatches = true; break; }
+          }
+        }
+      }
+
       if (!passwordMatches && !passcodeMatches) {
         console.warn(`[Login] Invalid password/passcode for: ${normalizedEmail}`);
         return res.status(401).json({ error: 'Invalid password or passcode' });
       }
     }
 
-    const uid = registryUser?.TLOid || centralUser.uid;
-    const firstName = registryUser?.first_name || centralUser.first_name || '';
-    const lastName = registryUser?.last_name || centralUser.last_name || '';
+    const uid = isAdminLogin ? (centralUser.uid || registryUser?.TLOid) : (registryUser?.TLOid || centralUser.uid);
+    const firstName = (isAdminLogin ? centralUser.first_name : (registryUser?.first_name || centralUser.first_name)) || '';
+    const lastName = (isAdminLogin ? centralUser.last_name : (registryUser?.last_name || centralUser.last_name)) || '';
 
     const isTestAccount = Boolean(centralUser.is_testaccount);
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';
@@ -544,22 +612,35 @@ export const pinLogin = async (req, res) => {
       });
     }
 
+    const isAdminLogin = isCO === true || isCO === 'true' || (requestedRole && ADMIN_ROLES_LOWER.includes(String(requestedRole).toLowerCase().trim()));
+
     let authRes;
-    if (isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole)) {
+    if (isAdminLogin) {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND role = ANY($2)',
-        [normalizedEmail, ADMIN_ROLES]
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND LOWER(TRIM(role)) = ANY($2) ORDER BY created_at DESC NULLS LAST, uid DESC',
+        [normalizedEmail, ADMIN_ROLES_LOWER]
       );
     } else {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1',
-        [normalizedEmail]
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 ORDER BY CASE WHEN LOWER(TRIM(role)) = ANY($2) THEN 2 ELSE 1 END, created_at DESC NULLS LAST, uid DESC',
+        [normalizedEmail, ADMIN_ROLES_LOWER]
       );
     }
     let centralUser = authRes.rows[0];
 
+    // Cross-row passcode enrichment for admin login if centralUser lacks passcode
+    if (centralUser && !centralUser.passcode) {
+      const anyUserRes = await pool.query(
+        'SELECT passcode, password_hash FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND passcode IS NOT NULL ORDER BY created_at DESC NULLS LAST, uid DESC LIMIT 1',
+        [normalizedEmail]
+      );
+      if (anyUserRes.rows.length > 0 && anyUserRes.rows[0].passcode) {
+        centralUser.passcode = anyUserRes.rows[0].passcode;
+      }
+    }
+
     // Fallback or credential enrichment for TIMON Portal (non-CO)
-    if (!isCO || isCO === 'false') {
+    if (!isAdminLogin) {
       const vacRes = await pool.query(
         `SELECT applicant_uid AS uid, password_hash, passcode, first_name, last_name, 'Third Level Official' as central_role, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1 ORDER BY id DESC LIMIT 1`,
         [normalizedEmail]
@@ -634,30 +715,76 @@ export const pinLogin = async (req, res) => {
     const registryUser = masterRes.rows[0] || stagingRes.rows[0];
 
     let role = centralUser?.central_role;
-    if (normalizedEmail === 'admin_co@deped.gov.ph') {
-      role = 'Central Office';
-    }
-    if (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled') {
-      role = 'Third Level Official';
-    } else if (!role || role === 'User') {
-      role = masterRes.rows[0] ? 'Third Level Official' : 'Third Level Applicant';
-    }
 
-    const storedPasscode = centralUser.passcode;
-    if (!storedPasscode) return res.status(401).json({ error: 'Passcode not set for this account' });
-
-    if (String(storedPasscode) !== String(passcode)) {
-      if (String(storedPasscode).startsWith('$2')) {
-        const match = await bcrypt.compare(passcode, storedPasscode);
-        if (!match) return res.status(401).json({ error: 'Invalid passcode' });
-      } else {
-        return res.status(401).json({ error: 'Invalid passcode' });
+    if (isAdminLogin && ADMIN_ROLES_LOWER.includes(String(centralUser?.central_role || '').toLowerCase().trim())) {
+      // PRESERVE ADMINISTRATIVE ROLE for Central Office / Records Management logins!
+      role = centralUser.central_role;
+    } else {
+      if (normalizedEmail === 'admin_co@deped.gov.ph') {
+        role = 'Central Office';
+      } else if (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled') {
+        role = 'Third Level Official';
+      } else if (!role || role === 'User') {
+        role = masterRes.rows[0] ? 'Third Level Official' : 'Third Level Applicant';
       }
     }
 
-    const uid = registryUser?.TLOid || centralUser?.uid;
-    const firstName = registryUser?.first_name || centralUser?.first_name || '';
-    const lastName = registryUser?.last_name || centralUser?.last_name || '';
+    let passcodeMatched = false;
+
+    // 1. Direct check against centralUser.passcode
+    if (centralUser?.passcode) {
+      const storedPasscode = String(centralUser.passcode);
+      const submittedSecret = String(passcode);
+      passcodeMatched = storedPasscode.startsWith('$2')
+        ? await bcrypt.compare(submittedSecret, storedPasscode)
+        : storedPasscode === submittedSecret;
+    }
+
+    // 2. Cross-row fallback across all duplicate rows in tlo_users
+    if (!passcodeMatched) {
+      const otherRowsRes = await pool.query(
+        'SELECT passcode FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND passcode IS NOT NULL',
+        [normalizedEmail]
+      );
+      for (const row of otherRowsRes.rows) {
+        const storedPasscode = String(row.passcode);
+        const submittedSecret = String(passcode);
+        const match = storedPasscode.startsWith('$2')
+          ? await bcrypt.compare(submittedSecret, storedPasscode)
+          : storedPasscode === submittedSecret;
+        if (match) {
+          passcodeMatched = true;
+          break;
+        }
+      }
+    }
+
+    // 3. Cross-table fallback in vacancy_applicants
+    if (!passcodeMatched) {
+      const vacOtherRes = await pool.query(
+        'SELECT passcode FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1 AND passcode IS NOT NULL',
+        [normalizedEmail]
+      );
+      for (const row of vacOtherRes.rows) {
+        const storedPasscode = String(row.passcode);
+        const submittedSecret = String(passcode);
+        const match = storedPasscode.startsWith('$2')
+          ? await bcrypt.compare(submittedSecret, storedPasscode)
+          : storedPasscode === submittedSecret;
+        if (match) {
+          passcodeMatched = true;
+          break;
+        }
+      }
+    }
+
+    if (!passcodeMatched) {
+      return res.status(401).json({ error: 'Invalid passcode' });
+    }
+
+    const uid = isAdminLogin ? (centralUser?.uid || registryUser?.TLOid) : (registryUser?.TLOid || centralUser?.uid);
+    const firstName = (isAdminLogin ? centralUser?.first_name : (registryUser?.first_name || centralUser?.first_name)) || '';
+    const lastName = (isAdminLogin ? centralUser?.last_name : (registryUser?.last_name || centralUser?.last_name)) || '';
 
     const isTestAccount = Boolean(centralUser?.is_testaccount);
     const secret = process.env.JWT_SECRET || 'STRIDE_INSIGHTED_SECRET_2026_KEY_PROD';

@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 2026-10-29 — Authentication: Dual Role Isolation for Records Management & TIMON Portal
+
+### Requirement & User Directive
+> "i was try to login this email "wilfredo.cabral@deped.gov.ph" in the records management but have an error "This portal is restricted to Administrative Personnel."
+> duplicate email but difference role TLO_applicant and central office"
+
+### Root Cause
+1. **Unconditional Role Overwrite in Login**: In [`api/src/controllers/loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js) (both `login` and `pinLogin`), even when `isCO === true` (Records Management / Admin login), the system checked `third_level_official_masterlist`. If a record was found for that email, it unconditionally overwrote `role` with `'Third Level Official'`.
+2. **Frontend Administrative Role Rejection**: When `role` was returned as `'Third Level Official'`, [`ui/src/pages/Login.jsx`](file:///e:/christop/staging/ui/src/pages/Login.jsx) rejected the session because `['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo']` did not include `'third level official'`, displaying the error: `"This portal is restricted to Administrative Personnel."`
+3. **Arbitrary Duplicate Row Selection in PostgreSQL**: When querying `tlo_users` for non-CO logins, an unordered query returned whatever row PostgreSQL scanned first (which could be the Central Office row instead of the TLO Applicant row), breaking TIMON Portal logins.
+4. **Credential Isolation Between Duplicate Rows**: When an account had dual records (one as Central Office, one as TLO Applicant), if password or passcode was stored or updated in one record, the other record failed authentication if credentials were not cross-verified.
+
+### Architectural & UI Fixes
+1. **Preserve Administrative Roles for Records Management ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js))**:
+   - In both `login` and `pinLogin`, when `isAdminLogin` (`isCO === true || isCO === 'true' || requestedRole is an admin role`), if the authenticated user has an administrative role (`ADMIN_ROLES_LOWER`), preserve `role = centralUser.central_role`.
+   - Prevent `masterRes` or `vacancyRes` from overriding administrative roles with `'Third Level Official'` or `'Vacancy Applicant'` when signing into Records Management.
+   - For `isAdminLogin`, assign `uid = centralUser.uid` to maintain administrative session continuity.
+2. **Targeted Role Prioritization for TIMON Portal ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js))**:
+   - When `!isAdminLogin` (signing into TIMON Portal), order `tlo_users` by non-admin roles first (`ORDER BY CASE WHEN LOWER(TRIM(role)) = ANY(ADMIN_ROLES_LOWER) THEN 2 ELSE 1 END, created_at DESC NULLS LAST, uid DESC`), ensuring applicant/official rows are prioritized.
+   - Updated `tlo_users` queries to sort by `created_at DESC NULLS LAST, uid DESC` (rather than non-existent `id`), resolving the PostgreSQL schema error (`column "id" does not exist`).
+3. **Cross-Row Credential Enrichment & Verification Fallback ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js))**:
+   - If `centralUser` lacks a `password_hash` or `passcode`, automatically enrich from any sibling row in `tlo_users` with the same email.
+   - In password and passcode matching, if the primary row fails to match, check sibling rows in `tlo_users` and `vacancy_applicants` so users can authenticate with their valid password or passcode regardless of which duplicate row holds the hash.
+
 ## 2026-10-29 — Admin Vacancies: Complete Design Alignment with TLO Positions
 
 ### Requirement & User Directive
