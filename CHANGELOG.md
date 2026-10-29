@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## 2026-10-29 — Admin Vacancies: Complete Design Alignment with TLO Positions
+
+### Requirement & User Directive
+> "copy the current design of "tlo-positions" into the "admin-vacancies""
+
+### Root Cause
+- The `AdminVacancies` page retained the older layout with disjointed filter tabs, basic form controls, and plain table containers that differed significantly from the unified design system established in `TloPositions.jsx`.
+- In contrast, `TloPositions.jsx` featured:
+  1. A sticky `#08315F` navy header bar with backdrop blur, typography accents, and user session badge.
+  2. A unified pill data controls container (`rounded-[24px] border-2 border-[#08315F]`) grouping pill search inputs, custom styled select dropdowns with chevron icons, quick filter toggles, reset, and action buttons.
+  3. Interactive KPI cards with `border-l-[6px]`, large `Plus_Jakarta_Sans` counter values, active state badges, and hover popovers.
+  4. An integrated table container (`card !rounded-[30px] !border-2 !border-[#08315F]`) with refined typography, sortable column headers, badge chips, hover action toolbars, a responsive mobile view, and bottom pagination controls.
+
+### Architectural & UI Fixes
+1. **Design System & Layout Alignment ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Replaced page layout with `flex h-screen bg-transparent font-sans overflow-hidden` and `dashboard-theme !bg-transparent` matching `TloPositions.jsx`.
+   - Replaced top header with the sticky `#08315F` navy header bar with icon container, italic uppercase tracking-tight title ("Vacancy Applications"), and user profile info.
+2. **Unified Data Controls Tab ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Adopted the `rounded-[24px] border-2 border-[#08315F]` unified container.
+   - Restyled search bar with `bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full` and clear button.
+   - Converted Status and CES Stage filters into pill dropdowns with `appearance-none` and `FiChevronDown`.
+   - Added pill quick filters for LET Passer and EMT Passer, Reset button, and Refresh / Export CSV action buttons.
+3. **KPI Stats Cards with Hover Popover ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Converted stats cards into `rounded-[18px] border-2 border-[#BAE6FD] border-l-[6px]` cards with `Plus_Jakarta_Sans` numbers and active indicators.
+   - Added hover popover on the Total Applications card summarizing applications by status stage.
+4. **Enhanced Table & Column Sorting ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Encapsulated table inside `card !rounded-[30px] !border-2 !border-[#08315F] bg-white shadow-sm`.
+   - Added interactive multi-column sorting (Application No, Applicant Surname, Position, Status, Created At) with ascending/descending arrows.
+   - Refined mobile card layout matching `TloPositions.jsx`.
+   - Re-styled table footer pagination with matching pill buttons and per-page selector.
+5. **Business Logic & Modal Integrity**:
+   - Preserved all existing application viewing, document counting, evaluation, appointment actions, and SweetAlert dialogs through `ViewApplicationDetailsModal`.
+
 ## 2026-10-29 — TIMON Portal: Strict DepEd Email Restriction Enforcement (@deped.gov.ph)
 
 ### Requirement & User Directive
