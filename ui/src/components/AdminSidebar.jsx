@@ -51,8 +51,8 @@ const AdminSidebar = () => {
             hidden: false,
         },
         {
-            id: 'vacancies',
-            label: 'Vacancies',
+            id: 'applications',
+            label: 'Applications',
             path: '/admin-vacancies',
             icon: FiFileText,
             isActive: (pathname, search) => pathname === '/admin-vacancies' || pathname === '/vacancies',

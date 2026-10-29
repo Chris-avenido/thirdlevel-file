@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2026-10-29 — Admin Sidebar: Rename "Vacancies" Navigation Item to "Applications"
+
+### Requirement & User Directive
+> "in the side bar replace vacancies with application"
+
+### Root Cause
+In [`ui/src/components/AdminSidebar.jsx`](file:///e:/christop/staging/ui/src/components/AdminSidebar.jsx), the navigation item pointing to `/admin-vacancies` was labeled `'Vacancies'` with `id: 'vacancies'`. Since the page displays and evaluates vacancy applicant submissions ("Vacancy Applications"), renaming the sidebar item to `'Applications'` clarifies the destination while keeping routing and active page indicators intact.
+
+### UI & Navigation Changes
+1. **Sidebar Item Update ([`AdminSidebar.jsx`](file:///e:/christop/staging/ui/src/components/AdminSidebar.jsx))**:
+   - Updated navigation item `id` from `'vacancies'` to `'applications'`.
+   - Updated navigation item `label` from `'Vacancies'` to `'Applications'`.
+   - Maintained target path `'/admin-vacancies'` and active status condition `(pathname, search) => pathname === '/admin-vacancies' || pathname === '/vacancies'`.
+   - Preserved document icon (`FiFileText`) and tooltip behavior.
+
 ## 2026-10-29 — Admin Vacancies: UI & Layout Design Enhancement
 
 ### Requirement & User Directive
