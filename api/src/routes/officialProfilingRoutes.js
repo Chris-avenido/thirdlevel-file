@@ -22,6 +22,7 @@ import {
   uploadVacancyDocument,
   submitVacancyApplication,
   getMyVacancyApplications,
+  getLatestVacancyApplication,
   getVacancyApplicationById,
   getAllVacancyApplications,
   updateVacancyApplicationStatus
@@ -47,6 +48,7 @@ router.post('/vacancy-applicant/upload-document', authMiddleware, memoryUpload.s
 router.post('/vacancy-applicant/application', authMiddleware, submitVacancyApplication);
 router.get('/vacancy-applicant/applications', authMiddleware, getMyVacancyApplications);
 router.get('/vacancy-applicant/application/:id', authMiddleware, getVacancyApplicationById);
+router.get('/vacancy-applicant/latest-application', authMiddleware, getLatestVacancyApplication);
 router.get('/vacancy-applications/all', authMiddleware, getAllVacancyApplications);
 router.patch('/vacancy-applications/:id/status', authMiddleware, updateVacancyApplicationStatus);
 router.get('/positions', authMiddleware, getPositions);

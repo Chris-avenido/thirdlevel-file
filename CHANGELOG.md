@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## 2026-10-29 — Vacancy Application: Azure Blob Storage Folder & Re-application Data Retrieval with N/A Toggle Buttons
+
+### Requirement & User Directive
+> "in the modal of "Third Level Position Application" i was sucessfull input and upload all documents but when i tried to re-apply can retrieve the documents and details that i am input 
+> add n/a button in the input fields so user can't manually type the word of n/a"
+> "in the storing file in in the Blob change APP-vacancy_applicants.id"
+
+### Root Cause
+1. **Azure Blob Folder Naming**: In [`api/src/controllers/vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js), document uploads previously created Azure Blob virtual folders using `APP-${applicationId}` (referencing `vacancy_applications.id`). This caused an applicant's uploaded documents across drafts or subsequent applications to be split across different folders rather than unified under the applicant's account.
+2. **Missing Re-application Data & Document Pre-fill**: In [`ui/src/components/ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx), opening the modal to re-apply reset all 12 document slots to `null` and cleared form fields (dates, current position, plantilla office, eligibilities), forcing applicants to re-enter all details and re-upload all documents from scratch.
+3. **Manual "N/A" Input Vulnerabilities**: Applicants frequently typed irregular text variants (`na`, `n/a`, `none`, `N/A`) in text inputs (`middle_name`, `target_vacancy_id`, `current_position`, `plantilla_office`, `assigned_oic_office`), causing inconsistency in reports and databases.
+
+### Architectural & UI Fixes
+1. **Azure Blob Virtual Folder Pathing ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js))**:
+   - Updated Azure upload target prefix to `APP-${vacancyApplicantId}` (referencing `vacancy_applicants.id`), with fallback to `applicationId`.
+   - Updated `vacancy_applications` queries and inserts to resolve and persist `vacancy_applicant_id`.
+2. **Latest Application & Document Retrieval ([`vacancyApplicantController.js`](file:///e:/christop/staging/api/src/controllers/vacancyApplicantController.js), [`officialProfilingRoutes.js`](file:///e:/christop/staging/api/src/routes/officialProfilingRoutes.js))**:
+   - Added `GET /api/third-level/vacancy-applicant/latest-application` endpoint. It finds the applicant's latest draft or submitted application and backfills any document attachments from previous submissions.
+3. **Automatic Pre-fill & Retrieval Notice ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx))**:
+   - When the modal opens, it automatically retrieves the applicant's previously entered details and all 12 uploaded document attachments.
+   - Displays a green banner confirming data retrieval with document count and a "Start Fresh" option.
+4. **Dedicated N/A Toggle Buttons & Normalization ([`ApplyVacancyModal.jsx`](file:///e:/christop/staging/ui/src/components/ApplyVacancyModal.jsx))**:
+   - Added one-click `[N/A]` toggle buttons to `target_vacancy_id`, `middle_name`, `current_position`, `plantilla_office`, `assigned_oic_office`, and custom designation.
+   - Added automatic normalization in `handleChange` so any manual variants of `n/a`, `na`, `none` are automatically standardized to `'N/A'`.
+
 ## 2026-10-29 — Admin Sidebar: Rename "Vacancies" Navigation Item to "Applications"
 
 ### Requirement & User Directive

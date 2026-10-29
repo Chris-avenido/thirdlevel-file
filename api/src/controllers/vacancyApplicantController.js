@@ -338,7 +338,7 @@ export const uploadVacancyDocument = async (req, res) => {
 
     let appRow = null;
     if (applicationId) {
-      const resApp = await client.query('SELECT id FROM vacancy_applications WHERE id = $1', [applicationId]);
+      const resApp = await client.query('SELECT id, vacancy_applicant_id FROM vacancy_applications WHERE id = $1', [applicationId]);
       if (resApp.rows.length > 0) {
         appRow = resApp.rows[0];
       }
@@ -346,7 +346,7 @@ export const uploadVacancyDocument = async (req, res) => {
 
     if (!appRow && (email || uid)) {
       const draftRes = await client.query(
-        `SELECT id FROM vacancy_applications 
+        `SELECT id, vacancy_applicant_id FROM vacancy_applications 
          WHERE (LOWER(email) = $1 OR applicant_uid = $2)
            AND status = 'Draft'
            AND (target_vacancy_id = $3 OR $3 IS NULL)
@@ -388,7 +388,7 @@ export const uploadVacancyDocument = async (req, res) => {
           $5, $6,
           $7, $8, 'N/A', 'Department of Education', 'N/A',
           'Stage 1 (CES Written Examination)', 'Draft', $9, NOW(), NOW()
-        ) RETURNING id`,
+        ) RETURNING id, vacancy_applicant_id`,
         [
           tempAppNo,
           applicantUid,
@@ -405,8 +405,25 @@ export const uploadVacancyDocument = async (req, res) => {
     }
 
     applicationId = appRow.id;
-    // Folder name in Azure Blob Storage format: APP-vacancy_applications.id
-    const cleanFolder = `APP-${applicationId}`;
+
+    // Resolve vacancy_applicants.id for Azure Blob storage folder path: APP-vacancy_applicants.id
+    let vacancyApplicantId = appRow.vacancy_applicant_id;
+    if (!vacancyApplicantId && (email || uid)) {
+      const applicantRes = await client.query(
+        `SELECT id FROM vacancy_applicants WHERE LOWER(email) = $1 OR applicant_uid = $2 LIMIT 1`,
+        [email, uid]
+      );
+      if (applicantRes.rows.length > 0) {
+        vacancyApplicantId = applicantRes.rows[0].id;
+        await client.query(
+          `UPDATE vacancy_applications SET vacancy_applicant_id = $1 WHERE id = $2`,
+          [vacancyApplicantId, applicationId]
+        );
+      }
+    }
+
+    // Folder name in Azure Blob Storage format: APP-vacancy_applicants.id
+    const cleanFolder = `APP-${vacancyApplicantId || applicationId}`;
     const targetAzureContainer = process.env.AZURE_FOLDER_NAME || 'staging-tlo';
 
     console.log(`[VacancyUpload] Uploading ${docType} for vacancy folder '${cleanFolder}' to Azure Blob Storage container (${targetAzureContainer})...`);
@@ -786,6 +803,87 @@ export const submitVacancyApplication = async (req, res) => {
     return res.status(500).json({ success: false, error: 'Internal server error while submitting application: ' + err.message });
   } finally {
     client.release();
+  }
+};
+
+/**
+ * Fetch the latest application or draft data and uploaded documents for prefilling upon re-applying.
+ */
+export const getLatestVacancyApplication = async (req, res) => {
+  const email = req.user?.email ? req.user.email.toLowerCase().trim() : '';
+  const uid = req.user?.uid || '';
+  const { vacancy_id } = req.query;
+
+  if (!email && !uid) {
+    return res.status(401).json({ success: false, error: 'Unauthorized: User identity not found' });
+  }
+
+  try {
+    // 1. Find the best matching application:
+    // Prioritize: 
+    //   a) A draft for this specific vacancy_id (if supplied)
+    //   b) Any draft
+    //   c) Most recent submitted application
+    const query = `
+      SELECT * FROM vacancy_applications
+      WHERE (LOWER(email) = $1 OR applicant_uid = $2)
+      ORDER BY 
+        CASE 
+          WHEN status = 'Draft' AND target_vacancy_id = $3 THEN 0
+          WHEN status = 'Draft' THEN 1
+          ELSE 2
+        END,
+        created_at DESC,
+        id DESC
+      LIMIT 1
+    `;
+    const result = await pool.query(query, [email, uid, vacancy_id || null]);
+    let app = result.rows[0] || null;
+
+    // 2. If an application is found, check if any of the 12 document attachments are missing.
+    // If so, look in other applications by this user to backfill any previously uploaded documents!
+    if (app) {
+      const docPairs = [
+        ['letter_of_intent_binary_id', 'letter_of_intent_filename'],
+        ['pds_binary_id', 'pds_filename'],
+        ['work_experience_sheet_binary_id', 'work_experience_sheet_filename'],
+        ['cv_binary_id', 'cv_filename'],
+        ['outstanding_accomplishments_binary_id', 'outstanding_accomplishments_filename'],
+        ['service_records_binary_id', 'service_records_filename'],
+        ['transcript_of_records_binary_id', 'transcript_of_records_filename'],
+        ['performance_eval_binary_id', 'performance_eval_filename'],
+        ['self_certification_binary_id', 'self_certification_filename'],
+        ['id_picture_binary_id', 'id_picture_filename'],
+        ['applicant_profile_doc_binary_id', 'applicant_profile_doc_filename'],
+        ['other_documents_binary_id', 'other_documents_filename']
+      ];
+
+      const missingPairs = docPairs.filter(([bKey]) => !app[bKey]);
+      if (missingPairs.length > 0) {
+        const otherAppsRes = await pool.query(
+          `SELECT * FROM vacancy_applications 
+           WHERE (LOWER(email) = $1 OR applicant_uid = $2) AND id != $3
+           ORDER BY created_at DESC`,
+          [email, uid, app.id]
+        );
+        for (const prevApp of otherAppsRes.rows) {
+          for (const [bKey, fKey] of missingPairs) {
+            if (!app[bKey] && prevApp[bKey]) {
+              app[bKey] = prevApp[bKey];
+              app[fKey] = prevApp[fKey];
+            }
+          }
+        }
+      }
+    }
+
+    return res.json({
+      success: true,
+      data: app
+    });
+  } catch (err) {
+    console.error('[getLatestVacancyApplication Error]:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error while fetching latest application' });
   }
 };
 

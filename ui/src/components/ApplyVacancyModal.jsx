@@ -176,6 +176,9 @@ const ApplyVacancyModal = ({
     const [currentStep, setCurrentStep] = useState(1);
     const [submitting, setSubmitting] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState({});
+    const [loadingExistingData, setLoadingExistingData] = useState(false);
+    const [retrievedFromPrevious, setRetrievedFromPrevious] = useState(false);
+    const [retrievedDocsCount, setRetrievedDocsCount] = useState(0);
 
     // Form fields corresponding strictly to DepEd Google Form questions
     const [formData, setFormData] = useState({
@@ -223,37 +226,191 @@ const ApplyVacancyModal = ({
         other_documents_filename: null
     });
 
-    // Populate data when modal opens or vacancy/applicantProfile changes
-    useEffect(() => {
-        if (isOpen) {
-            setCurrentStep(1);
-            const posTitle = vacancy?.position_title || applicantProfile?.target_position_title || 'Schools Division Superintendent';
-            const vacId = vacancy?.TLOid || vacancy?.item_number || (vacancy?.assignment_id ? String(vacancy.assignment_id) : '') || applicantProfile?.target_vacancy_id || '';
+    // Helper to toggle N/A on text input fields
+    const toggleNA = (fieldName) => {
+        setFormData(prev => ({
+            ...prev,
+            [fieldName]: prev[fieldName] === 'N/A' ? '' : 'N/A'
+        }));
+    };
 
-            setFormData(prev => ({
-                ...prev,
-                application_id: null,
-                position_applying_for: posTitle,
-                target_vacancy_id: vacId,
-                surname: (applicantProfile?.last_name || '').toUpperCase(),
-                first_name: (applicantProfile?.first_name || '').toUpperCase(),
-                middle_name: (applicantProfile?.middle_name || '').toUpperCase(),
-                contact_number: formatContactNumber(applicantProfile?.contact_number || ''),
-                current_position: prev.current_position || '',
-                plantilla_office: prev.plantilla_office || (vacancy?.office || '')
-            }));
-        }
+    // Reset and start with clean blank fields
+    const handleStartFresh = () => {
+        setRetrievedFromPrevious(false);
+        setRetrievedDocsCount(0);
+        const posTitle = vacancy?.position_title || applicantProfile?.target_position_title || 'Schools Division Superintendent';
+        const vacId = vacancy?.TLOid || vacancy?.item_number || (vacancy?.assignment_id ? String(vacancy.assignment_id) : '') || applicantProfile?.target_vacancy_id || '';
+
+        setFormData({
+            application_id: null,
+            position_applying_for: posTitle,
+            target_vacancy_id: vacId,
+            surname: (applicantProfile?.last_name || '').toUpperCase(),
+            first_name: (applicantProfile?.first_name || '').toUpperCase(),
+            middle_name: (applicantProfile?.middle_name || '').toUpperCase(),
+            date_of_birth: '',
+            current_position: '',
+            plantilla_office: vacancy?.office || '',
+            current_designation_preset: 'N/A',
+            current_designation_custom: '',
+            assigned_oic_office: '',
+            is_let_passer: false,
+            is_emt_passer: false,
+            ces_eligibility_stage: 'Stage 1 (CES Written Examination)',
+            ces_stage_date: '',
+            contact_number: formatContactNumber(applicantProfile?.contact_number || ''),
+            letter_of_intent_binary_id: null,
+            letter_of_intent_filename: null,
+            pds_binary_id: null,
+            pds_filename: null,
+            work_experience_sheet_binary_id: null,
+            work_experience_sheet_filename: null,
+            cv_binary_id: null,
+            cv_filename: null,
+            outstanding_accomplishments_binary_id: null,
+            outstanding_accomplishments_filename: null,
+            service_records_binary_id: null,
+            service_records_filename: null,
+            transcript_of_records_binary_id: null,
+            transcript_of_records_filename: null,
+            performance_eval_binary_id: null,
+            performance_eval_filename: null,
+            self_certification_binary_id: null,
+            self_certification_filename: null,
+            id_picture_binary_id: null,
+            id_picture_filename: null,
+            applicant_profile_doc_binary_id: null,
+            applicant_profile_doc_filename: null,
+            other_documents_binary_id: null,
+            other_documents_filename: null
+        });
+    };
+
+    // Populate data when modal opens: retrieve previous application documents & details
+    useEffect(() => {
+        if (!isOpen) return;
+
+        setCurrentStep(1);
+        const posTitle = vacancy?.position_title || applicantProfile?.target_position_title || 'Schools Division Superintendent';
+        const vacId = vacancy?.TLOid || vacancy?.item_number || (vacancy?.assignment_id ? String(vacancy.assignment_id) : '') || applicantProfile?.target_vacancy_id || '';
+
+        // Default initial data from applicantProfile
+        setFormData(prev => ({
+            ...prev,
+            application_id: null,
+            position_applying_for: posTitle,
+            target_vacancy_id: vacId,
+            surname: (applicantProfile?.last_name || prev.surname || '').toUpperCase(),
+            first_name: (applicantProfile?.first_name || prev.first_name || '').toUpperCase(),
+            middle_name: (applicantProfile?.middle_name || prev.middle_name || '').toUpperCase(),
+            contact_number: formatContactNumber(applicantProfile?.contact_number || prev.contact_number || ''),
+            current_position: prev.current_position || '',
+            plantilla_office: prev.plantilla_office || (vacancy?.office || '')
+        }));
+
+        let isMounted = true;
+        setLoadingExistingData(true);
+
+        const fetchLatestApplication = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const url = vacId
+                    ? apiUrl(`/api/third-level/vacancy-applicant/latest-application?vacancy_id=${encodeURIComponent(vacId)}`)
+                    : apiUrl('/api/third-level/vacancy-applicant/latest-application');
+
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (isMounted && data.success && data.data) {
+                    const latest = data.data;
+                    const docsCount = REQUIRED_DOCUMENTS.filter(d => Boolean(latest[d.binaryKey])).length;
+                    setRetrievedDocsCount(docsCount);
+                    setRetrievedFromPrevious(true);
+
+                    setFormData(prev => ({
+                        ...prev,
+                        // If it's a draft, keep its ID to continue uploading to it. If it was submitted, leave null to generate a new application on submit.
+                        application_id: latest.status === 'Draft' ? latest.id : null,
+                        position_applying_for: vacancy?.position_title || applicantProfile?.target_position_title || latest.position_applying_for || posTitle,
+                        target_vacancy_id: vacId || latest.target_vacancy_id || '',
+                        surname: (latest.surname || applicantProfile?.last_name || prev.surname || '').toUpperCase(),
+                        first_name: (latest.first_name || applicantProfile?.first_name || prev.first_name || '').toUpperCase(),
+                        middle_name: (latest.middle_name || applicantProfile?.middle_name || prev.middle_name || '').toUpperCase(),
+                        date_of_birth: latest.date_of_birth ? new Date(latest.date_of_birth).toISOString().split('T')[0] : prev.date_of_birth,
+                        contact_number: formatContactNumber(latest.contact_number || applicantProfile?.contact_number || prev.contact_number || ''),
+                        current_position: latest.current_position || prev.current_position || '',
+                        plantilla_office: latest.plantilla_office || prev.plantilla_office || (vacancy?.office || ''),
+                        current_designation_preset: DESIGNATION_PRESETS.includes(latest.current_designation)
+                            ? latest.current_designation
+                            : (latest.current_designation ? 'Other' : 'N/A'),
+                        current_designation_custom: DESIGNATION_PRESETS.includes(latest.current_designation)
+                            ? ''
+                            : (latest.current_designation || ''),
+                        assigned_oic_office: latest.assigned_oic_office || prev.assigned_oic_office || '',
+                        is_let_passer: latest.is_let_passer !== undefined ? Boolean(latest.is_let_passer) : prev.is_let_passer,
+                        is_emt_passer: latest.is_emt_passer !== undefined ? Boolean(latest.is_emt_passer) : prev.is_emt_passer,
+                        ces_eligibility_stage: latest.ces_eligibility_stage || prev.ces_eligibility_stage,
+                        ces_stage_date: latest.ces_stage_date ? new Date(latest.ces_stage_date).toISOString().split('T')[0] : prev.ces_stage_date,
+                        // 12 Documents
+                        letter_of_intent_binary_id: latest.letter_of_intent_binary_id || prev.letter_of_intent_binary_id,
+                        letter_of_intent_filename: latest.letter_of_intent_filename || prev.letter_of_intent_filename,
+                        pds_binary_id: latest.pds_binary_id || prev.pds_binary_id,
+                        pds_filename: latest.pds_filename || prev.pds_filename,
+                        work_experience_sheet_binary_id: latest.work_experience_sheet_binary_id || prev.work_experience_sheet_binary_id,
+                        work_experience_sheet_filename: latest.work_experience_sheet_filename || prev.work_experience_sheet_filename,
+                        cv_binary_id: latest.cv_binary_id || prev.cv_binary_id,
+                        cv_filename: latest.cv_filename || prev.cv_filename,
+                        outstanding_accomplishments_binary_id: latest.outstanding_accomplishments_binary_id || prev.outstanding_accomplishments_binary_id,
+                        outstanding_accomplishments_filename: latest.outstanding_accomplishments_filename || prev.outstanding_accomplishments_filename,
+                        service_records_binary_id: latest.service_records_binary_id || prev.service_records_binary_id,
+                        service_records_filename: latest.service_records_filename || prev.service_records_filename,
+                        transcript_of_records_binary_id: latest.transcript_of_records_binary_id || prev.transcript_of_records_binary_id,
+                        transcript_of_records_filename: latest.transcript_of_records_filename || prev.transcript_of_records_filename,
+                        performance_eval_binary_id: latest.performance_eval_binary_id || prev.performance_eval_binary_id,
+                        performance_eval_filename: latest.performance_eval_filename || prev.performance_eval_filename,
+                        self_certification_binary_id: latest.self_certification_binary_id || prev.self_certification_binary_id,
+                        self_certification_filename: latest.self_certification_filename || prev.self_certification_filename,
+                        id_picture_binary_id: latest.id_picture_binary_id || prev.id_picture_binary_id,
+                        id_picture_filename: latest.id_picture_filename || prev.id_picture_filename,
+                        applicant_profile_doc_binary_id: latest.applicant_profile_doc_binary_id || prev.applicant_profile_doc_binary_id,
+                        applicant_profile_doc_filename: latest.applicant_profile_doc_filename || prev.applicant_profile_doc_filename,
+                        other_documents_binary_id: latest.other_documents_binary_id || prev.other_documents_binary_id,
+                        other_documents_filename: latest.other_documents_filename || prev.other_documents_filename
+                    }));
+                }
+            } catch (err) {
+                console.error('[ApplyVacancyModal] Failed to prefill previous application:', err);
+            } finally {
+                if (isMounted) setLoadingExistingData(false);
+            }
+        };
+
+        fetchLatestApplication();
+
+        return () => {
+            isMounted = false;
+        };
     }, [isOpen, vacancy, applicantProfile]);
 
     if (!isOpen) return null;
 
-    // Handle Input Change with automatic uppercase formatting for name fields
+    // Handle Input Change with automatic uppercase formatting for name fields and 'n/a' normalization
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         let finalValue = type === 'checkbox' ? checked : value;
 
         if (['surname', 'first_name', 'middle_name'].includes(name)) {
             finalValue = finalValue.toUpperCase();
+        }
+
+        // Automatic normalization of manual 'n/a' or 'na' variations to standardized 'N/A'
+        const naVariants = ['n/a', 'na', 'n.a', 'n.a.', 'none', 'not applicable'];
+        if (typeof finalValue === 'string' && naVariants.includes(finalValue.trim().toLowerCase())) {
+            finalValue = 'N/A';
         }
 
         // Prevent future date selection in Date of Birth and CES Stage Date
@@ -662,6 +819,26 @@ const ApplyVacancyModal = ({
                     })}
                 </div>
 
+                {/* Retrieved Previous Application Notification Banner */}
+                {retrievedFromPrevious && (
+                    <div className="bg-emerald-50 border-b border-emerald-200 px-4 sm:px-8 py-2.5 flex items-center justify-between gap-3 text-xs text-emerald-900 shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">✓</span>
+                            <span className="truncate">
+                                <strong>Previous Application Data Retrieved:</strong> Form details and {retrievedDocsCount} uploaded documents loaded.
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleStartFresh}
+                            className="text-[11px] font-bold text-slate-500 hover:text-rose-600 underline shrink-0 transition-colors"
+                            title="Reset form and start with a blank application"
+                        >
+                            Start Fresh
+                        </button>
+                    </div>
+                )}
+
                 {/* Scrollable Form Body */}
                 <div className="p-4 sm:p-6 lg:p-8 overflow-y-auto flex-1 space-y-5 sm:space-y-6">
 
@@ -695,9 +872,23 @@ const ApplyVacancyModal = ({
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                                        Target Vacancy Item Number / Identifier (Optional)
-                                    </label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                            Target Vacancy Item Number / Identifier (Optional)
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleNA('target_vacancy_id')}
+                                            className={`px-2.5 py-0.5 text-[10px] font-black rounded-lg border transition-all ${
+                                                formData.target_vacancy_id === 'N/A'
+                                                    ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                                            }`}
+                                            title="Click to toggle N/A"
+                                        >
+                                            {formData.target_vacancy_id === 'N/A' ? '✓ N/A' : 'N/A'}
+                                        </button>
+                                    </div>
                                     <input
                                         type="text"
                                         name="target_vacancy_id"
@@ -707,7 +898,7 @@ const ApplyVacancyModal = ({
                                         className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#08315F] text-xs font-mono font-bold text-slate-900 bg-white shadow-sm"
                                     />
                                     <p className="text-[10px] text-slate-400 mt-1 font-medium">
-                                        Leave empty if applying generally for the pool of candidates.
+                                        Leave empty or click N/A if applying generally for the pool of candidates.
                                     </p>
                                 </div>
                             </div>
@@ -755,9 +946,23 @@ const ApplyVacancyModal = ({
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                                        MIDDLE NAME [ALL CAPS]
-                                    </label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                            MIDDLE NAME [ALL CAPS]
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleNA('middle_name')}
+                                            className={`px-2.5 py-0.5 text-[10px] font-black rounded-lg border transition-all ${
+                                                formData.middle_name === 'N/A'
+                                                    ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                                            }`}
+                                            title="Click to toggle N/A if no middle name"
+                                        >
+                                            {formData.middle_name === 'N/A' ? '✓ N/A' : 'N/A'}
+                                        </button>
+                                    </div>
                                     <input
                                         type="text"
                                         name="middle_name"
@@ -807,9 +1012,23 @@ const ApplyVacancyModal = ({
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                                        What is your current position? <span className="text-rose-500">*</span>
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                            What is your current position? <span className="text-rose-500">*</span>
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleNA('current_position')}
+                                            className={`px-2.5 py-0.5 text-[10px] font-black rounded-lg border transition-all ${
+                                                formData.current_position === 'N/A'
+                                                    ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                                            }`}
+                                            title="Click to toggle N/A"
+                                        >
+                                            {formData.current_position === 'N/A' ? '✓ N/A' : 'N/A'}
+                                        </button>
+                                    </div>
                                     <span className="text-[10px] text-slate-400 block mb-2 font-medium">
                                         [For other positions, do not abbreviate. e.g. Education Program Supervisor, Public Schools District Supervisor]
                                     </span>
@@ -824,9 +1043,23 @@ const ApplyVacancyModal = ({
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                                        In what Schools Division Office or Regional Office does your plantilla item belong to? <span className="text-rose-500">*</span>
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                            In what Schools Division Office or Regional Office does your plantilla item belong to? <span className="text-rose-500">*</span>
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleNA('plantilla_office')}
+                                            className={`px-2.5 py-0.5 text-[10px] font-black rounded-lg border transition-all ${
+                                                formData.plantilla_office === 'N/A'
+                                                    ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                                            }`}
+                                            title="Click to toggle N/A"
+                                        >
+                                            {formData.plantilla_office === 'N/A' ? '✓ N/A' : 'N/A'}
+                                        </button>
+                                    </div>
                                     <span className="text-[10px] text-slate-400 block mb-2 font-medium">
                                         [i.e. SDO-Pasig City; SDO-Cebu City; Regional Office; For non-DepEd, include Agency and Office Assignment]
                                     </span>
@@ -879,6 +1112,23 @@ const ApplyVacancyModal = ({
 
                                 {formData.current_designation_preset === 'Other' && (
                                     <div className="mt-3">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <label className="text-xs font-bold text-slate-700">
+                                                Custom Designation
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleNA('current_designation_custom')}
+                                                className={`px-2.5 py-0.5 text-[10px] font-black rounded-lg border transition-all ${
+                                                    formData.current_designation_custom === 'N/A'
+                                                        ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                                                }`}
+                                                title="Click to toggle N/A"
+                                            >
+                                                {formData.current_designation_custom === 'N/A' ? '✓ N/A' : 'N/A'}
+                                            </button>
+                                        </div>
                                         <input
                                             type="text"
                                             name="current_designation_custom"
@@ -892,9 +1142,23 @@ const ApplyVacancyModal = ({
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                                    Assigned Schools Division Office as designated OIC
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                        Assigned Schools Division Office as designated OIC
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleNA('assigned_oic_office')}
+                                        className={`px-2.5 py-0.5 text-[10px] font-black rounded-lg border transition-all ${
+                                            formData.assigned_oic_office === 'N/A'
+                                                ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300'
+                                        }`}
+                                        title="Click to toggle N/A if not designated OIC"
+                                    >
+                                        {formData.assigned_oic_office === 'N/A' ? '✓ N/A' : 'N/A'}
+                                    </button>
+                                </div>
                                 <span className="text-[10px] text-slate-400 block mb-2 font-medium">
                                     [i.e. SDO-Pasig City; SDO-Cebu City; Regional Office; For non-DepEd, include Agency and Office Assignment]
                                 </span>
@@ -903,7 +1167,7 @@ const ApplyVacancyModal = ({
                                     name="assigned_oic_office"
                                     value={formData.assigned_oic_office}
                                     onChange={handleChange}
-                                    placeholder="e.g. SDO-Manila (or leave blank if N/A)"
+                                    placeholder="e.g. SDO-Manila (or select N/A)"
                                     className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#08315F] text-xs font-bold text-slate-900 bg-white shadow-sm"
                                 />
                             </div>
