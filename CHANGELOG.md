@@ -1,5 +1,77 @@
 # CHANGELOG
 
+## 2026-10-29 — TIMON Portal: Strict DepEd Email Restriction Enforcement (@deped.gov.ph)
+
+### Requirement & User Directive
+> "still the can login not deped email in the TIMON Portal"
+> Clarification: BLOCK non-DepEd emails — restrict TIMON Portal login strictly to @deped.gov.ph accounts only.
+
+### Root Cause
+1. **Permissive Email Domain Validation**: Prior updates relaxed email domain validation across TIMON Portal login, PIN login, registration, and profiling, permitting non-DepEd emails (such as Gmail, Yahoo, etc.) to authenticate.
+2. **Missing Frontend & Backend Domain Enforcement**: Neither [`ui/src/pages/Login.jsx`](file:///e:/christop/staging/ui/src/pages/Login.jsx) nor [`api/src/controllers/loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js) actively returned validation errors when users attempted to authenticate into TIMON Portal using non-`@deped.gov.ph` email addresses.
+
+### Architectural & UI Fixes
+1. **Backend Email Domain Enforcement ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js), [`registerController.js`](file:///e:/christop/staging/api/src/controllers/registerController.js))**:
+   - In `login` and `pinLogin`: Added strict domain validation blocking any non-vacancies authentication where `!normalizedEmail.endsWith('@deped.gov.ph')`, immediately returning HTTP 400: `"Only official @deped.gov.ph email addresses are allowed to sign in to the TIMON Portal."`
+   - In `registerUser`: Restricted TIMON Portal registrations (`!isVacancyApplicant`) to official `@deped.gov.ph` emails only.
+2. **Frontend Login Guard & Alerts ([`Login.jsx`](file:///e:/christop/staging/ui/src/pages/Login.jsx))**:
+   - In `handleLogin` and `handlePinVerify`: Added client-side checks displaying a SweetAlert error ("Invalid Email Domain: Only official @deped.gov.ph email addresses are allowed to sign in to the TIMON Portal.") when non-`@deped.gov.ph` emails are submitted.
+   - Updated placeholder to `"Registered @deped.gov.ph Email"`.
+3. **Profiling & Masterlist DepEd Email Rules ([`OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx), [`thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js))**:
+   - Re-established `"DepEd Email"` field label and enforced `@deped.gov.ph` validation in both frontend checks and backend update / availability check endpoints (`checkProfilingEmail`, `updateProfile`).
+4. **Registration Domain Guard ([`Register.jsx`](file:///e:/christop/staging/ui/src/pages/Register.jsx))**:
+   - Enforced `@deped.gov.ph` domain checks for TIMON Portal registration steps.
+
+### Requirement & User Directive
+> "not applied
+> login of "TIMON Portal" do not restrict into deped email only
+> return if email login is not @deped.gov.ph"
+
+### Root Cause
+1. **Target Role Filtering during TIMON Login**: In [`api/src/controllers/loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js), non-CO logins (`isCO: false`) filtered `tlo_users` using `role = ANY($2)` where `$2` was restricted to a predefined list. If an appointed official or applicant had missing/inconsistent roles or had password/passcode records stored only in `vacancy_applicants`, authentication failed with `401` or `404`.
+2. **Masterlist Query & Test Account Isolation Mismatch**: In both [`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js) and [`thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js) (`getByEmail`), masterlist matching relied solely on direct string equality on `email` and strict `is_testaccount = $2`. In PostgreSQL, if `is_testaccount` is `NULL`, `NULL = false` evaluates to false, causing appointed officials with personal emails (e.g. `@gmail.com`) to fail profile retrieval.
+3. **Redirection Loop via lingering `active_portal`**: In [`ui/src/pages/Login.jsx`](file:///e:/christop/staging/ui/src/pages/Login.jsx) and [`ui/src/App.jsx`](file:///e:/christop/staging/ui/src/App.jsx), if an appointed applicant had previously used the Vacancies portal, `active_portal: 'vacancies'` persisted in `sessionStorage`. When logging into TIMON Portal, the system diverted them back to `/vacancy-dashboard` instead of allowing access to `/official-profiling`.
+4. **Residual UI Domain Checks & Field Label**: In [`ui/src/pages/OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx), residual validation notices and field label `"DepEd Email"` signaled restriction to `@deped.gov.ph`.
+
+### Architectural & UI Fixes
+1. **Unrestricted Authentication Pipeline for TIMON Portal ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js))**:
+   - In both `login` and `pinLogin`: For non-CO logins (`isCO === false` or undefined), removed restrictive role filtering on `tlo_users` so any non-admin account can authenticate.
+   - Cross-credential enrichment: If a user in `tlo_users` has null `password_hash` or `passcode`, fallback checks `vacancy_applicants` to retrieve their credentials.
+   - Masterlist linkage fallback: Matched `third_level_official_masterlist` using `(LOWER(TRIM(email)) = $1 OR vacancy_applicant_id IN (SELECT id FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1))` with `COALESCE(status, 'Active') != 'Inactive'`.
+   - Neutralized email redirection error message to: `"Your account email address has been updated to..."` without domain constraints.
+2. **Resilient Masterlist Profile Retrieval ([`thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js))**:
+   - In `getByEmail`: Updated queries to use `COALESCE(is_testaccount, FALSE) = $2` and `COALESCE(status, 'Active') != 'Inactive'`, ensuring appointed officials with personal emails (e.g. Gmail/Yahoo) are found reliably regardless of null flags.
+3. **Explicit Redirection to TIMON Portal ([`Login.jsx`](file:///e:/christop/staging/ui/src/pages/Login.jsx), [`App.jsx`](file:///e:/christop/staging/ui/src/App.jsx))**:
+   - When logging in via TIMON Portal (`!isCO`), clear lingering `sessionStorage.active_portal` and route users with role `'Third Level Official'` or `'TLO Applicant'` directly to `/official-profiling`.
+   - In `App.jsx` `PublicRoute`, prioritized routing for `'Third Level Official'` and `'TLO Applicant'` to `/official-profiling` ahead of `activePortal === 'vacancies'`.
+4. **Generalize Profiling Email Fields ([`OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx))**:
+   - Changed field label to `"Email Address"` and placeholder to `"e.g. juan.delacruz@deped.gov.ph or personal email"`.
+   - Removed all remaining `invalid_domain` and `@deped.gov.ph` error messages, ensuring full support for any valid email address format.
+
+### Requirement & User Directive
+> "after the appoinment i tried to login the appointment user there's have a "Edit Profile" remove it"
+> "during the login of "TIMON Portal" do not restrict into deped email only"
+
+### Root Cause
+1. **Unnecessary "Edit Profile" Header Button**: In [`ui/src/pages/OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx), when an appointed user logged in, their role was not `'tlo applicant'`, so `isEditing` defaulted to `false` and rendered a yellow "Edit Profile" button requiring user confirmation to edit fields.
+2. **DepEd Domain Restriction on TIMON Portal Login & Registration**:
+   - In [`api/src/controllers/loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js), authenticating non-admin portal accounts (`isCO: false`) restricted allowed roles to `THIRD_LEVEL_ROLES` which omitted `'Vacancy Applicant'`, and failed to authenticate appointed users whose records originated from `vacancy_applicants` with non-DepEd email addresses (e.g., Gmail, Yahoo). Furthermore, masterlist check was subordinated to `vacancyRes`, preventing appointed officials from obtaining the `'Third Level Official'` role.
+   - In [`ui/src/pages/Register.jsx`](file:///e:/christop/staging/ui/src/pages/Register.jsx), [`ui/src/pages/OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx), and [`api/src/controllers/thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js), email validation explicitly rejected any email address not ending in `@deped.gov.ph`.
+
+### Architectural & UI Fixes
+1. **Remove "Edit Profile" Button & Enable Direct Editing ([`OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx))**:
+   - Removed the "Edit Profile" button from both desktop and mobile header navigation bars.
+   - Set `isEditing` to default to `true`, allowing appointed officials and users to directly view and update their profile fields without encountering the confirmation modal.
+2. **Lift DepEd Email Restrictions for TIMON Portal ([`loginController.js`](file:///e:/christop/staging/api/src/controllers/loginController.js), [`Register.jsx`](file:///e:/christop/staging/ui/src/pages/Register.jsx), [`OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx), [`thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js))**:
+   - In `loginController.js`:
+     - Added `'Vacancy Applicant'` to `THIRD_LEVEL_ROLES` so applicants with non-DepEd emails can authenticate through TIMON Portal.
+     - Added fallback authentication against `vacancy_applicants` if the user is not found in `tlo_users`.
+     - Prioritized `third_level_official_masterlist` over `vacancy_applicants` so appointed officials are assigned `role = 'Third Level Official'`, automatically routing them to `/official-profiling`.
+   - In `Register.jsx`:
+     - Scoped the `@deped.gov.ph` domain restriction strictly to Central Office Admin registrations (`isCO: true`), allowing any valid email address for TIMON Portal registration.
+   - In `OfficialProfiling.jsx` & `thirdLevelController.js`:
+     - Updated email validation to accept any standard valid email format (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`) rather than enforcing `@deped.gov.ph`.
+
 ## 2026-10-29 — Vacancy Application: Azure Blob Storage Folder & Re-application Data Retrieval with N/A Toggle Buttons
 
 ### Requirement & User Directive

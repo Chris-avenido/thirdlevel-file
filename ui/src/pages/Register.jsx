@@ -181,7 +181,7 @@ const Register = () => {
 
     const handleFinalStep = async () => {
         if (!isVacancies && !formData.email.toLowerCase().endsWith('@deped.gov.ph')) {
-            Swal.fire('Notice', 'Only @deped.gov.ph emails are allowed for registration.', 'warning');
+            Swal.fire('Notice', 'Only official @deped.gov.ph emails are allowed for registration.', 'warning');
             return;
         }
         if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {

@@ -449,12 +449,16 @@ export const getByEmail = async (req, res) => {
     let masterRes;
     if (tloid) {
       masterRes = await pool.query(
-        `SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND status != 'Inactive' AND is_testaccount = $2`,
+        `SELECT * FROM third_level_official_masterlist WHERE "TLOid" = $1 AND COALESCE(status, 'Active') != 'Inactive' AND COALESCE(is_testaccount, FALSE) = $2`,
         [tloid, isTest]
       );
     } else if (email) {
       masterRes = await pool.query(
-        `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY created_at DESC NULLS LAST, "TLOid" DESC`,
+        `SELECT * FROM third_level_official_masterlist 
+         WHERE (LOWER(TRIM(email)) = LOWER(TRIM($1)) OR vacancy_applicant_id IN (SELECT id FROM vacancy_applicants WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)))) 
+           AND COALESCE(status, 'Active') != 'Inactive' 
+           AND COALESCE(is_testaccount, FALSE) = $2 
+         ORDER BY created_at DESC NULLS LAST, "TLOid" DESC`,
         [email, isTest]
       );
     }
@@ -464,7 +468,11 @@ export const getByEmail = async (req, res) => {
       let allSharingRes = masterRes;
       if (tloid && targetEmail) {
         allSharingRes = await pool.query(
-          `SELECT * FROM third_level_official_masterlist WHERE LOWER(email) = LOWER($1) AND status != 'Inactive' AND is_testaccount = $2 ORDER BY created_at DESC NULLS LAST, "TLOid" DESC`,
+          `SELECT * FROM third_level_official_masterlist 
+           WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) 
+             AND COALESCE(status, 'Active') != 'Inactive' 
+             AND COALESCE(is_testaccount, FALSE) = $2 
+           ORDER BY created_at DESC NULLS LAST, "TLOid" DESC`,
           [targetEmail, isTest]
         );
       }
@@ -636,7 +644,7 @@ export const checkProfilingEmail = async (req, res) => {
         inMasterlist: false,
         valid: false,
         reason: 'invalid_domain',
-        message: 'Only @deped.gov.ph emails are allowed for DepEd Email.'
+        message: 'Only @deped.gov.ph emails are allowed.'
       });
     }
 
@@ -924,8 +932,11 @@ export const updateProfile = async (req, res) => {
         }
 
         if (emailChanged) {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            throw new Error('Please provide a valid email address.');
+          }
           if (!normalizedEmail.endsWith('@deped.gov.ph')) {
-            throw new Error('Only @deped.gov.ph emails are allowed for DepEd Email.');
+            throw new Error('Only official @deped.gov.ph email addresses are allowed for DepEd Email.');
           }
           const isTest = Boolean(req.user?.is_testaccount);
           const collisionCheck = await client.query(
@@ -3932,8 +3943,8 @@ export const registerPersonnel = async (req, res) => {
   try {
     const isTest = Boolean(req.user?.is_testaccount);
     const normalizedEmail = email.toLowerCase().trim();
-    if (!normalizedEmail.endsWith('@deped.gov.ph')) {
-      return res.json({ success: false, error: 'Only @deped.gov.ph emails are allowed for DepEd Email.' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.json({ success: false, error: 'Please provide a valid email address.' });
     }
 
     const mName = (middle_name || '').trim().toUpperCase();

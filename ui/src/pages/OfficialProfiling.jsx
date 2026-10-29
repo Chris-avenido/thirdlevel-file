@@ -990,7 +990,7 @@ const OfficialProfiling = () => {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saved, setSaved] = useState(false);
     const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
-    const [isEditing, setIsEditing] = useState(isTlo);
+    const [isEditing, setIsEditing] = useState(true);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSuffixNA, setIsSuffixNA] = useState(false);
@@ -2665,6 +2665,11 @@ const OfficialProfiling = () => {
                 Swal.fire('Validation Error', 'Only @deped.gov.ph emails are allowed for DepEd Email.', 'error');
                 return false;
             }
+            if (!emailRegex.test(currentEmail)) {
+                setTab('personal');
+                Swal.fire('Validation Error', 'Please enter a valid email address.', 'error');
+                return false;
+            }
             if (currentEmail !== originalLoadedEmail) {
                 if (emailValidation.status === 'collision') {
                     setTab('personal');
@@ -3960,18 +3965,6 @@ const OfficialProfiling = () => {
                                     />
                                 </button>
 
-                                {!isTlo && (
-                                    <button
-                                        onClick={handleEditToggle}
-                                        className={`px-4 sm:px-5 py-1.5 sm:py-2 font-bold rounded-full text-[13px] sm:text-[15px] uppercase tracking-widest transition-all hidden sm:block border ${!isEditing
-                                            ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
-                                            : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
-                                            }`}
-                                    >
-                                        {isEditing ? "Cancel Edit" : "Edit Profile"}
-                                    </button>
-                                )}
-
                                 <button
                                     onClick={logout}
                                     className="flex items-center gap-1.5 sm:gap-2 text-slate-300 hover:text-red-400 font-bold text-[13px] sm:text-[15px] uppercase tracking-wider transition-all shrink-0 active:scale-95"
@@ -3980,20 +3973,6 @@ const OfficialProfiling = () => {
                                 </button>
                             </div>
                         </div>
-
-                        {!isTlo && (
-                            <div className="sm:hidden flex items-center justify-end w-full mt-2">
-                                <button
-                                    onClick={handleEditToggle}
-                                    className={`w-full py-1.5 font-bold rounded-full text-[13px] uppercase tracking-widest transition-all border ${!isEditing
-                                        ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
-                                        : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
-                                        }`}
-                                >
-                                    {isEditing ? "Cancel Edit" : "Edit Profile"}
-                                </button>
-                            </div>
-                        )}
 
                         {/* ── Collapsible Accordion Content (Profile Info Row) ── */}
                         <AnimatePresence initial={false}>
@@ -4722,6 +4701,7 @@ const OfficialProfiling = () => {
                                                                             <input
                                                                                 disabled={!isEditing}
                                                                                 type="email"
+                                                    
                                                                                 value={profile.alt_email_2 || ''}
                                                                                 onChange={e => setP('alt_email_2', e.target.value)}
                                                                                 placeholder="e.g. backup@yahoo.com"

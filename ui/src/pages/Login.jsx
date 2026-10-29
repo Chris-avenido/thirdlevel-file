@@ -161,6 +161,17 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         if (e) e.preventDefault();
+        const cleanEmail = (loginId || '').toLowerCase().trim();
+        const isVacanciesLogin = location.state?.portal === 'vacancies' || location.state?.redirectTo === '/all-vacancies';
+
+        if (!isVacanciesLogin && !cleanEmail.endsWith('@deped.gov.ph')) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Invalid Email Domain',
+                text: 'Only official @deped.gov.ph email addresses are allowed to sign in to the TIMON Portal.',
+                confirmButtonColor: '#08315F'
+            });
+        }
         setLoading(true);
 
         try {
@@ -198,6 +209,9 @@ const Login = () => {
                 // Role-based redirection
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
+                } else if (!isCO && (roleLower === 'third level official' || roleLower === 'tlo applicant')) {
+                    sessionStorage.removeItem('active_portal');
+                    navigate('/official-profiling');
                 } else if (location.state?.portal === 'vacancies' || roleLower === 'vacancy applicant' || sessionStorage.getItem('active_portal') === 'vacancies') {
                     navigate('/vacancy-dashboard');
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
@@ -220,6 +234,17 @@ const Login = () => {
     };
 
     const handlePinVerify = async (completedPin) => {
+        const cleanEmail = (loginId || '').toLowerCase().trim();
+        const isVacanciesLogin = location.state?.portal === 'vacancies' || location.state?.redirectTo === '/all-vacancies';
+
+        if (!isVacanciesLogin && !cleanEmail.endsWith('@deped.gov.ph')) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Invalid Email Domain',
+                text: 'Only official @deped.gov.ph email addresses are allowed to sign in to the TIMON Portal.',
+                confirmButtonColor: '#08315F'
+            });
+        }
         setLoading(true);
         try {
             const data = await verifyPin(loginId, completedPin, isCO);
@@ -250,6 +275,9 @@ const Login = () => {
                 // Role-based redirection
                 if (location.state?.redirectTo) {
                     navigate(location.state.redirectTo);
+                } else if (!isCO && (roleLower === 'third level official' || roleLower === 'tlo applicant')) {
+                    sessionStorage.removeItem('active_portal');
+                    navigate('/official-profiling');
                 } else if (location.state?.portal === 'vacancies' || roleLower === 'vacancy applicant' || sessionStorage.getItem('active_portal') === 'vacancies') {
                     navigate('/vacancy-dashboard');
                 } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
@@ -360,7 +388,7 @@ const Login = () => {
                                                 onChange={(e) => setLoginId(e.target.value)}
                                                 onFocus={() => setFocusedInput('id')}
                                                 onBlur={() => setFocusedInput(null)}
-                                                placeholder="Registered Email"
+                                                placeholder="Registered @deped.gov.ph Email"
                                                 autoComplete="username"
                                                 className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
                                                 required

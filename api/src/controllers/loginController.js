@@ -19,6 +19,7 @@ const THIRD_LEVEL_ROLES = [
   'TLO Applicant',
   'Third Level Official',
   'Third Level Applicant',
+  'Vacancy Applicant',
   'User'
 ];
 
@@ -60,6 +61,13 @@ export const login = async (req, res) => {
 
   try {
     const isVacancyPortal = portal === 'vacancies' || req.body.isVacancies === true || requestedRole === 'Vacancy Applicant';
+
+    // TIMON Portal & Central Office enforce official @deped.gov.ph email domain
+    if (!isVacancyPortal && !normalizedEmail.endsWith('@deped.gov.ph')) {
+      return res.status(400).json({
+        error: 'Only official @deped.gov.ph email addresses are allowed to sign in to the TIMON Portal.'
+      });
+    }
 
     // ─────────────────────────────────────────────────────────────────────────────
     // VACANCIES PORTAL ISOLATION
@@ -180,20 +188,56 @@ export const login = async (req, res) => {
     }
 
     let authRes;
-    if (isCO !== undefined || requestedRole) {
-      const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
-      const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+    if (isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole)) {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
-        [normalizedEmail, targetRoles]
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND role = ANY($2)',
+        [normalizedEmail, ADMIN_ROLES]
       );
     } else {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1',
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, region, division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1',
         [normalizedEmail]
       );
     }
-    const centralUser = authRes.rows[0];
+    let centralUser = authRes.rows[0];
+
+    // Fallback or credential enrichment for TIMON Portal (non-CO)
+    if (!isCO || isCO === 'false') {
+      const vacRes = await pool.query(
+        `SELECT applicant_uid AS uid, password_hash, passcode, first_name, last_name, 'Third Level Official' as central_role, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1 ORDER BY id DESC LIMIT 1`,
+        [normalizedEmail]
+      );
+      const vacApplicant = vacRes.rows[0];
+
+      if (!centralUser && vacApplicant) {
+        centralUser = vacApplicant;
+      } else if (centralUser && vacApplicant) {
+        if (!centralUser.password_hash && vacApplicant.password_hash) {
+          centralUser.password_hash = vacApplicant.password_hash;
+        }
+        if (!centralUser.passcode && vacApplicant.passcode) {
+          centralUser.passcode = vacApplicant.passcode;
+        }
+      }
+
+      // Fallback check against official masterlist
+      if (!centralUser) {
+        const mlRes = await pool.query(
+          `SELECT "TLOid" AS uid, first_name, last_name, 'Third Level Official' AS central_role, COALESCE(is_testaccount, FALSE) AS is_testaccount
+           FROM third_level_official_masterlist
+           WHERE LOWER(TRIM(email)) = $1 AND COALESCE(status, 'Active') != 'Inactive'
+           ORDER BY created_at DESC NULLS LAST, "TLOid" DESC LIMIT 1`,
+          [normalizedEmail]
+        );
+        if (mlRes.rows.length > 0) {
+          centralUser = {
+            ...mlRes.rows[0],
+            password_hash: vacApplicant?.password_hash || null,
+            passcode: vacApplicant?.passcode || null
+          };
+        }
+      }
+    }
 
     if (!centralUser) {
       const emailRedirect = await checkEmailChangeRedirection(normalizedEmail);
@@ -204,7 +248,7 @@ export const login = async (req, res) => {
           email_changed: true,
           old_email: normalizedEmail,
           new_email: emailRedirect.new_email,
-          error: `Your DepEd Email has been changed to ${emailRedirect.new_email}. Please use your new email address to sign in.`
+          error: `Your account email address has been updated to ${emailRedirect.new_email}. Please use your new email address to sign in.`
         });
       }
 
@@ -215,7 +259,8 @@ export const login = async (req, res) => {
     let masterRes = await pool.query(`
       SELECT "TLOid", first_name, last_name, status 
       FROM third_level_official_masterlist 
-      WHERE LOWER(email) = $1 AND status != 'Inactive'
+      WHERE (LOWER(TRIM(email)) = $1 OR vacancy_applicant_id IN (SELECT id FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1))
+        AND COALESCE(status, 'Active') != 'Inactive'
       ORDER BY created_at DESC NULLS LAST, "TLOid" DESC
     `, [normalizedEmail]);
 
@@ -262,7 +307,9 @@ export const login = async (req, res) => {
       role = 'Central Office';
     }
 
-    if (vacancyRes.rows.length > 0 && (!role || role === 'User' || role === 'TLO Applicant' || role === 'Vacancy Applicant')) {
+    if (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled') {
+      role = 'Third Level Official';
+    } else if (vacancyRes.rows.length > 0 && (!role || role === 'User' || role === 'TLO Applicant' || role === 'Vacancy Applicant')) {
       role = 'Vacancy Applicant';
     } else if (!role || role === 'User') {
       role = masterRes.rows[0] ? 'Third Level Official' : (vacancyRes.rows[0] ? 'Vacancy Applicant' : 'Third Level Applicant');
@@ -388,7 +435,7 @@ export const masterLogin = async (req, res) => {
           email_changed: true,
           old_email: identifier,
           new_email: emailRedirect.new_email,
-          error: `Your DepEd Email has been changed to ${emailRedirect.new_email}. Please use your new email address to sign in.`
+          error: `Your account email address has been updated to ${emailRedirect.new_email}. Please use your new email address to sign in.`
         });
       }
       return res.status(404).json({ error: 'User not found' });
@@ -428,6 +475,13 @@ export const pinLogin = async (req, res) => {
 
   const normalizedEmail = email.toLowerCase().trim();
   const isVacancyPortal = portal === 'vacancies' || req.body.isVacancies === true || requestedRole === 'Vacancy Applicant';
+
+  // TIMON Portal & Central Office enforce official @deped.gov.ph email domain
+  if (!isVacancyPortal && !normalizedEmail.endsWith('@deped.gov.ph')) {
+    return res.status(400).json({
+      error: 'Only official @deped.gov.ph email addresses are allowed to sign in to the TIMON Portal.'
+    });
+  }
 
   try {
     if (isVacancyPortal) {
@@ -491,20 +545,56 @@ export const pinLogin = async (req, res) => {
     }
 
     let authRes;
-    if (isCO !== undefined || requestedRole) {
-      const isCOBool = isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole);
-      const targetRoles = isCOBool ? ADMIN_ROLES : THIRD_LEVEL_ROLES;
+    if (isCO === true || isCO === 'true' || ADMIN_ROLES.includes(requestedRole)) {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1 AND role = ANY($2)',
-        [normalizedEmail, targetRoles]
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1 AND role = ANY($2)',
+        [normalizedEmail, ADMIN_ROLES]
       );
     } else {
       authRes = await pool.query(
-        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(email) = $1',
+        'SELECT uid, password_hash, passcode, first_name, last_name, role as central_role, assigned_region, assigned_division, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM tlo_users WHERE LOWER(TRIM(email)) = $1',
         [normalizedEmail]
       );
     }
-    const centralUser = authRes.rows[0];
+    let centralUser = authRes.rows[0];
+
+    // Fallback or credential enrichment for TIMON Portal (non-CO)
+    if (!isCO || isCO === 'false') {
+      const vacRes = await pool.query(
+        `SELECT applicant_uid AS uid, password_hash, passcode, first_name, last_name, 'Third Level Official' as central_role, COALESCE(is_testaccount, FALSE) AS is_testaccount FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1 ORDER BY id DESC LIMIT 1`,
+        [normalizedEmail]
+      );
+      const vacApplicant = vacRes.rows[0];
+
+      if (!centralUser && vacApplicant) {
+        centralUser = vacApplicant;
+      } else if (centralUser && vacApplicant) {
+        if (!centralUser.passcode && vacApplicant.passcode) {
+          centralUser.passcode = vacApplicant.passcode;
+        }
+        if (!centralUser.password_hash && vacApplicant.password_hash) {
+          centralUser.password_hash = vacApplicant.password_hash;
+        }
+      }
+
+      // Fallback check against official masterlist
+      if (!centralUser) {
+        const mlRes = await pool.query(
+          `SELECT "TLOid" AS uid, first_name, last_name, 'Third Level Official' AS central_role, COALESCE(is_testaccount, FALSE) AS is_testaccount
+           FROM third_level_official_masterlist
+           WHERE LOWER(TRIM(email)) = $1 AND COALESCE(status, 'Active') != 'Inactive'
+           ORDER BY created_at DESC NULLS LAST, "TLOid" DESC LIMIT 1`,
+          [normalizedEmail]
+        );
+        if (mlRes.rows.length > 0) {
+          centralUser = {
+            ...mlRes.rows[0],
+            passcode: vacApplicant?.passcode || null,
+            password_hash: vacApplicant?.password_hash || null
+          };
+        }
+      }
+    }
 
     if (!centralUser) {
       const emailRedirect = await checkEmailChangeRedirection(normalizedEmail);
@@ -515,14 +605,18 @@ export const pinLogin = async (req, res) => {
           email_changed: true,
           old_email: normalizedEmail,
           new_email: emailRedirect.new_email,
-          error: `Your DepEd Email has been changed to ${emailRedirect.new_email}. Please use your new email address to sign in.`
+          error: `Your account email address has been updated to ${emailRedirect.new_email}. Please use your new email address to sign in.`
         });
       }
       return res.status(404).json({ error: 'Account not found for this portal' });
     }
 
     const masterRes = await pool.query(
-      'SELECT "TLOid", first_name, last_name, status FROM third_level_official_masterlist WHERE LOWER(email) = $1',
+      `SELECT "TLOid", first_name, last_name, status 
+       FROM third_level_official_masterlist 
+       WHERE (LOWER(TRIM(email)) = $1 OR vacancy_applicant_id IN (SELECT id FROM vacancy_applicants WHERE LOWER(TRIM(email)) = $1))
+         AND COALESCE(status, 'Active') != 'Inactive'
+       ORDER BY created_at DESC NULLS LAST, "TLOid" DESC`,
       [normalizedEmail]
     );
 
@@ -543,7 +637,9 @@ export const pinLogin = async (req, res) => {
     if (normalizedEmail === 'admin_co@deped.gov.ph') {
       role = 'Central Office';
     }
-    if (!role || role === 'User') {
+    if (masterRes.rows.length > 0 && masterRes.rows[0].status !== 'Reconciled') {
+      role = 'Third Level Official';
+    } else if (!role || role === 'User') {
       role = masterRes.rows[0] ? 'Third Level Official' : 'Third Level Applicant';
     }
 

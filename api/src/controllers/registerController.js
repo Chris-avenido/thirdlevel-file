@@ -289,9 +289,9 @@ export const registerUser = async (req, res) => {
     if (assignedRole === 'RO_HRMO') assignedRole = 'Regional Office';
     if (assignedRole === 'SDO_HRMO') assignedRole = 'School Division Office';
 
-    if (['Personnel Admin', 'Central Office'].includes(assignedRole) && !normalizedEmail.endsWith('@deped.gov.ph')) {
+    if (!isVacancyApplicant && !normalizedEmail.endsWith('@deped.gov.ph')) {
       client.release();
-      return res.status(400).json({ error: 'Central Office Admin accounts must use an official @deped.gov.ph email' });
+      return res.status(400).json({ error: 'Only official @deped.gov.ph email addresses are allowed for TIMON Portal accounts' });
     }
 
     // Email ownership verification: a valid, unexpired OTP sent to this exact email is required.

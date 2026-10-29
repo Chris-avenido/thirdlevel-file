@@ -47,7 +47,9 @@ const PublicRoute = ({ children }) => {
         }
         const activePortal = sessionStorage.getItem('active_portal') || localStorage.getItem('active_portal');
         const roleLower = user.role?.toLowerCase() || '';
-        if (activePortal === 'vacancies' || roleLower === 'vacancy applicant') {
+        if (roleLower === 'third level official' || roleLower === 'tlo applicant') {
+            return <Navigate to="/official-profiling" replace />;
+        } else if (activePortal === 'vacancies' || roleLower === 'vacancy applicant') {
             return <Navigate to="/vacancy-dashboard" replace />;
         } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
             return <Navigate to="/home" replace />;
