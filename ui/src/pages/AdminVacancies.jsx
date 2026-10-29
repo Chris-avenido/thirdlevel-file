@@ -364,7 +364,35 @@ const AdminVacancies = () => {
         <AdminSidebar />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+          {/* TOP NAVIGATION BAR */}
+          <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
+                <FiBriefcase size={20} />
+              </div>
+              <div>
+                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">
+                  Vacancy <span className="text-blue-300 not-italic">Applications</span>
+                </h1>
+                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
+                  Recruitment &amp; Selection • TIMON (Third Level Incumbent and Management Operations Network)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
+                  {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
+                </span>
+                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">
+                  {user?.role || 'Central Office'}
+                </span>
+              </div>
+            </div>
+          </header>
+
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1720px] w-full mx-auto space-y-6">
             {/* Top Executive Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
@@ -648,21 +676,21 @@ const AdminVacancies = () => {
             </div>
 
             {/* DATA TABLE CONTAINER */}
-            <div className="bg-white rounded-2xl border-2 border-[#BAE6FD] shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl border-2 border-[#08315F] shadow-sm overflow-hidden flex flex-col">
               <div className="overflow-x-auto min-w-full">
-                <table className="w-full text-left border-collapse min-w-[1200px]">
+                <table className="w-full text-left border-collapse min-w-[1240px]">
                   <thead>
-                    <tr className="bg-[#08315F] text-white text-[11px] font-black uppercase tracking-wider">
+                    <tr className="bg-[#08315F] text-white text-[11.5px] font-black uppercase tracking-wider">
                       <th className="py-3.5 px-4 w-[160px]">Application No</th>
-                      <th className="py-3.5 px-4 w-[240px]">Applicant Name</th>
+                      <th className="py-3.5 px-4 w-[260px]">Applicant Name</th>
                       <th className="py-3.5 px-4 w-[220px]">Position Applying For</th>
-                      <th className="py-3.5 px-4 w-[200px]">Current Plantilla & Office</th>
-                      <th className="py-3.5 px-4 w-[170px]">Designation / OIC</th>
-                      <th className="py-3.5 px-4 w-[180px]">CES Eligibility</th>
-                      <th className="py-3.5 px-4 w-[110px] text-center">Docs</th>
+                      <th className="py-3.5 px-4 w-[200px]">Current Plantilla &amp; Office</th>
+                      <th className="py-3.5 px-4 w-[160px]">Designation / OIC</th>
+                      <th className="py-3.5 px-4 w-[170px]">CES Eligibility</th>
+                      <th className="py-3.5 px-4 w-[100px] text-center">Docs</th>
                       <th className="py-3.5 px-4 w-[130px] text-center">Status</th>
-                      <th className="py-3.5 px-4 w-[120px]">Date Filed</th>
-                      <th className="py-3.5 px-4 w-[110px] text-center">Action</th>
+                      <th className="py-3.5 px-4 w-[110px]">Date Filed</th>
+                      <th className="py-3.5 px-4 w-[100px] text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
@@ -680,7 +708,7 @@ const AdminVacancies = () => {
                             {hasActiveFilters && (
                               <button
                                 onClick={handleResetFilters}
-                                className="mt-2 px-4 py-1.5 bg-[#08315F] text-white rounded-xl text-xs font-bold uppercase tracking-wider"
+                                className="mt-2 px-4 py-1.5 bg-[#08315F] text-white rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer"
                               >
                                 Clear Filters
                               </button>
@@ -705,7 +733,7 @@ const AdminVacancies = () => {
                               setSelectedApplication(app);
                               setIsModalOpen(true);
                             }}
-                            className={`transition-colors group ${
+                            className={`transition-colors group border-b border-slate-100 ${
                               app.is_already_appointed_elsewhere
                                 ? 'bg-slate-100/60 opacity-60 cursor-not-allowed select-none'
                                 : 'hover:bg-sky-50/50 cursor-pointer'
@@ -717,61 +745,66 @@ const AdminVacancies = () => {
                             }
                           >
                             {/* Application No */}
-                            <td className="py-3 px-4 font-mono font-black text-[#08315F] whitespace-nowrap">
-                              <span className="bg-sky-50 text-[#08315F] border border-sky-200 px-2 py-0.5 rounded-lg text-[11px]">
+                            <td className="py-3.5 px-4 align-middle whitespace-nowrap">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-sky-50 text-[#08315F] border border-sky-200 font-black text-[11.5px] tracking-wide font-sans">
                                 {app.application_no}
                               </span>
                             </td>
 
                             {/* Applicant Name & Identity */}
-                            <td className="py-3 px-4">
+                            <td className="py-3.5 px-4 align-middle">
                               <div className="flex items-center gap-3">
-                                {hasIdPicture ? (
-                                  <img
-                                    src={apiUrl(`/api/binary/${app.id_picture_binary_id}`)}
-                                    alt="Photo"
-                                    className="w-9 h-9 rounded-full object-cover border border-slate-300 shrink-0 shadow-2xs"
-                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                  />
-                                ) : (
-                                  <div className="w-9 h-9 rounded-full bg-[#08315F] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
-                                    {(app.first_name || 'U')[0]}{(app.surname || 'A')[0]}
-                                  </div>
-                                )}
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-slate-200 shadow-xs flex items-center justify-center font-black text-xs text-[#08315F] shrink-0 overflow-hidden">
+                                  {hasIdPicture ? (
+                                    <img
+                                      src={apiUrl(`/api/binary/${app.id_picture_binary_id}`)}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                  ) : null}
+                                  <span className="select-none">{(app.first_name || 'U')[0]}{(app.surname || 'A')[0]}</span>
+                                </div>
                                 <div className="min-w-0">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <p className="font-black text-slate-900 uppercase truncate">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[13.5px] uppercase truncate">
                                       {app.surname}, {app.first_name} {app.middle_name || ''}
-                                    </p>
+                                    </span>
                                     {app.is_already_appointed_elsewhere ? (
                                       <span
                                         title={`Already appointed as ${app.appointed_tlo_id} (${app.masterlist_position_title || 'Official'}) in Masterlist`}
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-black uppercase tracking-tight bg-amber-50 text-amber-800 border border-amber-300 shrink-0"
                                       >
                                         <FiAlertCircle className="w-2.5 h-2.5 text-amber-600 shrink-0" />
-                                        In Masterlist ({app.appointed_tlo_id})
+                                        {app.appointed_tlo_id}
                                       </span>
                                     ) : app.appointed_tlo_id ? (
                                       <span
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight bg-emerald-50 text-emerald-800 border border-emerald-300"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-black uppercase tracking-tight bg-emerald-50 text-emerald-800 border border-emerald-300 shrink-0"
                                       >
-                                        <FiCheck className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                        <FiCheck className="w-2.5 h-2.5 text-emerald-600 shrink-0 stroke-[3]" />
                                         {app.appointed_tlo_id}
                                       </span>
                                     ) : null}
                                   </div>
-                                  <p className="text-[11px] text-slate-400 font-mono truncate">{app.email}</p>
-                                  <p className="text-[10px] text-slate-500 font-mono truncate">{formattedPhone}</p>
+                                  <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 truncate mt-0.5">
+                                    <FiMail size={11} className="text-slate-400 shrink-0" />
+                                    <span className="truncate">{app.email}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-[10.5px] font-medium text-slate-400 truncate">
+                                    <FiPhone size={10} className="text-slate-400 shrink-0" />
+                                    <span>{formattedPhone}</span>
+                                  </div>
                                 </div>
                               </div>
                             </td>
 
                             {/* Position Applying For */}
-                            <td className="py-3 px-4">
+                            <td className="py-3.5 px-4 align-middle">
                               <div className="min-w-0">
-                                <p className="font-bold text-slate-900 break-words">{app.position_applying_for}</p>
+                                <p className="font-black text-slate-900 text-[13px] leading-tight break-words">{app.position_applying_for}</p>
                                 {app.target_vacancy_id && (
-                                  <span className="inline-block mt-0.5 text-[9px] font-mono font-bold text-sky-800 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded">
+                                  <span className="inline-block mt-1 text-[10px] font-bold text-[#075985] bg-sky-50 border border-sky-200 px-2 py-0.5 rounded">
                                     {app.target_vacancy_id}
                                   </span>
                                 )}
@@ -779,42 +812,48 @@ const AdminVacancies = () => {
                             </td>
 
                             {/* Current Plantilla & Office */}
-                            <td className="py-3 px-4">
+                            <td className="py-3.5 px-4 align-middle">
                               <div className="min-w-0">
-                                <p className="font-bold text-slate-900 truncate">{app.current_position}</p>
-                                <p className="text-[11px] text-slate-500 truncate">{app.plantilla_office}</p>
+                                <p className="font-black text-slate-800 text-[12.5px] uppercase truncate">
+                                  {!app.current_position || app.current_position.toLowerCase() === 'n/a' ? 'N/A' : app.current_position}
+                                </p>
+                                {app.plantilla_office && app.plantilla_office.toLowerCase() !== 'n/a' && (
+                                  <p className="text-[11px] font-medium text-slate-500 truncate mt-0.5">{app.plantilla_office}</p>
+                                )}
                               </div>
                             </td>
 
                             {/* Designation / OIC */}
-                            <td className="py-3 px-4">
+                            <td className="py-3.5 px-4 align-middle">
                               <div className="min-w-0">
-                                <p className="font-bold text-slate-800 truncate">{app.current_designation || 'N/A'}</p>
-                                {app.assigned_oic_office && app.assigned_oic_office !== 'n/a' && (
-                                  <p className="text-[10px] text-amber-700 font-bold truncate">OIC: {app.assigned_oic_office}</p>
+                                <p className="font-black text-slate-800 text-[12.5px] uppercase truncate">
+                                  {!app.current_designation || app.current_designation.toLowerCase() === 'n/a' ? 'N/A' : app.current_designation}
+                                </p>
+                                {app.assigned_oic_office && !['n/a', 'na', 'none', ''].includes(app.assigned_oic_office.trim().toLowerCase()) && (
+                                  <p className="text-[10px] text-amber-700 font-bold truncate mt-0.5">OIC: {app.assigned_oic_office}</p>
                                 )}
                               </div>
                             </td>
 
                             {/* CES Eligibility */}
-                            <td className="py-3 px-4">
+                            <td className="py-3.5 px-4 align-middle">
                               <div className="min-w-0">
-                                <p className="font-bold text-slate-900 text-[11px] leading-tight break-words">
-                                  {app.ces_eligibility_stage}
+                                <p className="font-bold text-slate-900 text-[11.5px] leading-tight break-words">
+                                  {app.ces_eligibility_stage || 'N/A'}
                                 </p>
-                                <div className="flex items-center gap-1.5 mt-1 text-[10px] font-bold">
+                                <div className="flex items-center gap-1.5 mt-1 text-[10px] font-black">
                                   {app.is_let_passer && (
-                                    <span className="bg-sky-50 text-sky-700 px-1.5 py-0.2 rounded border border-sky-200">
+                                    <span className="bg-sky-50 text-[#075985] px-1.5 py-0.5 rounded border border-sky-200">
                                       LET
                                     </span>
                                   )}
                                   {app.is_emt_passer && (
-                                    <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.2 rounded border border-emerald-200">
+                                    <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">
                                       EMT
                                     </span>
                                   )}
                                   {app.ces_stage_date && (
-                                    <span className="text-slate-400 font-mono">
+                                    <span className="text-slate-400 font-medium">
                                       {new Date(app.ces_stage_date).toLocaleDateString()}
                                     </span>
                                   )}
@@ -823,9 +862,9 @@ const AdminVacancies = () => {
                             </td>
 
                             {/* Documents Attached */}
-                            <td className="py-3 px-4 text-center">
+                            <td className="py-3.5 px-4 align-middle text-center">
                               <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-black ${
                                   docsAttached === 12
                                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                     : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -837,7 +876,7 @@ const AdminVacancies = () => {
                             </td>
 
                             {/* Status */}
-                            <td className="py-3 px-4 text-center">
+                            <td className="py-3.5 px-4 align-middle text-center">
                               <div className="flex flex-col items-center gap-1">
                                 {renderStatusBadge(app.status)}
                                 {app.is_already_appointed_elsewhere && (
@@ -853,7 +892,7 @@ const AdminVacancies = () => {
                             </td>
 
                             {/* Date Filed */}
-                            <td className="py-3 px-4 whitespace-nowrap text-[11px] text-slate-500 font-mono">
+                            <td className="py-3.5 px-4 align-middle whitespace-nowrap text-[11.5px] text-slate-500 font-medium">
                               {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}
                             </td>
 

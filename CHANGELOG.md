@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 2026-10-29 — Admin Vacancies: UI & Layout Design Enhancement
+
+### Requirement & User Directive
+> "attached image fix my design in the page of "admin-vacancies""
+
+### Root Cause
+In [`ui/src/pages/AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx):
+1. **Missing Sticky Top Navigation Bar**: Unlike other admin modules (`OfficialsRegistry`, `Home`, `TloPositions`), `AdminVacancies` lacked the standard top sticky header. As a result, scrolling on the window caused the KPI stat cards at the top to be sliced off and shoved awkwardly against the browser address bar.
+2. **Incorrect Scroll Container**: The main content wrapper was set to `overflow-hidden` rather than `h-screen overflow-y-auto relative`, preventing smooth container scrolling.
+3. **Table & Typography Defects**:
+   - `Application No` rendered in jagged monospace within a tight pill.
+   - `Applicant Name` cell had `flex-wrap` which forced the appointed TLO badge onto line 2, pushing the email and phone number down and cutting off the phone number at the bottom of the row.
+   - Avatar placeholder rendered a broken/corrupted image thumbnail whenever binary picture was missing or invalid.
+   - `Designation / OIC` rendered `OIC: N/A` in orange even when no OIC was assigned.
+   - Plantilla office and position capitalization was inconsistent (`n/a` vs `N/A`).
+   - Dates in `font-mono text-slate-400` rendered blurry/pixelated.
+   - Table container used cyan `border-2 border-[#BAE6FD]` instead of brand `#08315F` navy border.
+
+### Architectural & UI Fixes
+1. **Standard Sticky Top Navigation Header ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Added sticky top navigation header bar (`h-screen overflow-y-auto relative` container + `<header className="sticky top-0 z-50 bg-[#08315F] ...">`) with the official `TIMON (Third Level Incumbent and Management Operations Network)` subtitle and admin credentials display.
+2. **Table Design & Typography Polish ([`AdminVacancies.jsx`](file:///e:/christop/staging/ui/src/pages/AdminVacancies.jsx))**:
+   - Upgraded table container to `border-2 border-[#08315F]` matching the rest of the application.
+   - Redesigned `Applicant Name` into a strictly aligned 3-line layout (Line 1: Name + inline Appointed badge, Line 2: Email with mail icon, Line 3: Phone with phone icon), eliminating vertical overflow and line clipping.
+   - Replaced fragile avatar placeholder with a gradient avatar container displaying crisp applicant initials if picture fails or is absent.
+   - Cleaned up `OIC` rendering to filter out `'N/A'`, `'na'`, and `'none'`, eliminating the confusing `OIC: N/A` display.
+   - Standardized `Current Position` and `Plantilla Office` capitalization to clean uppercase `N/A`.
+   - Replaced blurry monospace dates and codes with crisp, readable sans-serif typography.
+
 ## 2026-10-29 — Nexus Gate: Embed User Guide Button Directly Inside TIMON Portal Card
 
 ### Requirement & User Directive
