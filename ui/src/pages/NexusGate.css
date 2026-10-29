@@ -373,24 +373,12 @@
   margin-left: 0;
 }
 
-.nexus-top-actions {
-  position: absolute;
-  top: 36px;
-  right: 48px;
-  z-index: 20;
-}
-
-.nexus-layout-grid.swapped .nexus-top-actions {
-  right: auto;
-  left: 48px;
-}
-
 .nexus-guide-btn {
   background-color: #08315F;
   color: #FFFFFF;
   border: none;
   border-radius: 9999px;
-  padding: 10px 22px;
+  padding: 8px 18px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1px;
@@ -398,8 +386,9 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(8, 49, 95, 0.2);
+  box-shadow: 0 4px 14px rgba(8, 49, 95, 0.2);
   transition: all 0.2s ease;
+  z-index: 5;
 }
 
 .nexus-guide-btn:hover {
@@ -627,14 +616,6 @@
     clip-path: polygon(0 0, 50% 40px, 100% 0, 100% 100%, 0 100%) !important;
   }
 
-  .nexus-top-actions {
-    position: relative;
-    top: 0;
-    right: 0;
-    left: 0 !important;
-    margin-bottom: 24px;
-    align-self: flex-end;
-  }
 
   .nexus-features-row {
     grid-template-columns: 1fr;

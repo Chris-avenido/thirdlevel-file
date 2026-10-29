@@ -231,21 +231,6 @@ const NexusGate = () => {
     // Cards Section Component
     const renderCardsContent = (direction = 'right') => (
         <div className="nexus-cards-panel">
-            {/* Top Right User Guide Header Button */}
-            <div className="nexus-top-actions">
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowGuideModal(true);
-                    }}
-                    className="nexus-guide-btn"
-                >
-                    <FiBookOpen size={14} className="text-amber-400" />
-                    <span>USER GUIDE</span>
-                </button>
-            </div>
-
             {/* Cards Container */}
             <div className="nexus-cards-stack">
                 {/* ── CARD 1: THIRD LEVEL OFFICIALS ── */}
@@ -288,6 +273,19 @@ const NexusGate = () => {
                                 <path d="M31 34.5L33 36.5L37 32.5" stroke="#FCD116" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </div>
+
+                        {/* Top Right User Guide Header Button inside Card */}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowGuideModal(true);
+                            }}
+                            className="nexus-guide-btn"
+                        >
+                            <FiBookOpen size={14} className="text-amber-400" />
+                            <span>USER GUIDE</span>
+                        </button>
                     </div>
 
                     <div className="nexus-card-body">

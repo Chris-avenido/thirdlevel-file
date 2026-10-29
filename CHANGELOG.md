@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2026-10-29 — Nexus Gate: Embed User Guide Button Directly Inside TIMON Portal Card
+
+### Requirement & User Directive
+> "i don't like it i want inside the "nexus-card nexus-card-thirdlevel" of this button"
+
+### Architectural & UI Fixes
+1. **Direct Card Embedding ([`NexusGate.jsx`](file:///e:/christop/staging/ui/src/pages/NexusGate.jsx))**:
+   - Removed external `.nexus-top-actions` wrapper entirely.
+   - Positioned `<button className="nexus-guide-btn">` directly inside `<div className="nexus-card-header">` within `.nexus-card.nexus-card-thirdlevel`.
+   - `.nexus-card-header` utilizes `display: flex; justify-content: space-between; align-items: center;`, placing the yellow icon badge on the left and the dark blue `USER GUIDE` pill button on the right inside the card.
+   - Retained `e.stopPropagation()` on the button click handler so opening the User Guide modal does not trigger the card's portal navigation.
+2. **CSS Optimization ([`NexusGate.css`](file:///e:/christop/staging/ui/src/pages/NexusGate.css))**:
+   - Cleaned up obsolete absolute/flex `.nexus-top-actions` container rules.
+   - Refined `.nexus-guide-btn` with `z-index: 5` and `padding: 8px 18px` to seamlessly integrate inside the card header.
+
 ## 2026-10-29 — Asset Update: Replace "modern_logo.png" with "tlo_logo.png"
 
 ### Requirement & User Directive
