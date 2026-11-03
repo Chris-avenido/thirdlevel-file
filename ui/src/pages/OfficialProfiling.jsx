@@ -49,6 +49,20 @@ const SummaryRow = ({ label, value }) => (
 // All side tabs whose completion drives the progress bar.
 const CONTENT_TABS = ['personal', 'eligibility', 'experience', 'education', 'performance', 'trainings', 'achievements', 'documents', 'legal', 'summary'];
 
+const ADMIN_ROLES = [
+    'central office',
+    'personnel admin',
+    'admin',
+    'super user',
+    'regional office',
+    'school division office',
+    'co_pd',
+    'ro_hrmo',
+    'sdo_hrmo'
+];
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 const computeAge = (dob) => {
     if (!dob) return '';
     const today = new Date();
@@ -990,7 +1004,14 @@ const OfficialProfiling = () => {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saved, setSaved] = useState(false);
     const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
-    const [isEditing, setIsEditing] = useState(true);
+    const isAdmin = ADMIN_ROLES.includes(user?.role?.toLowerCase() || '') || Boolean((urlEmail && urlEmail.toLowerCase() !== user?.email?.toLowerCase()) || urlTloid);
+    const [isEditing, setIsEditing] = useState(!isAdmin);
+
+    useEffect(() => {
+        if (isAdmin) {
+            setIsEditing(false);
+        }
+    }, [isAdmin, urlTloid]);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSuffixNA, setIsSuffixNA] = useState(false);
@@ -2652,6 +2673,7 @@ const OfficialProfiling = () => {
         setProfile(p => ({ ...p, [field]: finalValue }));
     };
     const validateProfile = () => {
+        const emailRegex = EMAIL_REGEX;
         // 0. DepEd Email validation
         if (!isForApproval) {
             const currentEmail = (profile.email || user?.email || '').trim().toLowerCase();
@@ -2701,7 +2723,6 @@ const OfficialProfiling = () => {
         }
 
         // 2. Alternative Email 1 & 2
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (profile.alt_email_1) {
             if (!emailRegex.test(profile.alt_email_1)) {
                 Swal.fire('Validation Error', 'Alternative Email 1 is malformed or contains an invalid domain.', 'error');
@@ -3965,6 +3986,18 @@ const OfficialProfiling = () => {
                                     />
                                 </button>
 
+                                {isAdmin && (
+                                    <button
+                                        onClick={handleEditToggle}
+                                        className={`px-4 sm:px-5 py-1.5 sm:py-2 font-bold rounded-full text-[13px] sm:text-[15px] uppercase tracking-widest transition-all hidden sm:block border ${!isEditing
+                                            ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
+                                            : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
+                                            }`}
+                                    >
+                                        {isEditing ? "Cancel Edit" : "Edit Profile"}
+                                    </button>
+                                )}
+
                                 <button
                                     onClick={logout}
                                     className="flex items-center gap-1.5 sm:gap-2 text-slate-300 hover:text-red-400 font-bold text-[13px] sm:text-[15px] uppercase tracking-wider transition-all shrink-0 active:scale-95"
@@ -3973,6 +4006,20 @@ const OfficialProfiling = () => {
                                 </button>
                             </div>
                         </div>
+
+                        {isAdmin && (
+                            <div className="sm:hidden flex items-center justify-end w-full mt-2">
+                                <button
+                                    onClick={handleEditToggle}
+                                    className={`w-full py-1.5 font-bold rounded-full text-[13px] uppercase tracking-widest transition-all border ${!isEditing
+                                        ? 'bg-yellow-500 text-yellow-950 hover:bg-yellow-400 border-yellow-600 shadow-md'
+                                        : 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 border-blue-500/30'
+                                        }`}
+                                >
+                                    {isEditing ? "Cancel Edit" : "Edit Profile"}
+                                </button>
+                            </div>
+                        )}
 
                         {/* ── Collapsible Accordion Content (Profile Info Row) ── */}
                         <AnimatePresence initial={false}>
