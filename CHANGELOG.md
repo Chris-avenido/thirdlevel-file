@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-11-04 — Profiling Disambiguation: Restrict "Shared Email Detected: Verification Required" to Central Office Role
+
+### Requirement & User Directive
+> "in the staging folder in this part 'shouShared Email Detected: Verification Required' should be display only where role is central office"
+
+### Root Cause
+1. **Unconditional Disambiguation Modal Rendering in UI**: In [`ui/src/pages/OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx), the disambiguation modal for inconclusive identity evidence (`isUncertain`, displaying header `"Shared Email Detected: Verification Required"`) was conditionally triggered whenever `(isCollision || isUncertain) && !TLOid && disambiguationRecords.length > 0` regardless of the logged-in user's role.
+2. **Backend Profile Nullification for Inconclusive States**: In [`api/src/controllers/thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js) (`getByEmail`), when multiple records sharing an email resulted in `STATE_4_UNCERTAIN` without an explicit `tloid`, the controller unconditionally returned `data: null`, assuming any user would be prompted with the disambiguation modal. If only hidden in the UI, non-Central-Office users would see an empty profiling form.
+
+### Architectural & UI Fixes
+1. **Frontend Disambiguation Modal Gating ([`OfficialProfiling.jsx`](file:///e:/christop/staging/ui/src/pages/OfficialProfiling.jsx))**:
+   - Defined `isCentralOffice = (user?.role || '').trim().toLowerCase() === 'central office'`.
+   - Updated modal visibility condition to `(isCollision || (isUncertain && isCentralOffice)) && !TLOid && disambiguationRecords.length > 0`, ensuring `"Shared Email Detected: Verification Required"` is strictly restricted to Central Office users.
+   - Updated profile auto-population halt check to `(data.isCollision || (data.isUncertain && isCentralOffice)) && !data.data`.
+2. **Backend Active Record Resolution for Non-Central-Office Users ([`thirdLevelController.js`](file:///e:/christop/staging/api/src/controllers/thirdLevelController.js))**:
+   - Checked `isCO = (req.user?.role || '').trim().toLowerCase() === 'central office'`.
+   - Gated `requiresDisambiguation` for `STATE_4_UNCERTAIN` to Central Office callers only: `(resolution.state === 'STATE_3_CONFIRMED_COLLISION' || (resolution.state === 'STATE_4_UNCERTAIN' && isCO)) && !tloid`.
+   - For non-Central-Office users, resolved `activeRecord` using `tloid || req.user?.uid || masterRes.rows[0].TLOid`, returning populated profile data and setting `isUncertain = false`.
+
 ## 2026-10-29 — Authentication: Dual Role Isolation for Records Management & TIMON Portal
 
 ### Requirement & User Directive

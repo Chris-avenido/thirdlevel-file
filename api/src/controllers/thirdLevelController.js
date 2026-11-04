@@ -479,8 +479,14 @@ export const getByEmail = async (req, res) => {
 
       const resolution = evaluateIdentityResolution(allSharingRes.rows, tloid || masterRes.rows[0].TLOid);
 
-      // In STATE_3 or STATE_4: if explicit tloid was NOT passed, enforce strict isolation and require explicit selection
-      if ((resolution.state === 'STATE_3_CONFIRMED_COLLISION' || resolution.state === 'STATE_4_UNCERTAIN') && !tloid) {
+      const isCO = (req.user?.role || '').trim().toLowerCase() === 'central office';
+      const requiresDisambiguation = (
+        resolution.state === 'STATE_3_CONFIRMED_COLLISION' ||
+        (resolution.state === 'STATE_4_UNCERTAIN' && isCO)
+      ) && !tloid;
+
+      // In STATE_3 or (STATE_4 for Central Office): if explicit tloid was NOT passed, enforce strict isolation and require explicit selection
+      if (requiresDisambiguation) {
         const disambiguationRecords = allSharingRes.rows.map(r => ({
           TLOid: r.TLOid,
           first_name: r.first_name,
@@ -504,9 +510,9 @@ export const getByEmail = async (req, res) => {
         });
       }
 
-      const activeRecord = tloid
-        ? allSharingRes.rows.find(r => r.TLOid === tloid) || masterRes.rows[0]
-        : masterRes.rows[0];
+      const activeRecord = (tloid ? allSharingRes.rows.find(r => r.TLOid === tloid) : null)
+        || (req.user?.uid ? allSharingRes.rows.find(r => r.TLOid === req.user.uid) : null)
+        || masterRes.rows[0];
 
       const normalized = sanitizeOicPosition(activeRecord.position_title, activeRecord.is_oic);
       activeRecord.position_title = normalized.position_title;
@@ -554,7 +560,7 @@ export const getByEmail = async (req, res) => {
         state: resolution.state,
         isMultiRole: resolution.isMultiRole,
         isCollision: resolution.isCollision,
-        isUncertain: resolution.isUncertain,
+        isUncertain: isCO ? resolution.isUncertain : false,
         activeTloId: activeRecord.TLOid,
         availableRoles,
         data: { ...activeRecord, ...childRecords, active_assignments: activeAssignments },

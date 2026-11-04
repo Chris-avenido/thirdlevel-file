@@ -1004,6 +1004,7 @@ const OfficialProfiling = () => {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saved, setSaved] = useState(false);
     const isTlo = user?.role?.toLowerCase() === 'tlo applicant';
+    const isCentralOffice = (user?.role || '').trim().toLowerCase() === 'central office';
     const isAdmin = ADMIN_ROLES.includes(user?.role?.toLowerCase() || '') || Boolean((urlEmail && urlEmail.toLowerCase() !== user?.email?.toLowerCase()) || urlTloid);
     const [isEditing, setIsEditing] = useState(!isAdmin);
 
@@ -2199,7 +2200,7 @@ const OfficialProfiling = () => {
                 setIsUncertain(Boolean(data.isUncertain));
                 setDisambiguationRecords(Array.isArray(data.disambiguationRecords) ? data.disambiguationRecords : []);
 
-                if ((data.isCollision || data.isUncertain) && !data.data) {
+                if ((data.isCollision || (data.isUncertain && isCentralOffice)) && !data.data) {
                     // Ambiguous/Collision state without explicit TLOid: halt auto-population and show disambiguation
                     setStatus('found');
                     return;
@@ -3820,7 +3821,7 @@ const OfficialProfiling = () => {
 
                 {/* ── Disambiguation Modal for Confirmed Collision & Uncertain States ── */}
                 <AnimatePresence>
-                    {(isCollision || isUncertain) && !TLOid && disambiguationRecords.length > 0 && (
+                    {(isCollision || (isUncertain && isCentralOffice)) && !TLOid && disambiguationRecords.length > 0 && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 15 }}
