@@ -2,7 +2,7 @@
 export {
   cleanDesignationOrPosition,
   STANDARD_DESIGNATIONS
-} from './thirdLevel/shared.js';
+} from '../utils/officialRules.js';
 export {
   initializeProfile,
   getByEmail,
@@ -36,4 +36,4 @@ export {
   adminAction,
   getNotableAchievements,
   toggleTestAccount
-} from './thirdLevel/registry.js';
+} from '../features/officials-registry/controller.js';

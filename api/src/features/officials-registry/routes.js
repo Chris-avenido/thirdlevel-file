@@ -1,26 +1,29 @@
 import express from 'express';
 import multer from 'multer';
-import authMiddleware from '../middleware/authMiddleware.js';
+import authMiddleware from '../../middleware/authMiddleware.js';
 
 const memoryUpload = multer({ storage: multer.memoryStorage() });
 import {
   adminAction,
   getActiveOfficials,
-  getApplications,
   getUnassignedPersonnel,
-  processApplication,
   getOfficials,
   getPositionIncumbents,
   getLastVacateUpdate,
-  triggerCron,
   createUnassignedPersonnel,
   registerPersonnel,
   getKpiSummary,
+  toggleTestAccount
+} from './controller.js';
+// Application-processing handlers still live in the old controller barrel until official-profiling moves.
+import {
+  getApplications,
+  processApplication,
+  triggerCron,
   processRegistration,
-  toggleTestAccount,
   reassignOfficial
-} from '../controllers/thirdLevelController.js';
-import { bulkProcessDirectory, bulkProcessAchievements } from '../controllers/uploadDirectoryModalController.js';
+} from '../../controllers/thirdLevelController.js';
+import { bulkProcessDirectory, bulkProcessAchievements } from './uploadDirectoryController.js';
 
 const router = express.Router();
 

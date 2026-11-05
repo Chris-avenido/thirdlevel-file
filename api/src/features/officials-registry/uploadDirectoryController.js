@@ -1,4 +1,4 @@
-import pool from '../config/db.js';
+import pool from '../../config/db.js';
 
 const ensureColumns = async (client) => {
   const masterRes = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name='third_level_official_masterlist'`);

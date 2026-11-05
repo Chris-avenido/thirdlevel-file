@@ -8,7 +8,7 @@ import {
   syncAllChildTables,
   resolveSourceTable
 } from '../../services/tloProfileService.js';
-import { ensureOicColumn, sanitizeOicPosition, cleanDesignationOrPosition } from './shared.js';
+import { ensureOicColumn, sanitizeOicPosition, cleanDesignationOrPosition } from '../../utils/officialRules.js';
 
 export const initializeProfile = async (req, res) => {
   const { email, first_name, last_name } = req.body;

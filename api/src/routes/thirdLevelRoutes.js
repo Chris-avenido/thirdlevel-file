@@ -1,7 +1,7 @@
 import express from 'express';
 import officialProfilingRoutes from './officialProfilingRoutes.js';
 import { notableAchievementsRoutes } from '../features/notable-achievements/index.js';
-import officialsRegistryRoutes from './officialsRegistryRoutes.js';
+import { officialsRegistryRoutes } from '../features/officials-registry/index.js';
 
 const router = express.Router();
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import pool from '../../config/db.js';
-import { ensureOicColumn, getPositionTitleVariants, THIRD_LEVEL_POSITIONS, displayPositionTitle, getOptionalColumnExpression } from './shared.js';
-import { executeReassignment, processScheduledVacancies } from './applications.js';
+import { ensureOicColumn, getPositionTitleVariants, THIRD_LEVEL_POSITIONS, displayPositionTitle, getOptionalColumnExpression } from '../../utils/officialRules.js';
+import { executeReassignment, processScheduledVacancies } from '../../controllers/thirdLevel/applications.js';
 
 export const buildOfficialsFilterConditions = (query, user) => {
   const params = [];

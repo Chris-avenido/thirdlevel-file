@@ -7,7 +7,7 @@ import {
   cloneChildTablesOnApproval
 } from '../../services/tloProfileService.js';
 import { sendOfficialApprovalEmail, sendOfficialRejectionEmail } from '../../services/emailService.js';
-import { ensureOicColumn, THIRD_LEVEL_POSITIONS, displayPositionTitle, cleanDesignationOrPosition, STANDARD_DESIGNATIONS } from './shared.js';
+import { ensureOicColumn, THIRD_LEVEL_POSITIONS, displayPositionTitle, cleanDesignationOrPosition, STANDARD_DESIGNATIONS } from '../../utils/officialRules.js';
 
 export const getPositions = async (req, res) => {
   try {
