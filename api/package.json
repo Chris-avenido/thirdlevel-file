@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "test": "vitest run --reporter=dot"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.33.0",
@@ -27,6 +28,7 @@
     "zod": "^3.23.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "vitest": "5.1.0"
   }
 }

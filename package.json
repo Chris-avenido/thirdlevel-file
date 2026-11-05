@@ -6,7 +6,10 @@
     "install-all": "cd api && npm install && cd ../ui && npm install",
     "dev": "node dev.js",
     "dev:full": "node dev.js",
-    "dev:turbo": "node dev.js"
+    "dev:turbo": "node dev.js",
+    "build": "npm --prefix ui run build",
+    "test": "npm --prefix api test --silent && npm --prefix ui test --silent",
+    "lint": "eslint --config eslint.config.js api/src api/tests ui/src ui/tests"
   },
   "dependencies": {
     "all": "^0.0.0",
@@ -14,5 +17,10 @@
     "dotenv": "^17.4.2",
     "pg": "^8.22.0",
     "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "globals": "17.14.0"
   }
 }
