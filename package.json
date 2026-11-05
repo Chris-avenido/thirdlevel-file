@@ -9,7 +9,7 @@
     "dev:turbo": "node dev.js",
     "build": "npm --prefix ui run build",
     "test": "npm --prefix api test --silent && npm --prefix ui test --silent",
-    "lint": "eslint --config eslint.config.js api/src api/tests ui/src ui/tests"
+    "lint": "eslint --config eslint.config.js api/src api/tests ui/src ui/tests && depcruise --config .dependency-cruiser.cjs api/src ui/src"
   },
   "dependencies": {
     "all": "^0.0.0",
@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "dependency-cruiser": "18.7.2",
     "eslint": "10.14.0",
     "globals": "17.14.0"
   }

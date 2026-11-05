@@ -3,11 +3,16 @@
 Third-level officials system: Express + PostgreSQL API in `api/`, Vite + React UI in `ui/`. Run all commands from the repo root.
 
 ## Commands
-- Lint: `npm run lint`
+- Lint (ESLint + dependency-cruiser boundary and cycle rules): `npm run lint`
 - Test: `npm run test` (Vitest; one smoke test per app)
 - Build: `npm run build` (UI only)
 - Tier 2, once after all changes: `npm run lint && npm run test && npm run build`
 - Dev servers: `npm run dev`
+
+## Architecture
+- Backend: `api/src/features/<name>/` (auth, binary, notable-achievements, officials-registry, official-profiling). Shared kernel: `config/`, `utils/`, `middleware/`, `services/`.
+- Another feature is imported only through its `index.js`; kernel folders never import features; no circular imports. Enforced by `.dependency-cruiser.cjs` (part of `npm run lint`).
+- UI: pages in `ui/src/pages/`, extracted sections in `ui/src/components/<page-name>/`.
 
 ## Hard rules
 1. Never print or commit secrets from `.env` files.

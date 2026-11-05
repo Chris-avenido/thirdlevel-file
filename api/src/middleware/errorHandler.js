@@ -1,5 +1,4 @@
 // Global error handler: logs the raw error with the request ID, never returns it to the client.
-// eslint-disable-next-line no-unused-vars
 export default function errorHandler(err, req, res, next) {
   console.error(`[${req.id || '-'}] Unhandled error on ${req.method} ${req.originalUrl}:`, err);
   if (res.headersSent) return next(err);
