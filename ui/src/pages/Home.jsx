@@ -170,10 +170,10 @@ const Home = () => {
       setLoading(true);
       try {
         const [appsRes, offRes] = await Promise.all([
-          fetch(apiUrl('/api/third-level/applications'), {
+          fetch(apiUrl('/api/third-level/officials-registry/applications'), {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(apiUrl('/api/third-level/officials-kpi-summary'), {
+          fetch(apiUrl('/api/third-level/officials-registry/officials-kpi-summary'), {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);

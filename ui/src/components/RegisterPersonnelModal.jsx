@@ -52,7 +52,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
 
   const fetchPositions = async () => {
     try {
-      const res = await fetch(apiUrl('/api/third-level/positions'), {
+      const res = await fetch(apiUrl('/api/third-level/official-profiling/positions'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -133,7 +133,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
 
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/api/third-level/register-personnel'), {
+      const res = await fetch(apiUrl('/api/third-level/officials-registry/register-personnel'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

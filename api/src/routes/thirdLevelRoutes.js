@@ -5,8 +5,8 @@ import { officialsRegistryRoutes } from '../features/officials-registry/index.js
 
 const router = express.Router();
 
-router.use(officialProfilingRoutes);
-router.use(notableAchievementsRoutes);
-router.use(officialsRegistryRoutes);
+router.use('/official-profiling', officialProfilingRoutes);
+router.use('/notable-achievements', notableAchievementsRoutes);
+router.use('/officials-registry', officialsRegistryRoutes);
 
 export default router;

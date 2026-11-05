@@ -172,7 +172,7 @@ const MainDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(apiUrl('/api/third-level/officials-kpi-summary'), {
+      const res = await fetch(apiUrl('/api/third-level/officials-registry/officials-kpi-summary'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

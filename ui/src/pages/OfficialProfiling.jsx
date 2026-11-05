@@ -11,24 +11,7 @@ import { apiUrl } from '../utils/api';
 import { compressImageClientSide } from '../utils/imageCompressor';
 import Swal from 'sweetalert2';
 import { toUpper } from '../utils/textUtils';
-import { TABS } from '../components/official-profiling/constants';
-import { calculateDuration, formatDateStr, isSuffixPlaceholder, sanitizeSuffix, buildFullName } from '../components/official-profiling/helpers';
-import MobileDrawer from '../components/official-profiling/MobileDrawer';
-import HeaderBanner from '../components/official-profiling/HeaderBanner';
-import Sidebar from '../components/official-profiling/Sidebar';
-import MobileToggleBar from '../components/official-profiling/MobileToggleBar';
-import PersonalTab from '../components/official-profiling/PersonalTab';
-import EligibilityTab from '../components/official-profiling/EligibilityTab';
-import ExperienceTab from '../components/official-profiling/ExperienceTab';
-import EducationTab from '../components/official-profiling/EducationTab';
-import PerformanceTab from '../components/official-profiling/PerformanceTab';
-import AchievementsTab from '../components/official-profiling/AchievementsTab';
-import TrainingsTab from '../components/official-profiling/TrainingsTab';
-import DocumentsTab from '../components/official-profiling/DocumentsTab';
-import LegalTab from '../components/official-profiling/LegalTab';
-import SummaryTab from '../components/official-profiling/SummaryTab';
-import BottomActionBar from '../components/official-profiling/BottomActionBar';
-import LocationUnlockModal from '../components/official-profiling/LocationUnlockModal';
+import { MobileDrawer, HeaderBanner, Sidebar, MobileToggleBar, PersonalTab, EligibilityTab, ExperienceTab, EducationTab, PerformanceTab, AchievementsTab, TrainingsTab, DocumentsTab, LegalTab, SummaryTab, BottomActionBar, LocationUnlockModal, TABS, calculateDuration, formatDateStr, isSuffixPlaceholder, sanitizeSuffix, buildFullName } from '../components/official-profiling';
 const OfficialProfiling = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -498,7 +481,7 @@ const OfficialProfiling = () => {
     const fetchHistory = async (id) => {
         setHistoryLoading(true);
         try {
-            const res = await fetch(apiUrl(`/api/third-level/${id}/career-path`), {
+            const res = await fetch(apiUrl(`/api/third-level/official-profiling/${id}/career-path`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -585,7 +568,7 @@ const OfficialProfiling = () => {
     const lookupByEmail = async (email) => {
         if (!email) { setStatus('not-found'); return; }
         try {
-            const res = await fetch(apiUrl(`/api/third-level/by-email?email=${encodeURIComponent(email)}`), {
+            const res = await fetch(apiUrl(`/api/third-level/official-profiling/by-email?email=${encodeURIComponent(email)}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -922,7 +905,7 @@ const OfficialProfiling = () => {
         if (!user?.email) return;
         setSaving(true);
         try {
-            const res = await fetch(apiUrl('/api/third-level/initialize'), {
+            const res = await fetch(apiUrl('/api/third-level/official-profiling/initialize'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1195,7 +1178,7 @@ const OfficialProfiling = () => {
                 profiling_status: completeness === 100 ? 'profiling completed' : 'profiling'
             };
 
-            const res = await fetch(apiUrl(`/api/third-level/${TLOid}/profile`), {
+            const res = await fetch(apiUrl(`/api/third-level/official-profiling/${TLOid}/profile`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1244,7 +1227,7 @@ const OfficialProfiling = () => {
         setCertifying(true);
         try {
             const consentTimestamp = new Date().toISOString();
-            const res = await fetch(apiUrl(`/api/third-level/${TLOid}/profile`), {
+            const res = await fetch(apiUrl(`/api/third-level/official-profiling/${TLOid}/profile`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1272,7 +1255,7 @@ const OfficialProfiling = () => {
     const fetchVacancies = async () => {
         setVacanciesLoading(true);
         try {
-            const res = await fetch(apiUrl('/api/third-level/vacancies'), {
+            const res = await fetch(apiUrl('/api/third-level/official-profiling/vacancies'), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -1288,7 +1271,7 @@ const OfficialProfiling = () => {
         if (!TLOid || !targetVacancyId) return;
         setSaving(true);
         try {
-            const res = await fetch(apiUrl('/api/third-level/submit-application'), {
+            const res = await fetch(apiUrl('/api/third-level/official-profiling/submit-application'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1312,7 +1295,7 @@ const OfficialProfiling = () => {
 
     const fetchPositionsList = async () => {
         try {
-            const res = await fetch(apiUrl('/api/third-level/positions'), {
+            const res = await fetch(apiUrl('/api/third-level/official-profiling/positions'), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -1404,7 +1387,7 @@ const OfficialProfiling = () => {
 
     const fetchNotableAchievements = async () => {
         try {
-            const res = await fetch(apiUrl('/api/third-level/notable-achievements'), {
+            const res = await fetch(apiUrl('/api/third-level/official-profiling/notable-achievements'), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -1424,7 +1407,7 @@ const OfficialProfiling = () => {
         if (!applicationId) return;
         setSaving(true);
         try {
-            const res = await fetch(apiUrl(`/api/third-level/applications/${applicationId}/resubmit`), {
+            const res = await fetch(apiUrl(`/api/third-level/officials-registry/applications/${applicationId}/resubmit`), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
@@ -1466,7 +1449,7 @@ const OfficialProfiling = () => {
             const formData = new FormData();
             formData.append('file', fileToUpload);
 
-            const res = await fetch(apiUrl(`/api/third-level/${TLOid}/upload/${docType}`), {
+            const res = await fetch(apiUrl(`/api/third-level/official-profiling/${TLOid}/upload/${docType}`), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` },
                 body: formData

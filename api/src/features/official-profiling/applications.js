@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import pool from '../../config/db.js';
+import { findPositionLookups, runApplicationsQuery } from './repositories/applicationsRepository.js';
 import { upsertBinary } from '../../utils/binaryPipeline.js';
 import { uploadToAzure } from '../../utils/azureBlobService.js';
 import {
@@ -11,40 +12,7 @@ import { ensureOicColumn, THIRD_LEVEL_POSITIONS, displayPositionTitle, cleanDesi
 
 export const getPositions = async (req, res) => {
   try {
-    const posResult = await pool.query(`
-      SELECT DISTINCT position_title 
-      FROM third_level_official_masterlist 
-      WHERE position_title IS NOT NULL 
-        AND position_title != '' 
-        AND position_title NOT ILIKE 'N/A'
-      ORDER BY position_title
-    `);
-    const desigResult = await pool.query(`
-      SELECT DISTINCT designation 
-      FROM third_level_official_masterlist 
-      WHERE designation IS NOT NULL 
-        AND designation != '' 
-        AND designation NOT ILIKE 'N/A'
-      ORDER BY designation
-    `);
-    const strandResult = await pool.query(`
-      SELECT DISTINCT strand FROM third_level_official_masterlist WHERE strand IS NOT NULL AND strand != '' ORDER BY strand
-    `);
-    const regionResult = await pool.query(`
-      SELECT DISTINCT region FROM third_level_official_masterlist WHERE region IS NOT NULL AND region != '' ORDER BY region
-    `);
-    const officeResult = await pool.query(`
-      SELECT DISTINCT office FROM third_level_official_masterlist WHERE office IS NOT NULL AND office != '' ORDER BY office
-    `);
-    const divisionResult = await pool.query(`
-      SELECT DISTINCT division FROM third_level_official_masterlist WHERE division IS NOT NULL AND division != '' ORDER BY division
-    `);
-    const regionDivisionResult = await pool.query(`
-      SELECT DISTINCT region, division 
-      FROM third_level_official_masterlist 
-      WHERE division IS NOT NULL AND division != '' 
-        AND region IS NOT NULL AND region != ''
-    `);
+    const { posResult, desigResult, strandResult, regionResult, officeResult, divisionResult, regionDivisionResult } = await findPositionLookups();
 
     const deduplicate = (list) => {
       const map = new Map();
@@ -188,7 +156,7 @@ export const getVacancies = async (req, res) => {
 
     query += ` ORDER BY i.item_number ASC`;
 
-    const result = await pool.query(query, params);
+    const result = await runApplicationsQuery(query, params);
     res.json({
       success: true,
       data: result.rows.map(row => ({
@@ -269,7 +237,7 @@ export const getApplications = async (req, res) => {
 
     query += ` ORDER BY a.submitted_at DESC`;
 
-    const result = await pool.query(query, params);
+    const result = await runApplicationsQuery(query, params);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     res.status(500).json({ error: err.message });

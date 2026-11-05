@@ -11,13 +11,7 @@ import { apiUrl } from '../utils/api';
 import { formatPositionTitle } from '../utils/officialsUtils';
 import sgMap from '../utils/sgMap.json';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
-import { THIRD_LEVEL_POSITIONS } from '../components/officials-registry/THIRD_LEVEL_POSITIONS';
-import DataControls from '../components/officials-registry/DataControls';
-import ApprovalTabs from '../components/officials-registry/ApprovalTabs';
-import StatsCards from '../components/officials-registry/StatsCards';
-import ContentArea from '../components/officials-registry/ContentArea';
-import IncumbencyModal from '../components/officials-registry/IncumbencyModal';
-import ActionModal from '../components/officials-registry/ActionModal';
+import { DataControls, ApprovalTabs, StatsCards, ContentArea, IncumbencyModal, ActionModal, THIRD_LEVEL_POSITIONS } from '../components/officials-registry';
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -184,7 +178,7 @@ const OfficialsRegistry = () => {
         }
 
         try {
-            const res = await fetch(apiUrl('/api/third-level/process-registration'), {
+            const res = await fetch(apiUrl('/api/third-level/officials-registry/process-registration'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -226,7 +220,7 @@ const OfficialsRegistry = () => {
         if (!confirmRes.isConfirmed) return;
 
         try {
-            const res = await fetch(apiUrl('/api/third-level/toggle-test-account'), {
+            const res = await fetch(apiUrl('/api/third-level/officials-registry/toggle-test-account'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -398,7 +392,7 @@ const OfficialsRegistry = () => {
             }
             queryParams.append('category', backendCategory);
             queryParams.append('status', 'Active');
-            const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
+            const res = await fetch(apiUrl(`/api/third-level/officials-registry/officials?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -508,7 +502,7 @@ const OfficialsRegistry = () => {
     const fetchStrands = async () => {
         try {
             // Simplified fetch for strands - we can also hardcode or fetch distinct from masterlist
-            const res = await fetch(apiUrl('/api/third-level/officials?status=All'), {
+            const res = await fetch(apiUrl('/api/third-level/officials-registry/officials?status=All'), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -549,7 +543,7 @@ const OfficialsRegistry = () => {
             if (regionFilter !== 'All') queryParams.append('region', regionFilter);
             if (oicOnly) queryParams.append('is_oic', 'true');
 
-            const res = await fetch(apiUrl(`/api/third-level/officials-kpi-summary?${queryParams.toString()}`), {
+            const res = await fetch(apiUrl(`/api/third-level/officials-registry/officials-kpi-summary?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -604,7 +598,7 @@ const OfficialsRegistry = () => {
                 queryParams.append('limit', pageSize);
             }
 
-            const res = await fetch(apiUrl(`/api/third-level/officials?${queryParams.toString()}`), {
+            const res = await fetch(apiUrl(`/api/third-level/officials-registry/officials?${queryParams.toString()}`), {
                 headers: {
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 }
@@ -631,7 +625,7 @@ const OfficialsRegistry = () => {
         setIncumbentsLoading(true);
         setIncumbents([]);
         try {
-            const res = await fetch(apiUrl(`/api/third-level/position-incumbents?position_title=${encodeURIComponent(position)}&office=${encodeURIComponent(office || '')}`), {
+            const res = await fetch(apiUrl(`/api/third-level/officials-registry/position-incumbents?position_title=${encodeURIComponent(position)}&office=${encodeURIComponent(office || '')}`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -681,7 +675,7 @@ const OfficialsRegistry = () => {
             if (strandFilter !== 'All') queryParams.append('strand', strandFilter);
             if (positionFilter !== 'All') queryParams.append('position', positionFilter);
 
-            const res = await fetch(apiUrl(`/api/third-level/applications?${queryParams.toString()}`), {
+            const res = await fetch(apiUrl(`/api/third-level/officials-registry/applications?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
             });
             const data = await res.json();
@@ -711,7 +705,7 @@ const OfficialsRegistry = () => {
             const queryParams = new URLSearchParams();
             queryParams.append('limit', normalizedSearch ? '75' : '50');
             if (normalizedSearch) queryParams.append('search', normalizedSearch);
-            const res = await fetch(apiUrl(`/api/third-level/unassigned-personnel?${queryParams.toString()}`), {
+            const res = await fetch(apiUrl(`/api/third-level/officials-registry/unassigned-personnel?${queryParams.toString()}`), {
                 headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` },
                 signal: controller.signal
             });
@@ -753,7 +747,7 @@ const OfficialsRegistry = () => {
             const personName = `${actionOfficial?.first_name || ''} ${actionOfficial?.last_name || ''}`.trim();
             const positionName = actionOfficial?.position_title || 'position';
 
-            const res = await fetch(apiUrl('/api/third-level/admin-action'), {
+            const res = await fetch(apiUrl('/api/third-level/officials-registry/admin-action'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -804,7 +798,7 @@ const OfficialsRegistry = () => {
         if (!result.isConfirmed) return;
         setActionLoading(true);
         try {
-            const res = await fetch(apiUrl('/api/third-level/admin-action'), {
+            const res = await fetch(apiUrl('/api/third-level/officials-registry/admin-action'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -847,7 +841,7 @@ const OfficialsRegistry = () => {
                 setEffectivityDate(localDate.toISOString().split('T')[0]);
             }
             try {
-                const res = await fetch(apiUrl(`/api/third-level/officials/${official.TLOid}/last-vacate-update`), {
+                const res = await fetch(apiUrl(`/api/third-level/officials-registry/officials/${official.TLOid}/last-vacate-update`), {
                     headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
                 });
                 const data = await res.json();
@@ -891,7 +885,7 @@ const OfficialsRegistry = () => {
                 setUnassignedPersonnel(unassignedCacheRef.current.get('') || []);
             } else {
                 try {
-                    const res = await fetch(apiUrl('/api/third-level/vacancies'), {
+                    const res = await fetch(apiUrl('/api/third-level/official-profiling/vacancies'), {
                         headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
                     });
                     const data = await res.json();
@@ -912,7 +906,7 @@ const OfficialsRegistry = () => {
         }
         if (action === 'succeed') {
             try {
-                const res = await fetch(apiUrl(`/api/third-level/active-officials?exclude_TLOid=${official.TLOid}`), {
+                const res = await fetch(apiUrl(`/api/third-level/officials-registry/active-officials?exclude_TLOid=${official.TLOid}`), {
                     headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
                 });
                 const data = await res.json();
@@ -1226,7 +1220,7 @@ const OfficialsRegistry = () => {
 
         setProcessingId(app_TLOid);
         try {
-            const res = await fetch(apiUrl('/api/third-level/process-application'), {
+            const res = await fetch(apiUrl('/api/third-level/officials-registry/process-application'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

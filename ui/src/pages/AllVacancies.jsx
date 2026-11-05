@@ -21,7 +21,7 @@ const AllVacancies = () => {
     useEffect(() => {
         const fetchVacancies = async () => {
             try {
-                const res = await fetch(apiUrl('/api/third-level/vacancies'), {
+                const res = await fetch(apiUrl('/api/third-level/official-profiling/vacancies'), {
                     headers: { 'Authorization': `Bearer ${token || localStorage.getItem('token')}` }
                 });
                 const data = await res.json();

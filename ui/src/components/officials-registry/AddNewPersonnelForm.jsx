@@ -9,7 +9,7 @@ const AddNewPersonnelForm = ({ onCancel, onSuccess, token }) => {
     const handleAddPersonnel = async () => {
         setAddPersonnelLoading(true);
         try {
-            const res = await fetch(apiUrl('/api/third-level/add-unassigned-personnel'), {
+            const res = await fetch(apiUrl('/api/third-level/officials-registry/add-unassigned-personnel'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

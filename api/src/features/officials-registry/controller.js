@@ -1,5 +1,6 @@
 import fs from 'fs';
 import pool from '../../config/db.js';
+import * as officialsRepository from './repositories/officialsRepository.js';
 import { ensureOicColumn, getPositionTitleVariants, THIRD_LEVEL_POSITIONS, displayPositionTitle, getOptionalColumnExpression } from '../../utils/officialRules.js';
 import { executeReassignment, processScheduledVacancies } from '../official-profiling/index.js';
 
@@ -292,7 +293,7 @@ export const getOfficials = async (req, res) => {
   }
 
   try {
-    const result = await pool.query(query, params);
+    const result = await officialsRepository.runQuery(query, params);
     res.json({
       success: true,
       total: result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0,
@@ -357,18 +358,11 @@ export const getKpiSummary = async (req, res) => {
     `;
     params.push(THIRD_LEVEL_POSITIONS);
 
-    const result = await pool.query(query, params);
+    const result = await officialsRepository.runQuery(query, params);
 
     // Also fetch all masterlist rows for filter dropdowns / directory compatibility
-    const allRowsQuery = `
-      SELECT m.status, m.is_oic, m.position_title, m.first_name, m.last_name, m.email, m.office, m.strand, m.region, m.division, m.designation, m.effectivity_date,
-        m.date_of_birth, m.created_at, m.updated_at, m."TLOid",
-        m.photo_binary_id, m.pds_binary_id, m.contact_details, m.pending_admin_case
-      FROM third_level_official_masterlist m
-      WHERE m.status != 'For Approval' AND m.status != 'Rejected'
-      ORDER BY m."TLOid" ASC
-    `;
-    const allRows = await pool.query(allRowsQuery);
+    const allRows = await officialsRepository.findDirectoryRows();
+    
 
     res.json({
       success: true,
@@ -383,12 +377,7 @@ export const getKpiSummary = async (req, res) => {
 export const getLastVacateUpdate = async (req, res) => {
   try {
     const { TLOid } = req.params;
-    const result = await pool.query(`
-      SELECT vacate_reason, remarks 
-      FROM third_level_officials_updates 
-      WHERE "TLOid" = $1 AND status IN ('Vacating', 'Resigning', 'Inactive', 'Vacated', 'Reassigning', 'Pending Assignment')
-      ORDER BY updated_at DESC LIMIT 1
-    `, [TLOid]);
+    const result = await officialsRepository.findLastVacateUpdate(TLOid);
     res.json({ success: true, data: result.rows[0] || null });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -437,7 +426,7 @@ export const getPositionIncumbents = async (req, res) => {
       ORDER BY is_current DESC, tenure_date DESC
     `;
 
-    const result = await pool.query(query, params);
+    const result = await officialsRepository.runQuery(query, params);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -459,7 +448,7 @@ export const getActiveOfficials = async (req, res) => {
       query += ` AND "TLOid" != $${params.length}`;
     }
     query += ` ORDER BY last_name ASC, first_name ASC`;
-    const result = await pool.query(query, params);
+    const result = await officialsRepository.runQuery(query, params);
     res.json({ success: true, data: result.rows.map(row => ({ ...row, position_title: displayPositionTitle(row.position_title) })) });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -654,7 +643,7 @@ export const getUnassignedPersonnel = async (req, res) => {
 
     params.push(limit);
     query += ` ORDER BY LOWER(COALESCE(a.email, u.email)), last_name ASC, first_name ASC LIMIT $${params.length}`;
-    const result = await pool.query(query, params);
+    const result = await officialsRepository.runQuery(query, params);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -840,13 +829,7 @@ export const toggleTestAccount = async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      `UPDATE third_level_official_masterlist 
-       SET is_testaccount = $1, updated_at = NOW() 
-       WHERE "TLOid" = $2 
-       RETURNING "TLOid", email, is_testaccount`,
-      [Boolean(is_testaccount), TLOid]
-    );
+    const result = await officialsRepository.updateTestAccount(TLOid, is_testaccount);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Official record not found' });

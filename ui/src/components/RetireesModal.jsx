@@ -16,7 +16,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
   useEffect(() => {
     if (selectedOfficial && selectedOfficial.separationReason !== 'Mandatory Retirement') {
       setLoadingRemarks(true);
-      fetch(apiUrl(`/api/third-level/officials/${selectedOfficial.TLOid}/last-vacate-update`), {
+      fetch(apiUrl(`/api/third-level/officials-registry/officials/${selectedOfficial.TLOid}/last-vacate-update`), {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => res.json())

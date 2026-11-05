@@ -426,7 +426,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
   const fetchOfficials = async () => {
     setLoadingOfficials(true);
     try {
-      const res = await fetch(apiUrl('/api/third-level/officials-kpi-summary'), {
+      const res = await fetch(apiUrl('/api/third-level/officials-registry/officials-kpi-summary'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -442,7 +442,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
 
   const fetchOptions = async () => {
     try {
-      const res = await fetch(apiUrl('/api/third-level/positions'), {
+      const res = await fetch(apiUrl('/api/third-level/official-profiling/positions'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -461,7 +461,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
   const fetchVacancies = async () => {
     setLoadingVacancies(true);
     try {
-      const res = await fetch(apiUrl('/api/third-level/vacancies'), {
+      const res = await fetch(apiUrl('/api/third-level/official-profiling/vacancies'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -586,7 +586,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
       formData.append('justification', justification.trim());
       formData.append('remarks', justification.trim());
 
-      const reassignRes = await fetch(apiUrl('/api/third-level/reassign-official'), {
+      const reassignRes = await fetch(apiUrl('/api/third-level/officials-registry/reassign-official'), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`

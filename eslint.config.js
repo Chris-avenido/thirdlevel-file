@@ -1,13 +1,99 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import boundaries from 'eslint-plugin-boundaries';
 
 export default [
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/uploads/**'] },
+  { ignores: ['**/node_modules/**', '**/dist/**', '**/uploads/**', '**/.logs/**', '**/coverage/**', '**/scratch/**'] },
   js.configs.recommended,
-  { files: ['api/**/*.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: globals.node } },
+  {
+    files: ['api/**/*.js'],
+    languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: globals.node },
+  },
   {
     files: ['ui/**/*.{js,jsx}'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: globals.browser, parserOptions: { ecmaFeatures: { jsx: true } } },
+  },
+  {
+    // Architectural boundaries mirroring .dependency-cruiser.cjs (no-circular, no-cycle, cross-slice protection)
+    plugins: {
+      boundaries,
+    },
+    settings: {
+      'import/resolver': { node: { extensions: ['.js', '.jsx'] } },
+      'boundaries/include': ['api/src/**/*', 'ui/src/**/*'],
+      'boundaries/elements': [
+        { type: 'feature', pattern: 'api/src/features/*/' },
+        { type: 'kernel', pattern: 'api/src/(config|utils|middleware|services)/' },
+        { type: 'wiring', pattern: 'api/src/' },
+        { type: 'ui-feature', pattern: 'ui/src/components/(official-profiling|officials-registry)/**', mode: 'full', capture: ['feature'] },
+        { type: 'ui-page', pattern: 'ui/src/pages/**', mode: 'full' },
+        { type: 'ui', pattern: 'ui/src/**', mode: 'full' },
+      ],
+    },
+    rules: {
+      'boundaries/dependencies': [
+        'error',
+        {
+          default: 'allow',
+          policies: [
+            {
+              // UI page-section folders are consumed only through their index.js barrel
+              from: { element: { type: 'ui-page' } },
+              disallow: [{ to: { element: { type: 'ui-feature', fileInternalPath: '!(index.js)' } } }],
+              message: 'Import UI feature folders through their index.js barrel only.',
+            },
+            {
+              from: { element: { type: 'kernel' } },
+              disallow: [{ to: { element: { type: 'feature' } } }],
+              message: 'Shared kernel (config, utils, middleware, services) must not import features.',
+            },
+            {
+              from: { element: { type: 'ui' } },
+              disallow: [
+                { to: { element: { type: 'feature' } } },
+                { to: { element: { type: 'kernel' } } },
+                { to: { element: { type: 'wiring' } } },
+              ],
+              message: 'UI must not import API modules.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Shared kernel files must not import features
+    files: ['api/src/(config|utils|middleware|services)/**/*.js', 'api/src/config/**/*.js', 'api/src/utils/**/*.js', 'api/src/middleware/**/*.js', 'api/src/services/**/*.js'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/features/**', '../features/**', '../../features/**'],
+              message: 'Shared kernel (config, utils, middleware, services) must not import features.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // UI must not import API
+    files: ['ui/src/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/api/**', '../api/**', '../../api/**', '../../../api/**'],
+              message: 'UI must not import API files.',
+            },
+          ],
+        },
+      ],
+    },
   },
   {
     // Baseline for code that predates this lint setup: reported as warnings so the gate can pass.

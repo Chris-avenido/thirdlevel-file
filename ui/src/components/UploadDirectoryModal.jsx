@@ -97,7 +97,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
   const handleDownloadData = async () => {
     try {
       Swal.fire({ title: 'Preparing Download', text: 'Fetching existing directory...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      const res = await fetch(apiUrl('/api/third-level/officials?status=All'), {
+      const res = await fetch(apiUrl('/api/third-level/officials-registry/officials?status=All'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

@@ -46,7 +46,7 @@ const NotableAchievements = () => {
     const fetchAchievements = async () => {
         setLoading(true);
         try {
-            const res = await fetch(apiUrl('/api/third-level/notable-achievements-full'), {
+            const res = await fetch(apiUrl('/api/third-level/notable-achievements/notable-achievements-full'), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -145,7 +145,7 @@ const NotableAchievements = () => {
         if (!result.isConfirmed) return;
 
         try {
-            const res = await fetch(apiUrl(`/api/third-level/notable-achievements/${index_number}`), {
+            const res = await fetch(apiUrl(`/api/third-level/notable-achievements/notable-achievements/${index_number}`), {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -170,8 +170,8 @@ const NotableAchievements = () => {
         setSaving(true);
         try {
             const url = editMode === 'add'
-                ? apiUrl('/api/third-level/notable-achievements')
-                : apiUrl(`/api/third-level/notable-achievements/${formData.index_number}`);
+                ? apiUrl('/api/third-level/notable-achievements/notable-achievements')
+                : apiUrl(`/api/third-level/notable-achievements/notable-achievements/${formData.index_number}`);
 
             const res = await fetch(url, {
                 method: editMode === 'add' ? 'POST' : 'PUT',
