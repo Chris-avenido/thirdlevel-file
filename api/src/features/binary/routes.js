@@ -1,5 +1,5 @@
 import express from 'express';
-import { getBinary } from '../controllers/binaryController.js';
+import { getBinary } from './controller.js';
 
 const router = express.Router();
 

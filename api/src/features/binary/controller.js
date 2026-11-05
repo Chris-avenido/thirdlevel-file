@@ -1,7 +1,7 @@
-import pool from '../config/db.js';
+import pool from '../../config/db.js';
 import fs from 'fs';
 import path from 'path';
-import { downloadFromAzure } from '../utils/azureBlobService.js';
+import { downloadFromAzure } from '../../utils/azureBlobService.js';
 
 export const getBinary = async (req, res) => {
     try {

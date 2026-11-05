@@ -4,7 +4,7 @@ import path from 'path';
 import compression from 'compression';
 import authRoutes from './routes/authRoutes.js';
 import thirdLevelRoutes from './routes/thirdLevelRoutes.js';
-import binaryRoutes from './routes/binaryRoutes.js';
+import { binaryRoutes } from './features/binary/index.js';
 import requestContext from './middleware/requestContext.js';
 import errorHandler from './middleware/errorHandler.js';
 
