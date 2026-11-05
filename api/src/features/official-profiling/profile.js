@@ -7,8 +7,8 @@ import {
   fetchAllChildRecords,
   syncAllChildTables,
   resolveSourceTable
-} from '../../services/tloProfileService.js';
-import { ensureOicColumn, sanitizeOicPosition, cleanDesignationOrPosition } from '../../utils/officialRules.js';
+} from './tloProfileService.js';
+import { ensureOicColumn, sanitizeOicPosition, cleanDesignationOrPosition, displayPositionTitle } from '../../utils/officialRules.js';
 
 export const initializeProfile = async (req, res) => {
   const { email, first_name, last_name } = req.body;
@@ -776,5 +776,44 @@ export const submitApplication = async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     if (client) client.release();
+  }
+};
+
+export const getCareerPath = async (req, res) => {
+  const { TLOid } = req.params;
+  try {
+    const result = await pool.query(`
+      SELECT
+        u.position_title,
+        u.office,
+        u.updated_at,
+        (
+          SELECT CONCAT(prev.first_name, ' ', prev.last_name)
+          FROM third_level_officials_updates prev
+          WHERE prev.position_title = u.position_title
+            AND prev."TLOid" != $1
+          ORDER BY prev.updated_at DESC
+          LIMIT 1
+        ) AS previous_incumbent
+      FROM (
+        SELECT DISTINCT ON (position_title) position_title, office, updated_at
+        FROM third_level_officials_updates
+        WHERE "TLOid" = $1 AND position_title IS NOT NULL
+        ORDER BY position_title, updated_at DESC
+      ) u
+      ORDER BY u.updated_at DESC
+    `, [TLOid]);
+    res.json({ success: true, data: result.rows.map(row => ({ ...row, position_title: displayPositionTitle(row.position_title) })) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getNotableAchievements = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT achievement FROM notable_achievements WHERE delete_flg = 0 ORDER BY index_number ASC');
+    res.json({ success: true, data: result.rows.map(r => r.achievement) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

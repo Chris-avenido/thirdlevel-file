@@ -19,12 +19,12 @@
  *    this service writes to the relational tables in parallel
  */
 
-import * as educationRepo      from '../repositories/tloEducationRepository.js';
-import * as eligibilityRepo    from '../repositories/tloEligibilityRepository.js';
-import * as positionRepo       from '../repositories/tloPositionRepository.js';
-import * as trainingRepo       from '../repositories/tloTrainingRepository.js';
-import * as accomplishmentRepo from '../repositories/tloAccomplishmentRepository.js';
-import * as otherCoursesRepo   from '../repositories/tloOtherCoursesRepository.js';
+import * as educationRepo      from './repositories/tloEducationRepository.js';
+import * as eligibilityRepo    from './repositories/tloEligibilityRepository.js';
+import * as positionRepo       from './repositories/tloPositionRepository.js';
+import * as trainingRepo       from './repositories/tloTrainingRepository.js';
+import * as accomplishmentRepo from './repositories/tloAccomplishmentRepository.js';
+import * as otherCoursesRepo   from './repositories/tloOtherCoursesRepository.js';
 
 /**
  * Determines the source_table discriminator from a TLOid string.

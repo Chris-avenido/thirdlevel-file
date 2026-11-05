@@ -5,7 +5,7 @@ import { upsertBinary } from '../../utils/binaryPipeline.js';
 import { uploadToAzure } from '../../utils/azureBlobService.js';
 import {
   cloneChildTablesOnApproval
-} from '../../services/tloProfileService.js';
+} from './tloProfileService.js';
 import { sendOfficialApprovalEmail, sendOfficialRejectionEmail } from '../../services/emailService.js';
 import { ensureOicColumn, THIRD_LEVEL_POSITIONS, displayPositionTitle, cleanDesignationOrPosition, STANDARD_DESIGNATIONS } from '../../utils/officialRules.js';
 

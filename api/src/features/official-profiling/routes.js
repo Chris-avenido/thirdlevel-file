@@ -1,18 +1,17 @@
 import express from 'express';
 import multer from 'multer';
-import authMiddleware from '../middleware/authMiddleware.js';
+import authMiddleware from '../../middleware/authMiddleware.js';
 import {
   getByEmail,
   getCareerPath,
   getProfile,
-  getVacancies,
   initializeProfile,
   submitApplication,
   updateProfile,
   uploadDocument,
-  getNotableAchievements,
-  getPositions
-} from '../controllers/thirdLevelController.js';
+  getNotableAchievements
+} from './profile.js';
+import { getVacancies, getPositions } from './applications.js';
 
 const router = express.Router();
 const memoryUpload = multer({ storage: multer.memoryStorage() });

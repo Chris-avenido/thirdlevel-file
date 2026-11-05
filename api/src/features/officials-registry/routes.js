@@ -15,14 +15,13 @@ import {
   getKpiSummary,
   toggleTestAccount
 } from './controller.js';
-// Application-processing handlers still live in the old controller barrel until official-profiling moves.
 import {
   getApplications,
   processApplication,
   triggerCron,
   processRegistration,
   reassignOfficial
-} from '../../controllers/thirdLevelController.js';
+} from '../official-profiling/index.js';
 import { bulkProcessDirectory, bulkProcessAchievements } from './uploadDirectoryController.js';
 
 const router = express.Router();
