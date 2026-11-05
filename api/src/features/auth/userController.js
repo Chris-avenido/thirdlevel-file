@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import pool from '../config/db.js';
+import pool from '../../config/db.js';
 
 export const updateSettings = async (req, res) => {
   const { email } = req.user;

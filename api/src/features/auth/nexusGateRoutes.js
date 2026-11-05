@@ -1,5 +1,5 @@
 import express from 'express';
-import { checkAuthCode } from '../controllers/nexusGateController.js';
+import { checkAuthCode } from './nexusGateController.js';
 
 const router = express.Router();
 

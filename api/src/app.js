@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import compression from 'compression';
-import authRoutes from './routes/authRoutes.js';
+import { authRoutes } from './features/auth/index.js';
 import thirdLevelRoutes from './routes/thirdLevelRoutes.js';
 import { binaryRoutes } from './features/binary/index.js';
 import requestContext from './middleware/requestContext.js';
