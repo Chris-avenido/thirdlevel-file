@@ -2,6 +2,7 @@ import pg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { instrumentPool } from '../devtools/pg-pool-instrument.ts';
 
 dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../.env') });
 
@@ -17,6 +18,8 @@ const pool = new pg.Pool(process.env.DATABASE_URL ? {
   port: process.env.DB_PORT || 5432,
   connectionTimeoutMillis: 10000,
 });
+
+instrumentPool(pool);
 
 pool.on('connect', () => {
   console.log('[Database] Connection established successfully.');

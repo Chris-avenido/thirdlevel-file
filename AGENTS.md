@@ -30,3 +30,5 @@ Third-level officials system: Express + PostgreSQL API in `api/`, Vite + React U
 | Verify changes (two-tier gate) | `.claude/skills/ci-gate/SKILL.md` |
 | Score the folder structure | `.claude/skills/folder-architecture-audit/SKILL.md` |
 | Set up or harden agent files | `.claude/skills/agent-ide-brain/SKILL.md` |
+
+When troubleshooting or improving runtime behavior, read `.logs/LATEST.md` first (run `npm run logs:summary` to refresh it); raw entries are in `.logs/*.jsonl`.

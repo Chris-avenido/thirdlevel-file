@@ -1,3 +1,4 @@
+import './devtools/dev-bootstrap.ts';
 import app from './app.js';
 import { initDB } from './config/db.js';
 import './cron.js'; // Start the native background cron scheduler

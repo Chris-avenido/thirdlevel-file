@@ -43,3 +43,4 @@ stride.conf.patch
 __pycache__/
 .claude/
 desktop.ini
+.logs/
