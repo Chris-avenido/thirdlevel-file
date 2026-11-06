@@ -9,6 +9,7 @@ import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
+import PageHeaderCard from '../components/PageHeaderCard.jsx';
 
 const generateHash = (id) => {
     if (!id) return '';
@@ -217,30 +218,19 @@ const NotableAchievements = () => {
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
                     
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-brand-800 backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0">
-                        <div className="flex items-center gap-4 text-white">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                                <FiAward size={20} />
-                            </div>
-                            <div>
-                                <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">Notable <span className="text-blue-300 not-italic">Achievements</span></h1>
-                                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                                    {achievements.length} Total Achievements
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 text-emerald-100 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                    <PageHeaderCard title="Notable Achievements" subtitle={<>{achievements.length} Total Achievements</>}>
+<div className="flex flex-wrap items-center gap-3">
+                            <button onClick={() => setIsImportModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-success-50 text-success-700 rounded-md text-[13px] font-medium border border-success-700/30 hover:bg-success-700 hover:text-white transition-all">
                                 <FiUploadCloud size={14} /> Import Data
                             </button>
-                            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-all shadow-sm">
+                            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 rounded-md text-[13px] font-medium border border-brand-700/30 hover:bg-brand-700 hover:text-white transition-all">
                                 <FiDownload size={14} /> Export Data
                             </button>
-                            <button onClick={handleOpenAdd} className="flex items-center gap-2 px-4 py-2 bg-white text-brand-800 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-50 shadow-md shadow-black/10 transition-all border border-white">
+                            <button onClick={handleOpenAdd} className="flex items-center gap-2 px-4 py-2 bg-brand-700 text-white rounded-md text-[13px] font-medium hover:bg-brand-800 transition-all border border-brand-700">
                                 <FiPlus size={14} /> Add Record
                             </button>
                         </div>
-                    </header>
+</PageHeaderCard>
 
                     <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
                         {/* Filters */}

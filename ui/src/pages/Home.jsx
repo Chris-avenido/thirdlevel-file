@@ -14,6 +14,7 @@ import './MainDashboard/MainDashboard.css';
 import { UserPlus as FiUserPlus, CloudArrowUp as FiUploadCloud, List as FiList, House as FiHome, SignOut as FiLogOut, Medal as FiAward, Clock as FiClock, MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, SquaresFour as FiGrid } from '@phosphor-icons/react';
 import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
+import PageHeaderCard from '../components/PageHeaderCard.jsx';
 
 // Text cleaning engine from MainDashboard
 const repairMojibake = (text) => {
@@ -822,40 +823,28 @@ const Home = () => {
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
           {/* TOP NAVIGATION BAR */}
-          <header className="sticky top-0 z-50 bg-brand-800 backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                <FiGrid size={20} />
-              </div>
-              <div>
-                <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
-                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">InsightED Top-Level Metrics</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
+          <PageHeaderCard title="Executive Dashboard" subtitle="InsightED Top-Level Metrics">
+<div className="flex items-center gap-6">
               <div className="hidden md:flex flex-col items-end">
-                <span className="text-xs font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
-                <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">{user?.role}</span>
+                <span className="text-[15px] font-medium text-heading leading-tight">{user?.first_name} {user?.last_name}</span>
+                <span className="text-[13px] text-secondary">{user?.role}</span>
               </div>
             </div>
-          </header>
+</PageHeaderCard>
           <style>{`
           .dashboard-wrap { padding:28px; }
           .hero { background:var(--color-brand-800); color:white; border-radius:var(--radius-md); padding:28px; }
           .hero small { color:var(--color-gold); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
           .hero h1 { margin:10px 0 8px; font-family:var(--font-title); font-size:32px; line-height:1.25; font-weight:700; }
           .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
-          .kpi { position:relative; background:var(--card-bg); border:var(--card-border); box-shadow:var(--card-shadow); border-radius:var(--card-radius); padding:18px; border-left-width:6px; transition:all 0.2s; }
-          .kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-          .kpi.amber { border-left-color:var(--color-gold); } 
-          .kpi.red { border-left-color:var(--color-danger-600); } 
-          .kpi.blue { border-left-color:var(--color-brand-700); }
-          .kpi.purple { border-left-color:var(--color-brand-700); }
+          .kpi { position:relative; display:flex; flex-direction:column; background:var(--card-bg); border:var(--card-border); border-radius:var(--card-radius); padding:18px; transition:border-color 0.2s; }
+          .kpi:hover { border-color:var(--color-brand-300); }
           .kpi.active-filter { background:var(--color-brand-50); outline: 3px solid var(--color-brand-300); outline-offset: -2px; }
-          .kpi p { margin:0; color:var(--color-secondary); font-size:12px; font-weight:600; text-transform:uppercase; }
-          .kpi h2 { margin:8px 0 0; font-family:var(--font-data); font-size:34px; font-weight:700; color:var(--color-brand-800); }
-          .kpi .kpi-subheader { margin-top:2px; font-size:10px; color:var(--color-secondary); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; display:block; }
+          .kpi p { order:1; margin:0; color:var(--color-heading); font-family:var(--font-ui); font-size:15px; font-weight:600; }
+          .kpi h2 { order:3; margin:12px 0 0; font-family:var(--font-data); font-size:32px; line-height:1.25; font-weight:700; color:var(--color-brand-800); }
+          .kpi > div:not(.kpi-subheader):not(.kpi-tooltip) { order:3; margin-top:12px; }
+          .kpi > div:not(.kpi-subheader):not(.kpi-tooltip) h2 { margin:0; }
+          .kpi .kpi-subheader { order:2; margin-top:2px; font-family:var(--font-body); font-size:13px; line-height:1.45; font-weight:400; color:var(--color-secondary); display:block; }
           .kpi-tooltip { position:absolute; right:0; top:100%; margin-top:8px; width:280px; background:rgb(var(--rgb-white)/0.95); backdrop-filter:blur(8px); border:1px solid var(--color-muted); border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:16px; opacity:0; pointer-events:none; transition:all 0.2s; z-index:60; max-height:400px; overflow-y:auto; }
           .kpi:first-child .kpi-tooltip { right:auto; left:0; }
           .kpi-tooltip::-webkit-scrollbar { width: 4px; }

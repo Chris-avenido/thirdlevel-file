@@ -7,6 +7,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import { apiUrl } from '../utils/api';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 import FormErrorSummary from '../components/forms/FormErrorSummary.jsx';
+import PageHeaderCard from '../components/PageHeaderCard.jsx';
 
 const Settings = () => {
     const { user, token, setUser, logout } = useAuth();
@@ -124,35 +125,17 @@ const Settings = () => {
             
             <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
                 {/* TOP NAVIGATION BAR */}
-                <header className="sticky top-0 z-50 bg-brand-800 backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                            <FiSettings size={20} />
-                        </div>
-                        <div>
-                            <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">Account <span className="text-blue-300 not-italic">Settings</span></h1>
-                            <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">Profile & Security</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-6">
+                <PageHeaderCard title="Account Settings" subtitle="Update your personal information and security credentials.">
+<div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-xs font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
-                            <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">{user?.role}</span>
+                            <span className="text-[15px] font-medium text-heading leading-tight">{user?.first_name} {user?.last_name}</span>
+                            <span className="text-[13px] text-secondary">{user?.role}</span>
                         </div>
                     </div>
-                </header>
+</PageHeaderCard>
                 
                 <div className="p-8 lg:p-12 max-w-4xl mx-auto w-full mt-4">
                     
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mb-10"
-                    >
-                        <h1 className="page-title text-3xl text-brand-800 tracking-tight">Account Settings</h1>
-                        <p className="text-slate-500 font-medium mt-2">Update your personal information and security credentials.</p>
-                    </motion.div>
 
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}

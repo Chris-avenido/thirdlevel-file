@@ -13,6 +13,7 @@ import sgMap from '../utils/sgMap.json';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import { DataControls, ApprovalTabs, StatsCards, ContentArea, IncumbencyModal, ActionModal, ApplicantSubmissionsTable, THIRD_LEVEL_POSITIONS } from '../components/officials-registry';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
+import PageHeaderCard from '../components/PageHeaderCard.jsx';
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -1239,32 +1240,18 @@ const OfficialsRegistry = () => {
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-brand-800 backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
-                        <div className="flex items-center gap-4 text-white">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
-                                <FiUsers size={20} />
-                            </div>
-                            <div>
-                                <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">
-                                    Personnel <span className="text-blue-300 not-italic">Registry</span>
-                                </h1>
-                                <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
-                                    Official Leadership Management • Third Level Officials Command Dashboard
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-6">
+                    <PageHeaderCard title="Personnel Registry" subtitle="Official Leadership Management • Third Level Officials Command Dashboard">
+<div className="flex items-center gap-6">
                             <div className="hidden md:flex flex-col items-end">
-                                <span className="text-xs font-black text-white leading-none">
+                                <span className="text-[15px] font-medium text-heading leading-tight">
                                     {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
                                 </span>
-                                <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">
+                                <span className="text-[13px] text-secondary">
                                     {user?.role || 'Central Office'}
                                 </span>
                             </div>
                         </div>
-                    </header>
+</PageHeaderCard>
 
                     <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
                         {/* APPROVAL / REJECTED / APPLICATIONS TABS */}
