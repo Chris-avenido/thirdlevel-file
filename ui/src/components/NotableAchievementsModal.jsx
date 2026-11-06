@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import ConfirmDestructiveDialog from './forms/ConfirmDestructiveDialog.jsx';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from '../utils/staticElements.jsx';
 import { X as FiX, CloudArrowUp as FiUploadCloud, File as FiFile, CheckCircle as FiCheckCircle, WarningCircle as FiAlertCircle } from '@phosphor-icons/react';
@@ -10,6 +11,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
   const { token } = useAuth();
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [records, setRecords] = useState([]);
   const [isParsing, setIsParsing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -205,9 +207,17 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
                         </p>
                       </div>
                     </div>
-                    <button onClick={resetModal} className="text-[21px] font-bold text-red-500 hover:text-red-700 px-4 py-2 bg-red-50 hover:bg-red-100 rounded-xl transition-colors">
+                    <button onClick={() => setConfirmRemove(true)} className="text-[21px] font-bold text-red-500 hover:text-red-700 px-4 py-2 bg-red-50 hover:bg-red-100 rounded-xl transition-colors">
                       Remove File
                     </button>
+                    <ConfirmDestructiveDialog
+                      open={confirmRemove}
+                      title={`Remove ${file.name}?`}
+                      body={`This clears the uploaded file and its ${records.length} parsed records. You will need to upload again.`}
+                      confirmLabel="Remove file"
+                      onConfirm={() => { setConfirmRemove(false); resetModal(); }}
+                      onCancel={() => setConfirmRemove(false)}
+                    />
                   </div>
 
                   {records.length > 0 && (
