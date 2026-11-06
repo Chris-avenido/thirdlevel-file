@@ -20,7 +20,7 @@ Keep the repo's UI library; never migrate frameworks, never add a second library
 2. Balanced density.
 3. Accent color only on key actions.
 4. Light by default; dark mode supported through the theme, never forced.
-5. Corners 4-6px; only pill badges and circular avatars may be fully round.
+5. Controls 4-6px; cards, hero headers, KPI boxes, table wrappers and modals 12px (--card-radius); only pill badges and circular avatars may be fully round.
 6. Soft theme shadows separate surfaces; no heavy borders.
 7. Four fonts by role: Source Serif 4 (titles), Plus Jakarta Sans (headers, labels, UI), Public Sans (body), IBM Plex Mono (inputs, IDs, numbers); self-hosted via @fontsource. Inter only in print, voucher and signature modules.
 8. Body 15px (16px on mobile).
