@@ -14,6 +14,25 @@ export default [
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: globals.browser, parserOptions: { ecmaFeatures: { jsx: true } } },
   },
   {
+    // InsightED UI rules (.agents/rules/ui.md): one icon set, no animation libraries, no raw colors
+    files: ['ui/src/**/*.{js,jsx}'],
+    ignores: ['ui/src/theme/**', 'ui/src/devtools/**', '**/*.test.*'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['lucide-react', 'lucide-react/*', '@tabler/icons-react', '@tabler/icons*', 'react-icons', 'react-icons/*', '@heroicons/*', '@fortawesome/*', '@mui/icons-material', '@mui/icons-material/*'], message: 'lib-banned: use @phosphor-icons/react (duotone via IconContext)' },
+          { group: ['framer-motion', 'motion', 'motion/*', 'react-spring', '@react-spring/*', 'gsap', 'animejs', 'lottie-react', 'lottie-web', 'react-transition-group', '@formkit/auto-animate'], message: 'motion: use plain CSS transitions of 200ms or less' },
+          { group: ['recharts', 'chart.js', 'react-chartjs-2', 'apexcharts', 'react-apexcharts', 'echarts', 'victory', '@nivo/*', 'highcharts', 'plotly.js'], message: 'lib-banned: chart library not approved' },
+        ],
+      }],
+      'no-restricted-syntax': ['error',
+        { selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]", message: 'color-raw: use theme tokens (var(--color-*) or Tailwind token classes)' },
+        { selector: "Literal[value=/^(rgb|hsl)a?\\((?!var\\()/]", message: 'color-raw: use theme tokens (var(--color-*) or rgb(var(--rgb-*)/alpha))' },
+        { selector: "JSXAttribute[name.name='weight'][value.value!='duotone']", message: 'icon-weight: duotone only' },
+      ],
+    },
+  },
+  {
     // Architectural boundaries mirroring .dependency-cruiser.cjs (no-circular, no-cycle, cross-slice protection)
     plugins: {
       boundaries,
