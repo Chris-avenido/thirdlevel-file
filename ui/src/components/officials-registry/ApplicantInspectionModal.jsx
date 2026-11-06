@@ -334,7 +334,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                     initial={{ opacity: 0, scale: 0.95, y: 15 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                    className="relative w-full max-w-4xl bg-white rounded-[28px] border-2 border-brand-800 shadow-2xl overflow-hidden z-10 my-8 flex flex-col max-h-[92vh]"
+                    className="relative w-full max-w-4xl bg-white rounded-lg border-2 border-brand-800 shadow-2xl overflow-hidden z-10 my-8 flex flex-col max-h-[92vh]"
                 >
                     {/* Header */}
                     <div className="bg-brand-800 text-white p-6 sm:p-7 flex items-center justify-between shrink-0 border-b border-blue-900 relative">
@@ -353,7 +353,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </span>
                                     )}
                                 </div>
-                                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5 truncate">
+                                <h2 className="modal-title text-xl sm:text-2xl text-white tracking-tight mt-0.5 truncate">
                                     {applicant ? applicant.candidate_name : 'Loading Applicant...'}
                                 </h2>
                             </div>

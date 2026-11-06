@@ -27,7 +27,7 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                         };
 
                                                         return (
-                                                            <div className="relative p-6 bg-brand-800/5 rounded-[2rem] border-2 border-brand-700/10 space-y-4 mb-6 group">
+                                                            <div className="relative p-6 bg-brand-800/5 rounded-lg border-2 border-brand-700/10 space-y-4 mb-6 group">
                                                                 <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">{title}</p>
                                                                 {Array.from({ length: count }).map((_, idx) => (
                                                                     <div key={`${degField}-${idx}`} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
@@ -48,7 +48,7 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
 
                                                     return (
                                                         <div className="space-y-6">
-                                                            <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                            <div className="bg-white border-2 border-brand-800 rounded-lg p-6 lg:p-8 space-y-5 shadow-none">
                                                                 <div className="mb-6 flex justify-between items-center">
                                                                     <SectionLabel>Educational Attainment</SectionLabel>
                                                                     {isEditing && <div className="relative group/add-degree">

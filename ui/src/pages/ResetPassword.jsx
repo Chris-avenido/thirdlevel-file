@@ -62,7 +62,7 @@ const ResetPassword = () => {
     return (
         <PageTransition>
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl relative border border-white/20">
+                <div className="bg-white rounded-lg p-10 max-w-md w-full shadow-2xl relative border border-white/20">
                     <div className="text-center mb-8">
                         <img src={logo} alt="DepEd Logo" className="w-20 mx-auto mb-6" />
                         <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic">Reset Password</h2>

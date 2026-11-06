@@ -22,7 +22,7 @@ Keep the repo's UI library; never migrate frameworks, never add a second library
 4. Light by default; dark mode supported through the theme, never forced.
 5. Corners 4-6px; only pill badges and circular avatars may be fully round.
 6. Soft theme shadows separate surfaces; no heavy borders.
-7. Plus Jakarta Sans only.
+7. Four fonts by role: Source Serif 4 (titles), Plus Jakarta Sans (headers, labels, UI), Public Sans (body), IBM Plex Mono (inputs, IDs, numbers); self-hosted via @fontsource. Inter only in print, voucher and signature modules.
 8. Body 15px (16px on mobile).
 9. Strong bold headings; weight and color carry hierarchy.
 10. Top bar plus left sidebar shell.

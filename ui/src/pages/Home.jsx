@@ -828,14 +828,14 @@ const Home = () => {
                 <FiGrid size={20} />
               </div>
               <div>
-                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
+                <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">Executive <span className="text-blue-300 not-italic">Dashboard</span></h1>
                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">InsightED Top-Level Metrics</p>
               </div>
             </div>
 
             <div className="flex items-center gap-6">
               <div className="hidden md:flex flex-col items-end">
-                <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
+                <span className="text-xs font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                 <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">{user?.role}</span>
               </div>
             </div>
@@ -912,7 +912,7 @@ const Home = () => {
 
           <div className="dashboard-wrap mt-6">
             {/* FILTERS & SEARCH BAR */}
-            <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-brand-800 rounded-[24px] xl:rounded-full p-2 shadow-sm relative z-20 mt-[-24px] max-w-[1200px] mx-auto">
+            <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-brand-800 rounded-lg xl:rounded-full p-2 shadow-sm relative z-20 mt-[-24px] max-w-[1200px] mx-auto">
                 {/* SEARCH BAR */}
                 <FloatingLabelInput label="Search name or email" icon={<FiSearch size={14} />} className="w-full" type="text" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="Search name or email..." />
 

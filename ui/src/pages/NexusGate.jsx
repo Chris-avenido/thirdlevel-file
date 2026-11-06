@@ -399,11 +399,11 @@ const NexusGate = () => {
                     {showRecruitModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRecruitModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[22px] shadow-2xl border-2 border-brand-800 overflow-hidden">
+                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl border-2 border-brand-800 overflow-hidden">
                                 <div className="p-10">
                                     <div className="flex justify-between items-start mb-8">
                                         <div className="space-y-1">
-                                            <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight italic uppercase">Application Access</h2>
+                                            <h2 className="text-3xl font-black text-brand-800 tracking-tight italic uppercase">Application Access</h2>
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Verify your InsightED account status</p>
                                         </div>
                                         <button onClick={() => setShowRecruitModal(false)} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
@@ -433,7 +433,7 @@ const NexusGate = () => {
                     {showCOGate && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeCOGate} className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" />
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-[22px] shadow-2xl border-2 border-brand-800 overflow-hidden">
+                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-lg shadow-2xl border-2 border-brand-800 overflow-hidden">
                                 <div className="bg-brand-800 px-10 py-8 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -452,7 +452,7 @@ const NexusGate = () => {
                                 <div className="p-10">
                                     <div className="space-y-6">
                                         <div>
-                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight italic uppercase">How would you like to proceed?</h2>
+                                            <h2 className="text-2xl font-black text-brand-800 tracking-tight italic uppercase">How would you like to proceed?</h2>
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your existing account or register a new one</p>
                                         </div>
 

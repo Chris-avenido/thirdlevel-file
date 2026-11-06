@@ -145,7 +145,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-white rounded-[28px] shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-blue-100"
+            className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-blue-100"
             initial={{ opacity: 0, rotateY: -90, scale: 0.95 }}
             animate={{ opacity: 1, rotateY: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5, rotateX: -20, rotateY: 20 }}
@@ -203,7 +203,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                   </div>
 
                   <div
-                    className="border-2 border-dashed border-blue-200 rounded-[24px] p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/30 hover:border-blue-300 transition-all cursor-pointer group relative mt-4 mx-4 shadow-[0_0_40px_rgb(var(--rgb-brand-50)/1)]"
+                    className="border-2 border-dashed border-blue-200 rounded-lg p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/30 hover:border-blue-300 transition-all cursor-pointer group relative mt-4 mx-4 shadow-[0_0_40px_rgb(var(--rgb-brand-50)/1)]"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}
                     onClick={() => fileInputRef.current?.click()}
@@ -239,14 +239,14 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
 
                     <div className="flex gap-4">
                       <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-xl border-2 border-green-100">
-                        <div className="bg-green-500 text-white rounded-[4px] p-0.5">
+                        <div className="bg-green-500 text-white rounded-lg p-0.5">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         </div>
                         <span className="text-[18px] font-bold text-green-700">Excel <span className="text-green-600/70 font-semibold">(.xlsx, .xls)</span></span>
                       </div>
 
                       <div className="flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-xl border-2 border-purple-100">
-                        <div className="bg-purple-500 text-white rounded-[4px] p-0.5">
+                        <div className="bg-purple-500 text-white rounded-lg p-0.5">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                         </div>
                         <span className="text-[18px] font-bold text-purple-700">CSV <span className="text-purple-600/70 font-semibold">(.csv)</span></span>

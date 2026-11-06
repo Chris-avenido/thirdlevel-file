@@ -104,7 +104,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
     return (
         <div className="space-y-6">
             {/* Header Control Card */}
-            <div className="bg-white border-2 border-brand-800 rounded-[24px] p-5 shadow-sm space-y-4">
+            <div className="bg-white border-2 border-brand-800 rounded-lg p-5 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
             </div>
 
             {/* Submissions Data Table */}
-            <div className="bg-white border-2 border-brand-800 rounded-[28px] overflow-hidden shadow-sm">
+            <div className="bg-white border-2 border-brand-800 rounded-lg overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse table-auto">
                         <thead>

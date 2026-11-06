@@ -19,8 +19,8 @@
   --mdb-text: var(--color-heading);
   --mdb-muted: var(--color-secondary);
   --mdb-line: var(--color-brand-300);
-  --mdb-font: "DM Sans", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --mdb-font-head: "Plus Jakarta Sans", "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mdb-font: var(--font-body);
+  --mdb-font-head: var(--font-ui);
   --mdb-radius: 22px;
 }
 

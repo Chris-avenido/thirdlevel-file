@@ -150,7 +150,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
     return (
       <>
         {before}
-        <span className="bg-sky-200/80 text-brand-700 font-black rounded-[4px] px-0.5">{match}</span>
+        <span className="bg-sky-200/80 text-brand-700 font-black rounded-lg px-0.5">{match}</span>
         {after}
       </>
     );
@@ -215,14 +215,14 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             maxHeight: dropdownPos.maxHeight || 300,
             zIndex: 999999
           }}
-          className="flex flex-col bg-white rounded-[18px] border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgb(var(--rgb-brand-800)/0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="flex flex-col bg-white rounded-lg border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgb(var(--rgb-brand-800)/0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header Category Filter Tabs */}
           <div className="flex items-center gap-1.5 p-2 bg-gradient-to-r from-sky-50 to-slate-50 border-b-2 border-sky-100 shrink-0">
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('all'); }}
-              className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'all'
                   ? 'bg-brand-700 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
@@ -237,7 +237,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('regular'); }}
-              className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'regular'
                   ? 'bg-brand-700 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
@@ -252,7 +252,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('oic'); }}
-              className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'oic'
                   ? 'bg-brand-700 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
@@ -290,7 +290,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                      <span className={`text-[15px] font-black px-1.5 py-0.5 rounded-[6px] shrink-0 tracking-wider uppercase ${
+                      <span className={`text-[15px] font-black px-1.5 py-0.5 rounded-lg shrink-0 tracking-wider uppercase ${
                         isOIC
                           ? 'bg-amber-100/80 text-amber-800 border-2 border-amber-300/60'
                           : 'bg-sky-100/80 text-sky-800 border-2 border-sky-300/60'
@@ -624,7 +624,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="relative w-full max-w-xl flex flex-col rounded-[28px] shadow-2xl overflow-hidden"
+        className="relative w-full max-w-xl flex flex-col rounded-lg shadow-2xl overflow-hidden"
         style={{
           background: 'linear-gradient(160deg, var(--color-brand-50) 0%, var(--color-white) 60%)',
           border: '2px solid var(--color-brand-300)',
@@ -756,7 +756,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
           {/* — Current Assignment (read-only card) — */}
           {selected && (
             <section
-              className="rounded-[18px] px-5 py-4 transition-all animate-in fade-in duration-150"
+              className="rounded-lg px-5 py-4 transition-all animate-in fade-in duration-150"
               style={{
                 background: 'linear-gradient(135deg, var(--color-brand-50) 0%, var(--color-brand-100) 100%)',
                 border: '2px solid var(--color-brand-300)'
@@ -803,13 +803,13 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     Select Vacant Position <span className="text-rose-500">*</span>
                   </label>
                   {!selectedOffice ? (
-                    <div className="p-3.5 rounded-[14px] bg-slate-50 border-2 border-dashed border-slate-200 text-center">
+                    <div className="p-3.5 rounded-lg bg-slate-50 border-2 border-dashed border-slate-200 text-center">
                       <p className="text-[15px] font-black text-slate-400 uppercase tracking-wider">
                         Please select an office first to view vacant positions
                       </p>
                     </div>
                   ) : filteredVacantPositions.length === 0 ? (
-                    <div className="p-3.5 rounded-[14px] bg-amber-50 border-2 border-dashed border-amber-200 text-center">
+                    <div className="p-3.5 rounded-lg bg-amber-50 border-2 border-dashed border-amber-200 text-center">
                       <p className="text-[15px] font-black text-amber-600 uppercase tracking-wider">
                         No vacant positions found in {selectedOffice}
                       </p>
@@ -829,7 +829,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 {/* Selected Vacant Position Info Card */}
                 {selectedVacantItem && (
                   <div
-                    className="rounded-[14px] p-3.5 transition-all"
+                    className="rounded-lg p-3.5 transition-all"
                     style={{ background: 'var(--color-success-50)', border: '2px solid var(--color-success-300)' }}
                   >
                     <div className="flex items-center justify-between mb-1.5">
@@ -882,7 +882,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
               </label>
               <div
                 onClick={() => fileRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-2 rounded-[18px] px-5 py-4 cursor-pointer transition-all hover:scale-[1.005]"
+                className="flex flex-col items-center justify-center gap-2 rounded-lg px-5 py-4 cursor-pointer transition-all hover:scale-[1.005]"
                 style={{
                   border: file ? '2px solid var(--color-success-700)' : '2px dashed var(--color-brand-300)',
                   background: file ? 'var(--color-success-50)' : 'var(--color-brand-50)'
@@ -930,7 +930,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
         >
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-[14px] text-[18px] font-black text-slate-500 transition-colors hover:bg-slate-200/60"
+            className="px-5 py-2.5 rounded-lg text-[18px] font-black text-slate-500 transition-colors hover:bg-slate-200/60"
             style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-muted)' }}
           >
             Cancel
@@ -938,7 +938,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-[14px] text-[18px] font-black text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[18px] font-black text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
             style={{
               background: 'linear-gradient(135deg, var(--color-brand-700) 0%, var(--color-brand-800) 100%)',
               boxShadow: canSubmit ? '0 4px 14px rgb(var(--rgb-brand-700)/0.35)' : 'none'

@@ -11,7 +11,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
     <>
                                                 {tab === 'personal' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 lg:p-10 space-y-8 shadow-none">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-lg p-8 lg:p-10 space-y-8 shadow-none">
                                                             <div>
                                                                 <SectionLabel>Personal Information</SectionLabel>
                                                                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">

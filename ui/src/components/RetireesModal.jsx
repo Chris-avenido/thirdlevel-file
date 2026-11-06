@@ -38,7 +38,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-['Plus_Jakarta_Sans']"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
         >
           <motion.div 
             initial={{ scale: 0.95, opacity: 0 }}
@@ -160,13 +160,13 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border-2 border-slate-200"
+                className="bg-white rounded-lg w-full max-w-xl shadow-2xl border-2 border-slate-200"
               >
                 <div className="p-10">
                     <div className="flex justify-between items-start mb-8">
                         <div>
                             <span className="text-[15px] font-black text-brand-700 uppercase tracking-widest mb-2 block">Administrative Action</span>
-                            <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tighter uppercase italic leading-none">
+                            <h2 className="text-[45px] font-black text-brand-800 tracking-tighter uppercase italic leading-none">
                                 VACATING OFFICIAL
                             </h2>
                             <p className="text-slate-400 text-[21px] font-bold mt-2">

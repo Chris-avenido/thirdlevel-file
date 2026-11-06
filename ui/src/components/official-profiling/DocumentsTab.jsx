@@ -5,7 +5,7 @@ const DocumentsTab = ({ certified, handleDownloadDocument, handleFileUpload, han
     <>
                                                 {tab === 'documents' && (
                                                     <div className="space-y-6">
-                                                        <div className="flex items-start gap-4 p-6 bg-brand-50 rounded-[2rem] border-2 border-blue-100">
+                                                        <div className="flex items-start gap-4 p-6 bg-brand-50 rounded-lg border-2 border-blue-100">
                                                             <FiInfo className="text-brand-800 mt-1 shrink-0" size={18} />
                                                             <p className="text-[16.5px] font-bold text-brand-800 leading-relaxed">
                                                                 Document uploads are processed by the Personnel Division. Files will be stored securely in the system once upload integration is completed. The reference IDs below track which documents have been linked to your profile.
@@ -20,7 +20,7 @@ const DocumentsTab = ({ certified, handleDownloadDocument, handleFileUpload, han
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="w-10 h-10 bg-transparent rounded-xl flex items-center justify-center text-brand-800"><FiFileText size={18} /></div>
                                                                         <div className="flex-1">
-                                                                            <p className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 leading-tight">{label}</p>
+                                                                            <p className="text-[16.5px] font-black text-brand-800 leading-tight">{label}</p>
                                                                             <p className="text-[13.5px] font-bold text-slate-400 italic mt-0.5">{note}</p>
                                                                         </div>
                                                                         {profile[`${id}_binary_id`] && (

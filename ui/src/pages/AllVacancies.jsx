@@ -380,10 +380,10 @@ const AllVacancies = () => {
 
     return (
         <PageTransition>
-            <div className="min-h-screen bg-slate-50 font-['Plus_Jakarta_Sans'] text-brand-800 flex flex-col">
+            <div className="min-h-screen bg-slate-50 text-brand-800 flex flex-col">
                 {/* Header Banner */}
                 <header className="bg-brand-800 text-white relative overflow-hidden shadow-lg border-b border-brand-700/20 py-8 px-6 lg:px-12 shrink-0">
-                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-brand-700 rounded-[100%] opacity-80 pointer-events-none transform rotate-12 z-0"></div>
+                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-brand-700 rounded-lg opacity-80 pointer-events-none transform rotate-12 z-0"></div>
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6 relative z-10">
                         {/* Top Navigation Row */}
                         <div className="flex justify-between items-center w-full">
@@ -429,7 +429,7 @@ const AllVacancies = () => {
                             <span className="text-[11px] font-black uppercase tracking-[0.25em] text-gold">
                                 Department of Education • TIMON Official Roster
                             </span>
-                            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
+                            <h1 className="page-title text-2xl md:text-3xl lg:text-4xl text-white tracking-tight leading-tight">
                                 TIMON Applications
                             </h1>
                             <p className="text-blue-100/80 text-xs md:text-sm font-semibold max-w-2xl leading-relaxed">
@@ -449,7 +449,7 @@ const AllVacancies = () => {
                         </div>
                     ) : !intakeWindow.isOpen ? (
                         /* Closed Window State */
-                        <div className="bg-white border-2 border-rose-200 rounded-[28px] p-8 md:p-12 text-center space-y-6 shadow-sm">
+                        <div className="bg-white border-2 border-rose-200 rounded-lg p-8 md:p-12 text-center space-y-6 shadow-sm">
                             <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto shadow-sm">
                                 <FiLock size={32} />
                             </div>
@@ -483,7 +483,7 @@ const AllVacancies = () => {
                         </div>
                     ) : submittedApplication ? (
                         /* Submitted Receipt View */
-                        <div className="bg-white border-2 border-emerald-300 rounded-[28px] p-8 md:p-12 text-center space-y-6 shadow-md">
+                        <div className="bg-white border-2 border-emerald-300 rounded-lg p-8 md:p-12 text-center space-y-6 shadow-md">
                             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
                                 <FiCheckCircle size={36} />
                             </div>
@@ -619,7 +619,7 @@ const AllVacancies = () => {
                                     />
 
                                     {/* Tab 1 Navigation Action Bar */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-[20px] shadow-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-lg shadow-sm">
                                         <span className="text-xs font-semibold text-slate-500">
                                             Step 1 of 3: Complete executive designation, personal info, and office assignment.
                                         </span>
@@ -651,7 +651,7 @@ const AllVacancies = () => {
                                     />
 
                                     {/* Tab 2 Navigation Action Bar */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-[20px] shadow-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-lg shadow-sm">
                                         <button
                                             type="button"
                                             onClick={handlePrev}
@@ -684,7 +684,7 @@ const AllVacancies = () => {
                                     />
 
                                     {/* Final Review & Submission Action Bar */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white border-2 border-brand-800 rounded-[24px] shadow-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white border-2 border-brand-800 rounded-lg shadow-sm">
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                                             <button
                                                 type="button"

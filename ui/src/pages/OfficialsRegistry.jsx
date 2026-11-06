@@ -1245,7 +1245,7 @@ const OfficialsRegistry = () => {
                                 <FiUsers size={20} />
                             </div>
                             <div>
-                                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">
+                                <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">
                                     Personnel <span className="text-blue-300 not-italic">Registry</span>
                                 </h1>
                                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
@@ -1256,7 +1256,7 @@ const OfficialsRegistry = () => {
 
                         <div className="flex items-center gap-6">
                             <div className="hidden md:flex flex-col items-end">
-                                <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
+                                <span className="text-xs font-black text-white leading-none">
                                     {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
                                 </span>
                                 <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">

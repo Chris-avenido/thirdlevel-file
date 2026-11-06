@@ -261,7 +261,7 @@ const Login = () => {
                 <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-brand-800/10 rounded-full blur-[80px] animate-blob animation-delay-4000"></div>
 
                 <div className="relative z-10 w-[90%] max-w-md">
-                    <div className="bg-white p-8 rounded-[22px] border-2 border-brand-800 shadow-none transform transition-all hover:scale-[1.01] duration-500 relative">
+                    <div className="bg-white p-8 rounded-lg border-2 border-brand-800 shadow-none transform transition-all hover:scale-[1.01] duration-500 relative">
 
                         {/* BACK BUTTON */}
                         <button
@@ -276,7 +276,7 @@ const Login = () => {
                             <div className="relative w-24 h-24 mx-auto mb-4 bg-white/50 rounded-2xl shadow-inner flex items-center justify-center p-2">
                                 <img src={logo} alt="InsightED Logo" className="w-full h-full object-contain drop-shadow-sm" />
                             </div>
-                            <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight">InsightED</h1>
+                            <h1 className="page-title text-3xl text-brand-800 tracking-tight">InsightED</h1>
                             <p className="text-slate-500 text-sm mt-2 font-medium italic">Recruitment Hub</p>
                         </div>
 
@@ -322,17 +322,11 @@ const Login = () => {
 
                                     {/* SECRET INPUT */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                                            {loginMode === 'password' ? 'Security Password' : '6-Digit Passcode'}
-                                        </label>
                                         <div className={`relative group transition-all duration-300 ${focusedInput === 'secret' ? 'scale-[1.02]' : ''}`}>
-                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'secret' ? 'text-brand-800' : 'text-slate-400'}`}>
-                                                <FiLock className="w-5 h-5" />
-                                            </div>
                                             {loginMode === 'password' ? (
-                                                <FloatingLabelInput label="••••••••" className="w-full" id="login-secret" aria-invalid={fieldError('login-secret') ? 'true' : undefined} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocusedInput('secret')} onBlur={() => setFocusedInput(null)} placeholder="••••••••" autoComplete="current-password" required />
+                                                <FloatingLabelInput label="Security Password" icon={<FiLock className="w-5 h-5" />} trailing={<button type="button" onClick={() => setShowPassword(!showPassword)} className="flex items-center p-1 hover:text-brand-800" aria-label={showPassword ? "Hide secret" : "Show secret"}>{showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}</button>} className="w-full" id="login-secret" aria-invalid={fieldError('login-secret') ? 'true' : undefined} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocusedInput('secret')} onBlur={() => setFocusedInput(null)} placeholder="••••••••" autoComplete="current-password" required />
                                             ) : (
-                                                <FloatingLabelInput label="••••••" className="w-full" id="login-secret" aria-invalid={fieldError('login-secret') ? 'true' : undefined} type={showPassword ? 'text' : 'password'} value={passcode} onChange={(e) => {
+                                                <FloatingLabelInput label="6-Digit Passcode" icon={<FiLock className="w-5 h-5" />} trailing={<button type="button" onClick={() => setShowPassword(!showPassword)} className="flex items-center p-1 hover:text-brand-800" aria-label={showPassword ? "Hide secret" : "Show secret"}>{showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}</button>} className="w-full" id="login-secret" aria-invalid={fieldError('login-secret') ? 'true' : undefined} type={showPassword ? 'text' : 'password'} value={passcode} onChange={(e) => {
                                                         const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                                                         setPasscode(val);
                                                     }} onFocus={() => {
@@ -340,14 +334,6 @@ const Login = () => {
                                                         setShowDialpadModal(true);
                                                     }} onBlur={() => setFocusedInput(null)} placeholder="••••••" maxLength={6} inputMode="numeric" pattern="[0-9]*" readOnly autoComplete="off" required />
                                             )}
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-800 transition-colors p-1"
-                                                aria-label={showPassword ? "Hide secret" : "Show secret"}
-                                            >
-                                                {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -395,7 +381,7 @@ const Login = () => {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative border border-white/20"
+                                className="bg-white rounded-lg p-8 max-w-sm w-full shadow-2xl relative border border-white/20"
                             >
                                 <div className="text-center mb-6">
                                     <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2 uppercase italic">Enter Passcode</h2>
@@ -448,7 +434,7 @@ const Login = () => {
                         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-                                className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl text-center"
+                                className="bg-white rounded-lg p-10 max-w-sm w-full shadow-2xl text-center"
                             >
                                 <div className="w-20 h-20 bg-blue-50 text-brand-800 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner"><FiKey className="w-10 h-10" /></div>
                                 <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic mb-4">Reset Password</h2>

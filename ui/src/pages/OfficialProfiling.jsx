@@ -1588,7 +1588,7 @@ const OfficialProfiling = () => {
     // ── LOADING ──
     if (status === 'loading') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-transparent font-['Plus_Jakarta_Sans']">
+            <div className="min-h-screen flex items-center justify-center bg-transparent">
                 <div className="flex flex-col items-center gap-6">
                     <div className="w-14 h-14 border-[5px] border-brand-700 border-t-transparent rounded-full animate-spin" />
                     <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px]">Loading Your Profile...</p>
@@ -1601,7 +1601,7 @@ const OfficialProfiling = () => {
     // ── MAIN PROFILING FORM ──
     return (
         <PageTransition>
-            <div className="min-h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-brand-800 relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+            <div className="min-h-screen bg-transparent text-brand-800 relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
                 {/* Ambient Decorative Background Elements */}
 
                 {/* ── Mobile Sidebar Drawer ── */}

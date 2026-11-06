@@ -132,7 +132,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-white rounded-[28px] shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-blue-100"
+            className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-blue-100"
             initial={{ opacity: 0, rotateY: -90, scale: 0.95 }}
             animate={{ opacity: 1, rotateY: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5, rotateX: -20, rotateY: 20 }}
@@ -141,7 +141,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
           >
             <div className="flex items-center justify-between p-6 border-b-2 border-blue-50 bg-brand-50">
               <div>
-                <h2 className="text-[36px] font-black text-brand-800 m-0 leading-tight">Notable Achievements</h2>
+                <h2 className="modal-title text-[36px] text-brand-800 m-0 leading-tight">Notable Achievements</h2>
                 <p className="text-[21px] font-bold text-slate-500 m-0 uppercase tracking-wider mt-1">Bulk Upload & Process</p>
               </div>
               <button
@@ -170,7 +170,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
                   </div>
 
                   <div
-                    className="border-2 border-dashed border-blue-200 rounded-[24px] p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/50 hover:border-blue-400 transition-all cursor-pointer group"
+                    className="border-2 border-dashed border-blue-200 rounded-lg p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/50 hover:border-blue-400 transition-all cursor-pointer group"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}
                     onClick={() => fileInputRef.current?.click()}

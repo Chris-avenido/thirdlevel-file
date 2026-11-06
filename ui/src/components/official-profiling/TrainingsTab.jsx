@@ -9,10 +9,10 @@ const TrainingsTab = ({ handleAddTraining, handleRemoveTraining, handleTrainingD
     <>
                                                 {tab === 'trainings' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-lg p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel color="var(--color-brand-700)">Professional Development Trainings</SectionLabel>
 
-                                                            <div className="bg-brand-50/40 rounded-[2rem] p-5 border-2 border-blue-100 flex items-center gap-3">
+                                                            <div className="bg-brand-50/40 rounded-lg p-5 border-2 border-blue-100 flex items-center gap-3">
                                                                 <FiInfo size={16} className="text-blue-400 shrink-0" />
                                                                 <p className="text-[15px] font-bold text-brand-700">List all relevant trainings, seminars, and professional development programs attended. Include the total number of training hours accumulated.</p>
                                                             </div>

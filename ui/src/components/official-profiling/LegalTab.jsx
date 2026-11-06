@@ -6,7 +6,7 @@ const LegalTab = ({ handleDownloadDocument, handleFileUpload, handleViewDocument
     <>
                                                 {tab === 'legal' && (
                                                     <div className="space-y-6">
-                                                        <div className="flex items-start gap-4 p-6 bg-amber-50 rounded-[2rem] border-2 border-amber-200">
+                                                        <div className="flex items-start gap-4 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
                                                             <FiAlertTriangle className="text-amber-500 mt-1 shrink-0" size={20} />
                                                             <div>
                                                                 <p className="text-[16.5px] font-black text-amber-800 uppercase tracking-widest mb-1">Confidential Section</p>
@@ -15,7 +15,7 @@ const LegalTab = ({ handleDownloadDocument, handleFileUpload, handleViewDocument
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 shadow-none space-y-6">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-lg p-8 shadow-none space-y-6">
                                                             <Field label="Pending Administrative Case/s?">
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border-2 border-slate-200/40">
                                                                     {[{ val: 'Yes', label: 'Yes' }, { val: 'No', label: 'No' }].map(opt => (

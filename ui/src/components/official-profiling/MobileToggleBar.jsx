@@ -14,7 +14,7 @@ const MobileToggleBar = ({ dataSource, isTabCompleted, setIsMobileMenuOpen, setT
                                     </div>
                                     <div>
                                         <p className="text-[13.5px] font-bold text-slate-400 uppercase tracking-widest leading-none">Active Section</p>
-                                        <p className="text-[18px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase tracking-wider mt-0.5">{TABS.find(t => t.id === tab)?.label}</p>
+                                        <p className="text-[18px] font-black text-brand-800 uppercase tracking-wider mt-0.5">{TABS.find(t => t.id === tab)?.label}</p>
                                     </div>
                                 </div>
                                 <button

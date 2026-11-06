@@ -38,7 +38,7 @@ const Gate = () => {
                     <ShieldCheck size={14} />
                     Secure Personnel Portal
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight italic">
+                <h1 className="page-title text-4xl md:text-5xl text-slate-900 tracking-tight">
                     Third Level <span className="text-brand-700 not-italic">Officials</span>
                 </h1>
                 <p className="text-slate-500 font-medium mt-3">Personnel Division • TLM Section Recruitment Hub</p>
@@ -53,7 +53,7 @@ const Gate = () => {
                     animate="visible"
                     whileHover="hover"
                     onClick={() => navigate('/login')}
-                    className="cursor-pointer group bg-white rounded-[3rem] p-10 shadow-2xl shadow-blue-900/10 border border-slate-100 flex flex-col justify-between min-h-[360px] transition-all"
+                    className="cursor-pointer group bg-white rounded-lg p-10 shadow-2xl shadow-blue-900/10 border border-slate-100 flex flex-col justify-between min-h-[360px] transition-all"
                 >
                     <div>
                         <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform">
@@ -80,7 +80,7 @@ const Gate = () => {
                     whileHover="hover"
                     transition={{ delay: 0.1 }}
                     onClick={() => navigate('/register')}
-                    className="cursor-pointer group bg-white rounded-[3rem] p-10 shadow-2xl shadow-blue-900/10 border border-slate-100 flex flex-col justify-between min-h-[360px] transition-all"
+                    className="cursor-pointer group bg-white rounded-lg p-10 shadow-2xl shadow-blue-900/10 border border-slate-100 flex flex-col justify-between min-h-[360px] transition-all"
                 >
                     <div>
                         <div className="w-16 h-16 rounded-2xl bg-brand-700 text-white flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform">

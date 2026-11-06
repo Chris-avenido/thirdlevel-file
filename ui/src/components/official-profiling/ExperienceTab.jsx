@@ -12,7 +12,7 @@ const ExperienceTab = ({ handleAddPosition, handleRemovePosition, history, histo
                                                     <div className="space-y-6">
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                                                             <div className="md:col-span-2">
-                                                                <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 shadow-none h-full">
+                                                                <div className="bg-white border-2 border-brand-800 rounded-lg p-8 shadow-none h-full">
                                                                     <SectionLabel>Managerial Experience</SectionLabel>
                                                                     <div className="bg-brand-50/50 p-6 rounded-3xl border-2 border-blue-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                                                                         <div>
@@ -28,13 +28,13 @@ const ExperienceTab = ({ handleAddPosition, handleRemovePosition, history, histo
 
                                                             {/* SIDEBAR: CAREER PROGRESSION */}
                                                             <div className="md:col-span-1">
-                                                                <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 shadow-none">
+                                                                <div className="bg-white border-2 border-brand-800 rounded-lg p-8 shadow-none">
                                                                     <div className="flex items-center gap-3 mb-8">
                                                                         <div className="w-10 h-10 bg-brand-50 text-brand-700 rounded-2xl flex items-center justify-center">
                                                                             <FiClock size={20} />
                                                                         </div>
                                                                         <div>
-                                                                            <h3 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase tracking-tight italic leading-none">Career Progression</h3>
+                                                                            <h3 className="text-[21px] font-black text-brand-800 uppercase tracking-tight italic leading-none">Career Progression</h3>
                                                                             <p className="text-[13.5px] font-bold text-slate-400 uppercase tracking-widest mt-1">Professional Journey</p>
                                                                         </div>
                                                                     </div>
@@ -60,7 +60,7 @@ const ExperienceTab = ({ handleAddPosition, handleRemovePosition, history, histo
                                                                                     </div>
                                                                                     <div className="flex-1 pt-1">
                                                                                         <div className="flex justify-between items-start">
-                                                                                            <h4 className="text-[16.5px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase tracking-tight leading-none italic">{item.position_title}</h4>
+                                                                                            <h4 className="text-[16.5px] font-black text-brand-800 uppercase tracking-tight leading-none italic">{item.position_title}</h4>
                                                                                             <span className="text-[12px] font-bold text-slate-400 bg-transparent px-2 py-0.5 rounded-full">{new Date(item.updated_at).getFullYear()}</span>
                                                                                         </div>
                                                                                         <p className="text-[15px] font-bold text-brand-700 uppercase tracking-widest mt-2">{item.office || item.division || 'Department of Education'}</p>
@@ -79,7 +79,7 @@ const ExperienceTab = ({ handleAddPosition, handleRemovePosition, history, histo
                                                             </div>
                                                         </div>
 
-                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 shadow-none">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-lg p-8 shadow-none">
                                                             <SectionLabel color="var(--color-brand-800)">Previous Positions Held</SectionLabel>
                                                             <div className="space-y-3">
                                                                 <div className="hidden xl:grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_140px_140px_80px_44px] gap-3 px-2">

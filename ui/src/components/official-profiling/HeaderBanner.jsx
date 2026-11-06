@@ -6,7 +6,7 @@ const HeaderBanner = ({ TLOid, applicationId, applicationStatus, completeness, f
   return (
     <>
                 <div className="bg-brand-800 text-white relative overflow-hidden shadow-lg border-b-2 border-brand-700/20 py-6 px-6 lg:px-8 shrink-0">
-                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-brand-700 rounded-[100%] opacity-90 pointer-events-none transform rotate-12 z-0"></div>
+                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-brand-700 rounded-lg opacity-90 pointer-events-none transform rotate-12 z-0"></div>
                     <div className="max-w-[1400px] mx-auto flex flex-col gap-6 relative z-10">
                         {/* Top Navigation Row */}
                         <div className="flex justify-between items-center w-full">
@@ -53,7 +53,7 @@ const HeaderBanner = ({ TLOid, applicationId, applicationStatus, completeness, f
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2.5 flex-wrap">
-                                        <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tight leading-none truncate">{fullName}</h1>
+                                        <h1 className="person-title text-xl md:text-2xl lg:text-3xl text-white tracking-tight leading-none truncate">{fullName}</h1>
                                         {applicationStatus && (
                                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gold text-brand-800 text-[12px] md:text-[13.5px] font-black uppercase tracking-wider rounded-full shadow-sm">
                                                 <span className="w-1 h-1 bg-brand-800 rounded-full" />

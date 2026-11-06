@@ -9,7 +9,7 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
     <>
                                                 {tab === 'eligibility' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-lg p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel color="var(--color-brand-700)">Career Executive Service (CES)</SectionLabel>
                                                             <FloatingLabelInput as="select" label="CES Eligibility / Rank Status" disabled={!isEditing} value={profile.ces_stage || ''} onChange={e => setP('ces_stage', e.target.value)}>
                                                                     <option value="">Select Status</option>
@@ -34,7 +34,7 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                             </Field>
                                                         </div>
 
-                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-lg p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel>Educational Management Test (EMT)</SectionLabel>
                                                             <Field label="Are you an EMT Passer?">
                                                                 <div className="flex gap-1.5 p-1 bg-slate-100/70 rounded-xl max-w-xs border-2 border-slate-200/40">
@@ -68,7 +68,7 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                             )}
                                                         </div>
 
-                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-lg p-6 lg:p-8 space-y-5 shadow-none">
                                                             <div className="flex items-center justify-between">
                                                                 <SectionLabel>Other Civil Service Eligibility</SectionLabel>
                                                                 {isEditing && <button

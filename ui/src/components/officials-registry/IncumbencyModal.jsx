@@ -13,7 +13,7 @@ const IncumbencyModal = ({ incumbents, incumbentsLoading, selectedPosition, setS
                                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                        className="bg-white rounded-[3rem] w-full max-w-2xl shadow-[0_32px_64px_-12px_rgb(var(--rgb-heading)/0.14)] border-2 border-white/50 overflow-hidden relative"
+                                        className="bg-white rounded-lg w-full max-w-2xl shadow-[0_32px_64px_-12px_rgb(var(--rgb-heading)/0.14)] border-2 border-white/50 overflow-hidden relative"
                                     >
                                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent"></div>
 
@@ -23,7 +23,7 @@ const IncumbencyModal = ({ incumbents, incumbentsLoading, selectedPosition, setS
                                                     <div className="flex items-center gap-2 text-brand-700 font-black text-[15px] uppercase tracking-[0.2em] mb-2">
                                                         <FiClock /> Positional History
                                                     </div>
-                                                    <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
+                                                    <h2 className="text-[45px] font-black text-brand-800 tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
                                                     <p className="text-slate-400 font-medium text-[21px]">{selectedPosition?.office || 'Department of Education'}</p>
                                                 </div>
                                                 <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border-2 border-slate-200 transition-all">
@@ -60,7 +60,7 @@ const IncumbencyModal = ({ incumbents, incumbentsLoading, selectedPosition, setS
                                                                             </div>
                                                                             <div>
                                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                                    <h4 className="font-['Plus_Jakarta_Sans'] font-black text-brand-800 text-[24px] italic uppercase leading-none">
+                                                                                    <h4 className="font-black text-brand-800 text-[24px] italic uppercase leading-none">
                                                                                         {inc.first_name || 'VACANT'} {inc.last_name || ''}
                                                                                     </h4>
                                                                                     {inc.is_current == 1 && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[12px] font-black uppercase tracking-widest border-2 border-emerald-200">Active</span>}

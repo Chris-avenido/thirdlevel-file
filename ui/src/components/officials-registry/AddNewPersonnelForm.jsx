@@ -32,7 +32,7 @@ const AddNewPersonnelForm = ({ onCancel, onSuccess, token }) => {
     };
 
     return (
-        <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem] border-2 border-brand-800/10">
+        <div className="space-y-4 bg-slate-50 p-6 rounded-lg border-2 border-brand-800/10">
             <div className="flex justify-between items-center mb-2">
                 <h3 className="text-[21px] font-black text-brand-800 uppercase tracking-widest">Add New Personnel</h3>
                 <button onClick={onCancel} className="text-[15px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors">Cancel</button>

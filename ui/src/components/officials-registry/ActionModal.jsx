@@ -18,14 +18,14 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                                        className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl border-2 border-white/50 overflow-hidden flex flex-col max-h-[90vh]"
+                                        className="bg-white rounded-lg w-full max-w-xl shadow-2xl border-2 border-white/50 overflow-hidden flex flex-col max-h-[90vh]"
                                     >
                                         <div className="overflow-y-auto custom-scrollbar w-full h-full">
                                             <div className="p-10">
                                                 <div className="flex justify-between items-start mb-8">
                                                     <div>
                                                         <span className="text-[15px] font-black text-brand-700 uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                                        <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tighter uppercase italic leading-none">
+                                                        <h2 className="modal-title text-[45px] text-brand-800 tracking-tighter uppercase leading-none">
                                                             {adminAction === 'reassign'
                                                                 ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
                                                                 : `${adminAction === 'vacate' ? 'VACATING' : `${adminAction.toUpperCase()}ING`} OFFICIAL`}
@@ -184,7 +184,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                                         <button
                                                             disabled={actionLoading}
                                                             onClick={handleAdminAction}
-                                                            className="flex-1 py-5 bg-brand-800 text-white rounded-[1.5rem] font-black text-[16.5px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 border-2 border-transparent"
+                                                            className="flex-1 py-5 bg-brand-800 text-white rounded-lg font-black text-[16.5px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 border-2 border-transparent"
                                                         >
                                                             {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
                                                         </button>
@@ -192,7 +192,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                                             <button
                                                                 disabled={actionLoading}
                                                                 onClick={handleCancelVacate}
-                                                                className="flex-1 py-5 bg-rose-50 text-rose-600 border-2 border-rose-200 rounded-[1.5rem] font-black text-[16.5px] uppercase tracking-[0.2em] shadow-sm hover:bg-rose-100 hover:border-rose-300 transition-all active:scale-95 disabled:opacity-50"
+                                                                className="flex-1 py-5 bg-rose-50 text-rose-600 border-2 border-rose-200 rounded-lg font-black text-[16.5px] uppercase tracking-[0.2em] shadow-sm hover:bg-rose-100 hover:border-rose-300 transition-all active:scale-95 disabled:opacity-50"
                                                             >
                                                                 {actionLoading ? 'Processing...' : 'Cancel Action'}
                                                             </button>

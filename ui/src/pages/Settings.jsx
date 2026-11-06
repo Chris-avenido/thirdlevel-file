@@ -119,7 +119,7 @@ const Settings = () => {
     };
 
     return (
-        <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] overflow-hidden">
+        <div className="flex h-screen bg-transparent overflow-hidden">
             <AdminSidebar />
             
             <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
@@ -130,14 +130,14 @@ const Settings = () => {
                             <FiSettings size={20} />
                         </div>
                         <div>
-                            <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Account <span className="text-blue-300 not-italic">Settings</span></h1>
+                            <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">Account <span className="text-blue-300 not-italic">Settings</span></h1>
                             <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">Profile & Security</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
+                            <span className="text-xs font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
                             <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">{user?.role}</span>
                         </div>
                     </div>
@@ -150,7 +150,7 @@ const Settings = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="mb-10"
                     >
-                        <h1 className="text-3xl font-black text-brand-800 tracking-tight">Account Settings</h1>
+                        <h1 className="page-title text-3xl text-brand-800 tracking-tight">Account Settings</h1>
                         <p className="text-slate-500 font-medium mt-2">Update your personal information and security credentials.</p>
                     </motion.div>
 
@@ -158,7 +158,7 @@ const Settings = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-white rounded-[2rem] border-2 border-brand-800 p-8 shadow-xl"
+                        className="bg-white rounded-lg border-2 border-brand-800 p-8 shadow-xl"
                     >
                         <form onSubmit={handleSave} className="space-y-8">
                             <FormErrorSummary errors={errors} />

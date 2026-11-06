@@ -212,7 +212,7 @@ const NotableAchievements = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-brand-800 flex-col lg:flex-row relative overflow-hidden">
+            <div className="flex h-screen bg-transparent text-brand-800 flex-col lg:flex-row relative overflow-hidden">
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
                     
@@ -223,7 +223,7 @@ const NotableAchievements = () => {
                                 <FiAward size={20} />
                             </div>
                             <div>
-                                <h1 className="text-lg font-['Plus_Jakarta_Sans'] font-black text-white tracking-tight leading-none italic uppercase">Notable <span className="text-blue-300 not-italic">Achievements</span></h1>
+                                <h1 className="page-title text-lg text-white tracking-tight leading-none uppercase">Notable <span className="text-blue-300 not-italic">Achievements</span></h1>
                                 <p className="text-[9px] font-bold text-blue-200 uppercase tracking-widest mt-1">
                                     {achievements.length} Total Achievements
                                 </p>
@@ -281,13 +281,13 @@ const NotableAchievements = () => {
                                     <div className="w-12 h-12 border-4 border-brand-800/10 border-t-brand-800 rounded-full animate-spin"></div>
                                 </div>
                             ) : sortedRecords.length === 0 ? (
-                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-lg p-20 text-center border-2 border-dashed border-slate-200">
                                     <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
-                                    <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase italic tracking-tight">No Records Found</h3>
+                                    <h3 className="text-xl font-black text-brand-800 uppercase italic tracking-tight">No Records Found</h3>
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or add a new record.</p>
                                 </motion.div>
                             ) : (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-brand-800">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-lg overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-brand-800">
                                     <div className="w-full overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
@@ -311,12 +311,12 @@ const NotableAchievements = () => {
                                                 {pagedRecords.map((item) => (
                                                     <motion.tr key={item.index_number} whileHover={{ backgroundColor: 'rgb(var(--rgb-brand-50)/0.8)' }} className="group transition-colors relative">
                                                         <td className="px-6 py-4">
-                                                            <div className="w-12 h-10 rounded-[1rem] bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center font-black text-blue-400 text-xs border border-white shadow-sm tracking-widest">
+                                                            <div className="w-12 h-10 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center font-black text-blue-400 text-xs border border-white shadow-sm tracking-widest">
                                                                 {generateHash(item.index_number)}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <div className="font-['Plus_Jakarta_Sans'] font-black text-brand-800 text-sm leading-none group-hover:text-brand-800 transition-colors line-clamp-2">
+                                                            <div className="font-black text-brand-800 text-sm leading-none group-hover:text-brand-800 transition-colors line-clamp-2">
                                                                 {item.achievement}
                                                             </div>
                                                         </td>
@@ -378,7 +378,7 @@ const NotableAchievements = () => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col"
+                            className="bg-white rounded-lg w-full max-w-lg shadow-2xl overflow-hidden flex flex-col"
                         >
                             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <div>

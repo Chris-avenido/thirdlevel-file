@@ -70,7 +70,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                                     <div className="flex items-center gap-2">
                                                                         <div
                                                                             onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-brand-800 text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                            className={`font-black text-brand-800 text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                             title={item.email ? "View Official Profile" : ""}
                                                                         >
                                                                             {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
@@ -219,7 +219,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-brand-800 text-[21px] leading-none transition-colors truncate">
+                                                                    <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-black text-brand-800 text-[21px] leading-none transition-colors truncate">
                                                                         {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
                                                                     </div>
                                                                     {item.is_testaccount && (
@@ -319,12 +319,12 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                 key={item.TLOid}
                                                 whileHover={{ y: -4 }}
                                                 onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                className={`bg-white rounded-[1.5rem] p-5 border-2 border-brand-800 shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
+                                                className={`bg-white rounded-lg p-5 border-2 border-brand-800 shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                             >
                                                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                                                 <div>
                                                     <div className="flex justify-between items-start mb-4 relative z-10">
-                                                        <div className="w-12 h-12 rounded-[1rem] bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-300 font-black text-xl border-2 border-white shadow-md overflow-hidden shrink-0">
+                                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center text-blue-300 font-black text-xl border-2 border-white shadow-md overflow-hidden shrink-0">
                                                             {item.photo_binary_id ? (
                                                                 <img src={apiUrl(`/api/binary/${item.photo_binary_id}`)} alt="" className="w-full h-full object-cover" />
                                                             ) : <FiUser size={20} />}
@@ -338,7 +338,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                     </div>
 
                                                     <div className="space-y-1 relative z-10">
-                                                        <h3 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tighter leading-tight uppercase italic line-clamp-2">
+                                                        <h3 className="text-[21px] font-black text-brand-800 tracking-tighter leading-tight uppercase italic line-clamp-2">
                                                             {item.first_name ? <>{item.first_name} {item.last_name}</> : <span className="text-rose-500">VACANT POSITION</span>}
                                                         </h3>
                                                         {item.status !== 'Inactive' && (
@@ -431,7 +431,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                             </motion.div>
                                         ))}
                                     </div>
-                                    <div className="px-8 py-5 bg-white rounded-[2.5rem] border-2 border-slate-200 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="px-8 py-5 bg-white rounded-lg border-2 border-slate-200 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                         <span className="text-[15px] font-black text-slate-400 uppercase tracking-widest">
                                             Showing {totalRecords === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
                                         </span>
@@ -456,7 +456,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                             ) : (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
                                     {Object.entries(directoryGroups).map(([groupName, members]) => (
-                                        <div key={groupName} className="bg-slate-50/50 p-8 rounded-[3rem] border-2 border-slate-200">
+                                        <div key={groupName} className="bg-slate-50/50 p-8 rounded-lg border-2 border-slate-200">
                                             <h3 className="text-center font-black text-[36px] text-brand-800 tracking-tighter mb-8 uppercase">{groupName}</h3>
 
                                             <div className="flex flex-wrap justify-center gap-6">
@@ -481,7 +481,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                     {Object.keys(directoryGroups).length === 0 && (
                                         <div className="py-20 text-center">
                                             <FiLayers className="mx-auto text-slate-200 mb-6" size={64} />
-                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase tracking-tighter mb-2">No Directory Data</h2>
+                                            <h2 className="text-2xl font-black text-brand-800 uppercase tracking-tighter mb-2">No Directory Data</h2>
                                             <p className="text-slate-500 font-bold max-w-md mx-auto">No records found matching the current filters.</p>
                                         </div>
                                     )}

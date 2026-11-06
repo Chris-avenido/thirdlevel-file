@@ -18,7 +18,7 @@ const LocationUnlockModal = ({ profile, setIsLocationLocked, setShowLocationUnlo
                                                 <FiAlertTriangle size={24} />
                                             </div>
                                             <div>
-                                                <h3 className="text-[27px] font-black text-slate-800 tracking-tight">Confirm Location Change</h3>
+                                                <h3 className="modal-title text-[27px] text-slate-800 tracking-tight">Confirm Location Change</h3>
                                                 <p className="text-[16.5px] font-bold text-amber-600 uppercase tracking-wider mt-0.5">Location Access Verification</p>
                                             </div>
                                         </div>

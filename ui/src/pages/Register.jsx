@@ -181,7 +181,7 @@ const Register = () => {
         return (
             <div className="min-h-screen w-full flex items-center justify-center bg-white p-6">
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-                    <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/10">
+                    <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/10">
                         <FiCheckCircle size={48} />
                     </div>
                     <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-4 italic uppercase">Identity Created</h2>
@@ -197,7 +197,7 @@ const Register = () => {
             <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-transparent">
 
                 <div className="relative z-10 w-[95%] max-w-xl">
-                    <div className="bg-white border-2 border-brand-800 shadow-none rounded-[22px] p-8 md:p-12">
+                    <div className="bg-white border-2 border-brand-800 shadow-none rounded-lg p-8 md:p-12">
 
                         {/* HEADER */}
                         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -205,7 +205,7 @@ const Register = () => {
                                 <div className="w-16 h-16 bg-white/50 rounded-2xl shadow-inner flex items-center justify-center p-2 mb-6">
                                     <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                                 </div>
-                                <h1 className="text-4xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight italic leading-none uppercase">
+                                <h1 className="page-title text-4xl text-brand-800 tracking-tight leading-none uppercase">
                                     Join <span className="text-brand-700 not-italic">Registry</span>
                                 </h1>
                                 <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-3 flex items-center gap-2">

@@ -15,7 +15,7 @@ ReactDOM.createRoot(document.getElementById('root'), devLogger.reactRootErrorHan
     <React.StrictMode>
       <DevErrorBoundary>
         <AuthProvider>
-            <IconContext.Provider value={{ weight: 'duotone' }}>
+            <IconContext.Provider value={{ weight: 'duotone', size: '1em', color: 'currentColor', mirrored: false }}>
             <BrowserRouter basename={import.meta.env.BASE_URL}>
               <App />
           </BrowserRouter>

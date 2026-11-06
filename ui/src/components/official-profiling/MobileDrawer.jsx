@@ -31,7 +31,7 @@ const MobileDrawer = ({ completeness, dataSource, isMobileMenuOpen, isTabComplet
                                             <FiUser size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 leading-tight">Talent Portal</p>
+                                            <p className="text-[21px] font-black text-brand-800 leading-tight">Talent Portal</p>
                                             <p className="text-[15px] font-medium text-slate-400">Applicant Workspace</p>
                                         </div>
                                     </div>

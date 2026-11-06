@@ -34,14 +34,14 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                                                                             animate={{ opacity: 1, scale: 1, y: 0 }}
                                                                                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                                                                            className="relative w-full max-w-[1200px] bg-white rounded-[2rem] shadow-2xl border-2 border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
+                                                                                            className="relative w-full max-w-[1200px] bg-white rounded-lg shadow-2xl border-2 border-white/50 flex flex-col lg:flex-row overflow-hidden max-h-full"
                                                                                             onClick={e => e.stopPropagation()}
                                                                                         >
                                                                                             {/* Sidebar Options */}
                                                                                             <div className="w-full lg:w-64 bg-transparent border-r-2 border-slate-200 p-6 flex flex-col gap-3 shrink-0">
                                                                                                 <div className="flex items-center justify-between mb-4">
                                                                                                     <div>
-                                                                                                        <h2 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase tracking-tight italic">Export Options</h2>
+                                                                                                        <h2 className="text-[21px] font-black text-brand-800 uppercase tracking-tight italic">Export Options</h2>
                                                                                                     </div>
                                                                                                     <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm border-2 border-slate-200">
                                                                                                         <FiX size={18} />
@@ -157,13 +157,13 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                 {(selectedExportType === 'pdf' || selectedExportType === 'ppt') && (
                                                                                                     <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border-2 border-slate-200 shadow-inner hide-scrollbar">
                                                                                                         <div className="bg-white shadow-2xl border-2 border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale * 0.5})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale * 0.5)}px` }}>
-                                                                                                            <div className="p-8 mx-auto w-[1000px] min-h-[700px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id={selectedExportType === 'pdf' ? "pdf-preview-content" : "ppt-preview-content"}>
+                                                                                                            <div className="p-8 mx-auto w-[1000px] min-h-[700px] relative text-black bg-white" id={selectedExportType === 'pdf' ? "pdf-preview-content" : "ppt-preview-content"}>
                                                                                                                 <div className="absolute top-0 left-0 w-full h-2 bg-brand-800"></div>
                                                                                                                 <div className="flex justify-between items-start mb-5 pt-2">
                                                                                                                     <div className="flex gap-5 items-center">
                                                                                                                         <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain" />
                                                                                                                         <div>
-                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-brand-800">{profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
+                                                                                                                            <h1 className="person-title text-2xl uppercase tracking-tight text-brand-800">{profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
                                                                                                                             <h2 className="text-lg font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap">
                                                                                                                                 <span>{profile.position_title || 'N/A'}</span>
                                                                                                                                 {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-gold text-brand-800 text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
@@ -760,7 +760,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                             {/* DATA PRIVACY & CERTIFICATION */}
                                                             <div className="mt-8">
                                                                 {/* ── Data Privacy & Certification ── */}
-                                                                <div className="bg-white rounded-[2.5rem] border-2 border-brand-700/20 shadow-sm overflow-hidden">
+                                                                <div className="bg-white rounded-lg border-2 border-brand-700/20 shadow-sm overflow-hidden">
 
                                                                     {/* Header */}
                                                                     <div className="bg-brand-800 px-8 py-6 flex items-center gap-4">
@@ -775,7 +775,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
 
                                                                     <div className="p-8 space-y-6">
                                                                         {/* DepEd DPA Notice */}
-                                                                        <div className="bg-transparent rounded-[2rem] p-6 text-[16.5px] font-bold text-slate-600 leading-relaxed border-2 border-slate-200">
+                                                                        <div className="bg-transparent rounded-lg p-6 text-[16.5px] font-bold text-slate-600 leading-relaxed border-2 border-slate-200">
                                                                             <p>Pursuant to <span className="text-brand-800 font-black">Republic Act No. 10173</span> or <span className="text-brand-800 font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
                                                                         </div>
 
@@ -783,7 +783,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                         <div className="space-y-4">
                                                                             <button
                                                                                 onClick={() => setDpaConsent(v => !v)}
-                                                                                className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-brand-50 border-brand-700' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
+                                                                                className={`w-full flex items-start gap-4 p-5 rounded-lg border-2 text-left transition-all ${dpaConsent ? 'bg-brand-50 border-brand-700' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
                                                                             >
                                                                                 <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-brand-800 border-brand-700' : 'border-slate-300 bg-white'}`}>
                                                                                     {dpaConsent && <FiCheckCircle size={14} className="text-white" />}
@@ -795,7 +795,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
 
                                                                             <button
                                                                                 onClick={() => setTruthConsent(v => !v)}
-                                                                                className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
+                                                                                className={`w-full flex items-start gap-4 p-5 rounded-lg border-2 text-left transition-all ${truthConsent ? 'bg-emerald-50 border-emerald-500' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
                                                                             >
                                                                                 <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${truthConsent ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 bg-white'}`}>
                                                                                     {truthConsent && <FiCheckCircle size={14} className="text-white" />}
@@ -862,7 +862,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                 )}
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="flex items-center justify-center gap-4 py-6 bg-emerald-50 rounded-[2rem] border-2 border-emerald-200">
+                                                                            <div className="flex items-center justify-center gap-4 py-6 bg-emerald-50 rounded-lg border-2 border-emerald-200">
                                                                                 <FiCheckCircle size={28} className="text-emerald-500" />
                                                                                 <div>
                                                                                     <p className="font-black text-emerald-700 text-[21px] uppercase tracking-wider">Certified Successfully</p>
