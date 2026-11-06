@@ -17,7 +17,7 @@
 }
 
 .animate-pop-up {
-  animation: popUp 0.5s ease-out forwards;
+  animation: popUp 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 @keyframes blob {
@@ -790,7 +790,7 @@ body {
 .thin-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
-  transition: scrollbar-color 0.3s;
+  transition: scrollbar-color 0.2s;
 }
 .thin-scrollbar:hover {
   scrollbar-color: rgb(var(--rgb-secondary)/0.5) transparent;
