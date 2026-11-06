@@ -189,26 +189,9 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                     </Field>
                                                                     <Field label="Position Title (As per Appointment)">
                                                                         {isPositionOthers ? (
-                                                                            <div className="relative flex items-center">
-                                                                                <input
-                                                                                    disabled={!isEditing}
-                                                                                    type="text"
-                                                                                    value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title}
-                                                                                    onChange={e => setP('position_title', e.target.value || 'Others')}
-                                                                                    placeholder="Please specify position title"
-                                                                                    className={`${inp} pr-9`}
-                                                                                    autoFocus
-                                                                                />
-                                                                                <button
-                                                                                    type="button"
-                                                                                    disabled={!isEditing}
-                                                                                    onClick={() => setP('position_title', '')}
-                                                                                    className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-brand-800 hover:bg-slate-100 transition-colors"
-                                                                                    title="Switch back to list selection"
-                                                                                >
+                                                                            <FloatingLabelInput label="Please specify position title" trailing={<button type="button" disabled={!isEditing} onClick={() => setP('position_title', '')} title="Switch back to list selection" className="flex items-center text-secondary">
                                                                                     <FiRotateCcw size={13} />
-                                                                                </button>
-                                                                            </div>
+                                                                                </button>} disabled={!isEditing} type="text" value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value || 'Others')} placeholder="Please specify position title" autoFocus />
                                                                         ) : (
                                                                             <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
                                                                                 <option value="">Select Position Title</option>
@@ -220,26 +203,9 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                     <Field label="Designation">
                                                                         {profile.is_oic ? (
                                                                             isDesignationOthers ? (
-                                                                                <div className="relative flex items-center">
-                                                                                    <input
-                                                                                        disabled={!isEditing}
-                                                                                        type="text"
-                                                                                        value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation}
-                                                                                        onChange={e => setP('designation', e.target.value || 'Others')}
-                                                                                        placeholder="Please specify designation"
-                                                                                        className={`${inp} pr-9`}
-                                                                                        autoFocus
-                                                                                    />
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        disabled={!isEditing}
-                                                                                        onClick={() => setP('designation', '')}
-                                                                                        className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-brand-800 hover:bg-slate-100 transition-colors"
-                                                                                        title="Switch back to list selection"
-                                                                                    >
+                                                                                <FloatingLabelInput label="Please specify designation" trailing={<button type="button" disabled={!isEditing} onClick={() => setP('designation', '')} title="Switch back to list selection" className="flex items-center text-secondary">
                                                                                         <FiRotateCcw size={13} />
-                                                                                    </button>
-                                                                                </div>
+                                                                                    </button>} disabled={!isEditing} type="text" value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation} onChange={e => setP('designation', e.target.value || 'Others')} placeholder="Please specify designation" autoFocus />
                                                                             ) : (
                                                                                 <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || ''} onChange={e => setP('designation', e.target.value)} className={sel}>
                                                                                     <option value="">Select Designation</option>

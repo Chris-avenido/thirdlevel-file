@@ -11,19 +11,15 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                 {/* DROPDOWNS */}
                                 <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                     {/* Level Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <FloatingLabelInput as="select" label="All CO / RO / SDO" className="w-full xl:flex-1" value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter}>
                                             <option value="All">All CO / RO / SDO</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Regional Office">Regional Office</option>
                                             <option value="Schools Division Office">Schools Division Office</option>
-                                        </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
-                                    </div>
+                                        </FloatingLabelInput>
 
                                     {/* Region Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <FloatingLabelInput as="select" label="All Regions" className="w-full xl:flex-1" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter}>
                                             <option value="All">All Regions</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Region I">Region I</option>
@@ -44,54 +40,40 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                             <option value="CAR">CAR</option>
                                             <option value="NIR">NIR</option>
                                             <option value="BARMM">BARMM</option>
-                                        </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
-                                    </div>
+                                        </FloatingLabelInput>
 
                                     {/* Strand / Division Dropdown */}
                                     {levelFilter === 'Central Office' || regionFilter === 'Central Office' ? (
-                                        <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                                            <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                                        <FloatingLabelInput as="select" label="All Strands" className="w-full xl:flex-1" value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter}>
                                                 <option value="All">All Strands</option>
                                                 {strands.map(s => (
                                                     <option key={s} value={s}>{s}</option>
                                                 ))}
-                                            </select>
-                                            <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
-                                        </div>
+                                            </FloatingLabelInput>
                                     ) : (
-                                        <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                                            <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                                        <FloatingLabelInput as="select" label="All Divisions" className="w-full xl:flex-1" value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter}>
                                                 <option value="All">All Divisions</option>
                                                 {dependentOffices.map(o => (
                                                     <option key={o} value={o}>{o}</option>
                                                 ))}
-                                            </select>
-                                            <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
-                                        </div>
+                                            </FloatingLabelInput>
                                     )}
 
                                     {/* Designation Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <FloatingLabelInput as="select" label="All Designations" className="w-full xl:flex-1" value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)}>
                                             <option value="All">All Designations</option>
                                             {designations.map(d => (
                                                 <option key={d} value={d}>{expandAcronym(d)}</option>
                                             ))}
-                                        </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
-                                    </div>
+                                        </FloatingLabelInput>
 
                                     {/* Position Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <FloatingLabelInput as="select" label="All Positions" className="w-full xl:flex-1" value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter}>
                                             <option value="All">All Positions</option>
                                             {tabPositions.map(p => (
                                                 <option key={p} value={p}>{p}</option>
                                             ))}
-                                        </select>
-                                        <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
-                                    </div>
+                                        </FloatingLabelInput>
                                 </div>
 
                                 {/* BUTTONS */}

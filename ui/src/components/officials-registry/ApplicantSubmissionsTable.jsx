@@ -139,34 +139,22 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                             }} placeholder="Search candidate name or email..." />
 
                     {/* Position Filter */}
-                    <div className="relative">
-                        <select
-                            value={positionFilter}
-                            onChange={e => {
+                    <FloatingLabelInput as="select" label="All Applied Positions" className="w-full" value={positionFilter} onChange={e => {
                                 setPositionFilter(e.target.value);
                                 setPagination(p => ({ ...p, page: 1 }));
-                            }}
-                            className="w-full pl-4 pr-8 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 focus:border-brand-800 outline-none appearance-none bg-white transition-colors cursor-pointer"
-                        >
+                            }}>
                             <option value="All">All Applied Positions</option>
                             <option value="RD">Regional Director (RD)</option>
                             <option value="ARD">Assistant Regional Director (ARD)</option>
                             <option value="SDS">Schools Division Superintendent (SDS)</option>
                             <option value="ASDS">Assistant Schools Division Superintendent (ASDS)</option>
-                        </select>
-                        <FiBriefcase className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-                    </div>
+                        </FloatingLabelInput>
 
                     {/* Target Region Filter */}
-                    <div className="relative">
-                        <select
-                            value={regionFilter}
-                            onChange={e => {
+                    <FloatingLabelInput as="select" label="All Target Regions" className="w-full" value={regionFilter} onChange={e => {
                                 setRegionFilter(e.target.value);
                                 setPagination(p => ({ ...p, page: 1 }));
-                            }}
-                            className="w-full pl-4 pr-8 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 focus:border-brand-800 outline-none appearance-none bg-white transition-colors cursor-pointer"
-                        >
+                            }}>
                             <option value="All">All Target Regions</option>
                             <option value="Central Office">Central Office</option>
                             <option value="Region I">Region I</option>
@@ -186,9 +174,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                             <option value="CAR">CAR</option>
                             <option value="NCR">NCR</option>
                             <option value="BARMM">BARMM</option>
-                        </select>
-                        <FiMapPin className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-                    </div>
+                        </FloatingLabelInput>
 
                     {/* Quick Counts Indicator */}
                     <div className="flex items-center justify-end px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">

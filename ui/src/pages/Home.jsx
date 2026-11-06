@@ -919,36 +919,27 @@ const Home = () => {
                 {/* DROPDOWNS */}
                 <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
                     {/* Region Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-brand-50 border border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                    <FloatingLabelInput as="select" label="All Regions" className="w-full xl:flex-1" value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion}>
                             <option value="All regions">All Regions</option>
                             {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
                                 <option key={r} value={r}>{r}</option>
                             ))}
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
+                        </FloatingLabelInput>
 
                     {/* Level Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-brand-50 border border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                    <FloatingLabelInput as="select" label="All Levels" className="w-full xl:flex-1" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel}>
                             <option value="All levels">All Levels</option>
                             <option value="Third Level">Third Level</option>
                             <option value="Division Chief">Division Chief</option>
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
+                        </FloatingLabelInput>
 
                     {/* Office Dropdown */}
-                    <div className="relative w-full xl:flex-1 h-[38px] bg-brand-50 border border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                        <select value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice} className="w-full h-full bg-transparent pl-3 pr-6 text-[11px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
+                    <FloatingLabelInput as="select" label="All Offices" className="w-full xl:flex-1" value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice}>
                             <option value="All">All Offices</option>
                             {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
                                 <option key={o} value={o}>{o}</option>
                             ))}
-                        </select>
-                        <FiChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={12} />
-                    </div>
+                        </FloatingLabelInput>
                 </div>
 
                 {/* Clear Button */}

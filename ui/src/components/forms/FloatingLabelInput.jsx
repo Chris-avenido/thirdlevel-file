@@ -3,7 +3,7 @@ import { forwardRef, useId } from 'react';
 // The one shared text-like field: label floats on the border, inline error underneath.
 // `as` is 'input' (default), 'select' or 'textarea'. All other props go to the control.
 const FloatingLabelInput = forwardRef(function FloatingLabelInput(
-    { as: Control = 'input', label, error, required, requiredMark, icon, id, className = '', inputClassName = '', children, ...rest },
+    { as: Control = 'input', label, error, required, requiredMark, icon, trailing, id, className = '', inputClassName = '', children, ...rest },
     ref,
 ) {
     const autoId = useId();
@@ -16,6 +16,7 @@ const FloatingLabelInput = forwardRef(function FloatingLabelInput(
         + 'placeholder:text-secondary disabled:cursor-not-allowed disabled:bg-brand-50 disabled:text-secondary '
         + (isTextarea ? 'min-h-[88px] px-3 py-2.5 ' : 'h-11 px-3 md:h-10 ')
         + (icon ? 'pl-10 ' : '')
+        + (trailing ? 'pr-10 ' : '')
         + (error
             ? 'border-danger-700 focus:ring-2 focus:ring-danger-700/20'
             : 'border-secondary focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20');
@@ -35,6 +36,9 @@ const FloatingLabelInput = forwardRef(function FloatingLabelInput(
             </Control>
             {icon ? (
                 <span className="pointer-events-none absolute left-3 top-[22px] -translate-y-1/2 text-secondary md:top-5">{icon}</span>
+            ) : null}
+            {trailing ? (
+                <span className="absolute right-3 top-[22px] -translate-y-1/2 text-secondary md:top-5">{trailing}</span>
             ) : null}
             {label ? (
                 <label

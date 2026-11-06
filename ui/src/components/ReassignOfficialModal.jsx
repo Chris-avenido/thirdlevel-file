@@ -810,26 +810,12 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
               <div className="space-y-3.5">
                 {/* 1. Target Office */}
                 <div>
-                  <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                    Select Target Office <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={selectedOffice}
-                      onChange={(e) => handleSelectOffice(e.target.value)}
-                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-brand-700"
-                      style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-muted)' }}
-                    >
+                  <FloatingLabelInput as="select" label="Select Target Office" requiredMark className="w-full" value={selectedOffice} onChange={(e) => handleSelectOffice(e.target.value)} style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-muted)' }}>
                       <option value="">Choose Office…</option>
                       {uniqueTargetOffices.map((off) => (
                         <option key={off} value={off}>{off}</option>
                       ))}
-                    </select>
-                    <FiChevronDown
-                      size={18}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    />
-                  </div>
+                    </FloatingLabelInput>
                 </div>
 
                 {/* 2. Vacant Position Picker */}
@@ -850,25 +836,14 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                       </p>
                     </div>
                   ) : (
-                    <div className="relative">
-                      <select
-                        value={selectedVacantItem}
-                        onChange={(e) => handleSelectVacantPosition(e.target.value)}
-                        className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-brand-700"
-                        style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-brand-300)' }}
-                      >
+                    <FloatingLabelInput as="select" label="Choose Vacant Position…" className="w-full" value={selectedVacantItem} onChange={(e) => handleSelectVacantPosition(e.target.value)} style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-brand-300)' }}>
                         <option value="">Choose Vacant Position…</option>
                         {filteredVacantPositions.map((slot) => (
                           <option key={slot.item_number} value={slot.item_number}>
                             {slot.position_title} ({slot.item_number}){slot.strand ? ` — ${slot.strand}` : ''}
                           </option>
                         ))}
-                      </select>
-                      <FiChevronDown
-                        size={18}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none"
-                      />
-                    </div>
+                      </FloatingLabelInput>
                   )}
                 </div>
 

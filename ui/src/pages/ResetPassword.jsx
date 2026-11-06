@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import PageTransition from '../components/PageTransition';
 import logo from '../assets/modern_logo.png';
 import FormErrorSummary from '../components/forms/FormErrorSummary.jsx';
+import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -70,59 +71,23 @@ const ResetPassword = () => {
 
                     <form onSubmit={handleReset} className="space-y-5" noValidate>
                         <FormErrorSummary errors={errors} />
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <FiLock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                            </div>
-                            <input
-                                id="reset-password"
-                                aria-invalid={fieldError('reset-password') ? 'true' : undefined}
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="New Password"
-                                className="w-full pl-12 pr-12 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-all"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-4 flex items-center"
-                            >
+                        <FloatingLabelInput label="New Password" icon={<FiLock />} trailing={<button type="button" onClick={() => setShowPassword(!showPassword)} className="flex items-center text-secondary">
                                 {showPassword ? (
                                     <FiEyeOff className="h-5 w-5 text-slate-400 hover:text-slate-600 transition-colors" />
                                 ) : (
                                     <FiEye className="h-5 w-5 text-slate-400 hover:text-slate-600 transition-colors" />
                                 )}
-                            </button>
-                        </div>
+                            </button>} className="w-full" id="reset-password" aria-invalid={fieldError('reset-password') ? 'true' : undefined} type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New Password" />
 
                         {fieldError('reset-password') && <p className="-mt-3 text-[13px] font-medium text-danger-700">{fieldError('reset-password')}</p>}
 
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <FiLock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                            </div>
-                            <input
-                                id="reset-confirm-password"
-                                aria-invalid={fieldError('reset-confirm-password') ? 'true' : undefined}
-                                type={showConfirmPassword ? "text" : "password"}
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm New Password"
-                                className="w-full pl-12 pr-12 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-all"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute inset-y-0 right-0 pr-4 flex items-center"
-                            >
+                        <FloatingLabelInput label="Confirm New Password" icon={<FiLock />} trailing={<button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="flex items-center text-secondary">
                                 {showConfirmPassword ? (
                                     <FiEyeOff className="h-5 w-5 text-slate-400 hover:text-slate-600 transition-colors" />
                                 ) : (
                                     <FiEye className="h-5 w-5 text-slate-400 hover:text-slate-600 transition-colors" />
                                 )}
-                            </button>
-                        </div>
+                            </button>} className="w-full" id="reset-confirm-password" aria-invalid={fieldError('reset-confirm-password') ? 'true' : undefined} type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Password" />
 
                         {fieldError('reset-confirm-password') && <p className="-mt-3 text-[13px] font-medium text-danger-700">{fieldError('reset-confirm-password')}</p>}
 

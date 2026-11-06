@@ -3,6 +3,7 @@ import { MagnifyingGlass as FiSearch, CheckCircle as FiCheckCircle, Clock as FiC
 import { TestTube as FaVial } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 import { expandAcronym } from '../../utils/officialsUtils';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialRegion, handleOpenReassignModal, handlePositionClick, handleRegistrationAction, handleSort, handleToggleTestAccount, loading, navigate, officials, openActionModal, pageButtons, pageCount, pageSize, pagedRecords, setCurrentPage, setTableFilters, sortConfig, tableColumns, tableFilterOptions, tableFilters, totalRecords, user, viewMode }) => {
   return (
@@ -27,29 +28,19 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                     {tableColumns.map((column, index) => (
                                                         <th key={column.key} className={`px-2 py-4 text-left align-top relative ${column.width || ''}`}>
 
-                                                            <div className={`flex flex-col gap-3 mt-1 ${column.key === 'is_oic' ? 'pr-1' : 'pr-4'}`}>
-                                                                <button
-                                                                    onClick={() => handleSort(column.key)}
-                                                                    className="flex items-center justify-between h-5 text-[13.5px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left group"
-                                                                >
+                                                            <FloatingLabelInput as="select" label="All" trailing={<button onClick={() => handleSort(column.key)} className="flex items-center text-secondary">
                                                                     <span>{column.label}</span>
                                                                     <span className={`text-base leading-none flex items-center w-3 justify-end transition-colors ${sortConfig.key === column.key ? 'text-brand-800' : 'text-slate-200 group-hover:text-slate-400'}`}>
                                                                         {sortConfig.key === column.key
                                                                             ? (sortConfig.direction === 'asc' ? '↑' : '↓')
                                                                             : '↓'}
                                                                     </span>
-                                                                </button>
-                                                                <select
-                                                                    value={tableFilters[column.key] || ''}
-                                                                    onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                                                                    className={`w-full bg-white border-2 border-sky-200 rounded-lg py-1.5 font-bold text-brand-800 outline-none focus:border-sky-400 transition-colors ${column.key === 'is_oic' ? 'px-1 text-[13.5px] text-center' : 'px-3 text-[16.5px]'}`}
-                                                                >
+                                                                </button>} className="mt-1 w-full" inputClassName="text-center" value={tableFilters[column.key] || ''} onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}>
                                                                     <option value="">All</option>
                                                                     {(tableFilterOptions[column.key] || []).map(option => (
                                                                         <option key={option} value={option}>{option}</option>
                                                                     ))}
-                                                                </select>
-                                                            </div>
+                                                                </FloatingLabelInput>
                                                         </th>
                                                     ))}
 
