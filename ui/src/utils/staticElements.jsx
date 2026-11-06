@@ -10,8 +10,15 @@ const ANIMATION_PROPS = new Set([
 
 const cache = {};
 
+// Entrance class from the former animation props: movement or scale means a small rise, otherwise a fade.
+function entranceClass(initial) {
+  if (!initial || initial === false) return "";
+  if (typeof initial === "object" && ("y" in initial || "x" in initial || "scale" in initial)) return "ui-pop-in";
+  return "ui-fade-in";
+}
+
 function makeElement(tag) {
-  return forwardRef(function StaticElement({ children, style, animate, ...props }, ref) {
+  return forwardRef(function StaticElement({ children, style, animate, initial, className, ...props }, ref) {
     const rest = {};
     for (const key of Object.keys(props)) {
       if (!ANIMATION_PROPS.has(key)) rest[key] = props[key];
@@ -23,7 +30,9 @@ function makeElement(tag) {
       if (animate.height !== undefined) finalSize.height = animate.height;
     }
     const mergedStyle = style || Object.keys(finalSize).length ? { ...finalSize, ...style } : undefined;
-    return createElement(tag, { ...rest, style: mergedStyle, ref }, children);
+    const entrance = entranceClass(initial);
+    const merged = [className, entrance].filter(Boolean).join(" ");
+    return createElement(tag, { ...rest, className: merged || undefined, style: mergedStyle, ref }, children);
   });
 }
 
