@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiUrl } from '../../utils/api';
-import AdminSidebar from '../../components/AdminSidebar';
 import { formatPositionTitle } from '../../utils/officialsUtils';
 
 // Subcomponents
@@ -18,6 +17,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import ErrorState from './components/ErrorState';
 
 import './MainDashboard.css';
+import AdminLayout from '../../components/layout/AdminLayout.jsx';
 
 // Text cleaning engine
 const repairMojibake = (text) => {
@@ -413,29 +413,29 @@ const MainDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-slate-100">
-        <AdminSidebar />
+      <AdminLayout>
+        
         <LoadingSpinner />
-      </div>
+      </AdminLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-slate-100">
-        <AdminSidebar />
+      <AdminLayout>
+        
         <div className="mdb-container" style={{ padding: '40px' }}>
           <ErrorState error={error} onRetry={fetchData} />
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="flex h-screen bg-transparent text-brand-800 flex-col lg:flex-row relative overflow-hidden">
-      <AdminSidebar />
+    <AdminLayout>
+      
 
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative mdb-container">
+      <div className="flex-1 flex flex-col min-w-0 relative mdb-container">
         {/* TOP NAVIGATION BAR */}
         <DashboardHeader recordCount={filteredData.length} />
 
@@ -537,7 +537,7 @@ const MainDashboard = () => {
         onSelectAll={handleSelectAll}
         onClear={handleClearCategories}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

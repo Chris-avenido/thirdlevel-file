@@ -3,11 +3,11 @@ import { motion } from '../utils/staticElements.jsx';
 import { FloppyDisk as FiSave, Lock as FiLock, User as FiUser, Eye as FiEye, EyeSlash as FiEyeOff, SignOut as FiLogOut, Gear as FiSettings } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
-import AdminSidebar from '../components/AdminSidebar';
 import { apiUrl } from '../utils/api';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 import FormErrorSummary from '../components/forms/FormErrorSummary.jsx';
 import PageHeaderCard from '../components/PageHeaderCard.jsx';
+import AdminLayout from '../components/layout/AdminLayout.jsx';
 
 const Settings = () => {
     const { user, token, setUser, logout } = useAuth();
@@ -120,10 +120,10 @@ const Settings = () => {
     };
 
     return (
-        <div className="flex h-screen bg-transparent overflow-hidden">
-            <AdminSidebar />
+        <AdminLayout>
             
-            <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
+            
+            <main className="flex-1 flex flex-col relative">
                 {/* TOP NAVIGATION BAR */}
                 <PageHeaderCard title="Account Settings" subtitle="Update your personal information and security credentials.">
 <div className="flex items-center gap-6">
@@ -235,7 +235,7 @@ const Settings = () => {
 
                 </div>
             </main>
-        </div>
+        </AdminLayout>
     );
 };
 

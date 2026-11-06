@@ -28,6 +28,7 @@ export default {
       colors: { ...legacy, ...colors },
       fontFamily: {
         sans: ['var(--font-body)'],
+        body: ['var(--font-body)'],
         heading: ['var(--font-heading)'],
         title: ['var(--font-title)'],
         data: ['var(--font-data)'],

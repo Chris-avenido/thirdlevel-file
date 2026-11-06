@@ -49,7 +49,7 @@ const AdminSidebar = () => {
             <div
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-brand-800 border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
+                className={`fixed top-[72px] bottom-0 left-0 z-[100] flex shrink-0 bg-brand-800 border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:translate-x-0 
                 ${sidebarCollapsed ? 'w-[320px] lg:w-[96px]' : 'w-[320px]'}`

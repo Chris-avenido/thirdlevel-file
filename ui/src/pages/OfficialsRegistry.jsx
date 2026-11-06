@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from '../utils/staticElements.jsx';
 import { Users as FiUsers, MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, Info as FiInfo } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
-import AdminSidebar from '../components/AdminSidebar';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import { formatPositionTitle } from '../utils/officialsUtils';
@@ -14,6 +13,7 @@ import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import { DataControls, ApprovalTabs, StatsCards, ContentArea, IncumbencyModal, ActionModal, ApplicantSubmissionsTable, THIRD_LEVEL_POSITIONS } from '../components/officials-registry';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 import PageHeaderCard from '../components/PageHeaderCard.jsx';
+import AdminLayout from '../components/layout/AdminLayout.jsx';
 // Hero header text follows the active registry tab.
 const REGISTRY_HEADERS = {
     default: { title: "Personnel Registry", subtitle: "Official leadership management • Third level officials command dashboard" },
@@ -1244,9 +1244,9 @@ const OfficialsRegistry = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent font-sans overflow-hidden">
-                <AdminSidebar />
-                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
+            <AdminLayout>
+                
+                <div className="flex-1 flex flex-col min-w-0 relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
                     <PageHeaderCard title={REGISTRY_HEADERS[statusTab]?.title ?? REGISTRY_HEADERS.default.title} subtitle={REGISTRY_HEADERS[statusTab]?.subtitle ?? REGISTRY_HEADERS.default.subtitle}>
 <div className="flex items-center gap-6">
@@ -1305,7 +1305,7 @@ const OfficialsRegistry = () => {
                         </div>
                     </footer>
                 </div>
-            </div>
+            </AdminLayout>
         </PageTransition>
     );
 };

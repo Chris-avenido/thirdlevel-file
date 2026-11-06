@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import PageTransition from '../components/PageTransition';
-import AdminSidebar from '../components/AdminSidebar';
 import UploadDirectoryModal from '../components/UploadDirectoryModal';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import RetireesModal from '../components/RetireesModal';
@@ -14,6 +13,7 @@ import './MainDashboard/MainDashboard.css';
 import { UserPlus as FiUserPlus, CloudArrowUp as FiUploadCloud, List as FiList, House as FiHome, SignOut as FiLogOut, Medal as FiAward, Clock as FiClock, CaretRight as FiChevronRight, SquaresFour as FiGrid } from '@phosphor-icons/react';
 import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
 import PageHeaderCard from '../components/PageHeaderCard.jsx';
+import AdminLayout from '../components/layout/AdminLayout.jsx';
 
 // Text cleaning engine from MainDashboard
 const repairMojibake = (text) => {
@@ -818,9 +818,9 @@ const Home = () => {
 
   return (
     <PageTransition>
-      <div className="flex min-h-screen bg-transparent text-heading font-['Plus_Jakarta_Sans',system-ui,sans-serif]">
-        <AdminSidebar />
-        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+      <AdminLayout>
+        
+        <div className="flex-1 flex flex-col min-w-0 relative">
           {/* TOP NAVIGATION BAR */}
           <PageHeaderCard title="Executive Dashboard" subtitle="InsightED Top-Level Metrics">
 <div className="flex items-center gap-6">
@@ -1153,7 +1153,7 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AdminLayout>
       <UploadDirectoryModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}

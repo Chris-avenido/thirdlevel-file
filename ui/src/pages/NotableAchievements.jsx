@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from '../utils/staticElements.jsx';
 import { MagnifyingGlass as FiSearch, Funnel as FiFilter, DownloadSimple as FiDownload, CloudArrowUp as FiUploadCloud, Plus as FiPlus, PencilSimple as FiEdit2, Trash as FiTrash2, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, CheckCircle as FiCheckCircle, X as FiX, Medal as FiAward } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
-import AdminSidebar from '../components/AdminSidebar';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 import PageHeaderCard from '../components/PageHeaderCard.jsx';
+import AdminLayout from '../components/layout/AdminLayout.jsx';
 
 const generateHash = (id) => {
     if (!id) return '';
@@ -213,9 +213,9 @@ const NotableAchievements = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent text-brand-800 flex-col lg:flex-row relative overflow-hidden">
-                <AdminSidebar />
-                <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
+            <AdminLayout>
+                
+                <div className="flex-1 flex flex-col min-w-0 relative">
                     
                     {/* TOP NAVIGATION BAR */}
                     <PageHeaderCard title="Notable Achievements" subtitle={<>{achievements.length} Total Achievements</>}>
@@ -358,7 +358,7 @@ const NotableAchievements = () => {
                         </AnimatePresence>
                     </div>
                 </div>
-            </div>
+            </AdminLayout>
 
             {/* EDIT/ADD MODAL */}
             <AnimatePresence>
