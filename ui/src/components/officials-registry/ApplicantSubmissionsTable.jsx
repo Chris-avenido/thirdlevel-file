@@ -108,11 +108,11 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-700">
+                            <span className="text-[13px] font-semibold uppercase tracking-[0.2em] text-brand-700">
                                 Records Management • Applications
                             </span>
                         </div>
-                        <h2 className="text-xl font-black text-brand-800 tracking-tight mt-0.5">
+                        <h2 className="text-xl font-semibold text-brand-800 tracking-tight mt-0.5">
                             TIMON Applications Submissions
                         </h2>
                     </div>
@@ -121,7 +121,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                         <button
                             onClick={fetchSubmissions}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider hover:border-brand-800 hover:text-brand-800 transition-all"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-[13px] font-semibold uppercase tracking-wide hover:border-brand-800 hover:text-brand-800 transition-all"
                             title="Refresh Submissions"
                         >
                             <FiRefreshCw className={loading ? 'animate-spin' : ''} size={14} />
@@ -177,7 +177,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                         </FloatingLabelInput>
 
                     {/* Quick Counts Indicator */}
-                    <div className="flex items-center justify-end px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">
+                    <div className="flex items-center justify-end px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-[13px] font-medium text-slate-600">
                         <span>Showing {submissions.length} of {pagination.total} Submissions</span>
                     </div>
                 </div>
@@ -254,14 +254,14 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 <tr>
                                     <td colSpan="7" className="p-16 text-center text-slate-400">
                                         <div className="w-8 h-8 border-3 border-brand-800/20 border-t-brand-800 rounded-full animate-spin mx-auto mb-3"></div>
-                                        <p className="font-black uppercase tracking-widest text-[11px]">Loading Submissions...</p>
+                                        <p className="font-semibold uppercase tracking-wide text-[13px]">Loading Submissions...</p>
                                     </td>
                                 </tr>
                             ) : submissions.length === 0 ? (
                                 <tr>
                                     <td colSpan="7" className="p-16 text-center text-slate-400">
                                         <FiBriefcase className="mx-auto mb-3 text-slate-300" size={32} />
-                                        <h4 className="font-black uppercase tracking-tight text-brand-800 text-base">No Submissions Found</h4>
+                                        <h4 className="font-semibold uppercase tracking-tight text-brand-800 text-base">No Submissions Found</h4>
                                         <p className="font-medium text-slate-400 mt-1">Try adjusting your position or regional filters.</p>
                                     </td>
                                 </tr>
@@ -290,14 +290,14 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                             {/* Candidate Name */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-brand-800 flex items-center justify-center font-black shrink-0 border border-blue-100">
+                                                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-brand-800 flex items-center justify-center font-semibold shrink-0 border border-blue-100">
                                                         <FiUser size={16} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-brand-800 text-sm group-hover:text-brand-700 transition-colors">
+                                                        <p className="person-title text-brand-800 text-[17px] leading-tight group-hover:text-brand-700 transition-colors">
                                                             {row.candidate_name}
                                                         </p>
-                                                        <p className="text-[11px] font-medium text-slate-400">
+                                                        <p className="font-data text-[13px] text-secondary">
                                                             {row.email || '—'}
                                                         </p>
                                                     </div>
@@ -307,10 +307,10 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                             {/* Applied Position */}
                                             <td className="px-6 py-4">
                                                 <div className="inline-flex items-center gap-2">
-                                                    <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider border ${badgeInfo.badge}`}>
+                                                    <span className={`px-2.5 py-1 rounded-lg text-[13px] font-semibold uppercase tracking-wide border ${badgeInfo.badge}`}>
                                                         {row.applied_position}
                                                     </span>
-                                                    <span className="text-[11px] font-bold text-slate-600 hidden lg:inline">
+                                                    <span className="text-[13px] font-medium text-slate-600 hidden lg:inline">
                                                         {badgeInfo.label}
                                                     </span>
                                                 </div>
@@ -318,7 +318,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
 
                                             {/* Target Region */}
                                             <td className="px-6 py-4">
-                                                <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+                                                <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                                                     <FiMapPin className="text-brand-800 shrink-0" size={14} />
                                                     <span>{row.target_region}</span>
                                                 </div>
@@ -334,7 +334,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
 
                                             {/* QS Status */}
                                             <td className="px-6 py-4">
-                                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider border inline-flex items-center gap-1 ${
+                                                <span className={`px-2.5 py-1 rounded-lg text-[13px] font-semibold uppercase tracking-wide border inline-flex items-center gap-1 ${
                                                     row.overall_qualification_status === 'QUALIFIED'
                                                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                                                         : row.overall_qualification_status === 'NOT QUALIFIED'
@@ -348,11 +348,11 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                             {/* NSC Score */}
                                             <td className="px-6 py-4 text-center">
                                                 {nscAverage !== null && nscAverage !== undefined ? (
-                                                    <span className="px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-black text-xs inline-flex items-center gap-1" title="Completed NSC Average Score">
+                                                    <span className="px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-semibold text-[13px] inline-flex items-center gap-1" title="Completed NSC Average Score">
                                                         <FiAward size={12} /> {nscAverage}
                                                     </span>
                                                 ) : (
-                                                    <span className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-400 font-bold text-xs inline-flex items-center gap-1" title="NSC evaluation pending (all 5 member scores required)">
+                                                    <span className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-400 font-medium text-[13px] inline-flex items-center gap-1" title="NSC evaluation pending (all 5 member scores required)">
                                                         <FiAward size={12} /> --
                                                     </span>
                                                 )}
@@ -366,7 +366,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                                         e.stopPropagation();
                                                         handleOpenInspection(row.id);
                                                     }}
-                                                    className="px-4 py-2 rounded-xl bg-brand-800 text-white hover:bg-blue-900 text-xs font-black uppercase tracking-wider transition-all inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                                    className="px-4 py-2 rounded-xl bg-brand-800 text-white hover:bg-blue-900 text-[13px] font-semibold uppercase tracking-wide transition-all inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
                                                 >
                                                     <FiEye size={14} /> Inspect
                                                 </button>
@@ -382,24 +382,24 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                 {/* Pagination Controls */}
                 {pagination.totalPages > 1 && (
                     <div className="flex flex-col sm:flex-row items-center justify-between p-5 bg-slate-50 border-t-2 border-slate-100 gap-4">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <p className="text-[13px] font-medium text-slate-400 uppercase tracking-wide">
                             Page {pagination.page} of {pagination.totalPages} ({pagination.total} submissions)
                         </p>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setPagination(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
                                 disabled={pagination.page === 1}
-                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:border-brand-800 disabled:opacity-40 transition-colors flex items-center gap-1"
+                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-[13px] font-medium uppercase tracking-wide hover:border-brand-800 disabled:opacity-40 transition-colors flex items-center gap-1"
                             >
                                 <FiChevronLeft size={16} /> Prev
                             </button>
-                            <span className="text-xs font-black text-brand-800 px-2">
+                            <span className="text-[13px] font-semibold text-brand-800 px-2">
                                 {pagination.page}
                             </span>
                             <button
                                 onClick={() => setPagination(p => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))}
                                 disabled={pagination.page === pagination.totalPages}
-                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:border-brand-800 disabled:opacity-40 transition-colors flex items-center gap-1"
+                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-[13px] font-medium uppercase tracking-wide hover:border-brand-800 disabled:opacity-40 transition-colors flex items-center gap-1"
                             >
                                 Next <FiChevronRight size={16} />
                             </button>

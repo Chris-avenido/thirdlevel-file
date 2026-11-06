@@ -14,6 +14,14 @@ import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import { DataControls, ApprovalTabs, StatsCards, ContentArea, IncumbencyModal, ActionModal, ApplicantSubmissionsTable, THIRD_LEVEL_POSITIONS } from '../components/officials-registry';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 import PageHeaderCard from '../components/PageHeaderCard.jsx';
+// Hero header text follows the active registry tab.
+const REGISTRY_HEADERS = {
+    default: { title: "Personnel Registry", subtitle: "Official leadership management • Third level officials command dashboard" },
+    "For Approval": { title: "Pending Approvals", subtitle: "Personnel registrations waiting for review and approval" },
+    Rejected: { title: "Rejected Registrations", subtitle: "Personnel registrations that were declined" },
+    Applications: { title: "TIMON Applications", subtitle: "Executive designation applications submitted through the TIMON portal" },
+};
+
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -1240,7 +1248,7 @@ const OfficialsRegistry = () => {
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <PageHeaderCard title="Personnel Registry" subtitle="Official Leadership Management • Third Level Officials Command Dashboard">
+                    <PageHeaderCard title={REGISTRY_HEADERS[statusTab]?.title ?? REGISTRY_HEADERS.default.title} subtitle={REGISTRY_HEADERS[statusTab]?.subtitle ?? REGISTRY_HEADERS.default.subtitle}>
 <div className="flex items-center gap-6">
                             <div className="hidden md:flex flex-col items-end">
                                 <span className="text-[15px] font-medium text-heading leading-tight">
