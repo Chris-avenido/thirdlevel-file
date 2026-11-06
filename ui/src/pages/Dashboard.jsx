@@ -14,10 +14,10 @@ const Dashboard = () => {
   ];
 
   const kpis = [
-    { label: 'Total Learners', value: '27.4M', note: 'Across all active regions', color: 'blue' },
-    { label: 'Priority Schools', value: '1,248', note: 'Marked for resource review', color: 'gold' },
-    { label: 'Teachers', value: '895K', note: 'Current staffing inventory', color: 'blue' },
-    { label: 'Critical Alerts', value: '86', note: 'Require immediate validation', color: 'red' },
+    { label: 'Total Learners', value: '27.4M', note: 'Across all active regions', accent: 'blue' },
+    { label: 'Priority Schools', value: '1,248', note: 'Marked for resource review', accent: 'gold' },
+    { label: 'Teachers', value: '895K', note: 'Current staffing inventory', accent: 'blue' },
+    { label: 'Critical Alerts', value: '86', note: 'Require immediate validation', accent: 'red' },
   ];
 
   const chartData = [
@@ -85,8 +85,8 @@ const Dashboard = () => {
 
           <div className="kpi-row">
             {kpis.map((kpi, idx) => (
-              <div className={`card kpi-card border-l-${kpi.color}`} key={idx}>
-                <div className={`kpi-accent bg-${kpi.color}`}></div>
+              <div className={`card kpi-card border-l-${kpi.accent}`} key={idx}>
+                <div className={`kpi-accent bg-${kpi.accent}`}></div>
                 <div className="kpi-label">{kpi.label}</div>
                 <div className="kpi-value">{kpi.value}</div>
                 <div className="kpi-note">{kpi.note}</div>

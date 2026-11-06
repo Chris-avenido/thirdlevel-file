@@ -223,7 +223,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                       <div className="absolute top-0 right-0 text-blue-300 animate-pulse">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10Z" /></svg>
                       </div>
-                      <div className="absolute bottom-2 left-0 text-blue-300 animate-pulse" style={{ animationDelay: '0.5s' }}>
+                      <div className="absolute bottom-2 left-0 text-blue-300 animate-pulse">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10Z" /></svg>
                       </div>
                     </div>

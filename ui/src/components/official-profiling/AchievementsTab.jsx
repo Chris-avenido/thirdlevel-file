@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { motion } from '../../utils/staticElements.jsx';
 import { Plus as FiPlus, Trash as FiTrash2, Info as FiInfo } from '@phosphor-icons/react';
 import YearInput from '../YearInput';
 import { Field, SectionLabel } from './formParts';
 import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
+import ConfirmDestructiveDialog from '../forms/ConfirmDestructiveDialog.jsx';
 
 const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP, tab }) => {
+  const [pendingRemoveIdx, setPendingRemoveIdx] = useState(null);
   return (
     <>
                                                 {tab === 'achievements' && (
@@ -51,7 +54,7 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                                         {isEditing && layerCount > 1 && (
                                                                                             <button
                                                                                                 type="button"
-                                                                                                onClick={() => removeAchievementEntry(idx)}
+                                                                                                onClick={() => setPendingRemoveIdx(idx)}
                                                                                                 className="text-amber-600 hover:text-amber-800 text-[15px] font-bold uppercase tracking-wider flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-lg border-2 border-amber-200 transition-colors cursor-pointer"
                                                                                                 title="Remove Achievement Entry"
                                                                                             >
@@ -91,6 +94,14 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                                 <FiPlus size={14} /> Add Another Achievement Layer
                                                                             </button>
                                                                         )}
+                       <ConfirmDestructiveDialog
+                           open={pendingRemoveIdx !== null}
+                           title={`Remove achievement entry #${(pendingRemoveIdx ?? 0) + 1}?`}
+                           body="This removes the entry and its title and year from the profile. Changes apply when you save."
+                           confirmLabel="Remove entry"
+                           onConfirm={() => { removeAchievementEntry(pendingRemoveIdx); setPendingRemoveIdx(null); }}
+                           onCancel={() => setPendingRemoveIdx(null)}
+                       />
                                                                     </div>
                                                                 );
                                                             })()}

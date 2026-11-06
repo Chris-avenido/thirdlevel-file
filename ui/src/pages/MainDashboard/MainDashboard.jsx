@@ -14,7 +14,7 @@ import RiskChart from './components/RiskChart';
 import MasterTable from './components/MasterTable';
 import DetailModal from './components/DetailModal';
 import CategoryPickerModal from './components/CategoryPickerModal';
-import LoadingSkeleton from './components/LoadingSkeleton';
+import LoadingSpinner from './components/LoadingSpinner';
 import ErrorState from './components/ErrorState';
 
 import './MainDashboard.css';
@@ -415,7 +415,7 @@ const MainDashboard = () => {
     return (
       <div className="flex min-h-screen bg-slate-100">
         <AdminSidebar />
-        <LoadingSkeleton />
+        <LoadingSpinner />
       </div>
     );
   }

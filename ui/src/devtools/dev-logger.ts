@@ -5,6 +5,7 @@
  * Must be the FIRST import of the app entry and called before React renders. Every code path is guarded by
  * `import.meta.env.DEV`, so production builds drop it. Never throws, never recurses.
  */
+import { LOG_BADGE_STYLE } from "../theme/log-colors";
 import {
   fingerprintOf,
   formatError,
@@ -88,12 +89,7 @@ const PATCHED = Symbol.for("dev-diagnostics.patched");
 const MAX_NOISE = 100;
 const MAX_IMPORTANT = 200;
 const MAX_CRUMBS = 30;
-const BADGE: Record<Exclude<DevLevel, "silent">, string> = {
-  debug: "background:#475569;color:#F8FAFC",
-  info: "background:#0284C7;color:#fff",
-  warn: "background:#D97706;color:#fff",
-  error: "background:#DC2626;color:#fff",
-};
+const BADGE: Record<Exclude<DevLevel, "silent">, string> = LOG_BADGE_STYLE;
 
 /** Key names of a JSON request body (never values); arrays are summarised by their first element. */
 function keyShape(value: unknown, depth = 0): unknown {
@@ -510,7 +506,7 @@ class DevLogger {
     try {
       console[level](
         `%c[DEV:${level.toUpperCase()}]%c [${entry.context}] ${entry.message}`,
-        `${BADGE[level]};border-radius:3px;padding:1px 5px;font-weight:700`,
+        `${BADGE[level]};border-radius:4px;padding:1px 5px;font-weight:700`,
         "color:inherit",
         entry.details ?? "",
       );
