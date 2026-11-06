@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from '../../utils/staticElements.jsx';
 import { MagnifyingGlass as FiSearch, CheckCircle as FiCheckCircle, Clock as FiClock, ArrowRight as FiArrowRight, User as FiUser, Stack as FiLayers, X as FiX, Trash as FiTrash2, ArrowsClockwise as FiRefreshCw, Calendar as FiCalendar } from '@phosphor-icons/react';
 import { TestTube as FaVial } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';

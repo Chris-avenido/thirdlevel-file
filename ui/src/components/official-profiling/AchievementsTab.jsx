@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion } from '../../utils/staticElements.jsx';
 import { Plus as FiPlus, Trash as FiTrash2, Info as FiInfo } from '@phosphor-icons/react';
 import YearInput from '../YearInput';
 import { Field, SectionLabel } from './formParts';

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar as FiCalendar, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, X as FiX } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from '../utils/staticElements.jsx';
 
 const YearInput = ({
     value,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Envelope as FiMail, Lock as FiLock, Eye as FiEye, EyeSlash as FiEyeOff, ArrowRight as FiArrowRight, ArrowLeft as FiArrowLeft, WarningCircle as FiAlertCircle, DeviceMobile as FiSmartphone, Key as FiKey, X as FiX } from '@phosphor-icons/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from '../utils/staticElements.jsx';
 import logo from '../assets/modern_logo.png';
 import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';

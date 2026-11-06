@@ -3,7 +3,7 @@ import { X as FiX, Medal as FiAward, SignOut as FiLogOut, WarningCircle as FiAle
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from '../utils/staticElements.jsx';
 
 const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth = [], elementsThisMonth = [] }) => {
   const navigate = useNavigate();

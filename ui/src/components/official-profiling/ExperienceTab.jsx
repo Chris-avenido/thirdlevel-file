@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion } from '../../utils/staticElements.jsx';
 import { Medal as FiAward, CaretLeft as FiChevronLeft, Plus as FiPlus, Trash as FiTrash2, Clock as FiClock, Pulse as FiActivity } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import { PREVIOUS_POSITION_OPTIONS } from './constants';

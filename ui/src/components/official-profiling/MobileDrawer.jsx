@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from '../../utils/staticElements.jsx';
 import { User as FiUser, CheckCircle as FiCheckCircle, Lock as FiLock, ArrowRight as FiArrowRight, X as FiX } from '@phosphor-icons/react';
 import { TABS } from './constants';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from '../utils/staticElements.jsx';
 import { FloppyDisk as FiSave, Lock as FiLock, User as FiUser, Eye as FiEye, EyeSlash as FiEyeOff, SignOut as FiLogOut, Gear as FiSettings } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';

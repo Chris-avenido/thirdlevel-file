@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from '../../utils/staticElements.jsx';
 import { Clock as FiClock, Info as FiInfo, X as FiX, Calendar as FiCalendar } from '@phosphor-icons/react';
 
 const IncumbencyModal = ({ incumbents, incumbentsLoading, selectedPosition, setShowIncumbencyModal, showIncumbencyModal }) => {

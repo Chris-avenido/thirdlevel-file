@@ -1,6 +1,6 @@
 // src/components/PageTransition.jsx
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from '../utils/staticElements.jsx';
 
 const animations = {
     initial: { opacity: 0, scale: 0.99, filter: "blur(5px)" },

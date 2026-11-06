@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion } from '../../utils/staticElements.jsx';
 import { User as FiUser, CaretLeft as FiChevronLeft, Lock as FiLock } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 

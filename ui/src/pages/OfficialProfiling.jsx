@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from '../utils/staticElements.jsx';
 import { CheckCircle as FiCheckCircle, SpinnerGap as FiLoader } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';

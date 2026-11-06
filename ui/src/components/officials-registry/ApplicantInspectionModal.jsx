@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from '../../utils/staticElements.jsx';
 import { X as FiX, User as FiUser, Briefcase as FiBriefcase, MapPin as FiMapPin, Calendar as FiCalendar, FileText as FiFileText, DownloadSimple as FiDownload, Eye as FiEye, Medal as FiAward, FloppyDisk as FiSave, CheckCircle as FiCheckCircle, Warning as FiAlertTriangle, SpinnerGap as FiLoader, Check as FiCheck, Clipboard as FiClipboard, Sliders as FiSliders, Shield as FiShield, CheckSquare as FiCheckSquare, List as FiList } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 import Swal from 'sweetalert2';
