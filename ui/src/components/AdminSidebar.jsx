@@ -8,7 +8,7 @@ import newLogo from '../assets/modern_logo.png';
 const AdminSidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
 
     // Hover State
     const [isHovered, setIsHovered] = useState(false);
@@ -49,7 +49,7 @@ const AdminSidebar = () => {
             <div
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className={`fixed top-[72px] bottom-0 left-0 z-[100] flex shrink-0 bg-brand-800 border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
+                className={`fixed top-[72px] bottom-11 left-0 z-[100] flex shrink-0 bg-brand-800 border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:translate-x-0 
                 ${sidebarCollapsed ? 'w-[320px] lg:w-[96px]' : 'w-[320px]'}`
@@ -111,26 +111,9 @@ const AdminSidebar = () => {
                         <FiBriefcase size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>TIMON Applications</span>
                     </button>
-
-                    <button
-                        onClick={() => navigate('/settings')}
-                        title="Account Settings"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/settings' ? 'bg-white text-brand-800 shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <FiSettings size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Settings</span>
-                    </button>
                 </nav>
 
                 <div className={`border-t border-blue-800/50 mt-auto flex flex-col gap-4 ${sidebarCollapsed ? 'lg:p-4' : 'p-8'}`}>
-                    <button
-                        onClick={logout}
-                        title="Sign Out"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} text-rose-200 hover:bg-white/10 hover:text-rose-400`}
-                    >
-                        <FiLogOut size={18} className="shrink-0" />
-                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Sign Out</span>
-                    </button>
                     <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:h-0 lg:opacity-0' : 'h-6 opacity-100'}`}>
                         <p className="text-[9px] font-black text-blue-400/50 uppercase tracking-[0.2em] text-center whitespace-nowrap">Department of Education</p>
                     </div>

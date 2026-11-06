@@ -39,7 +39,7 @@ const AppHeader = () => {
                         <Bank size={20} />
                     </div>
                     <div className="min-w-0">
-                        <p className="truncate font-title text-[20px] font-bold leading-tight text-heading">InsightED HQ</p>
+                        <p className="truncate font-title text-[20px] font-bold leading-tight text-heading">TIMON Dashboard</p>
                         <p className="truncate font-title text-[13px] italic leading-tight text-secondary">Performance &amp; Monitoring Control Center</p>
                     </div>
                 </div>
@@ -54,7 +54,12 @@ const AppHeader = () => {
                     >
                         <Moon size={20} />
                     </button>
-                    <div className="relative" ref={menuRef}>
+                    <div
+                        className="relative"
+                        ref={menuRef}
+                        onPointerEnter={(e) => { if (e.pointerType === "mouse") setOpen(true); }}
+                        onPointerLeave={(e) => { if (e.pointerType === "mouse") setOpen(false); }}
+                    >
                         <button
                             type="button"
                             onClick={() => setOpen((v) => !v)}
@@ -72,13 +77,15 @@ const AppHeader = () => {
                             <CaretDown size={14} className="text-secondary" />
                         </button>
                         {open ? (
-                            <div role="menu" className="absolute right-0 top-full mt-2 w-48 rounded-md border border-muted bg-white py-1 shadow-md">
+                            <div className="absolute right-0 top-full w-48 pt-2">
+                            <div role="menu" className="rounded-md border border-muted bg-white py-1 shadow-md">
                                 <button type="button" role="menuitem" onClick={() => { setOpen(false); navigate('/settings'); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[15px] text-heading hover:bg-brand-50">
                                     <Gear size={16} /> Settings
                                 </button>
                                 <button type="button" role="menuitem" onClick={() => { setOpen(false); logout(); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[15px] text-danger-700 hover:bg-danger-50">
                                     <SignOut size={16} /> Sign out
                                 </button>
+                            </div>
                             </div>
                         ) : null}
                     </div>
