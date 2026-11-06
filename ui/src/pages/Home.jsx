@@ -11,9 +11,8 @@ import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import AnalyticsSection from './MainDashboard/components/AnalyticsSection';
 import './MainDashboard/MainDashboard.css';
-import { UserPlus as FiUserPlus, CloudArrowUp as FiUploadCloud, List as FiList, House as FiHome, SignOut as FiLogOut, Medal as FiAward, Clock as FiClock, MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, SquaresFour as FiGrid } from '@phosphor-icons/react';
+import { UserPlus as FiUserPlus, CloudArrowUp as FiUploadCloud, List as FiList, House as FiHome, SignOut as FiLogOut, Medal as FiAward, Clock as FiClock, CaretRight as FiChevronRight, SquaresFour as FiGrid } from '@phosphor-icons/react';
 import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
-import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 import PageHeaderCard from '../components/PageHeaderCard.jsx';
 
 // Text cleaning engine from MainDashboard
@@ -832,7 +831,8 @@ const Home = () => {
             </div>
 </PageHeaderCard>
           <style>{`
-          .dashboard-wrap { padding:28px; }
+          .dashboard-wrap { padding:16px 32px 28px; }
+          @media(max-width:767px){ .dashboard-wrap { padding:16px; } }
           .hero { background:var(--color-brand-800); color:white; border-radius:var(--radius-md); padding:28px; }
           .hero small { color:var(--color-gold); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
           .hero h1 { margin:10px 0 8px; font-family:var(--font-title); font-size:32px; line-height:1.25; font-weight:700; }
@@ -902,54 +902,7 @@ const Home = () => {
           }
         `}</style>
 
-          <div className="dashboard-wrap mt-6">
-            {/* FILTERS & SEARCH BAR */}
-            <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-end gap-3 card-surface p-4 relative z-20 max-w-[1200px] mx-auto">
-                {/* SEARCH BAR */}
-                <FloatingLabelInput label="Search" icon={<FiSearch size={14} />} className="min-w-0 flex-1" type="text" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="Search name or email..." />
-
-                {/* DROPDOWNS */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-[560px] xl:shrink-0">
-                    {/* Region Dropdown */}
-                    <FloatingLabelInput as="select" label="Region" className="w-full" value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion}>
-                            <option value="All regions">All Regions</option>
-                            {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
-                                <option key={r} value={r}>{r}</option>
-                            ))}
-                        </FloatingLabelInput>
-
-                    {/* Level Dropdown */}
-                    <FloatingLabelInput as="select" label="Level" className="w-full" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel}>
-                            <option value="All levels">All Levels</option>
-                            <option value="Third Level">Third Level</option>
-                            <option value="Division Chief">Division Chief</option>
-                        </FloatingLabelInput>
-
-                    {/* Office Dropdown */}
-                    <FloatingLabelInput as="select" label="Office" className="w-full" value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice}>
-                            <option value="All">All Offices</option>
-                            {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
-                                <option key={o} value={o}>{o}</option>
-                            ))}
-                        </FloatingLabelInput>
-                </div>
-
-                {/* Clear Button */}
-                <div className="flex items-center gap-2 w-full xl:w-auto mt-2 xl:mt-0">
-                    <button
-                        onClick={() => {
-                            setFilterSearch('');
-                            setFilterRegion('All regions');
-                            setFilterLevel('All levels');
-                            setFilterOffice('All');
-                        }}
-                        className="h-11 md:h-10 px-6 w-full xl:w-auto bg-brand-700 text-white rounded-md font-medium text-[13px] uppercase tracking-wide hover:bg-brand-800 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
-                    >
-                        Clear
-                    </button>
-                </div>
-            </div>
-
+          <div className="dashboard-wrap">
             <section className="kpis">
               <div className={`kpi ${activeQueueFilter === 'thirdLevel' ? 'active-filter' : ''}`} onClick={() => toggleFilter('thirdLevel')} style={{ cursor: 'pointer', outlineColor: 'var(--color-brand-300)' }}>
                 <p>Total Third Level Officials</p>
