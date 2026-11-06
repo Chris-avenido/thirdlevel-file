@@ -51,9 +51,9 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
 
                                                                     <div className="flex-1 w-full space-y-4">
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                                                            <Field label="First Name"><input disabled={!isEditing} type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} className={inp} /></Field>
-                                                                            <Field label="Last Name"><input disabled={!isEditing} type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} className={inp} /></Field>
-                                                                            <Field label="Middle Name"><input disabled={!isEditing} type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} className={inp} /></Field>
+                                                                            <FloatingLabelInput label="First Name" disabled={!isEditing} type="text" value={profile.first_name} onChange={e => setP('first_name', e.target.value)} />
+                                                                            <FloatingLabelInput label="Last Name" disabled={!isEditing} type="text" value={profile.last_name} onChange={e => setP('last_name', e.target.value)} />
+                                                                            <FloatingLabelInput label="Middle Name" disabled={!isEditing} type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} />
                                                                             <Field label="Suffix">
                                                                                 <div className="flex items-center gap-1.5">
                                                                                     <input
@@ -90,13 +90,11 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                             </Field>
                                                                         </div>
                                                                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                                                            <Field label="Gender">
-                                                                                <select disabled={!isEditing} value={profile.gender} onChange={e => setP('gender', e.target.value)} className={sel}>
+                                                                            <FloatingLabelInput as="select" label="Gender" disabled={!isEditing} value={profile.gender} onChange={e => setP('gender', e.target.value)}>
                                                                                     <option value="">Select</option>
                                                                                     <option value="MALE">Male</option>
                                                                                     <option value="FEMALE">Female</option>
-                                                                                </select>
-                                                                            </Field>
+                                                                                </FloatingLabelInput>
                                                                             <Field label="Date of Birth">
                                                                                 <div className="relative">
                                                                                     <ModernDatePicker disabled={!isEditing} maxDate={new Date()} value={profile.date_of_birth} onChange={val => setProfile(p => ({ ...p, date_of_birth: val, age: computeAge(val) }))} className={inp} />
@@ -107,12 +105,10 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                     {profile.age || '—'}
                                                                                 </div>
                                                                             </Field>
-                                                                            <Field label="Civil Status">
-                                                                                <select disabled={!isEditing} value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)} className={sel}>
+                                                                            <FloatingLabelInput as="select" label="Civil Status" disabled={!isEditing} value={profile.civil_status} onChange={e => setP('civil_status', e.target.value)}>
                                                                                     <option value="">Select</option>
                                                                                     {['SINGLE', 'MARRIED', 'WIDOWED', 'SEPARATED'].map(o => <option key={o} value={o}>{o.charAt(0) + o.slice(1).toLowerCase()}</option>)}
-                                                                                </select>
-                                                                            </Field>
+                                                                                </FloatingLabelInput>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -140,16 +136,12 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                     </div>
                                                                 </div>
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-                                                                    <Field label="Unique Number">
-                                                                        <input disabled={!isEditing} type="text" value={TLOid || ''} readOnly className={`${inp} bg-slate-50 text-slate-500 cursor-not-allowed`} />
-                                                                    </Field>
-                                                                    <Field label="Employment Status">
-                                                                        <select disabled={!isEditing} value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)} className={sel}>
+                                                                    <FloatingLabelInput label="Unique Number" disabled={!isEditing} type="text" value={TLOid || ''} readOnly />
+                                                                    <FloatingLabelInput as="select" label="Employment Status" disabled={!isEditing} value={profile.employment_status || ''} onChange={e => setP('employment_status', e.target.value)}>
                                                                             <option value="">Select Status</option>
                                                                             <option value="REGULAR">Regular</option>
                                                                             <option value="COTERMINOUS">Coterminous</option>
-                                                                        </select>
-                                                                    </Field>
+                                                                        </FloatingLabelInput>
                                                                     <Field label="Region">
                                                                         <div className="relative">
                                                                             <select

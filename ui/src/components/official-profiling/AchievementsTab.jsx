@@ -60,13 +60,7 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                                         )}
                                                                                     </div>
                                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                                        <Field label="Awards / Recognitions / Notable Achievements (If Any)">
-                                                                                            <select
-                                                                                                disabled={!isEditing}
-                                                                                                value={valAch}
-                                                                                                onChange={e => updateAchievementEntry(idx, e.target.value, undefined)}
-                                                                                                className="w-full bg-white hover:bg-slate-100/30 border-2 border-slate-200/80 focus:border-brand-700 focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-sm cursor-pointer"
-                                                                                            >
+                                                                                        <FloatingLabelInput as="select" label="Awards / Recognitions / Notable Achievements (If Any)" disabled={!isEditing} value={valAch} onChange={e => updateAchievementEntry(idx, e.target.value, undefined)}>
                                                                                                 <option value="">-- Select Achievement --</option>
                                                                                                 {notableAchievementsOptions.map((ach, i) => (
                                                                                                     <option key={`opt-${idx}-${i}`} value={ach}>{ach}</option>
@@ -74,8 +68,7 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                                                 {valAch && !notableAchievementsOptions.includes(valAch) && (
                                                                                                     <option value={valAch}>{valAch}</option>
                                                                                                 )}
-                                                                                            </select>
-                                                                                        </Field>
+                                                                                            </FloatingLabelInput>
                                                                                         <Field label="Year Received">
                                                                                             <YearInput
                                                                                                 disabled={!isEditing}

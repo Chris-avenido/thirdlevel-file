@@ -11,8 +11,7 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                     <div className="space-y-6">
                                                         <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                             <SectionLabel color="var(--color-brand-700)">Career Executive Service (CES)</SectionLabel>
-                                                            <Field label="CES Eligibility / Rank Status">
-                                                                <select disabled={!isEditing} value={profile.ces_stage || ''} onChange={e => setP('ces_stage', e.target.value)} className={inp}>
+                                                            <FloatingLabelInput as="select" label="CES Eligibility / Rank Status" disabled={!isEditing} value={profile.ces_stage || ''} onChange={e => setP('ces_stage', e.target.value)}>
                                                                     <option value="">Select Status</option>
                                                                     <option value="STAGE 1 (CES WRITTEN EXAMINATION)">Stage 1 (CES Written Examination)</option>
                                                                     <option value="STAGE 2 (ASSESSMENT CENTER)">Stage 2 (Assessment Center)</option>
@@ -26,8 +25,7 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                     <option value="CESO RANK II">CESO Rank II</option>
                                                                     <option value="CESO RANK I">CESO Rank I</option>
                                                                     <option value="NOT APPLICABLE">Not Applicable</option>
-                                                                </select>
-                                                            </Field>
+                                                                </FloatingLabelInput>
                                                             <Field label="Date of Conferment (if applicable)">
                                                                 <div className="relative">
                                                                     <ModernDatePicker disabled={!isEditing} value={profile.ces_conferment_date} onChange={val => setP('ces_conferment_date', val)} className={inp} />
