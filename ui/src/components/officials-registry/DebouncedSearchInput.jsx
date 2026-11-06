@@ -20,7 +20,7 @@ const DebouncedSearchInput = ({ value, onChange, placeholder }) => {
             onChange={(e) => setLocal(e.target.value)}
             placeholder={placeholder}
             autoComplete="off"
-            className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
+            className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 pl-11 pr-5 text-[21px] font-bold text-slate-700 placeholder:text-slate-400 outline-none transition-all"
         />
     );
 };

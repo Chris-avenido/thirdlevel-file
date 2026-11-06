@@ -32,11 +32,25 @@ export async function findByTloId(client, sourceTable, tloId) {
  */
 export async function syncForTloId(client, sourceTable, tloId, incomingArray, updatedBy = null) {
   const existingRes = await client.query(
-    `SELECT id FROM ${TABLE} WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2) AND delete_flg = 'No'`,
+    `SELECT id, delete_flg, LOWER(description) AS desc_lower
+     FROM ${TABLE}
+     WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)`,
     [sourceTable, tloId]
   );
-  const existingIds = new Set(existingRes.rows.map(r => r.id));
+  const activeIds = new Set();
+  const softDeletedByDesc = new Map();
+
+  for (const row of existingRes.rows) {
+    if (row.delete_flg === 'No') {
+      activeIds.add(row.id);
+    } else if (row.desc_lower) {
+      softDeletedByDesc.set(row.desc_lower, row.id);
+    }
+  }
+
   const incomingIds = new Set();
+  const toUpdate = [];
+  const toInsert = [];
 
   for (const rawItem of incomingArray) {
     const item = typeof rawItem === 'string'
@@ -46,58 +60,81 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     const description = (item.description || '').trim();
     if (!description) continue; // skip blank entries
 
-    const awardYear = item.award_year ? parseInt(item.award_year, 10) : null;
+    const parsedYear = item.award_year ? parseInt(item.award_year, 10) : null;
+    const awardYear = isNaN(parsedYear) ? null : parsedYear;
 
-    if (item.id && existingIds.has(item.id)) {
-      // UPDATE existing active row
-      await client.query(
-        `UPDATE ${TABLE}
-         SET description = $1, award_year = $2, delete_flg = 'No',
-             updated_at = NOW(), updated_by = $3
-         WHERE id = $4 AND source_table = $5 AND LOWER(tlo_id) = LOWER($6)`,
-        [description, isNaN(awardYear) ? null : awardYear, updatedBy,
-         item.id, sourceTable, tloId]
-      );
+    if (item.id && activeIds.has(item.id)) {
+      toUpdate.push({ id: item.id, description, award_year: awardYear });
       incomingIds.add(item.id);
     } else {
-      // Check if there's already a soft-deleted row with the same description we can resurrect
-      const existing = await client.query(
-        `SELECT id FROM ${TABLE}
-         WHERE source_table = $1 AND LOWER(tlo_id) = LOWER($2)
-           AND LOWER(description) = LOWER($3) AND delete_flg = 'Yes'
-         LIMIT 1`,
-        [sourceTable, tloId, description]
-      );
-      if (existing.rows.length > 0) {
-        await client.query(
-          `UPDATE ${TABLE}
-           SET description = $1, award_year = $2, delete_flg = 'No',
-               updated_at = NOW(), updated_by = $3
-           WHERE id = $4`,
-          [description, isNaN(awardYear) ? null : awardYear, updatedBy, existing.rows[0].id]
-        );
-        incomingIds.add(existing.rows[0].id);
+      const descLower = description.toLowerCase();
+      if (softDeletedByDesc.has(descLower)) {
+        const resurrectId = softDeletedByDesc.get(descLower);
+        softDeletedByDesc.delete(descLower); // only resurrect once
+        toUpdate.push({ id: resurrectId, description, award_year: awardYear });
+        incomingIds.add(resurrectId);
       } else {
-        const inserted = await client.query(
-          `INSERT INTO ${TABLE}
-             (source_table, tlo_id, description, award_year, delete_flg,
-              created_at, updated_at, created_by, updated_by)
-           VALUES ($1, $2, $3, $4, 'No', NOW(), NOW(), $5, $5)
-           RETURNING id`,
-          [sourceTable, tloId, description, isNaN(awardYear) ? null : awardYear, updatedBy]
-        );
-        incomingIds.add(inserted.rows[0].id);
+        toInsert.push({ description, award_year: awardYear });
       }
     }
   }
 
+  if (toUpdate.length > 0) {
+    await client.query(
+      `UPDATE ${TABLE} AS t
+       SET description = u.description,
+           award_year = u.award_year,
+           delete_flg = 'No',
+           updated_at = NOW(),
+           updated_by = $1
+       FROM (
+         SELECT UNNEST($2::int[]) AS id,
+                UNNEST($3::text[]) AS description,
+                UNNEST($4::int[]) AS award_year
+       ) AS u
+       WHERE t.id = u.id AND t.source_table = $5 AND LOWER(t.tlo_id) = LOWER($6)`,
+      [
+        updatedBy,
+        toUpdate.map(u => u.id),
+        toUpdate.map(u => u.description),
+        toUpdate.map(u => u.award_year),
+        sourceTable,
+        tloId
+      ]
+    );
+  }
+
+  if (toInsert.length > 0) {
+    const insertRes = await client.query(
+      `INSERT INTO ${TABLE}
+         (source_table, tlo_id, description, award_year, delete_flg,
+          created_at, updated_at, created_by, updated_by)
+       SELECT $1, $2, u.description, u.award_year, 'No', NOW(), NOW(), $3, $3
+       FROM (
+         SELECT UNNEST($4::text[]) AS description,
+                UNNEST($5::int[]) AS award_year
+       ) AS u
+       RETURNING id`,
+      [
+        sourceTable,
+        tloId,
+        updatedBy,
+        toInsert.map(i => i.description),
+        toInsert.map(i => i.award_year)
+      ]
+    );
+    for (const row of insertRes.rows) {
+      incomingIds.add(row.id);
+    }
+  }
+
   // Soft-delete rows that were omitted from the incoming array
-  const idsToSoftDelete = [...existingIds].filter(id => !incomingIds.has(id));
+  const idsToSoftDelete = [...activeIds].filter(id => !incomingIds.has(id));
   if (idsToSoftDelete.length > 0) {
     await client.query(
       `UPDATE ${TABLE}
        SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
-       WHERE id = ANY($2) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
+       WHERE id = ANY($2::int[]) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
       [updatedBy, idsToSoftDelete, sourceTable, tloId]
     );
     console.log(`[tloAccomplishmentRepository] Soft-deleted ${idsToSoftDelete.length} record(s) for ${tloId}`);

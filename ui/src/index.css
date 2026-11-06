@@ -76,8 +76,17 @@
   font-family: "Plus Jakarta Sans", Poppins, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
+  color-scheme: light;
   background-color: #f8fafc;
+}
+
+/* Ensure form controls default to clean light appearance across all browsers */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]),
+textarea,
+select {
+  color-scheme: light;
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 body {

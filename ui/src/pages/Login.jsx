@@ -98,6 +98,31 @@ const Login = () => {
 
     const { login, loginWithCredentials, verifyPin, logout } = useAuth();
 
+    const getTargetRedirect = (roleLower) => {
+        const searchParams = new URLSearchParams(location.search);
+        const targetRedirect = searchParams.get('returnUrl') || searchParams.get('redirect') || location.state?.redirectTo || location.state?.returnUrl;
+
+        if (
+            targetRedirect &&
+            typeof targetRedirect === 'string' &&
+            targetRedirect.startsWith('/') &&
+            !targetRedirect.startsWith('//') &&
+            !targetRedirect.startsWith('/login') &&
+            !targetRedirect.startsWith('/register') &&
+            !targetRedirect.startsWith('/reset-password')
+        ) {
+            return targetRedirect;
+        }
+
+        if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
+            return '/home';
+        } else if (['tlo applicant', 'third level applicant'].includes(roleLower)) {
+            return '/timon-applications';
+        } else {
+            return '/official-profiling';
+        }
+    };
+
     useEffect(() => {
         // Standalone app defaults
         setIsSchoolHead(false);
@@ -148,13 +173,7 @@ const Login = () => {
                 localStorage.setItem('remembered_user', JSON.stringify(sanitizedUser));
 
                 // Role-based redirection
-                if (location.state?.redirectTo) {
-                    navigate(location.state.redirectTo);
-                } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
-                    navigate('/home');
-                } else {
-                    navigate('/official-profiling');
-                }
+                navigate(getTargetRedirect(roleLower), { replace: true });
             } else {
                 Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
             }
@@ -194,13 +213,7 @@ const Login = () => {
                 localStorage.setItem('remembered_user', JSON.stringify(sanitizedUser));
 
                 // Role-based redirection
-                if (location.state?.redirectTo) {
-                    navigate(location.state.redirectTo);
-                } else if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office', 'co_pd', 'ro_hrmo', 'sdo_hrmo'].includes(roleLower)) {
-                    navigate('/home');
-                } else {
-                    navigate('/official-profiling');
-                }
+                navigate(getTargetRedirect(roleLower), { replace: true });
             } else {
                 Swal.fire('Login Failed', data.error || 'Invalid credentials', 'error');
             }
@@ -410,7 +423,7 @@ const Login = () => {
                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">OR</span>
                                 <div className="h-px bg-slate-200 flex-1"></div>
                             </div>
-                            <Link to="/register" state={{ isCO }} className="w-full bg-white border-2 border-blue-100 hover:border-blue-600 hover:bg-blue-50 text-blue-700 font-black py-5 rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center">
+                            <Link to={`/register${location.search}`} state={{ isCO, redirectTo: location.state?.redirectTo, returnUrl: location.state?.returnUrl }} className="w-full bg-white border-2 border-blue-100 hover:border-blue-600 hover:bg-blue-50 text-blue-700 font-black py-5 rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center">
                                 Create Account
                             </Link>
                         </div>
@@ -494,7 +507,7 @@ const Login = () => {
                                             value={forgotEmail}
                                             onChange={(e) => setForgotEmail(e.target.value)}
                                             placeholder="Email address"
-                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                                            className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-all"
                                         />
                                     </div>
                                 </div>

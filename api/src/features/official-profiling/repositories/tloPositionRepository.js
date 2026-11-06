@@ -49,6 +49,21 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
   const existingIds = new Set(existingRows.map(r => r.id));
   const incomingIds = new Set();
 
+  // Index existing rows by position_name and start date for candidate matching
+  const candidateMap = new Map();
+  for (const r of existingRows) {
+    const pName = (r.position_name || '').toUpperCase().trim();
+    const sDate = r.inclusive_date_start ? new Date(r.inclusive_date_start).toISOString().split('T')[0] : '';
+    const key = `${pName}|${sDate}`;
+    if (!candidateMap.has(key)) {
+      candidateMap.set(key, []);
+    }
+    candidateMap.get(key).push(r.id);
+  }
+
+  const toUpdate = [];
+  const toInsert = [];
+
   for (const item of incomingArray) {
     const positionName = ((item.position_name || '')).toUpperCase().trim();
     const designation = item.designation ? item.designation.trim() : null;
@@ -75,42 +90,146 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     // Resolve target existing ID: by item.id, or candidate match by name + start_date
     let targetId = item.id && existingIds.has(item.id) ? item.id : null;
     if (!targetId && positionName) {
-      const candidate = existingRows.find(r =>
-        !incomingIds.has(r.id) &&
-        r.position_name.toUpperCase() === positionName &&
-        String(r.inclusive_date_start ? new Date(r.inclusive_date_start).toISOString().split('T')[0] : '') === String(dateStart || '')
-      );
-      if (candidate) {
-        targetId = candidate.id;
+      const key = `${positionName}|${dateStart || ''}`;
+      const candidates = candidateMap.get(key);
+      if (candidates && candidates.length > 0) {
+        while (candidates.length > 0) {
+          const candId = candidates.shift();
+          if (!incomingIds.has(candId)) {
+            targetId = candId;
+            break;
+          }
+        }
       }
     }
 
     if (targetId) {
-      await client.query(
-        `UPDATE ${TABLE}
-         SET position_name = $1, office = $2, strand = $3, division = $4, region = $5,
-             inclusive_date_start = $6, inclusive_date_end = $7, oic_positions = $8,
-             status = $9, oic = $10, designation = $11,
-             delete_flg = 'No', updated_at = NOW(), updated_by = $12
-         WHERE id = $13 AND source_table = $14 AND LOWER(tlo_id) = LOWER($15)`,
-        [positionName, office, strand, division, region,
-         dateStart || null, dateEnd || null, oicPositions,
-         status, oic, designation,
-         updatedBy, targetId, sourceTable, tloId]
-      );
+      toUpdate.push({
+        id: targetId,
+        positionName,
+        office,
+        strand,
+        division,
+        region,
+        dateStart: dateStart || null,
+        dateEnd: dateEnd || null,
+        oicPositions,
+        status,
+        oic,
+        designation
+      });
       incomingIds.add(targetId);
     } else {
-      const inserted = await client.query(
-        `INSERT INTO ${TABLE}
-           (source_table, tlo_id, position_name, office, strand, division, region,
-            inclusive_date_start, inclusive_date_end, oic_positions, status, oic, designation, delete_flg,
-            created_at, updated_at, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'No', NOW(), NOW(), $14, $14)
-         RETURNING id`,
-        [sourceTable, tloId, positionName, office, strand, division, region,
-         dateStart || null, dateEnd || null, oicPositions, status, oic, designation, updatedBy]
-      );
-      incomingIds.add(inserted.rows[0].id);
+      toInsert.push({
+        positionName,
+        office,
+        strand,
+        division,
+        region,
+        dateStart: dateStart || null,
+        dateEnd: dateEnd || null,
+        oicPositions,
+        status,
+        oic,
+        designation
+      });
+    }
+  }
+
+  if (toUpdate.length > 0) {
+    await client.query(
+      `UPDATE ${TABLE} AS t
+       SET position_name = u.position_name,
+           office = u.office,
+           strand = u.strand,
+           division = u.division,
+           region = u.region,
+           inclusive_date_start = u.inclusive_date_start,
+           inclusive_date_end = u.inclusive_date_end,
+           oic_positions = u.oic_positions::jsonb,
+           status = u.status,
+           oic = u.oic,
+           designation = u.designation,
+           delete_flg = 'No',
+           updated_at = NOW(),
+           updated_by = $1
+       FROM (
+         SELECT UNNEST($2::int[]) AS id,
+                UNNEST($3::text[]) AS position_name,
+                UNNEST($4::text[]) AS office,
+                UNNEST($5::text[]) AS strand,
+                UNNEST($6::text[]) AS division,
+                UNNEST($7::text[]) AS region,
+                UNNEST($8::date[]) AS inclusive_date_start,
+                UNNEST($9::date[]) AS inclusive_date_end,
+                UNNEST($10::text[]) AS oic_positions,
+                UNNEST($11::varchar[]) AS status,
+                UNNEST($12::boolean[]) AS oic,
+                UNNEST($13::text[]) AS designation
+       ) AS u
+       WHERE t.id = u.id AND t.source_table = $14 AND LOWER(t.tlo_id) = LOWER($15)`,
+      [
+        updatedBy,
+        toUpdate.map(u => u.id),
+        toUpdate.map(u => u.positionName),
+        toUpdate.map(u => u.office),
+        toUpdate.map(u => u.strand),
+        toUpdate.map(u => u.division),
+        toUpdate.map(u => u.region),
+        toUpdate.map(u => u.dateStart),
+        toUpdate.map(u => u.dateEnd),
+        toUpdate.map(u => u.oicPositions),
+        toUpdate.map(u => u.status),
+        toUpdate.map(u => u.oic),
+        toUpdate.map(u => u.designation),
+        sourceTable,
+        tloId
+      ]
+    );
+  }
+
+  if (toInsert.length > 0) {
+    const insertRes = await client.query(
+      `INSERT INTO ${TABLE}
+         (source_table, tlo_id, position_name, office, strand, division, region,
+          inclusive_date_start, inclusive_date_end, oic_positions, status, oic, designation, delete_flg,
+          created_at, updated_at, created_by, updated_by)
+       SELECT $1, $2, u.position_name, u.office, u.strand, u.division, u.region,
+              u.inclusive_date_start, u.inclusive_date_end, u.oic_positions::jsonb, u.status, u.oic, u.designation,
+              'No', NOW(), NOW(), $3, $3
+       FROM (
+         SELECT UNNEST($4::text[]) AS position_name,
+                UNNEST($5::text[]) AS office,
+                UNNEST($6::text[]) AS strand,
+                UNNEST($7::text[]) AS division,
+                UNNEST($8::text[]) AS region,
+                UNNEST($9::date[]) AS inclusive_date_start,
+                UNNEST($10::date[]) AS inclusive_date_end,
+                UNNEST($11::text[]) AS oic_positions,
+                UNNEST($12::varchar[]) AS status,
+                UNNEST($13::boolean[]) AS oic,
+                UNNEST($14::text[]) AS designation
+       ) AS u
+       RETURNING id`,
+      [
+        sourceTable,
+        tloId,
+        updatedBy,
+        toInsert.map(i => i.positionName),
+        toInsert.map(i => i.office),
+        toInsert.map(i => i.strand),
+        toInsert.map(i => i.division),
+        toInsert.map(i => i.region),
+        toInsert.map(i => i.dateStart),
+        toInsert.map(i => i.dateEnd),
+        toInsert.map(i => i.oicPositions),
+        toInsert.map(i => i.status),
+        toInsert.map(i => i.oic),
+        toInsert.map(i => i.designation)
+      ]
+    );
+    for (const row of insertRes.rows) {
+      incomingIds.add(row.id);
     }
   }
 
@@ -123,7 +242,7 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     await client.query(
       `UPDATE ${TABLE}
        SET delete_flg = 'Yes', updated_at = NOW(), updated_by = $1
-       WHERE id = ANY($2) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
+       WHERE id = ANY($2::int[]) AND source_table = $3 AND LOWER(tlo_id) = LOWER($4)`,
       [updatedBy, idsToSoftDelete, sourceTable, tloId]
     );
     console.log(`[tloPositionRepository] Soft-deleted ${idsToSoftDelete.length} user-removed record(s) for ${tloId}`);

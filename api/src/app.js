@@ -5,6 +5,7 @@ import compression from 'compression';
 import { authRoutes } from './features/auth/index.js';
 import thirdLevelRoutes from './routes/thirdLevelRoutes.js';
 import { binaryRoutes } from './features/binary/index.js';
+import { poolingRoutes, adminPoolingRoutes } from './features/pooling/index.js';
 import requestContext from './middleware/requestContext.js';
 import errorHandler from './middleware/errorHandler.js';
 import { devRequestMiddleware } from './devtools/dev-diagnostics.ts';
@@ -29,6 +30,10 @@ app.get(['/health', '/api/health'], (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/third-level', thirdLevelRoutes);
 app.use('/api/binary', binaryRoutes);
+app.use('/api/pooling', poolingRoutes);
+app.use('/api/vacancies', poolingRoutes);
+app.use('/api/applications', poolingRoutes);
+app.use('/api/admin/records', adminPoolingRoutes);
 
 if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
   registerDevFaultRoutes(app, { pool });

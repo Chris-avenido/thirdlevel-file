@@ -84,7 +84,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, clas
                                 <select
                                     value={MONTHS[date.getMonth()]}
                                     onChange={({ target: { value } }) => changeMonth(MONTHS.indexOf(value))}
-                                    className="bg-slate-50 border-2 border-slate-200 text-slate-700 text-[18px] rounded-md px-2 py-1 outline-none focus:border-[#0038A8] font-medium cursor-pointer"
+                                    className="bg-white border-2 border-slate-200 text-slate-700 text-[18px] rounded-md px-2 py-1 outline-none focus:border-[#0038A8] font-medium cursor-pointer"
                                 >
                                     {MONTHS.map(option => (
                                         <option key={option} value={option}>{option}</option>
@@ -94,7 +94,7 @@ const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, clas
                                 <select
                                     value={date.getFullYear()}
                                     onChange={({ target: { value } }) => changeYear(value)}
-                                    className="bg-slate-50 border-2 border-slate-200 text-slate-700 text-[18px] rounded-md px-2 py-1 outline-none focus:border-[#0038A8] font-medium cursor-pointer"
+                                    className="bg-white border-2 border-slate-200 text-slate-700 text-[18px] rounded-md px-2 py-1 outline-none focus:border-[#0038A8] font-medium cursor-pointer"
                                 >
                                     {YEARS.map(option => (
                                         <option key={option} value={option}>{option}</option>

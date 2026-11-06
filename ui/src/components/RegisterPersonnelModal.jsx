@@ -199,7 +199,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                   required
                   value={formData.first_name}
                   onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[21px] font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
+                  className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
                   placeholder="JUAN"
                 />
               </div>
@@ -212,7 +212,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                   type="text"
                   value={formData.middle_name}
                   onChange={(e) => setFormData({ ...formData, middle_name: e.target.value.toUpperCase() })}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[21px] font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
+                  className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
                   placeholder="SANTOS"
                 />
               </div>
@@ -226,7 +226,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                   required
                   value={formData.last_name}
                   onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[21px] font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
+                  className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
                   placeholder="DELA CRUZ"
                 />
               </div>
@@ -255,7 +255,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                     };
                   });
                 }}
-                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[21px] font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
               >
                 <option value="" disabled>Select Region</option>
                 {options.regions.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
@@ -269,7 +269,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
               value={formData.division}
               onChange={(e) => setFormData({ ...formData, division: e.target.value })}
               disabled={!formData.region}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[21px] font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
             >
               <option value="" disabled>Select Division</option>
               {availableDivisions.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
@@ -285,7 +285,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full pl-10 pr-10 py-3 bg-slate-50 border-2 rounded-xl text-[21px] font-medium focus:outline-none transition-all ${(emailStatus === 'duplicate' || emailStatus === 'invalid_domain') ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : emailStatus === 'valid' ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'}`}
+                className={`w-full pl-10 pr-10 py-3 bg-white border-2 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none transition-all ${(emailStatus === 'duplicate' || emailStatus === 'invalid_domain') ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : emailStatus === 'valid' ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'}`}
                 placeholder="juan.delacruz@deped.gov.ph"
               />
               {emailStatus === 'valid' && (

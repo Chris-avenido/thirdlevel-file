@@ -11,7 +11,7 @@ import { apiUrl } from '../utils/api';
 import { formatPositionTitle } from '../utils/officialsUtils';
 import sgMap from '../utils/sgMap.json';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
-import { DataControls, ApprovalTabs, StatsCards, ContentArea, IncumbencyModal, ActionModal, THIRD_LEVEL_POSITIONS } from '../components/officials-registry';
+import { DataControls, ApprovalTabs, StatsCards, ContentArea, IncumbencyModal, ActionModal, ApplicantSubmissionsTable, THIRD_LEVEL_POSITIONS } from '../components/officials-registry';
 const OfficialsRegistry = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -1277,18 +1277,23 @@ const OfficialsRegistry = () => {
                     </header>
 
                     <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
-                        {/* UNIFIED DATA CONTROLS TAB */}
-                        <DataControls dependentOffices={dependentOffices} designationFilter={designationFilter} designations={designations} levelFilter={levelFilter} officeFilter={officeFilter} oicOnly={oicOnly} positionFilter={positionFilter} regionFilter={regionFilter} searchTerm={searchTerm} setActiveTab={setActiveTab} setDesignationFilter={setDesignationFilter} setLevelFilter={setLevelFilter} setOfficeFilter={setOfficeFilter} setOicOnly={setOicOnly} setPositionFilter={setPositionFilter} setRegionFilter={setRegionFilter} setSearchTerm={setSearchTerm} setStatusTab={setStatusTab} setStrandFilter={setStrandFilter} setTableFilters={setTableFilters} setViewMode={setViewMode} strandFilter={strandFilter} strands={strands} tabPositions={tabPositions} viewMode={viewMode} />
-
-                        {/* APPROVAL / REJECTED TABS */}
+                        {/* APPROVAL / REJECTED / APPLICATIONS TABS */}
                         <ApprovalTabs navigate={navigate} officials={officials} statusTab={statusTab} />
 
-                        {/* STATS CARDS */}
-                        <StatsCards activeTab={activeTab} kpiCounts={kpiCounts} setActiveTab={setActiveTab} setLevelFilter={setLevelFilter} setOfficeFilter={setOfficeFilter} setPositionFilter={setPositionFilter} setRegionFilter={setRegionFilter} setStatusTab={setStatusTab} setStrandFilter={setStrandFilter} statusTab={statusTab} />
+                        {statusTab === 'Applications' ? (
+                            <ApplicantSubmissionsTable token={token} isCentralOffice={isCentralOfficeView} />
+                        ) : (
+                            <>
+                                {/* UNIFIED DATA CONTROLS TAB */}
+                                <DataControls dependentOffices={dependentOffices} designationFilter={designationFilter} designations={designations} levelFilter={levelFilter} officeFilter={officeFilter} oicOnly={oicOnly} positionFilter={positionFilter} regionFilter={regionFilter} searchTerm={searchTerm} setActiveTab={setActiveTab} setDesignationFilter={setDesignationFilter} setLevelFilter={setLevelFilter} setOfficeFilter={setOfficeFilter} setOicOnly={setOicOnly} setPositionFilter={setPositionFilter} setRegionFilter={setRegionFilter} setSearchTerm={setSearchTerm} setStatusTab={setStatusTab} setStrandFilter={setStrandFilter} setTableFilters={setTableFilters} setViewMode={setViewMode} strandFilter={strandFilter} strands={strands} tabPositions={tabPositions} viewMode={viewMode} />
 
-                        {/* MAIN CONTENT AREA */}
+                                {/* STATS CARDS */}
+                                <StatsCards activeTab={activeTab} kpiCounts={kpiCounts} setActiveTab={setActiveTab} setLevelFilter={setLevelFilter} setOfficeFilter={setOfficeFilter} setPositionFilter={setPositionFilter} setRegionFilter={setRegionFilter} setStatusTab={setStatusTab} setStrandFilter={setStrandFilter} statusTab={statusTab} />
 
-                        <ContentArea StatusBadge={StatusBadge} currentPage={currentPage} directoryGroups={directoryGroups} getOfficialRegion={getOfficialRegion} handleOpenReassignModal={handleOpenReassignModal} handlePositionClick={handlePositionClick} handleRegistrationAction={handleRegistrationAction} handleSort={handleSort} handleToggleTestAccount={handleToggleTestAccount} loading={loading} navigate={navigate} officials={officials} openActionModal={openActionModal} pageButtons={pageButtons} pageCount={pageCount} pageSize={pageSize} pagedRecords={pagedRecords} setCurrentPage={setCurrentPage} setTableFilters={setTableFilters} sortConfig={sortConfig} tableColumns={tableColumns} tableFilterOptions={tableFilterOptions} tableFilters={tableFilters} totalRecords={totalRecords} user={user} viewMode={viewMode} />
+                                {/* MAIN CONTENT AREA */}
+                                <ContentArea StatusBadge={StatusBadge} currentPage={currentPage} directoryGroups={directoryGroups} getOfficialRegion={getOfficialRegion} handleOpenReassignModal={handleOpenReassignModal} handlePositionClick={handlePositionClick} handleRegistrationAction={handleRegistrationAction} handleSort={handleSort} handleToggleTestAccount={handleToggleTestAccount} loading={loading} navigate={navigate} officials={officials} openActionModal={openActionModal} pageButtons={pageButtons} pageCount={pageCount} pageSize={pageSize} pagedRecords={pagedRecords} setCurrentPage={setCurrentPage} setTableFilters={setTableFilters} sortConfig={sortConfig} tableColumns={tableColumns} tableFilterOptions={tableFilterOptions} tableFilters={tableFilters} totalRecords={totalRecords} user={user} viewMode={viewMode} />
+                            </>
+                        )}
                     </main>
 
                     {/* INCUMBENCY HISTORY MODAL */}

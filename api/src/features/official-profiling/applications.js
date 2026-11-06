@@ -189,9 +189,9 @@ export const getApplications = async (req, res) => {
         COALESCE(NULLIF(a.first_name, ''), m.first_name) as first_name,
         COALESCE(NULLIF(a.last_name, ''), m.last_name) as last_name,
         a.app_TLOid AS "TLOid", 
-        v.position_title AS target_position, 
-        v.office AS target_office, 
-        v.strand AS target_strand,
+        COALESCE(v.position_title, a.applied_position, a.position_applied_for) AS target_position, 
+        COALESCE(v.office, a.target_region) AS target_office, 
+        COALESCE(v.strand, a.target_region) AS target_strand,
         (
           SELECT string_agg(position_title || ' (' || COALESCE(office, '') || ')', ' | ') 
           FROM ActivePositions ap
@@ -213,26 +213,26 @@ export const getApplications = async (req, res) => {
 
     if (isRO && targetRegion) {
       params.push(targetRegion);
-      query += ` AND m.strand = $${params.length}`;
+      query += ` AND (m.strand = $${params.length} OR a.target_region = $${params.length})`;
     }
     if (isSDO && targetRegion && targetDivision) {
       params.push(targetRegion);
-      query += ` AND m.strand = $${params.length}`;
+      query += ` AND (m.strand = $${params.length} OR a.target_region = $${params.length})`;
       params.push(targetDivision);
       query += ` AND m.division = $${params.length}`;
     }
 
     if (search) {
       params.push(`%${search}%`);
-      query += ` AND (a.first_name ILIKE $${params.length} OR a.last_name ILIKE $${params.length} OR a.email ILIKE $${params.length} OR v.position_title ILIKE $${params.length} OR v.office ILIKE $${params.length} OR v.strand ILIKE $${params.length})`;
+      query += ` AND (a.first_name ILIKE $${params.length} OR a.last_name ILIKE $${params.length} OR a.email ILIKE $${params.length} OR COALESCE(v.position_title, a.applied_position, a.position_applied_for) ILIKE $${params.length} OR COALESCE(v.office, a.target_region) ILIKE $${params.length} OR COALESCE(v.strand, a.target_region) ILIKE $${params.length})`;
     }
     if (strand && strand !== 'All') {
       params.push(strand);
-      query += ` AND v.strand = $${params.length}`;
+      query += ` AND COALESCE(v.strand, a.target_region) = $${params.length}`;
     }
     if (position && position !== 'All') {
       params.push(position);
-      query += ` AND v.position_title = $${params.length}`;
+      query += ` AND COALESCE(v.position_title, a.applied_position, a.position_applied_for) = $${params.length}`;
     }
 
     query += ` ORDER BY a.submitted_at DESC`;

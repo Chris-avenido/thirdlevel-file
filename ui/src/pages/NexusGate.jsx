@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiUrl } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import {
     FiX,
     FiLogIn,
@@ -27,9 +29,24 @@ import buildingBg from '../assets/deped_building_bg.png';
 
 const NexusGate = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     // Layout Swap State for Position Changing Animation
     const [isSwapped, setIsSwapped] = useState(false);
+
+    // Applicant pooling intake window state
+    const [poolingActive, setPoolingActive] = useState(false);
+
+    useEffect(() => {
+        fetch(apiUrl('/api/pooling/status'))
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.isOpen) {
+                    setPoolingActive(true);
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     // Recruitment portal modal
     const [showRecruitModal, setShowRecruitModal] = useState(false);
@@ -66,16 +83,13 @@ const NexusGate = () => {
 
     const handleLockedVacanciesClick = (e) => {
         e.stopPropagation();
-        Swal.fire({
-            title: 'Vacancies Portal Locked',
-            text: 'The Vacancies module is currently locked and unavailable for public applications. Access is restricted to active hiring cycles.',
-            icon: 'warning',
-            confirmButtonText: 'Understood',
-            confirmButtonColor: '#08315F',
-            customClass: {
-                popup: 'rounded-3xl border-2 border-[#08315F]'
-            }
-        });
+        if (!user) {
+            navigate('/login?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', {
+                state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', portal: 'applicant' }
+            });
+        } else {
+            navigate('/timon-applications');
+        }
     };
 
     const closeCOGate = () => {
@@ -332,18 +346,25 @@ const NexusGate = () => {
                         <div className="nexus-card-badge nexus-badge-blue">
                             <FiBriefcase size={22} className="text-[#0284C7]" />
                         </div>
-                        <div className="nexus-locked-pill">
-                            <FiLock size={12} className="text-[#FCD116]" />
-                            <span>LOCKED</span>
-                        </div>
+                        {poolingActive ? (
+                            <div className="nexus-locked-pill !border-emerald-400 !bg-emerald-950/40 !text-emerald-300">
+                                <FiCheckCircle size={12} className="text-emerald-400" />
+                                <span>INTAKE OPEN</span>
+                            </div>
+                        ) : (
+                            <div className="nexus-locked-pill">
+                                <FiLock size={12} className="text-[#FCD116]" />
+                                <span>LOCKED</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="nexus-card-body">
-                        <span className="nexus-role-tag text-[#0284C7]">RECRUITMENT</span>
-                        <h2 className="nexus-card-title">Vacancies</h2>
-                        <span className="nexus-sub-tag text-[#0284C7]">OPEN POSITIONS & OPPORTUNITIES</span>
+                        <span className="nexus-role-tag text-[#0284C7]">EXECUTIVE APPLICATIONS</span>
+                        <h2 className="nexus-card-title">TIMON Applications</h2>
+                        <span className="nexus-sub-tag text-[#0284C7]">THIRD LEVEL VACANCIES & ROSTER</span>
                         <p className="nexus-card-desc mt-1">
-                            Explore official Third Level executive position vacancies, qualification standards, application requirements, and recruitment announcements across the Department.
+                            Apply for third-level executive designations (RD, ARD, SDS, ASDS) in designated regions during active intake windows.
                         </p>
                     </div>
                 </motion.div>
@@ -405,12 +426,12 @@ const NexusGate = () => {
                                         </button>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <button onClick={() => navigate('/login')} className="group p-6 bg-blue-50 hover:bg-blue-600 rounded-3xl border border-blue-100 transition-all duration-300 text-left">
+                                        <button onClick={() => navigate('/login?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', portal: 'applicant' } })} className="group p-6 bg-blue-50 hover:bg-blue-600 rounded-3xl border border-blue-100 transition-all duration-300 text-left">
                                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform shadow-sm"><FiLogIn size={24} /></div>
                                             <h3 className="font-black text-blue-900 group-hover:text-white uppercase tracking-tight italic">I have an account</h3>
                                             <p className="text-[10px] font-bold text-blue-600 group-hover:text-blue-100 uppercase tracking-wide mt-1">Sign in to continue</p>
                                         </button>
-                                        <button onClick={() => navigate('/register')} className="group p-6 bg-slate-50 hover:bg-[#075985] rounded-3xl border border-slate-200 transition-all duration-300 text-left">
+                                        <button onClick={() => navigate('/register?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', role: 'Third Level Applicant' } })} className="group p-6 bg-slate-50 hover:bg-[#075985] rounded-3xl border border-slate-200 transition-all duration-300 text-left">
                                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 mb-4 group-hover:scale-110 transition-transform shadow-sm"><FiUserPlus size={24} /></div>
                                             <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Portal Registration</h3>
                                             <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-1">Personnel & Applicants</p>

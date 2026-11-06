@@ -60,6 +60,9 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     availableByLevel[r.level].push(r.id);
   });
 
+  const toUpdate = [];
+  const toInsert = [];
+
   for (const item of incomingArray) {
     const level = item.level || 'Bachelor';
     const degree = (item.degree || '').trim();
@@ -73,26 +76,68 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     }
 
     if (targetId) {
-      // UPDATE existing row
-      await client.query(
-        `UPDATE ${TABLE}
-         SET level = $1, degree = $2, institution = $3, year_graduated = $4,
-             updated_at = NOW(), updated_by = $5
-         WHERE id = $6 AND source_table = $7 AND LOWER(tlo_id) = LOWER($8)`,
-        [level, degree, institution, yearGraduated, updatedBy, targetId, sourceTable, tloId]
-      );
+      toUpdate.push({ id: targetId, level, degree, institution, yearGraduated });
       incomingIds.add(targetId);
     } else {
-      // INSERT new row
-      const inserted = await client.query(
-        `INSERT INTO ${TABLE}
-           (source_table, tlo_id, level, degree, institution, year_graduated,
-            created_at, updated_at, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), $7, $7)
-         RETURNING id`,
-        [sourceTable, tloId, level, degree, institution, yearGraduated, updatedBy]
-      );
-      incomingIds.add(inserted.rows[0].id);
+      toInsert.push({ level, degree, institution, yearGraduated });
+    }
+  }
+
+  if (toUpdate.length > 0) {
+    await client.query(
+      `UPDATE ${TABLE} AS t
+       SET level = u.level,
+           degree = u.degree,
+           institution = u.institution,
+           year_graduated = u.year_graduated,
+           updated_at = NOW(),
+           updated_by = $1
+       FROM (
+         SELECT UNNEST($2::int[]) AS id,
+                UNNEST($3::varchar[]) AS level,
+                UNNEST($4::text[]) AS degree,
+                UNNEST($5::text[]) AS institution,
+                UNNEST($6::int[]) AS year_graduated
+       ) AS u
+       WHERE t.id = u.id AND t.source_table = $7 AND LOWER(t.tlo_id) = LOWER($8)`,
+      [
+        updatedBy,
+        toUpdate.map(u => u.id),
+        toUpdate.map(u => u.level),
+        toUpdate.map(u => u.degree),
+        toUpdate.map(u => u.institution),
+        toUpdate.map(u => u.yearGraduated),
+        sourceTable,
+        tloId
+      ]
+    );
+  }
+
+  if (toInsert.length > 0) {
+    const insertRes = await client.query(
+      `INSERT INTO ${TABLE}
+         (source_table, tlo_id, level, degree, institution, year_graduated,
+          created_at, updated_at, created_by, updated_by)
+       SELECT $1, $2, u.level, u.degree, u.institution, u.year_graduated, NOW(), NOW(), $3, $3
+       FROM (
+         SELECT UNNEST($4::varchar[]) AS level,
+                UNNEST($5::text[]) AS degree,
+                UNNEST($6::text[]) AS institution,
+                UNNEST($7::int[]) AS year_graduated
+       ) AS u
+       RETURNING id`,
+      [
+        sourceTable,
+        tloId,
+        updatedBy,
+        toInsert.map(i => i.level),
+        toInsert.map(i => i.degree),
+        toInsert.map(i => i.institution),
+        toInsert.map(i => i.yearGraduated)
+      ]
+    );
+    for (const row of insertRes.rows) {
+      incomingIds.add(row.id);
     }
   }
 
@@ -102,12 +147,12 @@ export async function syncForTloId(client, sourceTable, tloId, incomingArray, up
     try {
       await client.query(`SAVEPOINT sp_del_education`);
       await client.query(
-        `DELETE FROM ${TABLE} WHERE id = ANY($1) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
+        `DELETE FROM ${TABLE} WHERE id = ANY($1::int[]) AND source_table = $2 AND LOWER(tlo_id) = LOWER($3)`,
         [idsToDelete, sourceTable, tloId]
       );
       await client.query(`RELEASE SAVEPOINT sp_del_education`);
     } catch (delErr) {
-      await client.query(`ROLLBACK TO SAVEPOINT sp_del_education`).catch(() => {});
+      await client.query(`ROLLBACK TO SAVEPOINT sp_del_education`).catch(() => { });
       console.warn(`[tloEducationRepository] Deletion skipped/prohibited: ${delErr.message}`);
     }
   }

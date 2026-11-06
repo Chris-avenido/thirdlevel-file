@@ -399,7 +399,8 @@ const NotableAchievements = () => {
                                         value={formData.achievement}
                                         onChange={e => setFormData({ ...formData, achievement: e.target.value })}
                                         rows={4}
-                                        className="w-full bg-slate-50 border border-slate-200 focus:border-[#08315F] rounded-xl py-3 px-4 text-xs font-bold text-slate-700 outline-none transition-all resize-none"
+                                        placeholder="Enter achievement details..."
+                                        className="w-full bg-white border border-slate-200 focus:border-[#08315F] rounded-xl py-3 px-4 text-xs font-bold text-slate-700 placeholder:text-slate-400 outline-none transition-all resize-none"
                                     />
                                 </div>
                             </div>

@@ -370,11 +370,11 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                         </div>
                                                                         <div className="flex items-start gap-2">
                                                                             <FiStar size={18} className="text-blue-500 mt-0.5" />
-                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Target Vacancy</p>
+                                                                            <div><p className="text-[15px] text-slate-400 mb-1">Target Application</p>
                                                                                 <p className="text-[18px] font-black text-slate-800 uppercase">
                                                                                     {(() => {
                                                                                         const vac = targetVacancyId ? vacancies.find(x => x.TLOid === targetVacancyId) : null;
-                                                                                        return vac ? vac.position_title : '—';
+                                                                                        return vac ? vac.position_title : (profile.applied_position || profile.position_title || 'General Roster');
                                                                                     })()}
                                                                                 </p>
                                                                             </div>
@@ -831,12 +831,12 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                             </button>
                                                                                             {completeness === 100 && (applicationStatus === null || applicationStatus === 'disapproved') && (
                                                                                                 <button
-                                                                                                    onClick={targetVacancyId ? handleSubmitApplication : () => setTab('summary')}
+                                                                                                    onClick={handleSubmitApplication}
                                                                                                     disabled={!dpaConsent || !truthConsent || saving}
                                                                                                     className="flex-1 py-5 bg-[#08315F] text-white font-black text-[15px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
                                                                                                 >
                                                                                                     {saving ? <FiLoader className="animate-spin" size={18} /> : <FiArrowRight size={18} />}
-                                                                                                    {saving ? 'Processing...' : targetVacancyId ? 'Submit Final Application' : 'Select a Vacancy First'}
+                                                                                                    {saving ? 'Processing...' : 'Submit Final Application'}
                                                                                                 </button>
                                                                                             )}
                                                                                             {applicationStatus === 'applied' && (

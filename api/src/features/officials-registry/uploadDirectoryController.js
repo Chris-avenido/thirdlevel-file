@@ -31,15 +31,39 @@ export const bulkProcessDirectory = async (req, res) => {
     await client.query('BEGIN');
     await ensureColumns(client);
 
-    const allMasterRes = await client.query('SELECT * FROM third_level_official_masterlist');
+    const emptyEmails = [null, '', 'n/a', 'na'];
+    const incomingEmails = records
+      .map(r => r.email !== undefined && r.email !== null ? String(r.email).trim().toLowerCase() : '')
+      .filter(e => e && !emptyEmails.includes(e));
+    const incomingTloIds = records
+      .map(r => r.TLOid ? String(r.TLOid).trim() : '')
+      .filter(Boolean);
+    const incomingFirstNames = records
+      .filter(r => (!r.email || emptyEmails.includes(String(r.email).trim().toLowerCase())) && r.first_name)
+      .map(r => String(r.first_name).trim().toLowerCase());
+
+    const allMasterRes = await client.query(`
+      SELECT "TLOid", email, status, first_name, last_name, strand, office, position_title
+      FROM third_level_official_masterlist
+      WHERE (email IS NOT NULL AND LOWER(email) = ANY($1::text[]))
+         OR ("TLOid" = ANY($2::text[]))
+         OR (first_name IS NOT NULL AND LOWER(first_name) = ANY($3::text[]))
+    `, [incomingEmails, incomingTloIds, incomingFirstNames]);
     const allMaster = allMasterRes.rows;
+
+    const byTloId = new Map();
+    const byEmail = new Map();
+    for (const m of allMaster) {
+      if (m.TLOid) byTloId.set(m.TLOid, m);
+      if (m.email) byEmail.set(String(m.email).trim().toLowerCase(), m);
+    }
 
     const maxTloRes = await client.query(`
       SELECT "TLOid" FROM third_level_official_masterlist 
       WHERE "TLOid" LIKE 'TLO-%' 
       ORDER BY CAST(SUBSTRING("TLOid" FROM 5) AS INTEGER) DESC LIMIT 1
     `);
-    
+
     let nextTloIdNum = 1;
     if (maxTloRes.rows.length > 0) {
       const match = maxTloRes.rows[0].TLOid.match(/TLO-(\d+)/);
@@ -56,7 +80,6 @@ export const bulkProcessDirectory = async (req, res) => {
       summary: { total: records.length, new: 0, updated: 0, skipped: 0, failed: 0 }
     };
 
-    const emptyEmails = [null, '', 'n/a', 'na'];
     const toUpdate = [];
     const toInsert = [];
     const toHistory = [];
@@ -76,18 +99,18 @@ export const bulkProcessDirectory = async (req, res) => {
         let match = null;
 
         if (record.TLOid) {
-          match = allMaster.find(m => m.TLOid === record.TLOid);
+          match = byTloId.get(record.TLOid) || null;
         } else if (isNoEmail) {
-          match = allMaster.find(m => 
+          match = allMaster.find(m =>
             ((m.first_name || '').toLowerCase() === (record.first_name || '').toLowerCase() &&
-             (m.last_name || '').toLowerCase() === (record.last_name || '').toLowerCase() && record.first_name)
+              (m.last_name || '').toLowerCase() === (record.last_name || '').toLowerCase() && record.first_name)
             ||
             ((m.strand || '') === (record.strand || '') &&
-             (m.office || '') === (record.office || '') &&
-             (m.position_title || '') === (record.position_title || '') && record.position_title)
-          );
+              (m.office || '') === (record.office || '') &&
+              (m.position_title || '') === (record.position_title || '') && record.position_title)
+          ) || null;
         } else {
-          match = allMaster.find(m => (m.email || '').toLowerCase() === emailStrRaw);
+          match = byEmail.get(emailStrRaw) || null;
         }
 
         if (match) {
@@ -187,19 +210,19 @@ export const bulkProcessDirectory = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    
+
     console.log(`\n--- BULK UPLOAD SUMMARY ---`);
     console.log(`Total Uploaded Records: ${results.summary.total}`);
     console.log(`Total Inserted Records: ${results.summary.new}`);
     console.log(`Total Updated Records: ${results.summary.updated}`);
     console.log(`Total Skipped Records: ${results.summary.skipped}`);
     console.log(`Total Failed Records: ${results.summary.failed}`);
-    
+
     if (results.skipped.length > 0) {
       console.log(`\nSkipped Records:`);
       results.skipped.forEach(r => console.log(`- Row ${r.rowNum || '?'}: ${r.full_name || ''} [${r.email || ''}] (Reason: Already Exists/Skipped)`));
     }
-    
+
     if (results.failed.length > 0) {
       console.log(`\nFailed Records:`);
       results.failed.forEach(r => console.log(`- Row ${r.record.rowNum || '?'}: ${r.record.full_name || ''} [${r.record.email || ''}] (Reason: ${r.error})`));
@@ -234,27 +257,69 @@ export const bulkProcessAchievements = async (req, res) => {
       summary: { total: records.length, inserted: 0, updated: 0, failed: 0 }
     };
 
+    const validRecords = [];
+    const indexNumbers = [];
+
     for (const record of records) {
-      try {
-        const index_number = parseInt(record.index_number, 10);
-        const achievement = record.achievements || record.achievement;
+      const index_number = parseInt(record.index_number, 10);
+      const achievement = record.achievements || record.achievement;
 
-        if (isNaN(index_number) || !achievement) {
-          throw new Error('Missing index_number or achievement');
-        }
-
-        const existingRes = await client.query('SELECT index_number FROM notable_achievements WHERE index_number = $1', [index_number]);
-        
-        if (existingRes.rows.length > 0) {
-          await client.query('UPDATE notable_achievements SET achievement = $1, delete_flg = 0, edit_date = CURRENT_TIMESTAMP WHERE index_number = $2', [achievement, index_number]);
-          results.summary.updated++;
-        } else {
-          await client.query('INSERT INTO notable_achievements (index_number, achievement, delete_flg, create_date, edit_date) VALUES ($1, $2, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [index_number, achievement]);
-          results.summary.inserted++;
-        }
-      } catch (err) {
+      if (isNaN(index_number) || !achievement) {
         results.summary.failed++;
+        continue;
       }
+
+      validRecords.push({ index_number, achievement: String(achievement).trim() });
+      indexNumbers.push(index_number);
+    }
+
+    const existingMap = new Map();
+    if (indexNumbers.length > 0) {
+      const existingRes = await client.query(
+        'SELECT index_number FROM notable_achievements WHERE index_number = ANY($1::int[])',
+        [indexNumbers]
+      );
+      for (const row of existingRes.rows) {
+        existingMap.set(row.index_number, true);
+      }
+    }
+
+    const toUpdate = [];
+    const toInsert = [];
+
+    for (const item of validRecords) {
+      if (existingMap.has(item.index_number)) {
+        toUpdate.push(item);
+      } else {
+        toInsert.push(item);
+      }
+    }
+
+    if (toUpdate.length > 0) {
+      await client.query(`
+        UPDATE notable_achievements AS n
+        SET achievement = u.achievement,
+            delete_flg = 0,
+            edit_date = CURRENT_TIMESTAMP
+        FROM (
+          SELECT UNNEST($1::int[]) AS index_number,
+                 UNNEST($2::text[]) AS achievement
+        ) AS u
+        WHERE n.index_number = u.index_number
+      `, [toUpdate.map(u => u.index_number), toUpdate.map(u => u.achievement)]);
+      results.summary.updated += toUpdate.length;
+    }
+
+    if (toInsert.length > 0) {
+      await client.query(`
+        INSERT INTO notable_achievements (index_number, achievement, delete_flg, create_date, edit_date)
+        SELECT u.index_number, u.achievement, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        FROM (
+          SELECT UNNEST($1::int[]) AS index_number,
+                 UNNEST($2::text[]) AS achievement
+        ) AS u
+      `, [toInsert.map(i => i.index_number), toInsert.map(i => i.achievement)]);
+      results.summary.inserted += toInsert.length;
     }
 
     await client.query('COMMIT');

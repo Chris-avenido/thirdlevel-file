@@ -144,11 +144,26 @@ const Register = () => {
                 login(data.user, data.token);
                 setSuccess(true);
 
-                const redirectPath = (['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'CO_PD', 'RO_HRMO', 'SDO_HRMO'].includes(data.user.role))
-                    ? '/home'
-                    : '/official-profiling';
+                const searchParams = new URLSearchParams(location.search);
+                const targetRedirect = searchParams.get('returnUrl') || searchParams.get('redirect') || location.state?.redirectTo || location.state?.returnUrl;
 
-                setTimeout(() => navigate(redirectPath), 2000);
+                const redirectPath = (
+                    targetRedirect &&
+                    typeof targetRedirect === 'string' &&
+                    targetRedirect.startsWith('/') &&
+                    !targetRedirect.startsWith('//') &&
+                    !targetRedirect.startsWith('/login') &&
+                    !targetRedirect.startsWith('/register') &&
+                    !targetRedirect.startsWith('/reset-password')
+                ) ? targetRedirect : (
+                    ['Personnel Admin', 'Admin', 'Super User', 'Central Office', 'Regional Office', 'School Division Office', 'CO_PD', 'RO_HRMO', 'SDO_HRMO'].includes(data.user?.role)
+                        ? '/home'
+                        : ['TLO Applicant', 'Third Level Applicant'].includes(data.user?.role)
+                            ? '/timon-applications'
+                            : '/official-profiling'
+                );
+
+                setTimeout(() => navigate(redirectPath, { replace: true }), 2000);
             } else {
                 setError(data.error || "Registration failed");
             }
@@ -369,7 +384,7 @@ const Register = () => {
                         {/* FOOTER */}
                         <div className="mt-10 pt-8 border-t border-slate-100 text-center">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                Already have an account? <Link to="/login" className="text-[#075985] hover:text-blue-800 ml-1">Sign In Instead</Link>
+                                Already have an account? <Link to={`/login${location.search}`} state={{ isCO, redirectTo: location.state?.redirectTo, returnUrl: location.state?.returnUrl }} className="text-[#075985] hover:text-blue-800 ml-1">Sign In Instead</Link>
                             </p>
                         </div>
                     </div>

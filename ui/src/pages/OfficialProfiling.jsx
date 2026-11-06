@@ -166,7 +166,7 @@ const OfficialProfiling = () => {
             return !!(profile.pending_admin_case && profile.guilty_admin_details && profile.criminally_charged_details && profile.convicted_crime_details);
         }
         if (tabId === 'application') {
-            return !!targetVacancyId;
+            return true;
         }
         if (tabId === 'summary') {
             return !!(certified || profile.dpa_consented_at);
@@ -1268,7 +1268,7 @@ const OfficialProfiling = () => {
     };
 
     const handleSubmitApplication = async () => {
-        if (!TLOid || !targetVacancyId) return;
+        if (!TLOid) return;
         setSaving(true);
         try {
             const res = await fetch(apiUrl('/api/third-level/official-profiling/submit-application'), {
@@ -1277,7 +1277,12 @@ const OfficialProfiling = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token || localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ app_TLOid: TLOid, target_TLOid: targetVacancyId })
+                body: JSON.stringify({
+                    app_TLOid: TLOid,
+                    target_TLOid: targetVacancyId || null,
+                    applied_position: profile.applied_position || profile.position_title || 'RD',
+                    target_region: profile.target_region || profile.assigned_region || profile.region || 'Central Office'
+                })
             });
             const data = await res.json();
             if (data.success) {

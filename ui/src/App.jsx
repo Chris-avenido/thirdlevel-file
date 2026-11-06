@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -20,14 +20,26 @@ import ResetPassword from './pages/ResetPassword';
 
 import MainDashboard from './pages/MainDashboard';
 
-// Public Route Component
+// Public Route Component with Return URL Handling
 const PublicRoute = ({ children }) => {
     const { user, loading } = useAuth();
+    const location = useLocation();
+
     if (loading) return <LoadingScreen />;
     if (user) {
+        const searchParams = new URLSearchParams(location.search);
+        const returnUrl = searchParams.get('returnUrl') || searchParams.get('redirect') || location.state?.redirectTo || location.state?.returnUrl;
+
+        // Check if returnUrl is safe and not pointing back to auth pages to prevent loops
+        if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') && !returnUrl.startsWith('/login') && !returnUrl.startsWith('/register') && !returnUrl.startsWith('/reset-password')) {
+            return <Navigate to={returnUrl} replace />;
+        }
+
         const roleLower = user.role?.toLowerCase() || '';
         if (['personnel admin', 'super user', 'central office', 'regional office', 'school division office'].includes(roleLower)) {
             return <Navigate to="/home" replace />;
+        } else if (['tlo applicant', 'third level applicant'].includes(roleLower)) {
+            return <Navigate to="/timon-applications" replace />;
         } else {
             return <Navigate to="/official-profiling" replace />;
         }
@@ -35,11 +47,23 @@ const PublicRoute = ({ children }) => {
     return children;
 };
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
+// Protected Route Component with Authentication Guard & Return URL Redirection
+const ProtectedRoute = ({ children, redirectPath = '/login' }) => {
     const { user, loading } = useAuth();
+    const location = useLocation();
+
     if (loading) return <LoadingScreen />;
-    if (!user) return <Navigate to="/" replace />;
+    if (!user) {
+        const currentPath = location.pathname + location.search;
+        const encodedUrl = encodeURIComponent(currentPath);
+        return (
+            <Navigate 
+                to={`${redirectPath}?returnUrl=${encodedUrl}&redirect=${encodedUrl}`} 
+                state={{ redirectTo: currentPath, returnUrl: currentPath }} 
+                replace 
+            />
+        );
+    }
     return children;
 };
 
@@ -108,10 +132,26 @@ const App = () => {
                 } 
             />
             <Route 
-                path="/all-vacancies" 
+                path="/timon-applications" 
                 element={
                     <ProtectedRoute>
                         <AllVacancies />
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/all-vacancies" 
+                element={<Navigate to="/timon-applications" replace />} 
+            />
+            <Route 
+                path="/vacancies" 
+                element={<Navigate to="/timon-applications" replace />} 
+            />
+            <Route 
+                path="/admin/records/applications" 
+                element={
+                    <ProtectedRoute>
+                        <Navigate to="/officials-registry?status=Applications" replace />
                     </ProtectedRoute>
                 } 
             />

@@ -750,7 +750,7 @@ export const updateProfile = async (req, res) => {
 };
 
 export const submitApplication = async (req, res) => {
-  const { target_TLOid } = req.body;
+  const { target_TLOid, applied_position, target_region, questionnaire_responses } = req.body;
   const userEmail = req.user.email;
 
   if (!userEmail) return res.status(401).json({ error: 'Authentication error' });
@@ -760,9 +760,22 @@ export const submitApplication = async (req, res) => {
     await client.query('BEGIN');
     const result = await client.query(`
       UPDATE third_level_officials_profiling_application
-      SET application_status = 'applied', "target_TLOid" = $1, submitted_at = NOW(), updated_at = NOW()
+      SET application_status = 'applied',
+          "target_TLOid" = $1,
+          applied_position = COALESCE($3, applied_position),
+          target_region = COALESCE($4, target_region),
+          questionnaire_responses = COALESCE($5, questionnaire_responses),
+          submitted_at = NOW(),
+          submission_timestamp = NOW(),
+          updated_at = NOW()
       WHERE LOWER(email) = LOWER($2) AND application_status IS DISTINCT FROM 'approved'
-    `, [target_TLOid || null, userEmail]);
+    `, [
+      target_TLOid || null,
+      userEmail,
+      applied_position || null,
+      target_region || null,
+      questionnaire_responses ? JSON.stringify(questionnaire_responses) : null
+    ]);
 
     if (result.rowCount === 0) {
       await client.query('ROLLBACK');

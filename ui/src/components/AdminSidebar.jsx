@@ -1,7 +1,7 @@
 // Force HMR
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle, FiGrid } from 'react-icons/fi';
+import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle, FiGrid, FiBriefcase } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import newLogo from '../assets/modern_logo.png';
 
@@ -90,7 +90,7 @@ const AdminSidebar = () => {
                     <button
                         onClick={() => navigate('/officials-registry')}
                         title="Personnel Registry"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/officials-registry' && !location.search.includes('status=For%20Approval') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/officials-registry' && !location.search.includes('status=For%20Approval') && !location.search.includes('status=Applications') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
                     >
                         <FiUsers size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Personnel Registry</span>
@@ -102,6 +102,14 @@ const AdminSidebar = () => {
                     >
                         <FiCheckCircle size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Pending Approvals</span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/officials-registry?status=Applications')}
+                        title="TIMON Applications"
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.search.includes('status=Applications') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                    >
+                        <FiBriefcase size={18} className="shrink-0" />
+                        <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>TIMON Applications</span>
                     </button>
 
                     <button

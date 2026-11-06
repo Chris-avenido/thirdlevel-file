@@ -174,7 +174,7 @@ const Settings = () => {
                                             name="firstName"
                                             value={formData.firstName}
                                             onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[#08315F] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                             placeholder="Enter first name"
                                         />
                                     </div>
@@ -185,7 +185,7 @@ const Settings = () => {
                                             name="lastName"
                                             value={formData.lastName}
                                             onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[#08315F] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                             placeholder="Enter last name"
                                         />
                                     </div>
@@ -195,7 +195,7 @@ const Settings = () => {
                                             type="email" 
                                             value={user?.email || ''}
                                             disabled
-                                            className="w-full px-5 py-4 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-bold cursor-not-allowed"
+                                            className="w-full px-5 py-4 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-bold cursor-not-allowed disabled:opacity-70"
                                         />
                                         <p className="text-[10px] text-slate-400 font-medium ml-1 mt-1">Email address cannot be changed.</p>
                                     </div>
@@ -220,7 +220,7 @@ const Settings = () => {
                                                 name="password"
                                                 value={formData.password}
                                                 onChange={handleChange}
-                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[#08315F] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                                 placeholder="Leave blank to keep current"
                                             />
                                             <button 
@@ -239,7 +239,7 @@ const Settings = () => {
                                             name="confirmPassword"
                                             value={formData.confirmPassword}
                                             onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[#08315F] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                             placeholder="Confirm new password"
                                         />
                                     </div>
@@ -255,7 +255,7 @@ const Settings = () => {
                                                     const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                     handleChange({ target: { name: 'passcode', value: val } });
                                                 }}
-                                                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[#08315F] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
+                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
                                                 placeholder="••••••"
                                                 maxLength={6}
                                             />
@@ -278,7 +278,7 @@ const Settings = () => {
                                                 const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                 handleChange({ target: { name: 'confirmPasscode', value: val } });
                                             }}
-                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-[#08315F] font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
                                             placeholder="••••••"
                                             maxLength={6}
                                         />

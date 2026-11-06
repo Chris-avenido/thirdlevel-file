@@ -173,7 +173,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
           placeholder={placeholder}
           className="w-full pl-4 pr-16 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400"
           style={{
-            background: '#f8fafc',
+            background: '#ffffff',
             border: isOpen ? '2px solid #075985' : '2px solid #e2e8f0',
             boxShadow: isOpen ? '0 0 0 3px rgba(7,89,133,0.12)' : 'none'
           }}
@@ -696,7 +696,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 placeholder={loadingOfficials ? 'Loading officials…' : 'Search by name or email…'}
                 className="w-full pl-10 pr-8 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985]"
                 style={{
-                  background: '#f0f9ff',
+                  background: '#ffffff',
                   border: '2px solid #bae6fd',
                   boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)'
                 }}
@@ -914,7 +914,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     onChange={(e) => setJustification(e.target.value)}
                     placeholder="Optional reassignment note or administrative justification..."
                     className="w-full px-3.5 py-2 rounded-[14px] text-[19px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985] resize-none"
-                    style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
+                    style={{ background: '#ffffff', border: '2px solid #e2e8f0' }}
                   />
                 </div>
               </div>
