@@ -844,6 +844,9 @@ const Home = () => {
           .kpi h2 { order:3; margin:12px 0 0; font-family:var(--font-data); font-size:32px; line-height:1.25; font-weight:700; color:var(--color-brand-800); }
           .kpi > div:not(.kpi-subheader):not(.kpi-tooltip) { order:3; margin-top:12px; }
           .kpi > div:not(.kpi-subheader):not(.kpi-tooltip) h2 { margin:0; }
+          .kpi > div:not(.kpi-subheader):not(.kpi-tooltip) { display:flex; align-items:center; gap:12px; }
+          .kpi > div:not(.kpi-subheader):not(.kpi-tooltip) h2 { order:1; }
+          .kpi > div:not(.kpi-subheader):not(.kpi-tooltip) span { order:2; }
           .kpi .kpi-subheader { order:2; margin-top:2px; font-family:var(--font-body); font-size:13px; line-height:1.45; font-weight:400; color:var(--color-secondary); display:block; }
           .kpi-tooltip { position:absolute; right:0; top:100%; margin-top:8px; width:280px; background:rgb(var(--rgb-white)/0.95); backdrop-filter:blur(8px); border:1px solid var(--color-muted); border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:16px; opacity:0; pointer-events:none; transition:all 0.2s; z-index:60; max-height:400px; overflow-y:auto; }
           .kpi:first-child .kpi-tooltip { right:auto; left:0; }
@@ -901,14 +904,14 @@ const Home = () => {
 
           <div className="dashboard-wrap mt-6">
             {/* FILTERS & SEARCH BAR */}
-            <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-brand-800 rounded-lg xl:rounded-full p-2 shadow-sm relative z-20 mt-[-24px] max-w-[1200px] mx-auto">
+            <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-end gap-3 card-surface p-4 relative z-20 max-w-[1200px] mx-auto">
                 {/* SEARCH BAR */}
-                <FloatingLabelInput label="Search name or email" icon={<FiSearch size={14} />} className="w-full" type="text" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="Search name or email..." />
+                <FloatingLabelInput label="Search" icon={<FiSearch size={14} />} className="min-w-0 flex-1" type="text" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="Search name or email..." />
 
                 {/* DROPDOWNS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-[560px] xl:shrink-0">
                     {/* Region Dropdown */}
-                    <FloatingLabelInput as="select" label="Region" className="w-full xl:flex-1" value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion}>
+                    <FloatingLabelInput as="select" label="Region" className="w-full" value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion}>
                             <option value="All regions">All Regions</option>
                             {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
                                 <option key={r} value={r}>{r}</option>
@@ -916,14 +919,14 @@ const Home = () => {
                         </FloatingLabelInput>
 
                     {/* Level Dropdown */}
-                    <FloatingLabelInput as="select" label="Level" className="w-full xl:flex-1" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel}>
+                    <FloatingLabelInput as="select" label="Level" className="w-full" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel}>
                             <option value="All levels">All Levels</option>
                             <option value="Third Level">Third Level</option>
                             <option value="Division Chief">Division Chief</option>
                         </FloatingLabelInput>
 
                     {/* Office Dropdown */}
-                    <FloatingLabelInput as="select" label="Office" className="w-full xl:flex-1" value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice}>
+                    <FloatingLabelInput as="select" label="Office" className="w-full" value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice}>
                             <option value="All">All Offices</option>
                             {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
                                 <option key={o} value={o}>{o}</option>
@@ -940,7 +943,7 @@ const Home = () => {
                             setFilterLevel('All levels');
                             setFilterOffice('All');
                         }}
-                        className="h-[38px] px-8 w-full xl:w-auto bg-brand-700 text-white rounded-full font-black text-[11px] tracking-widest uppercase hover:bg-brand-700 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
+                        className="h-11 md:h-10 px-6 w-full xl:w-auto bg-brand-700 text-white rounded-md font-medium text-[13px] uppercase tracking-wide hover:bg-brand-800 transition-colors flex items-center justify-center whitespace-nowrap shrink-0"
                     >
                         Clear
                     </button>
