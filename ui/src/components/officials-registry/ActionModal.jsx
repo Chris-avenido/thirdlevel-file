@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiX } from 'react-icons/fi';
+import { MagnifyingGlass as FiSearch, X as FiX } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import JustificationInput from './JustificationInput';
 import AddNewPersonnelForm from './AddNewPersonnelForm';

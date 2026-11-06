@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-    FiFileText,
-    FiUploadCloud,
-    FiCheck,
-    FiTrash2,
-    FiExternalLink,
-    FiInfo,
-    FiLoader
-} from 'react-icons/fi';
+import { FileText as FiFileText, CloudArrowUp as FiUploadCloud, Check as FiCheck, Trash as FiTrash2, ArrowSquareOut as FiExternalLink, Info as FiInfo, SpinnerGap as FiLoader } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import { REQUIRED_DOCUMENTS } from './constants';
 import { apiUrl } from '../../utils/api';

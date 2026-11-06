@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiAlertTriangle, FiUnlock } from 'react-icons/fi';
+import { Warning as FiAlertTriangle, LockOpen as FiUnlock } from '@phosphor-icons/react';
 
 const LocationUnlockModal = ({ profile, setIsLocationLocked, setShowLocationUnlockModal, showLocationUnlockModal }) => {
   return (

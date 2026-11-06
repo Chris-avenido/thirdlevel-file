@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCheckCircle, FiLoader } from 'react-icons/fi';
+import { CheckCircle as FiCheckCircle, SpinnerGap as FiLoader } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import html2pdf from 'html2pdf.js';

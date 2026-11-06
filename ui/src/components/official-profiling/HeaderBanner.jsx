@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FiUser, FiChevronLeft, FiLock } from 'react-icons/fi';
+import { User as FiUser, CaretLeft as FiChevronLeft, Lock as FiLock } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 
 const HeaderBanner = ({ TLOid, applicationId, applicationStatus, completeness, fullName, handleEditToggle, isEditing, isTlo, logout, navigate, profile }) => {

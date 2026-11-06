@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FiPlus, FiTrash2, FiInfo } from 'react-icons/fi';
+import { Plus as FiPlus, Trash as FiTrash2, Info as FiInfo } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import { Field, SectionLabel } from './formParts';
 

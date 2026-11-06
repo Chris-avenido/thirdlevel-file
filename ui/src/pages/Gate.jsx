@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { LogIn, UserPlus, ArrowRight, Briefcase, ShieldCheck } from 'lucide-react';
+import { SignIn as LogIn, UserPlus as UserPlus, ArrowRight as ArrowRight, Briefcase as Briefcase, ShieldCheck as ShieldCheck } from '@phosphor-icons/react';
 
 const Gate = () => {
     const navigate = useNavigate();

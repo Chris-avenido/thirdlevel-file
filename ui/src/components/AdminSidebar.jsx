@@ -1,7 +1,7 @@
 // Force HMR
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiUsers, FiLogOut, FiChevronLeft, FiChevronRight, FiMenu, FiX, FiSettings, FiAward, FiCheckCircle, FiGrid, FiBriefcase } from 'react-icons/fi';
+import { House as FiHome, Users as FiUsers, SignOut as FiLogOut, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, List as FiMenu, X as FiX, Gear as FiSettings, Medal as FiAward, CheckCircle as FiCheckCircle, SquaresFour as FiGrid, Briefcase as FiBriefcase } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import newLogo from '../assets/modern_logo.png';
 

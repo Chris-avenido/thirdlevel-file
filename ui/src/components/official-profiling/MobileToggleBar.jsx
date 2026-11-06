@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiUser, FiList } from 'react-icons/fi';
+import { User as FiUser, List as FiList } from '@phosphor-icons/react';
 import { TABS } from './constants';
 
 const MobileToggleBar = ({ dataSource, isTabCompleted, setIsMobileMenuOpen, setTab, tab }) => {

@@ -1,4 +1,4 @@
-import { FiUser, FiAward, FiBriefcase, FiBook, FiFileText, FiShield, FiList, FiTrendingUp, FiActivity, FiStar } from 'react-icons/fi';
+import { User as FiUser, Medal as FiAward, Briefcase as FiBriefcase, Book as FiBook, FileText as FiFileText, Shield as FiShield, List as FiList, TrendUp as FiTrendingUp, Pulse as FiActivity, Star as FiStar } from '@phosphor-icons/react';
 
 export const TABS = [
     { id: 'personal', label: 'Personal Info', icon: FiUser },

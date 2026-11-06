@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { FiX, FiSearch, FiArrowRight, FiUploadCloud, FiAlertCircle, FiCheck, FiChevronDown } from 'react-icons/fi';
+import { X as FiX, MagnifyingGlass as FiSearch, ArrowRight as FiArrowRight, CloudArrowUp as FiUploadCloud, WarningCircle as FiAlertCircle, Check as FiCheck, CaretDown as FiChevronDown } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import ModernDatePicker from './ModernDatePicker';

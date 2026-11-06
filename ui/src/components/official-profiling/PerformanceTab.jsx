@@ -1,4 +1,4 @@
-import { FiInfo } from 'react-icons/fi';
+import { Info as FiInfo } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import { inp } from './constants';
 import { Field, SectionLabel } from './formParts';

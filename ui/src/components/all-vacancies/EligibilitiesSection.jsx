@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiAward } from 'react-icons/fi';
+import { Medal as FiAward } from '@phosphor-icons/react';
 import { CES_STAGES } from './constants';
 
 const EligibilitiesSection = ({

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiCheck, FiUser, FiMail, FiBriefcase } from 'react-icons/fi';
+import { X as FiX, Check as FiCheck, User as FiUser, Envelope as FiMail, Briefcase as FiBriefcase } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 

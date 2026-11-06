@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiInbox } from 'react-icons/fi';
+import { Tray as FiInbox } from '@phosphor-icons/react';
 
 const EmptyState = ({ message = "No official records match your criteria.", onReset }) => {
   return (

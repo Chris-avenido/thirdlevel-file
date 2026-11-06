@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  FiHome, 
-  FiMapPin, 
-  FiGrid, 
-  FiBook, 
-  FiBarChart2 
-} from 'react-icons/fi';
+import { House as FiHome, MapPin as FiMapPin, SquaresFour as FiGrid, Book as FiBook, ChartBar as FiBarChart2 } from '@phosphor-icons/react';
 
 const Dashboard = () => {
   const [activeNav, setActiveNav] = useState('Overview');

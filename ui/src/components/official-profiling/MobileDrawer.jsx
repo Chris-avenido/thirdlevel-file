@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUser, FiCheckCircle, FiLock, FiArrowRight, FiX } from 'react-icons/fi';
+import { User as FiUser, CheckCircle as FiCheckCircle, Lock as FiLock, ArrowRight as FiArrowRight, X as FiX } from '@phosphor-icons/react';
 import { TABS } from './constants';
 
 const MobileDrawer = ({ completeness, dataSource, isMobileMenuOpen, isTabCompleted, setIsMobileMenuOpen, setTab, tab }) => {

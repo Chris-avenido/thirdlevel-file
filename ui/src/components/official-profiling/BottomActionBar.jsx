@@ -1,4 +1,4 @@
-import { FiShield, FiSave, FiLoader } from 'react-icons/fi';
+import { Shield as FiShield, FloppyDisk as FiSave, SpinnerGap as FiLoader } from '@phosphor-icons/react';
 
 const BottomActionBar = ({ handleSave, isEditing, saving }) => {
   return (

@@ -1,4 +1,4 @@
-import { FiPlus, FiTrash2 } from 'react-icons/fi';
+import { Plus as FiPlus, Trash as FiTrash2 } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import YearInput from '../YearInput';
 import { inp } from './constants';

@@ -3,6 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { IconContext } from '@phosphor-icons/react'
 import App from './App.jsx'
 import './index.css'
 import { devLogger } from './devtools/dev-logger'
@@ -14,9 +15,11 @@ ReactDOM.createRoot(document.getElementById('root'), devLogger.reactRootErrorHan
     <React.StrictMode>
       <DevErrorBoundary>
         <AuthProvider>
-          <BrowserRouter basename={import.meta.env.BASE_URL}>
-            <App />
+            <IconContext.Provider value={{ weight: 'duotone' }}>
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
+              <App />
           </BrowserRouter>
+          </IconContext.Provider>
         </AuthProvider>
       </DevErrorBoundary>
     </React.StrictMode>

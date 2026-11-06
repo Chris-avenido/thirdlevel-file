@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiEdit3 } from 'react-icons/fi';
+import { PencilSimple as FiEdit3 } from '@phosphor-icons/react';
 import { APPLICANT_EXAM_DATA } from '../../constants/applicantExamQuestions';
 
 const ExamPartBEssays = ({ partBAnswers, setPartBAnswers }) => {

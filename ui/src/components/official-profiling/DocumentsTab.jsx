@@ -1,4 +1,4 @@
-import { FiFileText, FiCheckCircle, FiInfo, FiUpload, FiDownload, FiEye } from 'react-icons/fi';
+import { FileText as FiFileText, CheckCircle as FiCheckCircle, Info as FiInfo, UploadSimple as FiUpload, DownloadSimple as FiDownload, Eye as FiEye } from '@phosphor-icons/react';
 
 const DocumentsTab = ({ certified, handleDownloadDocument, handleFileUpload, handleViewDocument, isEditing, profile, tab, uploadedFileNames, uploadingDocs }) => {
   return (

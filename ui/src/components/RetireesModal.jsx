@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiAward, FiLogOut, FiAlertCircle, FiCalendar, FiChevronDown, FiUser, FiUsers, FiFileText } from 'react-icons/fi';
+import { X as FiX, Medal as FiAward, SignOut as FiLogOut, WarningCircle as FiAlertCircle, Calendar as FiCalendar, CaretDown as FiChevronDown, User as FiUser, Users as FiUsers, FileText as FiFileText } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';

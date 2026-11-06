@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiCheckCircle } from 'react-icons/fi';
+import { CheckCircle as FiCheckCircle } from '@phosphor-icons/react';
 import { APPLICANT_EXAM_DATA } from '../../constants/applicantExamQuestions';
 
 const ExamPartAScenarios = ({ partAAnswers, setPartAAnswers }) => {

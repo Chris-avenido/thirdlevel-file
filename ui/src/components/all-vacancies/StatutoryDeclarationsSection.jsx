@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiShield } from 'react-icons/fi';
+import { Shield as FiShield } from '@phosphor-icons/react';
 
 const STATUTORY_QUESTIONS = [
     {

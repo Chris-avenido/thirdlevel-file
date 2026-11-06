@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiBriefcase } from 'react-icons/fi';
+import { Briefcase as FiBriefcase } from '@phosphor-icons/react';
 import { DESIGNATION_PRESETS } from './constants';
 
 const DesignationOICSection = ({

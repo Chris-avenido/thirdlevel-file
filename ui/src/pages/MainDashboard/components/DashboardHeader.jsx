@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiHome } from 'react-icons/fi';
+import { House as FiHome } from '@phosphor-icons/react';
 import { useAuth } from '../../../context/AuthContext';
 
 const DashboardHeader = ({ recordCount, statusText = "Registry Verified" }) => {

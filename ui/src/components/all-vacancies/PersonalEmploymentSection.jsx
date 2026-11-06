@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiUser, FiInfo } from 'react-icons/fi';
+import { User as FiUser, Info as FiInfo } from '@phosphor-icons/react';
 import { formatContactNumber } from './constants';
 
 const PersonalEmploymentSection = ({

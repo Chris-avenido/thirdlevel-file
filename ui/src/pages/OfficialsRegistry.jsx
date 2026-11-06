@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUsers, FiSearch, FiChevronRight, FiInfo } from 'react-icons/fi';
+import { Users as FiUsers, MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, Info as FiInfo } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import AdminSidebar from '../components/AdminSidebar';

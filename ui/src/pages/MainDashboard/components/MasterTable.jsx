@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { MagnifyingGlass as FiSearch, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight } from '@phosphor-icons/react';
 
 const MasterTable = ({
   paginatedRows,

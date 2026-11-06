@@ -1,4 +1,4 @@
-import { FiSearch, FiChevronRight, FiGrid, FiList, FiLayers } from 'react-icons/fi';
+import { MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, SquaresFour as FiGrid, List as FiList, Stack as FiLayers } from '@phosphor-icons/react';
 import { expandAcronym } from '../../utils/officialsUtils';
 
 const DataControls = ({ dependentOffices, designationFilter, designations, levelFilter, officeFilter, oicOnly, positionFilter, regionFilter, searchTerm, setActiveTab, setDesignationFilter, setLevelFilter, setOfficeFilter, setOicOnly, setPositionFilter, setRegionFilter, setSearchTerm, setStatusTab, setStrandFilter, setTableFilters, setViewMode, strandFilter, strands, tabPositions, viewMode }) => {

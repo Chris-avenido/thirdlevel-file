@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUser, FiAward, FiBriefcase, FiFileText, FiShield, FiSave, FiCheckCircle, FiUpload, FiLoader, FiTrendingUp, FiClock, FiStar, FiArrowRight, FiCalendar, FiDownload, FiX, FiMonitor, FiFile, FiPrinter, FiEye, FiHeart, FiBookOpen, FiRotateCcw, FiCamera, FiBarChart2, FiChevronDown, FiHome, FiMapPin, FiLayers } from 'react-icons/fi';
+import { User as FiUser, Medal as FiAward, Briefcase as FiBriefcase, FileText as FiFileText, Shield as FiShield, FloppyDisk as FiSave, CheckCircle as FiCheckCircle, UploadSimple as FiUpload, SpinnerGap as FiLoader, TrendUp as FiTrendingUp, Clock as FiClock, Star as FiStar, ArrowRight as FiArrowRight, Calendar as FiCalendar, DownloadSimple as FiDownload, X as FiX, Monitor as FiMonitor, File as FiFile, Printer as FiPrinter, Eye as FiEye, Heart as FiHeart, BookOpen as FiBookOpen, ArrowCounterClockwise as FiRotateCcw, Camera as FiCamera, ChartBar as FiBarChart2, CaretDown as FiChevronDown, House as FiHome, MapPin as FiMapPin, Stack as FiLayers } from '@phosphor-icons/react';
 import depedLogo from '../../assets/DepED-Logo.png';
 import { apiUrl } from '../../utils/api';
 import { calculateDuration, sanitizeSuffix } from './helpers';

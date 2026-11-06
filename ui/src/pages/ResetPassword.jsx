@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import { Lock as FiLock, Eye as FiEye, EyeSlash as FiEyeOff } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import PageTransition from '../components/PageTransition';
 import logo from '../assets/modern_logo.png';

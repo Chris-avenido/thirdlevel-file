@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiX } from 'react-icons/fi';
+import { X as FiX } from '@phosphor-icons/react';
 
 const DetailModal = ({ row, onClose }) => {
   if (!row) return null;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiSettings, FiRotateCcw, FiSliders } from 'react-icons/fi';
+import { Gear as FiSettings, ArrowCounterClockwise as FiRotateCcw, Sliders as FiSliders } from '@phosphor-icons/react';
 
 const FilterPanel = ({
   regions = [],

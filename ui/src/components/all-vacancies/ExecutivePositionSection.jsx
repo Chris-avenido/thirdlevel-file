@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiBriefcase, FiMapPin } from 'react-icons/fi';
+import { Briefcase as FiBriefcase, MapPin as FiMapPin } from '@phosphor-icons/react';
 import { EXECUTIVE_POSITIONS, DEPED_REGIONS } from './constants';
 
 const ExecutivePositionSection = ({

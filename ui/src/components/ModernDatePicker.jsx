@@ -1,7 +1,7 @@
 import React from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { FiCalendar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { Calendar as FiCalendar, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight } from '@phosphor-icons/react';
 
 const MONTHS = [
     "January", "February", "March", "April", "May", "June",

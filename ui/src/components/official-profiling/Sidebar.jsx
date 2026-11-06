@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiUser, FiChevronRight, FiCheckCircle, FiLock } from 'react-icons/fi';
+import { User as FiUser, CaretRight as FiChevronRight, CheckCircle as FiCheckCircle, Lock as FiLock } from '@phosphor-icons/react';
 import { TABS } from './constants';
 
 const Sidebar = ({ completeness, dataSource, isTabCompleted, setTab, tab }) => {

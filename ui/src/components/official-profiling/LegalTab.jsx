@@ -1,4 +1,4 @@
-import { FiAlertTriangle, FiUpload, FiDownload, FiEye } from 'react-icons/fi';
+import { Warning as FiAlertTriangle, UploadSimple as FiUpload, DownloadSimple as FiDownload, Eye as FiEye } from '@phosphor-icons/react';
 import { Field } from './formParts';
 
 const LegalTab = ({ handleDownloadDocument, handleFileUpload, handleViewDocument, isEditing, profile, setP, tab, uploadedFileNames, uploadingDocs }) => {

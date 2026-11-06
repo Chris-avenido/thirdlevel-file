@@ -1,4 +1,4 @@
-import { FiUpload, FiLock, FiUnlock, FiRotateCcw } from 'react-icons/fi';
+import { UploadSimple as FiUpload, Lock as FiLock, LockOpen as FiUnlock, ArrowCounterClockwise as FiRotateCcw } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 import ModernDatePicker from '../ModernDatePicker';
 import { inp, sel } from './constants';

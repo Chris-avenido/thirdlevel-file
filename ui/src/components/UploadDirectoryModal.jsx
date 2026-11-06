@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiUploadCloud, FiFile, FiCheckCircle, FiAlertCircle, FiChevronLeft, FiChevronRight, FiDownload, FiPlus, FiUsers, FiFileText } from 'react-icons/fi';
+import { X as FiX, CloudArrowUp as FiUploadCloud, File as FiFile, CheckCircle as FiCheckCircle, WarningCircle as FiAlertCircle, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, DownloadSimple as FiDownload, Plus as FiPlus, Users as FiUsers, FileText as FiFileText } from '@phosphor-icons/react';
 import { apiUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Swal from 'sweetalert2';

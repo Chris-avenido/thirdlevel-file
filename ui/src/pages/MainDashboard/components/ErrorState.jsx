@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
+import { WarningCircle as FiAlertCircle, ArrowsClockwise as FiRefreshCw } from '@phosphor-icons/react';
 
 const ErrorState = ({ error, onRetry }) => {
   return (

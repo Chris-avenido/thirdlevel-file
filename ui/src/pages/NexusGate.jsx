@@ -3,22 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiUrl } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import {
-    FiX,
-    FiLogIn,
-    FiUserPlus,
-    FiShield,
-    FiBookOpen,
-    FiExternalLink,
-    FiLock,
-    FiBriefcase,
-    FiArrowRight,
-    FiCheckCircle,
-    FiCheck,
-    FiClock,
-    FiFileText,
-    FiDatabase
-} from 'react-icons/fi';
+import { X as FiX, SignIn as FiLogIn, UserPlus as FiUserPlus, Shield as FiShield, BookOpen as FiBookOpen, ArrowSquareOut as FiExternalLink, Lock as FiLock, Briefcase as FiBriefcase, ArrowRight as FiArrowRight, CheckCircle as FiCheckCircle, Check as FiCheck, Clock as FiClock, FileText as FiFileText, Database as FiDatabase } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import PageTransition from '../components/PageTransition';
 import './NexusGate.css';

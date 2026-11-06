@@ -1,18 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import {
-    FiSearch,
-    FiBriefcase,
-    FiMapPin,
-    FiCalendar,
-    FiUser,
-    FiChevronLeft,
-    FiChevronRight,
-    FiRefreshCw,
-    FiSliders,
-    FiEye,
-    FiAward
-} from 'react-icons/fi';
+import { MagnifyingGlass as FiSearch, Briefcase as FiBriefcase, MapPin as FiMapPin, Calendar as FiCalendar, User as FiUser, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, ArrowsClockwise as FiRefreshCw, Sliders as FiSliders, Eye as FiEye, Medal as FiAward } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 import ApplicantInspectionModal from './ApplicantInspectionModal';
 

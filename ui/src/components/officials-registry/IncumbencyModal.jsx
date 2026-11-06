@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiClock, FiInfo, FiX, FiCalendar } from 'react-icons/fi';
+import { Clock as FiClock, Info as FiInfo, X as FiX, Calendar as FiCalendar } from '@phosphor-icons/react';
 
 const IncumbencyModal = ({ incumbents, incumbentsLoading, selectedPosition, setShowIncumbencyModal, showIncumbencyModal }) => {
   return (

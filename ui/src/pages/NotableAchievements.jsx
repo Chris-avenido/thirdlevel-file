@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiFilter, FiDownload, FiUploadCloud, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiCheckCircle, FiX, FiAward } from 'react-icons/fi';
+import { MagnifyingGlass as FiSearch, Funnel as FiFilter, DownloadSimple as FiDownload, CloudArrowUp as FiUploadCloud, Plus as FiPlus, PencilSimple as FiEdit2, Trash as FiTrash2, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, CheckCircle as FiCheckCircle, X as FiX, Medal as FiAward } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import AdminSidebar from '../components/AdminSidebar';

@@ -1,20 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    FiChevronLeft,
-    FiChevronRight,
-    FiCheckCircle,
-    FiAlertTriangle,
-    FiLock,
-    FiLogIn,
-    FiUserPlus,
-    FiClock,
-    FiUser,
-    FiSend,
-    FiLoader,
-    FiClipboard,
-    FiUploadCloud
-} from 'react-icons/fi';
+import { CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, CheckCircle as FiCheckCircle, Warning as FiAlertTriangle, Lock as FiLock, SignIn as FiLogIn, UserPlus as FiUserPlus, Clock as FiClock, User as FiUser, PaperPlaneTilt as FiSend, SpinnerGap as FiLoader, Clipboard as FiClipboard, CloudArrowUp as FiUploadCloud } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import { apiUrl } from '../utils/api';

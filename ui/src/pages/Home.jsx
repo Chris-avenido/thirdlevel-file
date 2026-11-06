@@ -11,7 +11,7 @@ import RegisterPersonnelModal from '../components/RegisterPersonnelModal';
 import ReassignOfficialModal from '../components/ReassignOfficialModal';
 import AnalyticsSection from './MainDashboard/components/AnalyticsSection';
 import './MainDashboard/MainDashboard.css';
-import { FiUserPlus, FiUploadCloud, FiList, FiHome, FiLogOut, FiAward, FiClock, FiSearch, FiChevronRight, FiGrid } from 'react-icons/fi';
+import { UserPlus as FiUserPlus, CloudArrowUp as FiUploadCloud, List as FiList, House as FiHome, SignOut as FiLogOut, Medal as FiAward, Clock as FiClock, MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, SquaresFour as FiGrid } from '@phosphor-icons/react';
 import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
 
 // Text cleaning engine from MainDashboard
