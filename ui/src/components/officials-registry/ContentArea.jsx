@@ -20,7 +20,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                                 </motion.div>
                             ) : viewMode === 'table' ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-brand-800 overflow-hidden">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card-surface overflow-hidden">
                                     <div className="w-full">
                                         <table className="hidden md:table w-full text-left border-collapse table-fixed">
                                             <thead>
@@ -70,7 +70,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                                     <div className="flex items-center gap-2">
                                                                         <div
                                                                             onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                                            className={`font-black text-brand-800 text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                            className={`person-title text-brand-800 text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                             title={item.email ? "View Official Profile" : ""}
                                                                         >
                                                                             {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
@@ -319,7 +319,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                 key={item.TLOid}
                                                 whileHover={{ y: -4 }}
                                                 onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                className={`bg-white rounded-lg p-5 border-2 border-brand-800 shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
+                                                className={`card-surface p-5 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                             >
                                                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                                                 <div>
@@ -431,7 +431,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                             </motion.div>
                                         ))}
                                     </div>
-                                    <div className="px-8 py-5 bg-white rounded-lg border-2 border-slate-200 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="px-8 py-5 card-surface flex flex-col md:flex-row md:items-center justify-between gap-4">
                                         <span className="text-[15px] font-black text-slate-400 uppercase tracking-widest">
                                             Showing {totalRecords === 0 ? 0 : ((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
                                         </span>
@@ -461,7 +461,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
 
                                             <div className="flex flex-wrap justify-center gap-6">
                                                 {members.map(item => (
-                                                    <div key={item.TLOid} className="bg-white border-2 border-slate-200 rounded-3xl p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-brand-700 transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}>
+                                                    <div key={item.TLOid} className="card-surface p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-brand-700 transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}>
                                                         <div className="absolute -top-4 bg-brand-700 text-white text-[15px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md w-[90%] truncate border-2 border-sky-600">
                                                             {item.position_title || 'Position Unknown'}
                                                         </div>

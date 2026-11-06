@@ -5,7 +5,7 @@ import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 const DataControls = ({ dependentOffices, designationFilter, designations, levelFilter, officeFilter, oicOnly, positionFilter, regionFilter, searchTerm, setActiveTab, setDesignationFilter, setLevelFilter, setOfficeFilter, setOicOnly, setPositionFilter, setRegionFilter, setSearchTerm, setStatusTab, setStrandFilter, setTableFilters, setViewMode, strandFilter, strands, tabPositions, viewMode }) => {
   return (
     <>
-                        <div className="bg-white border-2 border-brand-800 rounded-lg p-3 shadow-sm mb-6 flex flex-col gap-2.5">
+                        <div className="card-surface p-3 mb-6 flex flex-col gap-2.5">
                             {/* TOP ROW: FILTERS */}
                             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full">
                                 {/* DROPDOWNS */}

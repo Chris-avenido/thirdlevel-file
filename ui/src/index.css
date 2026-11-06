@@ -89,13 +89,7 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-body);
-  background-color: var(--blue-50);
-  background-attachment: fixed;
-  background-image:
-    radial-gradient(43.5% 49.5% at 10% 12%, rgb(var(--rgb-brand-700)/.30) 0 34%, transparent 78%),
-    radial-gradient(46.5% 54% at 92% 10%, rgb(var(--rgb-gold)/.42) 0 36%, transparent 80%),
-    radial-gradient(40.5% 48% at 84% 92%, rgb(var(--rgb-brand-300)/.30) 0 34%, transparent 78%),
-    radial-gradient(45% 52.5% at 8% 92%, rgb(var(--rgb-warning-700)/.26) 0 28%, rgb(var(--rgb-gold)/.18) 42%, transparent 80%);
+  background-color: var(--color-page);
 }
 
 #root {
@@ -153,7 +147,7 @@ body {
   --text: var(--color-heading);
   --muted: var(--color-secondary);
   --line: var(--color-brand-300);
-  --radius: 22px;
+  --radius: var(--radius-md);
 }
 
 .dashboard-theme.app {

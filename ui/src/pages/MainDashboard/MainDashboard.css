@@ -21,7 +21,7 @@
   --mdb-line: var(--color-brand-300);
   --mdb-font: var(--font-body);
   --mdb-font-head: var(--font-ui);
-  --mdb-radius: 22px;
+  --mdb-radius: var(--radius-md);
 }
 
 .mdb-container {
@@ -31,13 +31,7 @@
   width: 100%;
   color: var(--mdb-text);
   font-family: var(--mdb-font);
-  background-color: var(--mdb-blue-50);
-  background-image:
-    radial-gradient(43.5% 49.5% at 10% 12%, rgb(var(--rgb-brand-700)/.30) 0 34%, transparent 78%),
-    radial-gradient(46.5% 54% at 92% 10%, rgb(var(--rgb-gold)/.42) 0 36%, transparent 80%),
-    radial-gradient(40.5% 48% at 84% 92%, rgb(var(--rgb-brand-300)/.30) 0 34%, transparent 78%),
-    radial-gradient(45% 52.5% at 8% 92%, rgb(var(--rgb-warning-700)/.26) 0 28%, rgb(var(--rgb-gold)/.18) 42%, transparent 80%);
-  background-attachment: fixed;
+  background-color: var(--color-page);
   padding-bottom: 40px;
 }
 
@@ -162,10 +156,10 @@
 
 .mdb-card {
   min-width: 0;
-  background: var(--mdb-card);
-  border: 2.5px solid color-mix(in srgb, var(--mdb-blue) 64%, var(--mdb-navy) 36%);
-  border-radius: var(--mdb-radius);
-  box-shadow: var(--shadow-lg);
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -181,9 +175,9 @@
 .mdb-card h2 {
   margin: 0;
   color: var(--mdb-navy);
-  font-family: var(--mdb-font-head);
+  font-family: var(--font-ui);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -.02em;
 }
 .mdb-card-subtitle {
@@ -317,14 +311,14 @@
 .mdb-kpi-card {
   flex: 1 1 calc(20% - 14px);
   min-width: 170px;
-  background: white;
-  border: 2px solid var(--mdb-line);
-  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
   padding: 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--card-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .mdb-kpi-card:hover {
@@ -342,9 +336,9 @@
 }
 .mdb-kpi-card .mdb-kpi-number {
   color: var(--mdb-navy);
-  font-family: var(--mdb-font-head);
+  font-family: var(--font-data);
   font-size: clamp(30px, 2.2vw, 40px) !important;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -.03em;
 }
@@ -469,8 +463,8 @@
 /* Data Table */
 .mdb-table-wrap {
   overflow-x: auto;
-  border: 1.5px solid var(--mdb-line);
-  border-radius: var(--radius-md);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
   max-height: 480px;
 }
 .mdb-data-table {
