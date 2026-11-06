@@ -2,6 +2,7 @@ import React from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar as FiCalendar, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight } from '@phosphor-icons/react';
+import FloatingLabelInput from './forms/FloatingLabelInput.jsx';
 
 const MONTHS = [
     "January", "February", "March", "April", "May", "June",
@@ -81,25 +82,17 @@ const ModernDatePicker = ({ value, onChange, placeholder, minDate, maxDate, clas
                             </button>
 
                             <div className="flex items-center space-x-2">
-                                <select
-                                    value={MONTHS[date.getMonth()]}
-                                    onChange={({ target: { value } }) => changeMonth(MONTHS.indexOf(value))}
-                                    className="bg-white border-2 border-slate-200 text-slate-700 text-[18px] rounded-md px-2 py-1 outline-none focus:border-brand-700 font-medium cursor-pointer"
-                                >
+                                <FloatingLabelInput as="select" label="Month" value={MONTHS[date.getMonth()]} onChange={({ target: { value } }) => changeMonth(MONTHS.indexOf(value))}>
                                     {MONTHS.map(option => (
                                         <option key={option} value={option}>{option}</option>
                                     ))}
-                                </select>
+                                </FloatingLabelInput>
 
-                                <select
-                                    value={date.getFullYear()}
-                                    onChange={({ target: { value } }) => changeYear(value)}
-                                    className="bg-white border-2 border-slate-200 text-slate-700 text-[18px] rounded-md px-2 py-1 outline-none focus:border-brand-700 font-medium cursor-pointer"
-                                >
+                                <FloatingLabelInput as="select" label="Year" value={date.getFullYear()} onChange={({ target: { value } }) => changeYear(value)}>
                                     {YEARS.map(option => (
                                         <option key={option} value={option}>{option}</option>
                                     ))}
-                                </select>
+                                </FloatingLabelInput>
                             </div>
 
                             <button

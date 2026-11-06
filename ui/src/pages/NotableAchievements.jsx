@@ -248,16 +248,12 @@ const NotableAchievements = () => {
                             <div className="flex-1 max-w-xl flex items-center gap-3">
                                 <div className="relative flex-1">
                                     <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <select
-                                        value={searchTerm}
-                                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                                        className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-brand-800 shadow-sm transition-all appearance-none cursor-pointer"
-                                    >
+                                    <FloatingLabelInput as="select" label="All Achievements" className="w-full" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}>
                                         <option value="">All Achievements</option>
                                         {uniqueAchievements.map((ach, idx) => (
                                             <option key={idx} value={ach}>{ach}</option>
                                         ))}
-                                    </select>
+                                    </FloatingLabelInput>
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                         <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
                                     </div>

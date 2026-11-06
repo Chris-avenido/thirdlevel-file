@@ -330,43 +330,15 @@ const Login = () => {
                                                 <FiLock className="w-5 h-5" />
                                             </div>
                                             {loginMode === 'password' ? (
-                                                <input
-                                                    id="login-secret"
-                                                    aria-invalid={fieldError('login-secret') ? 'true' : undefined}
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    value={password}
-                                                    onChange={(e) => setPassword(e.target.value)}
-                                                    onFocus={() => setFocusedInput('secret')}
-                                                    onBlur={() => setFocusedInput(null)}
-                                                    placeholder="••••••••"
-                                                    autoComplete="current-password"
-                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-brand-800 focus:ring-4 focus:ring-brand-800/5 transition-all shadow-sm"
-                                                    required
-                                                />
+                                                <FloatingLabelInput label="••••••••" className="w-full" id="login-secret" aria-invalid={fieldError('login-secret') ? 'true' : undefined} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocusedInput('secret')} onBlur={() => setFocusedInput(null)} placeholder="••••••••" autoComplete="current-password" required />
                                             ) : (
-                                                <input
-                                                    id="login-secret"
-                                                    aria-invalid={fieldError('login-secret') ? 'true' : undefined}
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    value={passcode}
-                                                    onChange={(e) => {
+                                                <FloatingLabelInput label="••••••" className="w-full" id="login-secret" aria-invalid={fieldError('login-secret') ? 'true' : undefined} type={showPassword ? 'text' : 'password'} value={passcode} onChange={(e) => {
                                                         const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                                                         setPasscode(val);
-                                                    }}
-                                                    onFocus={() => {
+                                                    }} onFocus={() => {
                                                         setFocusedInput('secret');
                                                         setShowDialpadModal(true);
-                                                    }}
-                                                    onBlur={() => setFocusedInput(null)}
-                                                    placeholder="••••••"
-                                                    maxLength={6}
-                                                    inputMode="numeric"
-                                                    pattern="[0-9]*"
-                                                    readOnly
-                                                    autoComplete="off"
-                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-brand-800 focus:ring-4 focus:ring-brand-800/5 transition-all shadow-sm cursor-pointer"
-                                                    required
-                                                />
+                                                    }} onBlur={() => setFocusedInput(null)} placeholder="••••••" maxLength={6} inputMode="numeric" pattern="[0-9]*" readOnly autoComplete="off" required />
                                             )}
                                             <button
                                                 type="button"

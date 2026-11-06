@@ -244,16 +244,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
             <label className="block text-[18px] font-bold text-slate-500 uppercase tracking-wide mb-2">DepEd Email</label>
             <div className="relative">
               <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                id="personnel-email"
-                aria-invalid={fieldError('personnel-email') ? 'true' : undefined}
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full pl-10 pr-10 py-3 bg-white border-2 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none transition-all ${(emailStatus === 'duplicate' || emailStatus === 'invalid_domain') ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : emailStatus === 'valid' ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'}`}
-                placeholder="juan.delacruz@deped.gov.ph"
-              />
+              <FloatingLabelInput label="juan.delacruz@deped.gov.ph" className="w-full" id="personnel-email" aria-invalid={fieldError('personnel-email') ? 'true' : undefined} type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="juan.delacruz@deped.gov.ph" />
               {emailStatus === 'valid' && (
                 <FiCheck className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" size={20} />
               )}

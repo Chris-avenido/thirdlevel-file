@@ -43,11 +43,11 @@ const TrainingsTab = ({ handleAddTraining, handleRemoveTraining, handleTrainingD
                                                                                 <p className="text-red-500 text-[15px] mt-1 font-semibold absolute -bottom-5">Must be after From Date.</p>
                                                                             )}
                                                                         </div>
-                                                                        <select disabled={!isEditing} value={tr.hours_per_day || '8'} onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)} className="bg-white border-2 border-slate-200 rounded-xl px-2 py-2 text-[18px] font-bold outline-none focus:border-brand-700 transition-all min-w-0 cursor-pointer shadow-sm">
+                                                                        <FloatingLabelInput as="select" label="8 hrs" className="min-w-0" disabled={!isEditing} value={tr.hours_per_day || '8'} onChange={e => handleTrainingDateChange(idx, 'hours_per_day', e.target.value)}>
                                                                             <option value="8">8 hrs</option>
                                                                             <option value="4">4 hrs</option>
                                                                             <option value="2">2 hrs</option>
-                                                                        </select>
+                                                                        </FloatingLabelInput>
                                                                         <FloatingLabelInput label="Total" className="min-w-0" disabled={!isEditing} type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" />
                                                                         {isEditing && <button onClick={() => handleRemoveTraining(idx)} className="w-11 h-11 flex items-center justify-center bg-gold/10 text-gold rounded-xl hover:bg-gold hover:text-white transition-all"><FiTrash2 size={14} /></button>}
                                                                     </motion.div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { User as FiUser, List as FiList } from '@phosphor-icons/react';
 import { TABS } from './constants';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const MobileToggleBar = ({ dataSource, isTabCompleted, setIsMobileMenuOpen, setTab, tab }) => {
   return (
@@ -25,17 +26,13 @@ const MobileToggleBar = ({ dataSource, isTabCompleted, setIsMobileMenuOpen, setT
                             </div>
                             {/* Mobile Section Selection Dropdown */}
                             <div className="w-full">
-                                <select
-                                    value={tab}
-                                    onChange={(e) => setTab(e.target.value)}
-                                    className="w-full p-2.5 bg-slate-50 border-2 border-slate-300 rounded-lg text-[18px] font-bold text-slate-800 focus:ring-2 focus:ring-brand-700 outline-none shadow-inner"
-                                >
+                                <FloatingLabelInput as="select" label="Section" className="w-full" value={tab} onChange={(e) => setTab(e.target.value)}>
                                     {TABS.filter(t => dataSource !== 'masterlist' || t.id !== 'application').map((t) => (
                                         <option key={t.id} value={t.id}>
                                             {t.label} {isTabCompleted(t.id) ? '✓' : ''}
                                         </option>
                                     ))}
-                                </select>
+                                </FloatingLabelInput>
                             </div>
                         </div>
     </>

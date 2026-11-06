@@ -56,17 +56,10 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                             <FloatingLabelInput label="Middle Name" disabled={!isEditing} type="text" value={profile.middle_name} onChange={e => setP('middle_name', e.target.value)} />
                                                                             <Field label="Suffix">
                                                                                 <div className="flex items-center gap-1.5">
-                                                                                    <input
-                                                                                        disabled={!isEditing || isSuffixNA}
-                                                                                        type="text"
-                                                                                        value={isSuffixNA ? '' : (profile.suffix || '')}
-                                                                                        onChange={e => {
+                                                                                    <FloatingLabelInput label="Suffix" disabled={!isEditing || isSuffixNA} type="text" value={isSuffixNA ? '' : (profile.suffix || '')} onChange={e => {
                                                                                             if (isSuffixNA) setIsSuffixNA(false);
                                                                                             setP('suffix', e.target.value);
-                                                                                        }}
-                                                                                        placeholder={isSuffixNA ? 'Not Applicable' : 'e.g. Jr., III'}
-                                                                                        className={`${inp} ${isSuffixNA ? '!bg-slate-100/80 !text-slate-400 !cursor-not-allowed italic' : ''}`}
-                                                                                    />
+                                                                                        }} placeholder={isSuffixNA ? 'Not Applicable' : 'e.g. Jr., III'} />
                                                                                     <button
                                                                                         type="button"
                                                                                         disabled={!isEditing}
@@ -144,15 +137,10 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                         </FloatingLabelInput>
                                                                     <Field label="Region">
                                                                         <div className="relative">
-                                                                            <select
-                                                                                disabled={!isEditing || isLocationLocked}
-                                                                                value={profile.region || ''}
-                                                                                onChange={e => {
+                                                                            <FloatingLabelInput as="select" label="Select Region" disabled={!isEditing || isLocationLocked} value={profile.region || ''} onChange={e => {
                                                                                     setP('region', e.target.value);
                                                                                     setP('division', '');
-                                                                                }}
-                                                                                className={`${sel} ${isLocationLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
-                                                                            >
+                                                                                }}>
                                                                                 <option value="">Select Region</option>
                                                                                 {(regionsList || []).map(r => (
                                                                                     <option key={r} value={r}>{r}</option>
@@ -160,7 +148,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                 {profile.region && !(regionsList || []).includes(profile.region) && (
                                                                                     <option value={profile.region}>{profile.region}</option>
                                                                                 )}
-                                                                            </select>
+                                                                            </FloatingLabelInput>
                                                                             {isLocationLocked && (
                                                                                 <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
                                                                             )}
@@ -168,12 +156,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                     </Field>
                                                                     <Field label="Division">
                                                                         <div className="relative">
-                                                                            <select
-                                                                                disabled={!isEditing || isLocationLocked || !profile.region}
-                                                                                value={profile.division || ''}
-                                                                                onChange={e => setP('division', e.target.value)}
-                                                                                className={`${sel} ${(isLocationLocked || !profile.region) ? 'bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200' : ''}`}
-                                                                            >
+                                                                            <FloatingLabelInput as="select" label="Division" disabled={!isEditing || isLocationLocked || !profile.region} value={profile.division || ''} onChange={e => setP('division', e.target.value)}>
                                                                                 <option value="">{profile.region ? 'Select Division' : 'Select Region First'}</option>
                                                                                 {(availableDivisions || []).map(d => (
                                                                                     <option key={d} value={d}>{d}</option>
@@ -181,7 +164,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                 {profile.division && !(availableDivisions || []).includes(profile.division) && (
                                                                                     <option value={profile.division}>{profile.division}</option>
                                                                                 )}
-                                                                            </select>
+                                                                            </FloatingLabelInput>
                                                                             {isLocationLocked && (
                                                                                 <FiLock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={13} />
                                                                             )}
@@ -193,11 +176,11 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                     <FiRotateCcw size={13} />
                                                                                 </button>} disabled={!isEditing} type="text" value={profile.position_title?.toUpperCase() === 'OTHERS' ? '' : profile.position_title} onChange={e => setP('position_title', e.target.value || 'Others')} placeholder="Please specify position title" autoFocus />
                                                                         ) : (
-                                                                            <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || ''} onChange={e => setP('position_title', e.target.value)} className={sel}>
+                                                                            <FloatingLabelInput as="select" label="Select Position Title" disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.position_title?.toUpperCase()) || profile.position_title || ''} onChange={e => setP('position_title', e.target.value)}>
                                                                                 <option value="">Select Position Title</option>
                                                                                 {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
                                                                                 <option value="Others">Others</option>
-                                                                            </select>
+                                                                            </FloatingLabelInput>
                                                                         )}
                                                                     </Field>
                                                                     <Field label="Designation">
@@ -207,11 +190,11 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                         <FiRotateCcw size={13} />
                                                                                     </button>} disabled={!isEditing} type="text" value={profile.designation?.toUpperCase() === 'OTHERS' ? '' : profile.designation} onChange={e => setP('designation', e.target.value || 'Others')} placeholder="Please specify designation" autoFocus />
                                                                             ) : (
-                                                                                <select disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || ''} onChange={e => setP('designation', e.target.value)} className={sel}>
+                                                                                <FloatingLabelInput as="select" label="Select Designation" disabled={!isEditing} value={unifiedList.find(u => u.toUpperCase() === profile.designation?.toUpperCase()) || profile.designation || ''} onChange={e => setP('designation', e.target.value)}>
                                                                                     <option value="">Select Designation</option>
                                                                                     {unifiedList.map(o => <option key={o} value={o}>{o}</option>)}
                                                                                     <option value="Others">Others</option>
-                                                                                </select>
+                                                                                </FloatingLabelInput>
                                                                             )
                                                                         ) : (
                                                                             <div className="w-full bg-slate-50/70 border-2 border-slate-200 rounded-lg py-2 px-3.5 text-[18px] font-semibold text-slate-400 min-h-[38px] h-[38px] flex items-center italic">

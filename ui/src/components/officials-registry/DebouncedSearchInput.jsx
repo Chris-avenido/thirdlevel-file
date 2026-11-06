@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const DebouncedSearchInput = ({ value, onChange, placeholder }) => {
     const [local, setLocal] = useState(value);
@@ -15,13 +16,7 @@ const DebouncedSearchInput = ({ value, onChange, placeholder }) => {
     }, [local, onChange]);
 
     return (
-        <input
-            value={local}
-            onChange={(e) => setLocal(e.target.value)}
-            placeholder={placeholder}
-            autoComplete="off"
-            className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-2xl py-4 pl-11 pr-5 text-[21px] font-bold text-slate-700 placeholder:text-slate-400 outline-none transition-all"
-        />
+        <FloatingLabelInput label={placeholder} className="w-full" value={local} onChange={(e) => setLocal(e.target.value)} placeholder={placeholder} autoComplete="off" />
     );
 };
 

@@ -159,27 +159,17 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative flex items-center">
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => {
+        <FloatingLabelInput label={placeholder} className="w-full" ref={inputRef} type="text" value={value} onChange={(e) => {
             onChange(e.target.value);
             if (!isOpen) setIsOpen(true);
-          }}
-          onFocus={() => {
+          }} onFocus={() => {
             updatePosition();
             setIsOpen(true);
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="w-full pl-4 pr-16 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400"
-          style={{
+          }} onKeyDown={handleKeyDown} placeholder={placeholder} style={{
             background: 'var(--color-white)',
             border: isOpen ? '2px solid var(--color-brand-700)' : '2px solid var(--color-muted)',
             boxShadow: isOpen ? '0 0 0 3px rgb(var(--rgb-brand-700)/0.12)' : 'none'
-          }}
-        />
+          }} />
 
         <div className="absolute right-2 flex items-center gap-1">
           {value && (
@@ -687,26 +677,15 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 size={16}
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none"
               />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => {
+              <FloatingLabelInput label={loadingOfficials ? 'Loading officials…' : 'Search by name or email…'} className="w-full" ref={inputRef} type="text" value={query} onChange={(e) => {
                   setQuery(e.target.value);
                   setDropdownOpen(true);
                   if (!e.target.value) setSelected(null);
-                }}
-                onFocus={() => setDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setDropdownOpen(false), 180)}
-                placeholder={loadingOfficials ? 'Loading officials…' : 'Search by name or email…'}
-                className="w-full pl-10 pr-8 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-brand-700"
-                style={{
+                }} onFocus={() => setDropdownOpen(true)} onBlur={() => setTimeout(() => setDropdownOpen(false), 180)} placeholder={loadingOfficials ? 'Loading officials…' : 'Search by name or email…'} style={{
                   background: 'var(--color-white)',
                   border: '2px solid var(--color-brand-300)',
                   boxShadow: 'var(--shadow-xs)'
-                }}
-                disabled={loadingOfficials}
-              />
+                }} disabled={loadingOfficials} />
               {query && (
                 <button
                   type="button"

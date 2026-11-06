@@ -266,7 +266,7 @@ const Register = () => {
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                     <div className="relative group">
                                         <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input id="register-email" aria-invalid={fieldError('register-email') ? 'true' : undefined} type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-brand-800'}`} />
+                                        <FloatingLabelInput label="example@gmail.com" className="w-full" id="register-email" aria-invalid={fieldError('register-email') ? 'true' : undefined} type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" />
 
                                         {!isCO && masterlistCheckStatus === 'valid' && (
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">

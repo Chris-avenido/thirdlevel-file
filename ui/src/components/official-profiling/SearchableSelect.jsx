@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 export const SearchableSelect = ({ value, onChange, options, placeholder, className, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -32,14 +33,7 @@ export const SearchableSelect = ({ value, onChange, options, placeholder, classN
 
     return (
         <div ref={containerRef} className="relative w-full">
-            <input disabled={disabled}
-                type="text"
-                placeholder={placeholder}
-                value={search}
-                onChange={handleInputChange}
-                onFocus={() => setIsOpen(true)}
-                className={`w-full ${className}`}
-            />
+            <FloatingLabelInput label={placeholder} className="w-full" disabled={disabled} type="text" placeholder={placeholder} value={search} onChange={handleInputChange} onFocus={() => setIsOpen(true)} />
             {isOpen && (
                 <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border-2 border-slate-200 rounded-xl shadow-lg z-50 py-1">
                     {filteredOptions.length > 0 ? (
