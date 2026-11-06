@@ -12,7 +12,7 @@ const ExamPartBEssays = ({ partBAnswers, setPartBAnswers }) => {
     };
 
     return (
-        <div className="bg-white border-2 border-brand-800 rounded-lg p-6 shadow-sm space-y-6">
+        <div className="bg-white border-2 border-brand-800 rounded-card p-6 shadow-sm space-y-6">
             <div className="border-b border-slate-100 pb-3">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-700">
                     Assessment • Part B

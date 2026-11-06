@@ -443,13 +443,13 @@ const AllVacancies = () => {
                 <main className="flex-1 max-w-[1100px] w-full mx-auto p-6 md:p-10 space-y-8">
                     {/* Status Loading Skeleton */}
                     {windowLoading ? (
-                        <div className="bg-white border-2 border-slate-200 rounded-3xl p-12 text-center shadow-sm">
+                        <div className="bg-white border-2 border-slate-200 rounded-card p-12 text-center shadow-sm">
                             <FiLoader className="animate-spin text-brand-800 mx-auto mb-4" size={36} />
                             <h3 className="text-sm font-black uppercase tracking-wider text-slate-500">Checking Application Window Status...</h3>
                         </div>
                     ) : !intakeWindow.isOpen ? (
                         /* Closed Window State */
-                        <div className="bg-white border-2 border-rose-200 rounded-lg p-8 md:p-12 text-center space-y-6 shadow-sm">
+                        <div className="bg-white border-2 border-rose-200 rounded-card p-8 md:p-12 text-center space-y-6 shadow-sm">
                             <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto shadow-sm">
                                 <FiLock size={32} />
                             </div>
@@ -483,7 +483,7 @@ const AllVacancies = () => {
                         </div>
                     ) : submittedApplication ? (
                         /* Submitted Receipt View */
-                        <div className="bg-white border-2 border-emerald-300 rounded-lg p-8 md:p-12 text-center space-y-6 shadow-md">
+                        <div className="bg-white border-2 border-emerald-300 rounded-card p-8 md:p-12 text-center space-y-6 shadow-md">
                             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
                                 <FiCheckCircle size={36} />
                             </div>
@@ -619,7 +619,7 @@ const AllVacancies = () => {
                                     />
 
                                     {/* Tab 1 Navigation Action Bar */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-lg shadow-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-card shadow-sm">
                                         <span className="text-xs font-semibold text-slate-500">
                                             Step 1 of 3: Complete executive designation, personal info, and office assignment.
                                         </span>
@@ -651,7 +651,7 @@ const AllVacancies = () => {
                                     />
 
                                     {/* Tab 2 Navigation Action Bar */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-lg shadow-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-2 border-slate-200 rounded-card shadow-sm">
                                         <button
                                             type="button"
                                             onClick={handlePrev}
@@ -684,7 +684,7 @@ const AllVacancies = () => {
                                     />
 
                                     {/* Final Review & Submission Action Bar */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white border-2 border-brand-800 rounded-lg shadow-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white border-2 border-brand-800 rounded-card shadow-sm">
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                                             <button
                                                 type="button"

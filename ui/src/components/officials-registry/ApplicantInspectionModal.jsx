@@ -334,7 +334,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                     initial={{ opacity: 0, scale: 0.95, y: 15 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                    className="relative w-full max-w-4xl bg-white rounded-lg border-2 border-brand-800 shadow-2xl overflow-hidden z-10 my-8 flex flex-col max-h-[92vh]"
+                    className="relative w-full max-w-4xl bg-white rounded-card border-2 border-brand-800 shadow-2xl overflow-hidden z-10 my-8 flex flex-col max-h-[92vh]"
                 >
                     {/* Header */}
                     <div className="bg-brand-800 text-white p-6 sm:p-7 flex items-center justify-between shrink-0 border-b border-blue-900 relative">
@@ -503,7 +503,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </div>
 
                                         {/* Restored Statutory Legal Questionnaire Responses */}
-                                        <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-4 shadow-sm">
+                                        <div className="p-6 rounded-card bg-white border-2 border-slate-200 space-y-4 shadow-sm">
                                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                                                 <div className="flex items-center gap-2">
                                                     <FiShield className="text-brand-800" size={16} />
@@ -578,7 +578,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                     {applicant.documents.map((doc, idx) => (
                                                         <div
                                                             key={idx}
-                                                            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-white border-2 border-slate-100 hover:border-slate-200 transition-all gap-4 shadow-sm"
+                                                            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-card bg-white border-2 border-slate-100 hover:border-slate-200 transition-all gap-4 shadow-sm"
                                                         >
                                                             <div className="flex items-center gap-3 min-w-0">
                                                                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-brand-800 flex items-center justify-center shrink-0">
@@ -622,7 +622,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </div>
 
                                         {/* Qualification Standards (QS) Evaluation & Server-Derived Status */}
-                                        <div className="p-6 rounded-2xl bg-white border-2 border-brand-800 space-y-5 shadow-sm">
+                                        <div className="p-6 rounded-card bg-white border-2 border-brand-800 space-y-5 shadow-sm">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
                                                 <div className="flex items-center gap-2">
                                                     <FiCheckSquare className="text-brand-800" size={18} />
@@ -889,7 +889,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </div>
 
                                         {/* Active Evaluator Input Form Card */}
-                                        <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-5 shadow-sm">
+                                        <div className="p-6 rounded-card bg-white border-2 border-slate-200 space-y-5 shadow-sm">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
                                                 <div>
                                                     <span className="text-[10px] font-black uppercase tracking-wider text-brand-700">
@@ -960,7 +960,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </div>
 
                                         {/* Committee Evaluation Summary Matrix Table */}
-                                        <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-3">
+                                        <div className="p-6 rounded-card bg-white border border-slate-200 space-y-3">
                                             <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider flex items-center gap-1.5">
                                                 <FiList size={14} /> Summary Matrix of 5 Committee Evaluators
                                             </h4>
@@ -1076,7 +1076,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         {/* Split Sections: QS Details & Statutory Disclosures */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* Left: Qualification Standards (QS) Review */}
-                                            <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-4 shadow-sm">
+                                            <div className="p-6 rounded-card bg-white border-2 border-slate-200 space-y-4 shadow-sm">
                                                 <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
                                                     <FiCheckSquare className="text-brand-800" size={16} />
                                                     <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider">
@@ -1121,7 +1121,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                             </div>
 
                                             {/* Right: Statutory Disclosures Rollup */}
-                                            <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-4 shadow-sm">
+                                            <div className="p-6 rounded-card bg-white border-2 border-slate-200 space-y-4 shadow-sm">
                                                 <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
                                                     <FiShield className="text-brand-800" size={16} />
                                                     <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider">
@@ -1150,7 +1150,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </div>
 
                                         {/* Bottom: NSC Evaluation Committee Scores Breakdown */}
-                                        <div className="p-6 rounded-2xl bg-white border-2 border-brand-800 space-y-4 shadow-sm">
+                                        <div className="p-6 rounded-card bg-white border-2 border-brand-800 space-y-4 shadow-sm">
                                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                                                 <div className="flex items-center gap-2">
                                                     <FiAward className="text-brand-800" size={18} />

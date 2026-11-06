@@ -215,7 +215,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             maxHeight: dropdownPos.maxHeight || 300,
             zIndex: 999999
           }}
-          className="flex flex-col bg-white rounded-lg border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgb(var(--rgb-brand-800)/0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="flex flex-col bg-white rounded-card border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgb(var(--rgb-brand-800)/0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header Category Filter Tabs */}
           <div className="flex items-center gap-1.5 p-2 bg-gradient-to-r from-sky-50 to-slate-50 border-b-2 border-sky-100 shrink-0">

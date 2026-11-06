@@ -37,6 +37,7 @@ export default {
       // Corners are 4-6px; pills and circles keep `rounded-full`.
       borderRadius: {
         sm: '4px', DEFAULT: '4px', md: '6px', lg: '6px', xl: '6px', '2xl': '6px', '3xl': '6px',
+        card: 'var(--card-radius)',
       },
       // Soft theme shadows only.
       boxShadow: {

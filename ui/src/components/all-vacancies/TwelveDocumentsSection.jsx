@@ -99,7 +99,7 @@ const TwelveDocumentsSection = ({
     };
 
     return (
-        <div className="bg-white border-2 border-slate-200 rounded-lg p-6 md:p-8 space-y-6 shadow-sm">
+        <div className="bg-white border-2 border-slate-200 rounded-card p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
                     <FiFileText className="text-brand-800" size={20} />
@@ -181,7 +181,7 @@ const TwelveDocumentsSection = ({
 
                             {/* File Status or Upload Drop Area */}
                             {attached ? (
-                                <div className="mt-3 p-2.5 rounded-xl bg-white border border-emerald-200 flex items-center justify-between gap-2">
+                                <div className="mt-3 p-2.5 rounded-card bg-white border border-emerald-200 flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <FiFileText size={16} className="text-emerald-600 shrink-0" />
                                         <span className="text-xs font-mono font-bold text-slate-800 truncate" title={attached.file_name}>

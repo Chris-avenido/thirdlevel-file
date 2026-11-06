@@ -45,7 +45,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden"
+            className="bg-white rounded-card shadow-2xl w-full max-w-2xl overflow-hidden"
           >
         <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-6 flex justify-between items-center text-white border-b-2 border-white/10">
           <div className="flex items-center gap-3">
@@ -160,7 +160,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="bg-white rounded-lg w-full max-w-xl shadow-2xl border-2 border-slate-200"
+                className="bg-white rounded-card w-full max-w-xl shadow-2xl border-2 border-slate-200"
               >
                 <div className="p-10">
                     <div className="flex justify-between items-start mb-8">

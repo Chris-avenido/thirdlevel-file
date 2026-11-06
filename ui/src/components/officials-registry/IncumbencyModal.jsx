@@ -13,7 +13,7 @@ const IncumbencyModal = ({ incumbents, incumbentsLoading, selectedPosition, setS
                                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                        className="bg-white rounded-lg w-full max-w-2xl shadow-[0_32px_64px_-12px_rgb(var(--rgb-heading)/0.14)] border-2 border-white/50 overflow-hidden relative"
+                                        className="bg-white rounded-card w-full max-w-2xl shadow-[0_32px_64px_-12px_rgb(var(--rgb-heading)/0.14)] border-2 border-white/50 overflow-hidden relative"
                                     >
                                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent"></div>
 
@@ -26,7 +26,7 @@ const IncumbencyModal = ({ incumbents, incumbentsLoading, selectedPosition, setS
                                                     <h2 className="text-[45px] font-black text-brand-800 tracking-tighter uppercase italic leading-none">{selectedPosition?.title}</h2>
                                                     <p className="text-slate-400 font-medium text-[21px]">{selectedPosition?.office || 'Department of Education'}</p>
                                                 </div>
-                                                <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-2xl bg-white text-slate-400 hover:text-red-600 shadow-sm border-2 border-slate-200 transition-all">
+                                                <button onClick={() => setShowIncumbencyModal(false)} className="p-3 rounded-card bg-white text-slate-400 hover:text-red-600 shadow-sm border-2 border-slate-200 transition-all">
                                                     <FiX size={24} />
                                                 </button>
                                             </div>

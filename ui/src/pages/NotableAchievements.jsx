@@ -271,13 +271,13 @@ const NotableAchievements = () => {
                                     <div className="w-12 h-12 border-4 border-brand-800/10 border-t-brand-800 rounded-full animate-spin"></div>
                                 </div>
                             ) : sortedRecords.length === 0 ? (
-                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-lg p-20 text-center border-2 border-dashed border-slate-200">
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-card p-20 text-center border-2 border-dashed border-slate-200">
                                     <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
                                     <h3 className="text-xl font-black text-brand-800 uppercase italic tracking-tight">No Records Found</h3>
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or add a new record.</p>
                                 </motion.div>
                             ) : (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-lg overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-brand-800">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-card overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-brand-800">
                                     <div className="w-full overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
@@ -368,13 +368,13 @@ const NotableAchievements = () => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-lg w-full max-w-lg shadow-2xl overflow-hidden flex flex-col"
+                            className="bg-white rounded-card w-full max-w-lg shadow-2xl overflow-hidden flex flex-col"
                         >
                             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <div>
                                     <h2 className="text-xl font-black text-brand-800 uppercase tracking-tighter">{editMode === 'add' ? 'Add New Record' : 'Edit Record'}</h2>
                                 </div>
-                                <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-slate-400 hover:text-red-500 bg-white rounded-xl shadow-sm border border-slate-200 transition-all">
+                                <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-slate-400 hover:text-red-500 bg-white rounded-card shadow-sm border border-slate-200 transition-all">
                                     <FiX size={18} />
                                 </button>
                             </div>

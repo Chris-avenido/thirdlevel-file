@@ -2,7 +2,7 @@ import React from 'react';
 
 const FormTabs = ({ tabs, activeTab, onTabChange }) => {
     return (
-        <div className="bg-white border-2 border-slate-200 rounded-lg p-2 shadow-sm">
+        <div className="bg-white border-2 border-slate-200 rounded-card p-2 shadow-sm">
             <div className="flex border-b border-slate-100 overflow-x-auto no-scrollbar gap-2">
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id;

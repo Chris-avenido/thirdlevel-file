@@ -141,7 +141,7 @@ const Settings = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-white rounded-lg border-2 border-brand-800 p-8 shadow-xl"
+                        className="bg-white rounded-card border-2 border-brand-800 p-8 shadow-xl"
                     >
                         <form onSubmit={handleSave} className="space-y-8">
                             <FormErrorSummary errors={errors} />

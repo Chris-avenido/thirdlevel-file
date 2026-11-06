@@ -18,7 +18,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                                        className="bg-white rounded-lg w-full max-w-xl shadow-2xl border-2 border-white/50 overflow-hidden flex flex-col max-h-[90vh]"
+                                        className="bg-white rounded-card w-full max-w-xl shadow-2xl border-2 border-white/50 overflow-hidden flex flex-col max-h-[90vh]"
                                     >
                                         <div className="overflow-y-auto custom-scrollbar w-full h-full">
                                             <div className="p-10">

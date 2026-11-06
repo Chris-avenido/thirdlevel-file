@@ -132,7 +132,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-blue-100"
+            className="bg-white rounded-card shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-blue-100"
             initial={{ opacity: 0, rotateY: -90, scale: 0.95 }}
             animate={{ opacity: 1, rotateY: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5, rotateX: -20, rotateY: 20 }}
@@ -170,7 +170,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
                   </div>
 
                   <div
-                    className="border-2 border-dashed border-blue-200 rounded-lg p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/50 hover:border-blue-400 transition-all cursor-pointer group"
+                    className="border-2 border-dashed border-blue-200 rounded-card p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/50 hover:border-blue-400 transition-all cursor-pointer group"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}
                     onClick={() => fileInputRef.current?.click()}
@@ -195,7 +195,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
 
               {file && !summary && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm">
+                  <div className="flex items-center justify-between bg-white p-4 rounded-card border-2 border-blue-100 shadow-sm">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
                         <FiFile size={26} />
@@ -221,7 +221,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
                   </div>
 
                   {records.length > 0 && (
-                    <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-sm overflow-hidden flex flex-col max-h-[300px]">
+                    <div className="bg-white rounded-card border-2 border-blue-100 shadow-sm overflow-hidden flex flex-col max-h-[300px]">
                       <div className="px-6 py-4 border-b-2 border-slate-100 flex justify-between items-center bg-slate-50">
                         <h3 className="font-black text-brand-800 text-[21px]">Data Preview</h3>
                         <div className="text-[18px] font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -266,25 +266,25 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
               {summary && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 text-center">
+                    <div className="bg-white p-4 rounded-card border-2 border-blue-100 text-center">
                       <p className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
                       <p className="text-[45px] font-black text-brand-800">{summary.summary.total}</p>
                     </div>
-                    <div className="bg-white p-4 rounded-2xl border-2 border-green-200 text-center bg-green-50/30">
+                    <div className="bg-white p-4 rounded-card border-2 border-green-200 text-center bg-green-50/30">
                       <p className="text-[15px] font-black text-green-600 uppercase tracking-widest mb-1">Inserted</p>
                       <p className="text-[45px] font-black text-green-700">{summary.summary.inserted}</p>
                     </div>
-                    <div className="bg-white p-4 rounded-2xl border-2 border-amber-200 text-center bg-amber-50/30">
+                    <div className="bg-white p-4 rounded-card border-2 border-amber-200 text-center bg-amber-50/30">
                       <p className="text-[15px] font-black text-amber-600 uppercase tracking-widest mb-1">Updated</p>
                       <p className="text-[45px] font-black text-amber-700">{summary.summary.updated}</p>
                     </div>
-                    <div className="bg-white p-4 rounded-2xl border-2 border-red-200 text-center bg-red-50/30">
+                    <div className="bg-white p-4 rounded-card border-2 border-red-200 text-center bg-red-50/30">
                       <p className="text-[15px] font-black text-red-500 uppercase tracking-widest mb-1">Failed</p>
                       <p className="text-[45px] font-black text-red-700">{summary.summary.failed}</p>
                     </div>
                   </div>
 
-                  <div className="bg-white p-6 rounded-2xl border-2 border-blue-100 flex justify-center text-center">
+                  <div className="bg-white p-6 rounded-card border-2 border-blue-100 flex justify-center text-center">
                     <h3 className="font-black text-green-700 text-[27px]">Processing Complete!</h3>
                   </div>
                 </div>

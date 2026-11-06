@@ -183,7 +183,7 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-card w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-6 text-white flex justify-between items-center shrink-0 border-b-2 border-white/10">
           <div>
             <h2 className="text-[30px] font-bold">Register Third Level Personnel</h2>

@@ -11,7 +11,7 @@ const ExecutivePositionSection = ({
     setTargetRegion
 }) => {
     return (
-        <div className="bg-white border-2 border-slate-200 rounded-lg p-6 md:p-8 space-y-6 shadow-sm">
+        <div className="bg-white border-2 border-slate-200 rounded-card p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
                     <FiBriefcase className="text-brand-800" size={20} />

@@ -67,7 +67,7 @@ const OfficialsRegistry = () => {
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute left-0 right-0 top-full mt-2 bg-white rounded-3xl shadow-2xl border-2 border-slate-200 z-[130] overflow-hidden flex flex-col max-h-[450px]"
+                                className="absolute left-0 right-0 top-full mt-2 bg-white rounded-card shadow-2xl border-2 border-slate-200 z-[130] overflow-hidden flex flex-col max-h-[450px]"
                             >
                                 <div className="p-4 border-b-2 border-slate-100 bg-slate-50/50">
                                     <FloatingLabelInput label="Search options" icon={<FiSearch size={16} />} className="w-full" autoFocus type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search options..." autoComplete="off" />
