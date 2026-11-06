@@ -32,3 +32,7 @@ Third-level officials system: Express + PostgreSQL API in `api/`, Vite + React U
 | Set up or harden agent files | `.claude/skills/agent-ide-brain/SKILL.md` |
 
 When troubleshooting or improving runtime behavior, read `.logs/LATEST.md` first (run `npm run logs:summary` to refresh it); raw entries are in `.logs/*.jsonl`.
+
+## UI rules
+
+All UI follows the InsightED design language: see `.agents/rules/ui.md`. To retrofit or check a UI, use the `insighted-ui-rules` skill.
