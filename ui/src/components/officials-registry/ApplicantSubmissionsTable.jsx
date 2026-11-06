@@ -104,7 +104,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
     return (
         <div className="space-y-6">
             {/* Header Control Card */}
-            <div className="bg-white border-2 border-brand-800 rounded-lg p-5 shadow-sm space-y-4">
+            <div className="card-surface p-4 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2">
@@ -184,14 +184,14 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
             </div>
 
             {/* Submissions Data Table */}
-            <div className="bg-white border-2 border-brand-800 rounded-lg overflow-hidden shadow-sm">
+            <div className="card-surface overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse table-auto">
                         <thead>
-                            <tr className="bg-slate-50 border-b-2 border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider">
+                            <tr className="bg-white border-b border-muted text-heading text-[13px] font-semibold uppercase tracking-wide">
                                 <th
                                     onClick={() => handleSort('candidate_name')}
-                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                                    className="px-6 py-4 cursor-pointer hover:bg-brand-50 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <span>Candidate Name</span>
@@ -202,7 +202,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 </th>
                                 <th
                                     onClick={() => handleSort('applied_position')}
-                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                                    className="px-6 py-4 cursor-pointer hover:bg-brand-50 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <span>Applied Position</span>
@@ -213,7 +213,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 </th>
                                 <th
                                     onClick={() => handleSort('target_region')}
-                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                                    className="px-6 py-4 cursor-pointer hover:bg-brand-50 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <span>Target Region</span>
@@ -224,7 +224,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 </th>
                                 <th
                                     onClick={() => handleSort('submission_timestamp')}
-                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                                    className="px-6 py-4 cursor-pointer hover:bg-brand-50 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <span>Submission Timestamp</span>
@@ -235,7 +235,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 </th>
                                 <th
                                     onClick={() => handleSort('overall_qualification_status')}
-                                    className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                                    className="px-6 py-4 cursor-pointer hover:bg-brand-50 transition-colors"
                                 >
                                     <div className="flex items-center gap-1.5">
                                         <span>QS Status</span>
@@ -249,7 +249,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y-2 divide-slate-100 text-xs font-bold text-slate-800">
+                        <tbody className="divide-y divide-muted bg-white text-[15px] font-medium text-heading">
                             {loading ? (
                                 <tr>
                                     <td colSpan="7" className="p-16 text-center text-slate-400">

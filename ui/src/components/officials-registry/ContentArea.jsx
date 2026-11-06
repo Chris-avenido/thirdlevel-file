@@ -20,11 +20,11 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                                 </motion.div>
                             ) : viewMode === 'table' ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card-surface overflow-hidden">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card-surface overflow-x-auto">
                                     <div className="w-full">
-                                        <table className="hidden md:table w-full text-left border-collapse table-fixed">
+                                        <table className="hidden md:table w-full min-w-[1100px] text-left border-collapse table-fixed">
                                             <thead>
-                                                <tr className="bg-white border-b-2 border-slate-200">
+                                                <tr className="bg-white border-b border-muted">
                                                     {tableColumns.map((column, index) => (
                                                         <th key={column.key} className={`px-2 py-4 text-left align-top relative ${column.width || ''}`}>
 
@@ -45,7 +45,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
 
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y-2 divide-slate-200/60 bg-white">
+                                            <tbody className="divide-y divide-muted bg-white">
                                                 {pagedRecords.map((item) => (
                                                     <tr key={item.TLOid} className="group transition-colors relative hover:bg-slate-50/80">
                                                         <td className="px-3 py-4 align-middle max-w-[120px]">

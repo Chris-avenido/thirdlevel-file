@@ -1253,7 +1253,7 @@ const OfficialsRegistry = () => {
                         </div>
 </PageHeaderCard>
 
-                    <main className="flex-1 px-8 pb-8 pt-6 max-w-[1600px] mx-auto w-full dashboard-theme !bg-transparent">
+                    <main className="flex-1 px-8 pb-8 pt-6 w-full dashboard-theme !bg-transparent">
                         {/* APPROVAL / REJECTED / APPLICATIONS TABS */}
                         <ApprovalTabs navigate={navigate} officials={officials} statusTab={statusTab} />
 
