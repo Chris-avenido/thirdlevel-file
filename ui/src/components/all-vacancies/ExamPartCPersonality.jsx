@@ -20,12 +20,12 @@ const ExamPartCPersonality = ({ partCRatings, setPartCRatings, partCSets, setPar
     };
 
     return (
-        <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-6 shadow-sm space-y-6">
+        <div className="bg-white border-2 border-brand-800 rounded-[24px] p-6 shadow-sm space-y-6">
             <div className="border-b border-slate-100 pb-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0038A8]">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-700">
                     Assessment • Part C
                 </span>
-                <h3 className="text-base font-black text-[#08315F] mt-0.5">
+                <h3 className="text-base font-black text-brand-800 mt-0.5">
                     Behavioral & Leadership Questionnaire
                 </h3>
                 <p className="text-xs text-slate-500 font-medium mt-1">
@@ -35,7 +35,7 @@ const ExamPartCPersonality = ({ partCRatings, setPartCRatings, partCSets, setPar
 
             {/* Statements Rating (Sampled or Paginated) */}
             <div className="space-y-4">
-                <h4 className="text-xs font-black text-[#08315F] uppercase tracking-wider">
+                <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider">
                     Section 1: Work Style Statements (50 Items)
                 </h4>
                 <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
@@ -57,7 +57,7 @@ const ExamPartCPersonality = ({ partCRatings, setPartCRatings, partCSets, setPar
                                             onClick={() => handleRating(stmt.id, val)}
                                             className={`w-7 h-7 rounded text-[11px] font-black border transition-all ${
                                                 isSelected
-                                                    ? 'bg-[#08315F] text-white border-[#08315F]'
+                                                    ? 'bg-brand-800 text-white border-brand-800'
                                                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                                             }`}
                                         >
@@ -73,13 +73,13 @@ const ExamPartCPersonality = ({ partCRatings, setPartCRatings, partCSets, setPar
 
             {/* Forced-Choice Sets */}
             <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h4 className="text-xs font-black text-[#08315F] uppercase tracking-wider">
+                <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider">
                     Section 2: Forced Choice Profiles (20 Sets)
                 </h4>
                 <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                     {APPLICANT_EXAM_DATA.sets.map((set) => (
                         <div key={set.id} className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-                            <span className="text-[11px] font-black text-[#08315F] uppercase">
+                            <span className="text-[11px] font-black text-brand-800 uppercase">
                                 Set {set.id}
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

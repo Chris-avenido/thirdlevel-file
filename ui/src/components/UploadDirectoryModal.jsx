@@ -137,7 +137,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08315F]/60 backdrop-blur-sm p-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-800/60 backdrop-blur-sm p-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -156,7 +156,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                   <FiUsers size={30} />
                 </div>
                 <div>
-                  <h2 className="text-[36px] font-black text-[#08315f] m-0 leading-tight">Add Officials Directory</h2>
+                  <h2 className="text-[36px] font-black text-brand-800 m-0 leading-tight">Add Officials Directory</h2>
                   <p className="text-[18px] font-bold text-slate-400 m-0 uppercase tracking-widest mt-1">BULK UPLOAD & PROCESS</p>
                 </div>
               </div>
@@ -186,7 +186,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                         <FiFileText size={22} />
                       </div>
                       <div>
-                        <h4 className="font-bold text-[#08315f] text-[24px]">Download Existing Data</h4>
+                        <h4 className="font-bold text-brand-800 text-[24px]">Download Existing Data</h4>
                         <p className="text-[18px] text-slate-500 font-medium mt-0.5 max-w-lg leading-relaxed">
                           Ensure your file has these headers: TLO_id, Strand, Region, Office, Division, Name, Position, Designation, Email, Alternative Email 1/2, Contact Details 1/2.
                         </p>
@@ -194,14 +194,14 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
                     <div className="flex gap-3 shrink-0">
 
-                      <button onClick={handleDownloadData} className="text-[18px] font-bold text-[#08315f] bg-white px-5 py-2.5 rounded-xl border-2 border-slate-200 shadow-sm flex items-center gap-2 hover:bg-slate-50 transition-colors">
+                      <button onClick={handleDownloadData} className="text-[18px] font-bold text-brand-800 bg-white px-5 py-2.5 rounded-xl border-2 border-slate-200 shadow-sm flex items-center gap-2 hover:bg-slate-50 transition-colors">
                         <FiDownload /> Download Data
                       </button>
                     </div>
                   </div>
 
                   <div
-                    className="border-2 border-dashed border-blue-200 rounded-[24px] p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/30 hover:border-blue-300 transition-all cursor-pointer group relative mt-4 mx-4 shadow-[0_0_40px_rgba(240,249,255,1)]"
+                    className="border-2 border-dashed border-blue-200 rounded-[24px] p-12 flex flex-col items-center justify-center bg-white hover:bg-blue-50/30 hover:border-blue-300 transition-all cursor-pointer group relative mt-4 mx-4 shadow-[0_0_40px_rgb(var(--rgb-brand-50)/1)]"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}
                     onClick={() => fileInputRef.current?.click()}
@@ -226,7 +226,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                       </div>
                     </div>
 
-                    <h3 className="text-[36px] font-black text-[#08315f] mb-2">Drag and drop your file here</h3>
+                    <h3 className="text-[36px] font-black text-brand-800 mb-2">Drag and drop your file here</h3>
                     <p className="text-slate-500 font-medium mb-8 text-[21px]">or click to browse</p>
 
                     <div className="w-full max-w-sm flex items-center justify-center mb-6">
@@ -278,7 +278,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                   {records.length > 0 && (
                     <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-sm overflow-hidden flex flex-col">
                       <div className="px-6 py-4 border-b-2 border-slate-100 flex justify-between items-center bg-slate-50">
-                        <h3 className="font-black text-[#08315f] text-[21px]">Data Preview</h3>
+                        <h3 className="font-black text-brand-800 text-[21px]">Data Preview</h3>
                         <div className="text-[18px] font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full uppercase tracking-wider">
                           {records.filter(r => !r.isValid).length} Invalid Rows
                         </div>
@@ -364,7 +364,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className={`grid gap-4 ${summary.summary.failed > 0 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'}`}>
                     <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 text-center">
                       <p className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-1">Total (CSV)</p>
-                      <p className="text-[45px] font-black text-[#08315f]">{summary.summary.total}</p>
+                      <p className="text-[45px] font-black text-brand-800">{summary.summary.total}</p>
                     </div>
                     <div className="bg-white p-4 rounded-2xl border-2 border-green-200 text-center bg-green-50/30">
                       <p className="text-[15px] font-black text-green-600 uppercase tracking-widest mb-1">Inserted</p>
@@ -384,7 +384,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
 
                   <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b-2 border-slate-100 bg-slate-50 flex gap-4 overflow-x-auto">
-                      <h3 className="font-black text-[#08315f] text-[21px]">Processing Results Breakdown</h3>
+                      <h3 className="font-black text-brand-800 text-[21px]">Processing Results Breakdown</h3>
                     </div>
                     <div className="p-6 space-y-6 max-h-[40vh] overflow-y-auto">
                       {summary.newInserts.length > 0 && (
@@ -461,7 +461,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
                     <button
                       onClick={handleProceed}
                       disabled={!file || records.filter(r => r.isValid).length === 0 || isProcessing}
-                      className="px-8 py-2.5 rounded-xl font-bold text-white bg-[#1d4ed8] hover:bg-[#1e40af] transition-all disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-[18px]"
+                      className="px-8 py-2.5 rounded-xl font-bold text-white bg-brand-700 hover:bg-brand-700 transition-all disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-[18px]"
                     >
                       {isProcessing && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                       Proceed
@@ -471,7 +471,7 @@ const UploadDirectoryModal = ({ isOpen, onClose, onSuccess }) => {
               ) : (
                 <button
                   onClick={handleClose}
-                  className="px-8 py-3 rounded-xl font-black text-white bg-[#075985] hover:bg-[#0369a1] transition-all shadow-lg shadow-[#075985]/30 text-[18px]"
+                  className="px-8 py-3 rounded-xl font-black text-white bg-brand-700 hover:bg-brand-700 transition-all shadow-lg shadow-brand-700/30 text-[18px]"
                 >
                   Close Summary
                 </button>

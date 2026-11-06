@@ -128,7 +128,7 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
             ) : (
               <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-3xl">
                 <FiAward className="mx-auto text-slate-300 mb-4" size={48} />
-                <h3 className="text-[30px] font-black text-[#08315F] uppercase tracking-tighter">No Anticipated Vacancies</h3>
+                <h3 className="text-[30px] font-black text-brand-800 uppercase tracking-tighter">No Anticipated Vacancies</h3>
                 <p className="text-[21px] font-bold text-slate-400 mt-2">There are no personnel retiring within the next 5 years.</p>
               </div>
             )
@@ -165,8 +165,8 @@ const RetireesModal = ({ isOpen, onClose, retirees = [], applicationsThisMonth =
                 <div className="p-10">
                     <div className="flex justify-between items-start mb-8">
                         <div>
-                            <span className="text-[15px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
-                            <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
+                            <span className="text-[15px] font-black text-brand-700 uppercase tracking-widest mb-2 block">Administrative Action</span>
+                            <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tighter uppercase italic leading-none">
                                 VACATING OFFICIAL
                             </h2>
                             <p className="text-slate-400 text-[21px] font-bold mt-2">

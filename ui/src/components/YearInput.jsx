@@ -71,7 +71,7 @@ const YearInput = ({
             {/* Trigger */}
             <div
                 onClick={() => !disabled && setIsOpen(!isOpen)}
-                className={`w-full bg-white border-2 ${errorText ? 'border-red-400' : isOpen ? 'border-[#08315F] ring-2 ring-[#08315F]/10' : 'border-slate-200 hover:border-slate-300'} 
+                className={`w-full bg-white border-2 ${errorText ? 'border-red-400' : isOpen ? 'border-brand-800 ring-2 ring-brand-800/10' : 'border-slate-200 hover:border-slate-300'} 
                     rounded-xl py-2.5 pl-10 pr-8 text-[21px] transition-all shadow-sm cursor-pointer select-none
                     ${disabled ? 'bg-slate-50 text-slate-500 cursor-not-allowed opacity-70' : 'text-slate-800'}`}
             >
@@ -101,7 +101,7 @@ const YearInput = ({
                         className="absolute z-[100] mt-2 left-0 right-0 bg-white rounded-2xl shadow-xl shadow-slate-200/80 border-2 border-slate-100 overflow-hidden"
                     >
                         {/* Header with navigation */}
-                        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#08315F] to-[#0A4A8A]">
+                        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-brand-800 to-brand-700">
                             <button
                                 onClick={(e) => { e.stopPropagation(); if (canGoBack) setDecadeStart(d => d - 12); }}
                                 disabled={!canGoBack}
@@ -135,15 +135,15 @@ const YearInput = ({
                                         disabled={isDisabled}
                                         className={`relative py-2.5 rounded-xl text-[18px] font-bold transition-all duration-200
                                             ${isSelected
-                                                ? 'bg-[#08315F] text-white shadow-md shadow-blue-900/20 scale-[1.02]'
+                                                ? 'bg-brand-800 text-white shadow-md shadow-blue-900/20 scale-[1.02]'
                                                 : isDisabled
                                                     ? 'text-slate-300 cursor-not-allowed'
-                                                    : 'text-slate-600 hover:bg-[#08315F]/8 hover:text-[#08315F] active:scale-95'
+                                                    : 'text-slate-600 hover:bg-brand-800/8 hover:text-brand-800 active:scale-95'
                                             }`}
                                     >
                                         {yr}
                                         {isCurrent && !isSelected && (
-                                            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#08315F]" />
+                                            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-brand-800" />
                                         )}
                                     </button>
                                 );
@@ -154,7 +154,7 @@ const YearInput = ({
                         <div className="flex items-center justify-between px-3 pb-3 pt-1 border-t-2 border-slate-100 mt-1">
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleSelect(currentYear); }}
-                                className="text-[15px] font-bold text-[#08315F] uppercase tracking-wider hover:underline transition-all px-2 py-1 rounded-lg hover:bg-[#08315F]/5"
+                                className="text-[15px] font-bold text-brand-800 uppercase tracking-wider hover:underline transition-all px-2 py-1 rounded-lg hover:bg-brand-800/5"
                             >
                                 This Year
                             </button>

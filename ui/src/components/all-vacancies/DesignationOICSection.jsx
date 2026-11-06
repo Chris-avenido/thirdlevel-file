@@ -18,8 +18,8 @@ const DesignationOICSection = ({
         <div className="bg-white border-2 border-slate-200 rounded-[24px] p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
-                    <FiBriefcase className="text-[#08315F]" size={20} />
-                    <h3 className="text-base font-black text-[#08315F] uppercase tracking-wide">
+                    <FiBriefcase className="text-brand-800" size={20} />
+                    <h3 className="text-base font-black text-brand-800 uppercase tracking-wide">
                         3. Third Level Designation & OIC Assignment
                     </h3>
                 </div>
@@ -43,7 +43,7 @@ const DesignationOICSection = ({
                             key={option}
                             className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
                                 designationData.current_designation_preset === option
-                                    ? 'bg-blue-50/70 border-[#08315F] text-[#08315F] shadow-sm'
+                                    ? 'bg-blue-50/70 border-brand-800 text-brand-800 shadow-sm'
                                     : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                             }`}
                         >
@@ -53,7 +53,7 @@ const DesignationOICSection = ({
                                 value={option}
                                 checked={designationData.current_designation_preset === option}
                                 onChange={handleChange}
-                                className="mt-0.5 text-[#08315F] focus:ring-[#08315F]"
+                                className="mt-0.5 text-brand-800 focus:ring-brand-800"
                             />
                             <span className="text-xs font-bold leading-relaxed">{option}</span>
                         </label>
@@ -71,7 +71,7 @@ const DesignationOICSection = ({
                             value={designationData.current_designation_custom || ''}
                             onChange={handleChange}
                             placeholder="Input full designation (do not abbreviate)"
-                            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
                             required
                         />
                     </div>
@@ -92,7 +92,7 @@ const DesignationOICSection = ({
                     value={designationData.assigned_oic_office || ''}
                     onChange={handleChange}
                     placeholder="e.g. SDO-Manila (or leave blank if N/A)"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
                 />
             </div>
         </div>

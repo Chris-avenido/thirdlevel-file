@@ -17,10 +17,10 @@ import { apiUrl } from '../../utils/api';
 import ApplicantInspectionModal from './ApplicantInspectionModal';
 
 const POSITION_BADGES = {
-    RD: { label: 'Regional Director', badge: 'bg-[#08315F] text-[#FCD116] border-[#08315F]' },
-    ARD: { label: 'Asst. Regional Director', badge: 'bg-[#0038A8] text-white border-[#0038A8]' },
-    SDS: { label: 'Schools Div. Supt.', badge: 'bg-[#075985] text-white border-[#075985]' },
-    ASDS: { label: 'Asst. Schools Div. Supt.', badge: 'bg-[#0284C7] text-white border-[#0284C7]' }
+    RD: { label: 'Regional Director', badge: 'bg-brand-800 text-gold border-brand-800' },
+    ARD: { label: 'Asst. Regional Director', badge: 'bg-brand-700 text-white border-brand-700' },
+    SDS: { label: 'Schools Div. Supt.', badge: 'bg-brand-700 text-white border-brand-700' },
+    ASDS: { label: 'Asst. Schools Div. Supt.', badge: 'bg-brand-700 text-white border-brand-700' }
 };
 
 const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
@@ -115,15 +115,15 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
     return (
         <div className="space-y-6">
             {/* Header Control Card */}
-            <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-5 shadow-sm space-y-4">
+            <div className="bg-white border-2 border-brand-800 rounded-[24px] p-5 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0038A8]">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-700">
                                 Records Management • Applications
                             </span>
                         </div>
-                        <h2 className="text-xl font-black text-[#08315F] tracking-tight mt-0.5">
+                        <h2 className="text-xl font-black text-brand-800 tracking-tight mt-0.5">
                             TIMON Applications Submissions
                         </h2>
                     </div>
@@ -132,7 +132,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                         <button
                             onClick={fetchSubmissions}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider hover:border-[#08315F] hover:text-[#08315F] transition-all"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-xs font-black uppercase tracking-wider hover:border-brand-800 hover:text-brand-800 transition-all"
                             title="Refresh Submissions"
                         >
                             <FiRefreshCw className={loading ? 'animate-spin' : ''} size={14} />
@@ -153,7 +153,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 setPagination(p => ({ ...p, page: 1 }));
                             }}
                             placeholder="Search candidate name or email..."
-                            className="w-full bg-white pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:border-[#08315F] outline-none transition-colors"
+                            className="w-full bg-white pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:border-brand-800 outline-none transition-colors"
                         />
                         <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     </div>
@@ -166,7 +166,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 setPositionFilter(e.target.value);
                                 setPagination(p => ({ ...p, page: 1 }));
                             }}
-                            className="w-full pl-4 pr-8 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 focus:border-[#08315F] outline-none appearance-none bg-white transition-colors cursor-pointer"
+                            className="w-full pl-4 pr-8 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 focus:border-brand-800 outline-none appearance-none bg-white transition-colors cursor-pointer"
                         >
                             <option value="All">All Applied Positions</option>
                             <option value="RD">Regional Director (RD)</option>
@@ -185,7 +185,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 setRegionFilter(e.target.value);
                                 setPagination(p => ({ ...p, page: 1 }));
                             }}
-                            className="w-full pl-4 pr-8 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 focus:border-[#08315F] outline-none appearance-none bg-white transition-colors cursor-pointer"
+                            className="w-full pl-4 pr-8 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 focus:border-brand-800 outline-none appearance-none bg-white transition-colors cursor-pointer"
                         >
                             <option value="All">All Target Regions</option>
                             <option value="Central Office">Central Office</option>
@@ -218,7 +218,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
             </div>
 
             {/* Submissions Data Table */}
-            <div className="bg-white border-2 border-[#08315F] rounded-[28px] overflow-hidden shadow-sm">
+            <div className="bg-white border-2 border-brand-800 rounded-[28px] overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse table-auto">
                         <thead>
@@ -230,7 +230,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                     <div className="flex items-center gap-1.5">
                                         <span>Candidate Name</span>
                                         {sortBy === 'candidate_name' && (
-                                            <span className="text-[#08315F]">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
+                                            <span className="text-brand-800">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
                                         )}
                                     </div>
                                 </th>
@@ -241,7 +241,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                     <div className="flex items-center gap-1.5">
                                         <span>Applied Position</span>
                                         {sortBy === 'applied_position' && (
-                                            <span className="text-[#08315F]">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
+                                            <span className="text-brand-800">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
                                         )}
                                     </div>
                                 </th>
@@ -252,7 +252,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                     <div className="flex items-center gap-1.5">
                                         <span>Target Region</span>
                                         {sortBy === 'target_region' && (
-                                            <span className="text-[#08315F]">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
+                                            <span className="text-brand-800">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
                                         )}
                                     </div>
                                 </th>
@@ -263,7 +263,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                     <div className="flex items-center gap-1.5">
                                         <span>Submission Timestamp</span>
                                         {sortBy === 'submission_timestamp' && (
-                                            <span className="text-[#08315F]">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
+                                            <span className="text-brand-800">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
                                         )}
                                     </div>
                                 </th>
@@ -274,7 +274,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                     <div className="flex items-center gap-1.5">
                                         <span>QS Status</span>
                                         {sortBy === 'overall_qualification_status' && (
-                                            <span className="text-[#08315F]">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
+                                            <span className="text-brand-800">{sortOrder === 'ASC' ? '↑' : '↓'}</span>
                                         )}
                                     </div>
                                 </th>
@@ -287,7 +287,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                             {loading ? (
                                 <tr>
                                     <td colSpan="7" className="p-16 text-center text-slate-400">
-                                        <div className="w-8 h-8 border-3 border-[#08315F]/20 border-t-[#08315F] rounded-full animate-spin mx-auto mb-3"></div>
+                                        <div className="w-8 h-8 border-3 border-brand-800/20 border-t-brand-800 rounded-full animate-spin mx-auto mb-3"></div>
                                         <p className="font-black uppercase tracking-widest text-[11px]">Loading Submissions...</p>
                                     </td>
                                 </tr>
@@ -295,7 +295,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                 <tr>
                                     <td colSpan="7" className="p-16 text-center text-slate-400">
                                         <FiBriefcase className="mx-auto mb-3 text-slate-300" size={32} />
-                                        <h4 className="font-black uppercase tracking-tight text-[#08315F] text-base">No Submissions Found</h4>
+                                        <h4 className="font-black uppercase tracking-tight text-brand-800 text-base">No Submissions Found</h4>
                                         <p className="font-medium text-slate-400 mt-1">Try adjusting your position or regional filters.</p>
                                     </td>
                                 </tr>
@@ -324,11 +324,11 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                             {/* Candidate Name */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#08315F] flex items-center justify-center font-black shrink-0 border border-blue-100">
+                                                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-brand-800 flex items-center justify-center font-black shrink-0 border border-blue-100">
                                                         <FiUser size={16} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-[#08315F] text-sm group-hover:text-[#0038A8] transition-colors">
+                                                        <p className="font-black text-brand-800 text-sm group-hover:text-brand-700 transition-colors">
                                                             {row.candidate_name}
                                                         </p>
                                                         <p className="text-[11px] font-medium text-slate-400">
@@ -353,7 +353,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                             {/* Target Region */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-1.5 text-slate-700 font-bold">
-                                                    <FiMapPin className="text-[#08315F] shrink-0" size={14} />
+                                                    <FiMapPin className="text-brand-800 shrink-0" size={14} />
                                                     <span>{row.target_region}</span>
                                                 </div>
                                             </td>
@@ -400,7 +400,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                                                         e.stopPropagation();
                                                         handleOpenInspection(row.id);
                                                     }}
-                                                    className="px-4 py-2 rounded-xl bg-[#08315F] text-white hover:bg-blue-900 text-xs font-black uppercase tracking-wider transition-all inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                                    className="px-4 py-2 rounded-xl bg-brand-800 text-white hover:bg-blue-900 text-xs font-black uppercase tracking-wider transition-all inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
                                                 >
                                                     <FiEye size={14} /> Inspect
                                                 </button>
@@ -423,17 +423,17 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                             <button
                                 onClick={() => setPagination(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
                                 disabled={pagination.page === 1}
-                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:border-[#08315F] disabled:opacity-40 transition-colors flex items-center gap-1"
+                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:border-brand-800 disabled:opacity-40 transition-colors flex items-center gap-1"
                             >
                                 <FiChevronLeft size={16} /> Prev
                             </button>
-                            <span className="text-xs font-black text-[#08315F] px-2">
+                            <span className="text-xs font-black text-brand-800 px-2">
                                 {pagination.page}
                             </span>
                             <button
                                 onClick={() => setPagination(p => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))}
                                 disabled={pagination.page === pagination.totalPages}
-                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:border-[#08315F] disabled:opacity-40 transition-colors flex items-center gap-1"
+                                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:border-brand-800 disabled:opacity-40 transition-colors flex items-center gap-1"
                             >
                                 Next <FiChevronRight size={16} />
                             </button>

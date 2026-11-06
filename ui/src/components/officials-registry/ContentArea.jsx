@@ -19,7 +19,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or try a different search term.</p>
                                 </motion.div>
                             ) : viewMode === 'table' ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-[#08315F] overflow-hidden">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card !rounded-[30px] !border-2 !border-brand-800 overflow-hidden">
                                     <div className="w-full">
                                         <table className="hidden md:table w-full text-left border-collapse table-fixed">
                                             <thead>
@@ -33,7 +33,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                                     className="flex items-center justify-between h-5 text-[13.5px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full text-left group"
                                                                 >
                                                                     <span>{column.label}</span>
-                                                                    <span className={`text-base leading-none flex items-center w-3 justify-end transition-colors ${sortConfig.key === column.key ? 'text-[#08315F]' : 'text-slate-200 group-hover:text-slate-400'}`}>
+                                                                    <span className={`text-base leading-none flex items-center w-3 justify-end transition-colors ${sortConfig.key === column.key ? 'text-brand-800' : 'text-slate-200 group-hover:text-slate-400'}`}>
                                                                         {sortConfig.key === column.key
                                                                             ? (sortConfig.direction === 'asc' ? '↑' : '↓')
                                                                             : '↓'}
@@ -42,7 +42,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                                 <select
                                                                     value={tableFilters[column.key] || ''}
                                                                     onChange={(e) => setTableFilters(current => ({ ...current, [column.key]: e.target.value }))}
-                                                                    className={`w-full bg-white border-2 border-sky-200 rounded-lg py-1.5 font-bold text-[#08315F] outline-none focus:border-sky-400 transition-colors ${column.key === 'is_oic' ? 'px-1 text-[13.5px] text-center' : 'px-3 text-[16.5px]'}`}
+                                                                    className={`w-full bg-white border-2 border-sky-200 rounded-lg py-1.5 font-bold text-brand-800 outline-none focus:border-sky-400 transition-colors ${column.key === 'is_oic' ? 'px-1 text-[13.5px] text-center' : 'px-3 text-[16.5px]'}`}
                                                                 >
                                                                     <option value="">All</option>
                                                                     {(tableFilterOptions[column.key] || []).map(option => (
@@ -59,7 +59,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                 {pagedRecords.map((item) => (
                                                     <tr key={item.TLOid} className="group transition-colors relative hover:bg-slate-50/80">
                                                         <td className="px-3 py-4 align-middle max-w-[120px]">
-                                                            <div className="font-black text-[#08315F] text-[15px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}>
+                                                            <div className="font-black text-brand-800 text-[15px] uppercase tracking-tight truncate" title={item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}>
                                                                 <span>{item.status === 'Inactive' ? 'N/A' : (item.region || 'N/A')}</span>
                                                             </div>
                                                         </td>
@@ -79,7 +79,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                                     <div className="flex items-center gap-2">
                                                                         <div
                                                                             onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
+                                                                            className={`font-['Plus_Jakarta_Sans'] font-black text-brand-800 text-[21px] leading-none transition-colors truncate ${item.email ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''}`}
                                                                             title={item.email ? "View Official Profile" : ""}
                                                                         >
                                                                             {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
@@ -92,7 +92,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                                         )}
                                                                     </div>
                                                                     <div className="text-[13.5px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 truncate">
-                                                                        <FiArrowRight className="text-[#075985] shrink-0" size={10} />
+                                                                        <FiArrowRight className="text-brand-700 shrink-0" size={10} />
                                                                         <span className="truncate">{item.email}</span>
                                                                         {item.status !== 'Inactive' && item.effectivity_date && (
                                                                             <>
@@ -127,12 +127,12 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                                 <span className="text-slate-300 font-bold text-[18px]">—</span>
                                                             ) : (
                                                                 <div className="flex flex-col gap-1.5 w-full pr-2">
-                                                                    <span className="text-[18px] font-bold text-[#08315F] leading-none">
+                                                                    <span className="text-[18px] font-bold text-brand-800 leading-none">
                                                                         {Math.min(100, Math.max(0, Math.round(item.profile_completion)))}%
                                                                     </span>
                                                                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                                                                         <div
-                                                                            className="h-full bg-[#08315F] rounded-full transition-all duration-300"
+                                                                            className="h-full bg-brand-800 rounded-full transition-all duration-300"
                                                                             style={{ width: `${Math.min(100, Math.max(0, Math.round(item.profile_completion)))}%` }}
                                                                         />
                                                                     </div>
@@ -152,7 +152,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                             <div
                                                                 onClick={() => handlePositionClick(item)}
                                                                 title={item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
-                                                                className="text-[15px] font-black text-[#08315F] uppercase tracking-widest truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
+                                                                className="text-[15px] font-black text-brand-800 uppercase tracking-widest truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors w-full"
                                                             >
                                                                 {item.status === 'Inactive' ? 'N/A' : ((expandAcronym(item.designation) || '').replace(/^(OIC\s*-\s*|OIC\s+)/i, '').replace(/\s*\(?OIC\)?\s*$/i, '').trim() || 'No Designation')}
                                                             </div>
@@ -160,7 +160,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                         <td className="px-1 py-4 align-middle text-center max-w-[60px]">
                                                             <div className="flex justify-start items-center ml-2">
                                                                 {(item.is_oic || (item.designation && item.designation.toUpperCase().includes('OIC'))) ? (
-                                                                    <span className="px-2 py-1 rounded-full bg-[#FCD116]/20 border-2 border-[#FCD116] text-[#0038A8] text-[13.5px] font-black uppercase tracking-widest shadow-sm">Yes</span>
+                                                                    <span className="px-2 py-1 rounded-full bg-gold/20 border-2 border-gold text-brand-700 text-[13.5px] font-black uppercase tracking-widest shadow-sm">Yes</span>
                                                                 ) : (
                                                                     <span className="px-2 py-1 rounded-full bg-slate-100 border-2 border-slate-200 text-slate-400 text-[13.5px] font-black uppercase tracking-widest shadow-sm">No</span>
                                                                 )}
@@ -228,7 +228,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-[21px] leading-none transition-colors truncate">
+                                                                    <div onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)} className="font-['Plus_Jakarta_Sans'] font-black text-brand-800 text-[21px] leading-none transition-colors truncate">
                                                                         {item.first_name ? `${item.first_name} ${item.last_name || ''}` : <span className="text-rose-500 italic tracking-widest text-[15px]">VACANT POSITION</span>}
                                                                     </div>
                                                                     {item.is_testaccount && (
@@ -247,7 +247,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                     <div className="flex flex-col gap-2 mt-1 bg-slate-50/50 rounded-xl p-3 border-2 border-slate-200">
                                                         <div className="flex justify-between items-center text-[15px] gap-2">
                                                             <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">{((item.region || getOfficialRegion(item)) === 'Central Office') ? 'Strand' : 'Office'}</span>
-                                                            <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">
+                                                            <span className="font-black text-brand-800 text-right truncate max-w-[65%]">
                                                                 {(item.region) ? `${item.region} • ` : 'N/A • '}{((item.region || getOfficialRegion(item)) === 'Central Office' ? item.strand : item.division) || 'N/A'}
                                                             </span>
                                                         </div>
@@ -259,7 +259,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                         </div>
                                                         <div className="flex justify-between items-center text-[15px] gap-2">
                                                             <span className="font-black text-slate-400 uppercase tracking-widest shrink-0">Designation</span>
-                                                            <span className="font-black text-[#08315F] text-right truncate max-w-[65%]">{expandAcronym(item.designation) || 'No Designation'}</span>
+                                                            <span className="font-black text-brand-800 text-right truncate max-w-[65%]">{expandAcronym(item.designation) || 'No Designation'}</span>
                                                         </div>
                                                     </div>
 
@@ -307,7 +307,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                     <button
                                                         key={page}
                                                         onClick={() => setCurrentPage(page)}
-                                                        className={`w-10 h-10 rounded-xl text-[15px] font-black border-2 transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                                        className={`w-10 h-10 rounded-xl text-[15px] font-black border-2 transition-all ${currentPage === page ? 'bg-brand-800 text-white border-brand-700' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
                                                     >
                                                         {page}
                                                     </button>
@@ -328,7 +328,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                 key={item.TLOid}
                                                 whileHover={{ y: -4 }}
                                                 onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}
-                                                className={`bg-white rounded-[1.5rem] p-5 border-2 border-[#08315F] shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
+                                                className={`bg-white rounded-[1.5rem] p-5 border-2 border-brand-800 shadow-lg shadow-slate-200/40 group flex flex-col justify-between h-full relative overflow-hidden ${item.email ? 'cursor-pointer' : 'cursor-default'}`}
                                             >
                                                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                                                 <div>
@@ -339,7 +339,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                             ) : <FiUser size={20} />}
                                                         </div>
                                                         <div className="flex items-center gap-1">
-                                                            {item.is_oic && <span className="px-2 py-0.5 bg-[#FCD116] text-[#0038A8] border-2 border-yellow-200 rounded-full text-[10.5px] font-black uppercase tracking-widest">OIC</span>}
+                                                            {item.is_oic && <span className="px-2 py-0.5 bg-gold text-brand-700 border-2 border-yellow-200 rounded-full text-[10.5px] font-black uppercase tracking-widest">OIC</span>}
                                                             <div className="scale-75 origin-top-right">
                                                                 <StatusBadge status={item.status} />
                                                             </div>
@@ -347,13 +347,13 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                     </div>
 
                                                     <div className="space-y-1 relative z-10">
-                                                        <h3 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter leading-tight uppercase italic line-clamp-2">
+                                                        <h3 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tighter leading-tight uppercase italic line-clamp-2">
                                                             {item.first_name ? <>{item.first_name} {item.last_name}</> : <span className="text-rose-500">VACANT POSITION</span>}
                                                         </h3>
                                                         {item.status !== 'Inactive' && (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handlePositionClick(item); }}
-                                                                className="text-[12px] font-black text-[#08315F] uppercase tracking-[0.2em] hover:text-[#075985] transition-colors text-left flex items-center gap-1 w-full"
+                                                                className="text-[12px] font-black text-brand-800 uppercase tracking-[0.2em] hover:text-brand-700 transition-colors text-left flex items-center gap-1 w-full"
                                                                 title="Positional History"
                                                             >
                                                                 <span className="truncate">{item.position_title || 'Candidate'}</span>
@@ -428,10 +428,10 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                     </div>
                                                     {item.status !== 'Inactive' && (
                                                         <div className="flex items-center justify-between">
-                                                            <div className="text-[10.5px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-1 group-hover:text-[#075985] transition-colors">
+                                                            <div className="text-[10.5px] font-black text-slate-300 uppercase tracking-widest italic flex items-center gap-1 group-hover:text-brand-700 transition-colors">
                                                                 Full Profile <FiArrowRight size={12} />
                                                             </div>
-                                                            <button onClick={() => handlePositionClick(item)} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-[#08315F] hover:text-white transition-all border-2 border-slate-200" title="Positional History">
+                                                            <button onClick={() => handlePositionClick(item)} className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-brand-800 hover:text-white transition-all border-2 border-slate-200" title="Positional History">
                                                                 <FiClock size={14} />
                                                             </button>
                                                         </div>
@@ -450,7 +450,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                 <button
                                                     key={page}
                                                     onClick={() => setCurrentPage(page)}
-                                                    className={`w-10 h-10 rounded-xl text-[15px] font-black border-2 transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#004A99]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                                    className={`w-10 h-10 rounded-xl text-[15px] font-black border-2 transition-all ${currentPage === page ? 'bg-brand-800 text-white border-brand-700' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
                                                 >
                                                     {page}
                                                 </button>
@@ -466,12 +466,12 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
                                     {Object.entries(directoryGroups).map(([groupName, members]) => (
                                         <div key={groupName} className="bg-slate-50/50 p-8 rounded-[3rem] border-2 border-slate-200">
-                                            <h3 className="text-center font-black text-[36px] text-[#08315F] tracking-tighter mb-8 uppercase">{groupName}</h3>
+                                            <h3 className="text-center font-black text-[36px] text-brand-800 tracking-tighter mb-8 uppercase">{groupName}</h3>
 
                                             <div className="flex flex-wrap justify-center gap-6">
                                                 {members.map(item => (
-                                                    <div key={item.TLOid} className="bg-white border-2 border-slate-200 rounded-3xl p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-[#075985] transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}>
-                                                        <div className="absolute -top-4 bg-[#075985] text-white text-[15px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md w-[90%] truncate border-2 border-sky-600">
+                                                    <div key={item.TLOid} className="bg-white border-2 border-slate-200 rounded-3xl p-6 w-[280px] flex flex-col items-center text-center relative shadow-xl shadow-slate-200/50 hover:border-brand-700 transition-colors cursor-pointer" onClick={() => item.email && navigate(`/official-profiling?email=${encodeURIComponent(item.email)}`)}>
+                                                        <div className="absolute -top-4 bg-brand-700 text-white text-[15px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md w-[90%] truncate border-2 border-sky-600">
                                                             {item.position_title || 'Position Unknown'}
                                                         </div>
                                                         <div className="mt-4 font-black text-[27px] text-slate-800 leading-tight uppercase italic min-h-[50px] flex items-center justify-center">
@@ -480,7 +480,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                                         <div className="text-[15px] font-bold text-slate-500 mt-2 min-h-[30px] flex items-center justify-center">{item.designation || 'No Designation'}</div>
                                                         <div className="w-full h-0.5 bg-slate-200 my-4"></div>
                                                         <div className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest">
-                                                            Appointed: <span className="text-[#075985] ml-1">{item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : item.effectivity_date ? new Date(item.effectivity_date).toLocaleDateString() : 'N/A'}</span>
+                                                            Appointed: <span className="text-brand-700 ml-1">{item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : item.effectivity_date ? new Date(item.effectivity_date).toLocaleDateString() : 'N/A'}</span>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -490,7 +490,7 @@ const ContentArea = ({ StatusBadge, currentPage, directoryGroups, getOfficialReg
                                     {Object.keys(directoryGroups).length === 0 && (
                                         <div className="py-20 text-center">
                                             <FiLayers className="mx-auto text-slate-200 mb-6" size={64} />
-                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tighter mb-2">No Directory Data</h2>
+                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase tracking-tighter mb-2">No Directory Data</h2>
                                             <p className="text-slate-500 font-bold max-w-md mx-auto">No records found matching the current filters.</p>
                                         </div>
                                     )}

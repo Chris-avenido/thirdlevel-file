@@ -124,7 +124,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08315F]/60 backdrop-blur-sm p-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-800/60 backdrop-blur-sm p-4 font-['Plus_Jakarta_Sans',system-ui,sans-serif]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -137,9 +137,9 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
             transition={{ duration: 0.6, type: 'spring', bounce: 0.35 }}
             style={{ transformPerspective: 1200, transformOrigin: "center" }}
           >
-            <div className="flex items-center justify-between p-6 border-b-2 border-blue-50 bg-[#f8fafc]">
+            <div className="flex items-center justify-between p-6 border-b-2 border-blue-50 bg-brand-50">
               <div>
-                <h2 className="text-[36px] font-black text-[#08315f] m-0 leading-tight">Notable Achievements</h2>
+                <h2 className="text-[36px] font-black text-brand-800 m-0 leading-tight">Notable Achievements</h2>
                 <p className="text-[21px] font-bold text-slate-500 m-0 uppercase tracking-wider mt-1">Bulk Upload & Process</p>
               </div>
               <button
@@ -213,7 +213,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
                   {records.length > 0 && (
                     <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-sm overflow-hidden flex flex-col max-h-[300px]">
                       <div className="px-6 py-4 border-b-2 border-slate-100 flex justify-between items-center bg-slate-50">
-                        <h3 className="font-black text-[#08315f] text-[21px]">Data Preview</h3>
+                        <h3 className="font-black text-brand-800 text-[21px]">Data Preview</h3>
                         <div className="text-[18px] font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-full uppercase tracking-wider">
                           {records.filter(r => !r.isValid).length} Invalid Rows
                         </div>
@@ -258,7 +258,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white p-4 rounded-2xl border-2 border-blue-100 text-center">
                       <p className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
-                      <p className="text-[45px] font-black text-[#08315f]">{summary.summary.total}</p>
+                      <p className="text-[45px] font-black text-brand-800">{summary.summary.total}</p>
                     </div>
                     <div className="bg-white p-4 rounded-2xl border-2 border-green-200 text-center bg-green-50/30">
                       <p className="text-[15px] font-black text-green-600 uppercase tracking-widest mb-1">Inserted</p>
@@ -294,7 +294,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
                   <button
                     onClick={handleProceed}
                     disabled={!file || records.filter(r => r.isValid).length === 0 || isProcessing}
-                    className="px-8 py-3 rounded-xl font-black text-white bg-[#075985] hover:bg-[#0369a1] transition-all shadow-lg shadow-[#075985]/30 disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-[18px]"
+                    className="px-8 py-3 rounded-xl font-black text-white bg-brand-700 hover:bg-brand-700 transition-all shadow-lg shadow-brand-700/30 disabled:opacity-50 disabled:shadow-none flex items-center gap-2 text-[18px]"
                   >
                     {isProcessing && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                     Proceed
@@ -303,7 +303,7 @@ const NotableAchievementsModal = ({ isOpen, onClose, onSuccess }) => {
               ) : (
                 <button
                   onClick={handleClose}
-                  className="px-8 py-3 rounded-xl font-black text-white bg-[#075985] hover:bg-[#0369a1] transition-all shadow-lg shadow-[#075985]/30 text-[18px]"
+                  className="px-8 py-3 rounded-xl font-black text-white bg-brand-700 hover:bg-brand-700 transition-all shadow-lg shadow-brand-700/30 text-[18px]"
                 >
                   Close Summary
                 </button>

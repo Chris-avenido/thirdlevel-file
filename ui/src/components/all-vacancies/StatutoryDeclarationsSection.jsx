@@ -35,8 +35,8 @@ const StatutoryDeclarationsSection = ({
         <div className="bg-white border-2 border-slate-200 rounded-[24px] p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
-                    <FiShield className="text-[#08315F]" size={20} />
-                    <h3 className="text-base font-black text-[#08315F] uppercase tracking-wide">
+                    <FiShield className="text-brand-800" size={20} />
+                    <h3 className="text-base font-black text-brand-800 uppercase tracking-wide">
                         6. Statutory Civil Service Background Disclosures
                     </h3>
                 </div>
@@ -68,7 +68,7 @@ const StatutoryDeclarationsSection = ({
                                                 isSelected
                                                     ? opt === 'Yes'
                                                         ? 'bg-amber-600 text-white shadow-sm'
-                                                        : 'bg-[#08315F] text-white shadow-sm'
+                                                        : 'bg-brand-800 text-white shadow-sm'
                                                     : 'bg-white border-2 border-slate-200 text-slate-500 hover:border-slate-300'
                                             }`}
                                         >

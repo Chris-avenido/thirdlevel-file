@@ -27,11 +27,11 @@ const MobileDrawer = ({ completeness, dataSource, isMobileMenuOpen, isTabComplet
                                 {/* Header */}
                                 <div className="px-5 pt-5 pb-4 border-b-2 border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-[#08315F]/10 rounded-xl flex items-center justify-center text-[#08315F]">
+                                        <div className="w-10 h-10 bg-brand-800/10 rounded-xl flex items-center justify-center text-brand-800">
                                             <FiUser size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] leading-tight">Talent Portal</p>
+                                            <p className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 leading-tight">Talent Portal</p>
                                             <p className="text-[15px] font-medium text-slate-400">Applicant Workspace</p>
                                         </div>
                                     </div>
@@ -61,7 +61,7 @@ const MobileDrawer = ({ completeness, dataSource, isMobileMenuOpen, isTabComplet
                                                         }
                                                     }}
                                                     className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-left text-[18px] font-semibold transition-all
-                                                        ${active ? 'bg-[#08315F] text-white shadow-md shadow-blue-900/20' : 'text-slate-600 hover:bg-transparent hover:text-slate-800'}
+                                                        ${active ? 'bg-brand-800 text-white shadow-md shadow-blue-900/20' : 'text-slate-600 hover:bg-transparent hover:text-slate-800'}
                                                         ${isLocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                                                 >
                                                     <span className="flex items-center gap-3 min-w-0">

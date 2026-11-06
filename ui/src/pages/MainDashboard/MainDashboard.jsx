@@ -432,7 +432,7 @@ const MainDashboard = () => {
   }
 
   return (
-    <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] flex-col lg:flex-row relative overflow-hidden">
+    <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-brand-800 flex-col lg:flex-row relative overflow-hidden">
       <AdminSidebar />
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative mdb-container">

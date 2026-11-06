@@ -15,12 +15,12 @@ const FormTabs = ({ tabs, activeTab, onTabChange }) => {
                             onClick={() => onTabChange(tab.id)}
                             className={`py-3 px-4 sm:px-5 font-black text-xs uppercase tracking-wider border-b-2 flex items-center gap-2.5 transition-all whitespace-nowrap cursor-pointer shrink-0 rounded-t-xl ${
                                 isActive
-                                    ? 'border-[#08315F] text-[#08315F] bg-blue-50/70 shadow-xs'
+                                    ? 'border-brand-800 text-brand-800 bg-blue-50/70 shadow-xs'
                                     : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                             }`}
                         >
                             {Icon && (
-                                <Icon size={16} className={isActive ? 'text-[#08315F]' : 'text-slate-400'} />
+                                <Icon size={16} className={isActive ? 'text-brand-800' : 'text-slate-400'} />
                             )}
                             <span>{tab.label}</span>
                             {tab.isComplete && (

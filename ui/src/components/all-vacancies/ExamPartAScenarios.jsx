@@ -11,12 +11,12 @@ const ExamPartAScenarios = ({ partAAnswers, setPartAAnswers }) => {
     };
 
     return (
-        <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-6 shadow-sm space-y-6">
+        <div className="bg-white border-2 border-brand-800 rounded-[24px] p-6 shadow-sm space-y-6">
             <div className="border-b border-slate-100 pb-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0038A8]">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-700">
                     Assessment • Part A
                 </span>
-                <h3 className="text-base font-black text-[#08315F] mt-0.5">
+                <h3 className="text-base font-black text-brand-800 mt-0.5">
                     Situational Judgment Scenarios
                 </h3>
                 <p className="text-xs text-slate-500 font-medium mt-1">
@@ -28,7 +28,7 @@ const ExamPartAScenarios = ({ partAAnswers, setPartAAnswers }) => {
                 {APPLICANT_EXAM_DATA.scenarios.map((scenario) => (
                     <div key={scenario.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-black text-[#08315F] uppercase">
+                            <span className="text-xs font-black text-brand-800 uppercase">
                                 {scenario.title}
                             </span>
                             {partAAnswers[scenario.id] !== undefined && (
@@ -50,7 +50,7 @@ const ExamPartAScenarios = ({ partAAnswers, setPartAAnswers }) => {
                                         onClick={() => handleSelectOption(scenario.id, idx)}
                                         className={`w-full text-left p-3 rounded-lg text-xs font-medium border transition-all flex items-start gap-2.5 ${
                                             isSelected
-                                                ? 'bg-[#08315F] text-white border-[#08315F]'
+                                                ? 'bg-brand-800 text-white border-brand-800'
                                                 : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                                         }`}
                                     >

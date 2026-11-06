@@ -27,7 +27,7 @@ const TwelveDocumentsSection = ({
                 icon: 'warning',
                 title: 'File Too Large',
                 text: `${docConfig.label} exceeds the maximum allowed size of 10 MB.`,
-                confirmButtonColor: '#08315F'
+                confirmButtonColor: 'var(--color-brand-800)'
             });
             return;
         }
@@ -40,7 +40,7 @@ const TwelveDocumentsSection = ({
                     icon: 'warning',
                     title: 'Invalid File Type',
                     text: `${docConfig.label} must be an image file (JPG, PNG, or WebP).`,
-                    confirmButtonColor: '#08315F'
+                    confirmButtonColor: 'var(--color-brand-800)'
                 });
                 return;
             }
@@ -51,7 +51,7 @@ const TwelveDocumentsSection = ({
                     icon: 'warning',
                     title: 'Invalid File Type',
                     text: `${docConfig.label} must be a PDF file (.pdf only).`,
-                    confirmButtonColor: '#08315F'
+                    confirmButtonColor: 'var(--color-brand-800)'
                 });
                 return;
             }
@@ -92,7 +92,7 @@ const TwelveDocumentsSection = ({
                 icon: 'error',
                 title: 'Upload Failed',
                 text: 'Could not attach the document. Please try again.',
-                confirmButtonColor: '#08315F'
+                confirmButtonColor: 'var(--color-brand-800)'
             });
         } finally {
             setUploadingDoc(prev => ({ ...prev, [docConfig.key]: false }));
@@ -110,8 +110,8 @@ const TwelveDocumentsSection = ({
         <div className="bg-white border-2 border-slate-200 rounded-[24px] p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
-                    <FiFileText className="text-[#08315F]" size={20} />
-                    <h3 className="text-base font-black text-[#08315F] uppercase tracking-wide">
+                    <FiFileText className="text-brand-800" size={20} />
+                    <h3 className="text-base font-black text-brand-800 uppercase tracking-wide">
                         5. Twelve (12) Required Document Attachments
                     </h3>
                 </div>
@@ -135,7 +135,7 @@ const TwelveDocumentsSection = ({
                     href="https://tinyurl.com/3rdLevelForms"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#08315F] text-[#FCD116] hover:bg-blue-900 text-xs font-black uppercase tracking-wider shrink-0 shadow-sm transition-all active:scale-95"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-800 text-gold hover:bg-blue-900 text-xs font-black uppercase tracking-wider shrink-0 shadow-sm transition-all active:scale-95"
                 >
                     <span>Download Templates</span>
                     <FiExternalLink size={13} />
@@ -223,11 +223,11 @@ const TwelveDocumentsSection = ({
                                     <label className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed text-xs font-bold uppercase tracking-wider cursor-pointer transition-all ${
                                         isUploading
                                             ? 'bg-slate-100 border-slate-300 text-slate-400 cursor-not-allowed'
-                                            : 'bg-white hover:bg-blue-50/50 border-slate-300 hover:border-[#08315F] text-slate-600 hover:text-[#08315F]'
+                                            : 'bg-white hover:bg-blue-50/50 border-slate-300 hover:border-brand-800 text-slate-600 hover:text-brand-800'
                                     }`}>
                                         {isUploading ? (
                                             <>
-                                                <FiLoader className="animate-spin text-[#08315F]" size={14} />
+                                                <FiLoader className="animate-spin text-brand-800" size={14} />
                                                 <span>Attaching...</span>
                                             </>
                                         ) : (

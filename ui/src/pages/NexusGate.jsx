@@ -169,7 +169,7 @@ const NexusGate = () => {
                             title="Click for Admin Records Management Login"
                         >
                             <div className="nexus-admin-shield-icon">
-                                <FiShield size={18} className="text-[#08315F]" />
+                                <FiShield size={18} className="text-brand-800" />
                             </div>
                             <span className="nexus-admin-capsule-title">Records Management</span>
                             <span className="nexus-admin-access-badge">ADMIN ACCESS</span>
@@ -294,16 +294,16 @@ const NexusGate = () => {
                     <div className="nexus-card-header">
                         <div className="nexus-card-badge nexus-badge-yellow shadow-md">
                             <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10">
-                                <circle cx="20" cy="16" r="8" fill="#08315F" />
-                                <path d="M8 38C8 30.268 13.3726 24 20 24C22.42 24 24.673 24.836 26.5 26.27" stroke="#08315F" strokeWidth="5" strokeLinecap="round" />
-                                <path d="M34 26L41 29V35C41 38.5 37.5 42 34 43C30.5 42 27 38.5 27 35V29L34 26Z" fill="#08315F" stroke="#FCD116" strokeWidth="2" strokeLinejoin="round" />
-                                <path d="M31 34.5L33 36.5L37 32.5" stroke="#FCD116" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <circle cx="20" cy="16" r="8" fill="var(--color-brand-800)" />
+                                <path d="M8 38C8 30.268 13.3726 24 20 24C22.42 24 24.673 24.836 26.5 26.27" stroke="var(--color-brand-800)" strokeWidth="5" strokeLinecap="round" />
+                                <path d="M34 26L41 29V35C41 38.5 37.5 42 34 43C30.5 42 27 38.5 27 35V29L34 26Z" fill="var(--color-brand-800)" stroke="var(--color-gold)" strokeWidth="2" strokeLinejoin="round" />
+                                <path d="M31 34.5L33 36.5L37 32.5" stroke="var(--color-gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </div>
                     </div>
 
                     <div className="nexus-card-body">
-                        <span className="nexus-role-tag text-[#D97706]">FOR THIRD LEVEL PERSONNEL</span>
+                        <span className="nexus-role-tag text-warning-700">FOR THIRD LEVEL PERSONNEL</span>
                         <h2 className="nexus-card-title">Third Level Portal</h2>
                         <p className="nexus-card-desc">
                             Access and update your professional and personnel information, upload supporting documents, and review your official Third Level profile records. The portal supports leadership profiling, talent management, succession planning, and other human resource management initiatives of the Department.
@@ -311,7 +311,7 @@ const NexusGate = () => {
                     </div>
 
                     <div className="nexus-card-footer">
-                        <span className="nexus-action-link text-[#08315F]">
+                        <span className="nexus-action-link text-brand-800">
                             CONTINUE <FiArrowRight size={16} />
                         </span>
                     </div>
@@ -344,7 +344,7 @@ const NexusGate = () => {
 
                     <div className="nexus-card-header">
                         <div className="nexus-card-badge nexus-badge-blue">
-                            <FiBriefcase size={22} className="text-[#0284C7]" />
+                            <FiBriefcase size={22} className="text-brand-700" />
                         </div>
                         {poolingActive ? (
                             <div className="nexus-locked-pill !border-emerald-400 !bg-emerald-950/40 !text-emerald-300">
@@ -353,16 +353,16 @@ const NexusGate = () => {
                             </div>
                         ) : (
                             <div className="nexus-locked-pill">
-                                <FiLock size={12} className="text-[#FCD116]" />
+                                <FiLock size={12} className="text-gold" />
                                 <span>LOCKED</span>
                             </div>
                         )}
                     </div>
 
                     <div className="nexus-card-body">
-                        <span className="nexus-role-tag text-[#0284C7]">EXECUTIVE APPLICATIONS</span>
+                        <span className="nexus-role-tag text-brand-700">EXECUTIVE APPLICATIONS</span>
                         <h2 className="nexus-card-title">TIMON Applications</h2>
-                        <span className="nexus-sub-tag text-[#0284C7]">THIRD LEVEL VACANCIES & ROSTER</span>
+                        <span className="nexus-sub-tag text-brand-700">THIRD LEVEL VACANCIES & ROSTER</span>
                         <p className="nexus-card-desc mt-1">
                             Apply for third-level executive designations (RD, ARD, SDS, ASDS) in designated regions during active intake windows.
                         </p>
@@ -414,11 +414,11 @@ const NexusGate = () => {
                     {showRecruitModal && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRecruitModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[22px] shadow-2xl border-2 border-[#08315F] overflow-hidden">
+                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[22px] shadow-2xl border-2 border-brand-800 overflow-hidden">
                                 <div className="p-10">
                                     <div className="flex justify-between items-start mb-8">
                                         <div className="space-y-1">
-                                            <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">Application Access</h2>
+                                            <h2 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight italic uppercase">Application Access</h2>
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Verify your InsightED account status</p>
                                         </div>
                                         <button onClick={() => setShowRecruitModal(false)} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
@@ -431,7 +431,7 @@ const NexusGate = () => {
                                             <h3 className="font-black text-blue-900 group-hover:text-white uppercase tracking-tight italic">I have an account</h3>
                                             <p className="text-[10px] font-bold text-blue-600 group-hover:text-blue-100 uppercase tracking-wide mt-1">Sign in to continue</p>
                                         </button>
-                                        <button onClick={() => navigate('/register?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', role: 'Third Level Applicant' } })} className="group p-6 bg-slate-50 hover:bg-[#075985] rounded-3xl border border-slate-200 transition-all duration-300 text-left">
+                                        <button onClick={() => navigate('/register?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', role: 'Third Level Applicant' } })} className="group p-6 bg-slate-50 hover:bg-brand-700 rounded-3xl border border-slate-200 transition-all duration-300 text-left">
                                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 mb-4 group-hover:scale-110 transition-transform shadow-sm"><FiUserPlus size={24} /></div>
                                             <h3 className="font-black text-slate-900 group-hover:text-white uppercase tracking-tight italic">Portal Registration</h3>
                                             <p className="text-[10px] font-bold text-slate-500 group-hover:text-blue-100 uppercase tracking-wide mt-1">Personnel & Applicants</p>
@@ -448,8 +448,8 @@ const NexusGate = () => {
                     {showCOGate && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeCOGate} className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" />
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-[22px] shadow-2xl border-2 border-[#08315F] overflow-hidden">
-                                <div className="bg-[#08315F] px-10 py-8 flex items-center justify-between">
+                            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-white rounded-[22px] shadow-2xl border-2 border-brand-800 overflow-hidden">
+                                <div className="bg-brand-800 px-10 py-8 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
                                             <FiShield size={22} className="text-white" />
@@ -467,16 +467,16 @@ const NexusGate = () => {
                                 <div className="p-10">
                                     <div className="space-y-6">
                                         <div>
-                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic uppercase">How would you like to proceed?</h2>
+                                            <h2 className="text-2xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight italic uppercase">How would you like to proceed?</h2>
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sign in to your existing account or register a new one</p>
                                         </div>
 
                                         <div className="grid grid-cols-1 gap-4">
                                             <button
                                                 onClick={() => navigate('/login', { state: { isCO: true } })}
-                                                className="group p-6 bg-blue-50 hover:bg-[#08315F] rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
+                                                className="group p-6 bg-blue-50 hover:bg-brand-800 rounded-3xl border border-blue-100 transition-all duration-300 text-left flex items-center gap-4"
                                             >
-                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#08315F] shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-800 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
                                                     <FiLogIn size={22} />
                                                 </div>
                                                 <div>
@@ -487,7 +487,7 @@ const NexusGate = () => {
 
                                             <button
                                                 onClick={() => navigate('/register', { state: { isCO: true } })}
-                                                className="group p-6 bg-slate-50 hover:bg-[#08315F] rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
+                                                className="group p-6 bg-slate-50 hover:bg-brand-800 rounded-3xl border border-slate-200 transition-all duration-300 text-left flex items-center gap-4"
                                             >
                                                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-600 shrink-0 group-hover:scale-110 transition-transform shadow-sm">
                                                     <FiUserPlus size={22} />
@@ -522,7 +522,7 @@ const NexusGate = () => {
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                                 className="relative w-full max-w-6xl h-[88vh] bg-white rounded-3xl shadow-2xl border border-white/40 flex flex-col overflow-hidden z-10"
                             >
-                                <div className="px-6 py-4 bg-[#08315F] text-white flex items-center justify-between shrink-0 shadow-md">
+                                <div className="px-6 py-4 bg-brand-800 text-white flex items-center justify-between shrink-0 shadow-md">
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-400">
                                             <FiBookOpen size={20} />

@@ -4,14 +4,14 @@ import { expandAcronym } from '../../utils/officialsUtils';
 const DataControls = ({ dependentOffices, designationFilter, designations, levelFilter, officeFilter, oicOnly, positionFilter, regionFilter, searchTerm, setActiveTab, setDesignationFilter, setLevelFilter, setOfficeFilter, setOicOnly, setPositionFilter, setRegionFilter, setSearchTerm, setStatusTab, setStrandFilter, setTableFilters, setViewMode, strandFilter, strands, tabPositions, viewMode }) => {
   return (
     <>
-                        <div className="bg-white border-2 border-[#08315F] rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
+                        <div className="bg-white border-2 border-brand-800 rounded-[24px] p-3 shadow-sm mb-6 flex flex-col gap-2.5">
                             {/* TOP ROW: FILTERS */}
                             <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2 w-full">
                                 {/* DROPDOWNS */}
                                 <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                     {/* Level Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All CO / RO / SDO</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Regional Office">Regional Office</option>
@@ -21,8 +21,8 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                     </div>
 
                                     {/* Region Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Regions</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Region I">Region I</option>
@@ -49,8 +49,8 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
 
                                     {/* Strand / Division Dropdown */}
                                     {levelFilter === 'Central Office' || regionFilter === 'Central Office' ? (
-                                        <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                            <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                        <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
+                                            <select value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
                                                 <option value="All">All Strands</option>
                                                 {strands.map(s => (
                                                     <option key={s} value={s}>{s}</option>
@@ -59,8 +59,8 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                             <FiChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-500 pointer-events-none" size={16} />
                                         </div>
                                     ) : (
-                                        <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                            <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                        <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
+                                            <select value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
                                                 <option value="All">All Divisions</option>
                                                 {dependentOffices.map(o => (
                                                     <option key={o} value={o}>{o}</option>
@@ -71,8 +71,8 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                     )}
 
                                     {/* Designation Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Designations</option>
                                             {designations.map(d => (
                                                 <option key={d} value={d}>{expandAcronym(d)}</option>
@@ -82,8 +82,8 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                     </div>
 
                                     {/* Position Dropdown */}
-                                    <div className="relative w-full xl:flex-1 h-[44px] bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full focus-within:border-sky-400 transition-colors">
-                                        <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-[#08315F] outline-none appearance-none cursor-pointer text-ellipsis">
+                                    <div className="relative w-full xl:flex-1 h-[44px] bg-brand-50 border-2 border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
+                                        <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter} className="w-full h-full bg-transparent pl-4 pr-7 text-[16.5px] font-bold text-brand-800 outline-none appearance-none cursor-pointer text-ellipsis">
                                             <option value="All">All Positions</option>
                                             {tabPositions.map(p => (
                                                 <option key={p} value={p}>{p}</option>
@@ -98,10 +98,10 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                     {/* OIC Toggle */}
                                     <button
                                         onClick={() => setOicOnly(!oicOnly)}
-                                        className={`h-[44px] px-4 flex-1 xl:flex-none rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 border-2 ${oicOnly ? 'bg-[#08315F] border-[#08315F]' : 'bg-[#F0F9FF] border-[#BAE6FD] hover:bg-sky-100'}`}
+                                        className={`h-[44px] px-4 flex-1 xl:flex-none rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0 border-2 ${oicOnly ? 'bg-brand-800 border-brand-800' : 'bg-brand-50 border-brand-300 hover:bg-sky-100'}`}
                                         title="Toggle OIC only"
                                     >
-                                        <span className={`text-[15px] font-black uppercase tracking-widest ${oicOnly ? 'text-white' : 'text-[#08315F]'}`}>OIC ONLY</span>
+                                        <span className={`text-[15px] font-black uppercase tracking-widest ${oicOnly ? 'text-white' : 'text-brand-800'}`}>OIC ONLY</span>
                                         <div className={`w-8 h-4 rounded-full relative transition-colors shrink-0 ${oicOnly ? 'bg-amber-400' : 'bg-slate-300'}`}>
                                             <div className={`absolute top-[2px] left-[2px] w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${oicOnly ? 'translate-x-[16px]' : 'translate-x-0'}`} />
                                         </div>
@@ -133,34 +133,34 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                             {/* BOTTOM ROW: SEARCH BAR & VIEW TOGGLES */}
                             <div className="flex items-center gap-2 w-full">
                                 <div className="relative flex-1 h-[44px]">
-                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#08315F]/50" size={16} />
+                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-800/50" size={16} />
                                     <input
                                         type="text"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         placeholder="Search by name, position, or office..."
-                                        className="w-full h-full bg-[#F0F9FF] border-2 border-[#BAE6FD] rounded-full py-0 pl-11 pr-4 text-[16.5px] font-bold text-[#08315F] outline-none focus:border-sky-400 placeholder:text-[#08315F]/50 transition-colors"
+                                        className="w-full h-full bg-brand-50 border-2 border-brand-300 rounded-full py-0 pl-11 pr-4 text-[16.5px] font-bold text-brand-800 outline-none focus:border-sky-400 placeholder:text-brand-800/50 transition-colors"
                                     />
                                 </div>
                                 {/* VIEW TOGGLES */}
                                 <div className="flex items-center gap-2 shrink-0 px-1">
                                     <button
                                         onClick={() => setViewMode('table')}
-                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-brand-800 text-white border-b-[3px] border-gold shadow-sm transform -translate-y-[1px]' : 'bg-brand-100 text-brand-800 hover:bg-brand-300'}`}
                                         title="Table view"
                                     >
                                         <FiList size={16} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('grid')}
-                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-brand-800 text-white border-b-[3px] border-gold shadow-sm transform -translate-y-[1px]' : 'bg-brand-100 text-brand-800 hover:bg-brand-300'}`}
                                         title="Grid view"
                                     >
                                         <FiGrid size={16} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('directory')}
-                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-[#08315F] text-white border-b-[3px] border-[#FBBF24] shadow-sm transform -translate-y-[1px]' : 'bg-[#E0F2FE] text-[#08315F] hover:bg-[#BAE6FD]'}`}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'directory' ? 'bg-brand-800 text-white border-b-[3px] border-gold shadow-sm transform -translate-y-[1px]' : 'bg-brand-100 text-brand-800 hover:bg-brand-300'}`}
                                         title="Organizational Directory"
                                     >
                                         <FiLayers size={16} />

@@ -189,7 +189,7 @@ const AllVacancies = () => {
             showCancelButton: true,
             confirmButtonText: 'Sign In',
             cancelButtonText: 'Register',
-            confirmButtonColor: '#08315F'
+            confirmButtonColor: 'var(--color-brand-800)'
         }).then((result) => {
             if (result.isConfirmed) {
                 navigate('/login?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', portal: 'applicant' } });
@@ -327,7 +327,7 @@ const AllVacancies = () => {
                 title: 'Required Documents Missing',
                 html: `<div class="text-left text-xs space-y-1"><p class="font-bold text-slate-700">Please attach the following required documents:</p><ul class="list-disc pl-5 text-rose-600">${missingDocs.map(d => `<li>${d.label}</li>`).join('')}</ul></div>`,
                 icon: 'warning',
-                confirmButtonColor: '#08315F'
+                confirmButtonColor: 'var(--color-brand-800)'
             });
             return;
         }
@@ -386,9 +386,9 @@ const AllVacancies = () => {
                 text: `Your application for ${appliedPosition} in ${targetRegion} has been recorded in the TIMON Applications executive pool.`,
                 icon: 'success',
                 confirmButtonText: 'View Receipt',
-                confirmButtonColor: '#08315F',
+                confirmButtonColor: 'var(--color-brand-800)',
                 customClass: {
-                    popup: 'rounded-3xl border-2 border-[#08315F]'
+                    popup: 'rounded-3xl border-2 border-brand-800'
                 }
             });
         } catch (err) {
@@ -397,7 +397,7 @@ const AllVacancies = () => {
                 title: 'Submission Failed',
                 text: err.message,
                 icon: 'error',
-                confirmButtonColor: '#08315F'
+                confirmButtonColor: 'var(--color-brand-800)'
             });
         } finally {
             setSubmitting(false);
@@ -406,10 +406,10 @@ const AllVacancies = () => {
 
     return (
         <PageTransition>
-            <div className="min-h-screen bg-slate-50 font-['Plus_Jakarta_Sans'] text-[#08315F] flex flex-col">
+            <div className="min-h-screen bg-slate-50 font-['Plus_Jakarta_Sans'] text-brand-800 flex flex-col">
                 {/* Header Banner */}
-                <header className="bg-[#08315F] text-white relative overflow-hidden shadow-lg border-b border-[#0038A8]/20 py-8 px-6 lg:px-12 shrink-0">
-                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-[#075985] rounded-[100%] opacity-80 pointer-events-none transform rotate-12 z-0"></div>
+                <header className="bg-brand-800 text-white relative overflow-hidden shadow-lg border-b border-brand-700/20 py-8 px-6 lg:px-12 shrink-0">
+                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-brand-700 rounded-[100%] opacity-80 pointer-events-none transform rotate-12 z-0"></div>
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6 relative z-10">
                         {/* Top Navigation Row */}
                         <div className="flex justify-between items-center w-full">
@@ -422,7 +422,7 @@ const AllVacancies = () => {
                             {user ? (
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-2 text-xs font-bold text-blue-100 bg-white/10 px-3 py-1.5 rounded-full">
-                                        <FiUser size={13} className="text-[#FCD116]" />
+                                        <FiUser size={13} className="text-gold" />
                                         <span>{user.first_name || user.email}</span>
                                     </div>
                                     <button
@@ -442,7 +442,7 @@ const AllVacancies = () => {
                                     </button>
                                     <button
                                         onClick={() => navigate('/register?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', role: 'Third Level Applicant' } })}
-                                        className="flex items-center gap-1.5 bg-[#FCD116] text-[#08315F] px-3.5 py-1.5 rounded-full font-black text-xs uppercase tracking-wider hover:bg-yellow-400 transition-all shadow-sm"
+                                        className="flex items-center gap-1.5 bg-gold text-brand-800 px-3.5 py-1.5 rounded-full font-black text-xs uppercase tracking-wider hover:bg-yellow-400 transition-all shadow-sm"
                                     >
                                         <FiUserPlus size={14} /> Register
                                     </button>
@@ -452,7 +452,7 @@ const AllVacancies = () => {
 
                         {/* Title Row */}
                         <div className="flex flex-col gap-2">
-                            <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[#FCD116]">
+                            <span className="text-[11px] font-black uppercase tracking-[0.25em] text-gold">
                                 Department of Education • TIMON Official Roster
                             </span>
                             <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
@@ -470,7 +470,7 @@ const AllVacancies = () => {
                     {/* Status Loading Skeleton */}
                     {windowLoading ? (
                         <div className="bg-white border-2 border-slate-200 rounded-3xl p-12 text-center shadow-sm">
-                            <FiLoader className="animate-spin text-[#08315F] mx-auto mb-4" size={36} />
+                            <FiLoader className="animate-spin text-brand-800 mx-auto mb-4" size={36} />
                             <h3 className="text-sm font-black uppercase tracking-wider text-slate-500">Checking Application Window Status...</h3>
                         </div>
                     ) : !intakeWindow.isOpen ? (
@@ -501,7 +501,7 @@ const AllVacancies = () => {
                             <div>
                                 <button
                                     onClick={() => navigate('/')}
-                                    className="px-6 py-3 bg-[#08315F] text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm"
+                                    className="px-6 py-3 bg-brand-800 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm"
                                 >
                                     Return to Nexus Gate
                                 </button>
@@ -533,7 +533,7 @@ const AllVacancies = () => {
                                 </div>
                                 <div className="flex justify-between items-center text-xs">
                                     <span className="text-slate-500 font-semibold">Designation:</span>
-                                    <span className="font-bold text-[#08315F]">{submittedApplication.applied_position}</span>
+                                    <span className="font-bold text-brand-800">{submittedApplication.applied_position}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs">
                                     <span className="text-slate-500 font-semibold">Target Region:</span>
@@ -556,7 +556,7 @@ const AllVacancies = () => {
                                 </button>
                                 <button
                                     onClick={() => navigate('/')}
-                                    className="px-6 py-3 bg-[#08315F] text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm"
+                                    className="px-6 py-3 bg-brand-800 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm"
                                 >
                                     Done
                                 </button>
@@ -599,14 +599,14 @@ const AllVacancies = () => {
                                         <button
                                             type="button"
                                             onClick={() => navigate('/login?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', portal: 'applicant' } })}
-                                            className="px-5 py-2.5 bg-[#08315F] text-white font-black text-xs uppercase tracking-wider rounded-xl hover:bg-blue-900 transition-all shadow-sm flex items-center gap-2"
+                                            className="px-5 py-2.5 bg-brand-800 text-white font-black text-xs uppercase tracking-wider rounded-xl hover:bg-blue-900 transition-all shadow-sm flex items-center gap-2"
                                         >
                                             <FiLogIn size={14} /> Sign In
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => navigate('/register?returnUrl=%2Ftimon-applications&redirect=%2Ftimon-applications', { state: { redirectTo: '/timon-applications', returnUrl: '/timon-applications', role: 'Third Level Applicant' } })}
-                                            className="px-5 py-2.5 bg-white border-2 border-[#08315F] text-[#08315F] font-black text-xs uppercase tracking-wider rounded-xl hover:bg-slate-50 transition-all flex items-center gap-2"
+                                            className="px-5 py-2.5 bg-white border-2 border-brand-800 text-brand-800 font-black text-xs uppercase tracking-wider rounded-xl hover:bg-slate-50 transition-all flex items-center gap-2"
                                         >
                                             <FiUserPlus size={14} /> Register New Account
                                         </button>
@@ -648,7 +648,7 @@ const AllVacancies = () => {
                                         <button
                                             type="button"
                                             onClick={handleNext}
-                                            className="w-full sm:w-auto px-6 py-3 bg-[#08315F] text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm flex items-center justify-center gap-2"
+                                            className="w-full sm:w-auto px-6 py-3 bg-brand-800 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm flex items-center justify-center gap-2"
                                         >
                                             <span>Proceed to Questionnaire</span>
                                             <FiChevronRight size={16} />
@@ -685,7 +685,7 @@ const AllVacancies = () => {
                                         <button
                                             type="button"
                                             onClick={handleNext}
-                                            className="w-full sm:w-auto px-6 py-3 bg-[#08315F] text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm flex items-center justify-center gap-2"
+                                            className="w-full sm:w-auto px-6 py-3 bg-brand-800 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-sm flex items-center justify-center gap-2"
                                         >
                                             <span>Proceed to Document Uploads</span>
                                             <FiChevronRight size={16} />
@@ -706,7 +706,7 @@ const AllVacancies = () => {
                                     />
 
                                     {/* Final Review & Submission Action Bar */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white border-2 border-[#08315F] rounded-[24px] shadow-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white border-2 border-brand-800 rounded-[24px] shadow-sm">
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                                             <button
                                                 type="button"
@@ -723,7 +723,7 @@ const AllVacancies = () => {
                                         <button
                                             type="submit"
                                             disabled={submitting}
-                                            className="w-full sm:w-auto px-8 py-4 bg-[#08315F] text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
+                                            className="w-full sm:w-auto px-8 py-4 bg-brand-800 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-900 transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
                                         >
                                             {submitting ? (
                                                 <>

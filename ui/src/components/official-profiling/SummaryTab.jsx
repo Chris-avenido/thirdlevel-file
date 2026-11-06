@@ -15,7 +15,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                             {/* PROFILE SUMMARY */}
                                                             <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8 relative">
                                                                 <div className="absolute top-8 right-8 z-[51]">
-                                                                    <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-[#004a99] border-2 border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[16.5px] transition-all shadow-sm relative z-[51]">
+                                                                    <button onClick={() => setExportModalOpen(!exportModalOpen)} className="flex items-center gap-2 bg-brand-700 border-2 border-blue-400/30 px-5 py-2.5 rounded-lg text-white hover:bg-blue-700 font-bold text-[16.5px] transition-all shadow-sm relative z-[51]">
                                                                         <FiDownload size={18} /> Export Profile
                                                                     </button>
                                                                     <AnimatePresence>
@@ -41,7 +41,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                             <div className="w-full lg:w-64 bg-transparent border-r-2 border-slate-200 p-6 flex flex-col gap-3 shrink-0">
                                                                                                 <div className="flex items-center justify-between mb-4">
                                                                                                     <div>
-                                                                                                        <h2 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase tracking-tight italic">Export Options</h2>
+                                                                                                        <h2 className="text-[21px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase tracking-tight italic">Export Options</h2>
                                                                                                     </div>
                                                                                                     <button onClick={() => setExportModalOpen(false)} className="w-8 h-8 bg-white text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-full flex items-center justify-center transition-colors shadow-sm border-2 border-slate-200">
                                                                                                         <FiX size={18} />
@@ -112,7 +112,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                             if (selectedExportType === 'ppt') generatePPT();
                                                                                                         }}
                                                                                                         disabled={exporting}
-                                                                                                        className="w-full py-4 bg-[#08315F] text-white font-black text-[15px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                                                                        className="w-full py-4 bg-brand-800 text-white font-black text-[15px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-brand-800 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                                                                                                     >
                                                                                                         {exporting ? <FiLoader className="animate-spin" size={18} /> : <FiDownload size={18} />}
                                                                                                         {exporting ? 'Generating...' : `Download`}
@@ -158,15 +158,15 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                     <div className="overflow-hidden flex justify-center w-full bg-slate-50/50 py-10 rounded-2xl border-2 border-slate-200 shadow-inner hide-scrollbar">
                                                                                                         <div className="bg-white shadow-2xl border-2 border-slate-200 transition-transform duration-200 shrink-0 w-[1000px]" style={{ transform: `scale(${previewScale * 0.5})`, transformOrigin: 'top center', marginBottom: `-${700 * (1 - previewScale * 0.5)}px` }}>
                                                                                                             <div className="p-8 mx-auto w-[1000px] min-h-[700px] relative font-['Plus_Jakarta_Sans'] text-black bg-white" id={selectedExportType === 'pdf' ? "pdf-preview-content" : "ppt-preview-content"}>
-                                                                                                                <div className="absolute top-0 left-0 w-full h-2 bg-[#08315F]"></div>
+                                                                                                                <div className="absolute top-0 left-0 w-full h-2 bg-brand-800"></div>
                                                                                                                 <div className="flex justify-between items-start mb-5 pt-2">
                                                                                                                     <div className="flex gap-5 items-center">
                                                                                                                         <img src={depedLogo} alt="Logo" className="w-20 h-20 object-contain" />
                                                                                                                         <div>
-                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-[#08315F]">{profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
+                                                                                                                            <h1 className="text-2xl font-black uppercase tracking-tight text-brand-800">{profile.last_name || ''}{sanitizeSuffix(profile.suffix) ? ` ${sanitizeSuffix(profile.suffix)}` : ''}, {profile.first_name || ''} {profile.middle_name || ''}</h1>
                                                                                                                             <h2 className="text-lg font-bold uppercase mt-1 text-slate-800 flex items-center gap-2 flex-wrap">
                                                                                                                                 <span>{profile.position_title || 'N/A'}</span>
-                                                                                                                                {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-[#FCD116] text-[#08315F] text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                                                                                                                {profile.is_oic && <span className="px-2 py-0.5 rounded-full bg-gold text-brand-800 text-[9px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                                                                                                                 {profile.office ? `, ${profile.office}` : ''}
                                                                                                                             </h2>
                                                                                                                             {profile.designation &&
@@ -174,7 +174,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                                                 profile.designation.trim().toLowerCase() !== 'no designation' &&
                                                                                                                                 profile.designation.trim().toLowerCase() !== 'none' &&
                                                                                                                                 profile.designation.trim().toLowerCase() !== (profile.position_title || '').trim().toLowerCase() && (
-                                                                                                                                <p className="text-sm font-semibold italic text-[#08315F] mt-0.5">
+                                                                                                                                <p className="text-sm font-semibold italic text-brand-800 mt-0.5">
                                                                                                                                     {profile.designation}
                                                                                                                                 </p>
                                                                                                                             )}
@@ -194,7 +194,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                                     <div className="col-span-7 space-y-5">
                                                                                                                         <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
-                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience</th></tr>
+                                                                                                                                <tr><th colSpan={3} className="bg-brand-800 text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Managerial Experience</th></tr>
                                                                                                                             </thead>
                                                                                                                             <tbody>
                                                                                                                                 {(() => {
@@ -226,7 +226,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                                                                     rows.push(
                                                                                                                                                         <tr key={`child-${i}-${oicIdx}`} className="text-slate-700 text-[11px] bg-amber-50/50">
                                                                                                                                                             <td className="border-2 border-slate-400 px-3 py-1.5 pl-6 font-medium">
-                                                                                                                                                                <span className="text-[#08315F] font-bold">└─ OIC:</span> {oicTitle}
+                                                                                                                                                                <span className="text-brand-800 font-bold">└─ OIC:</span> {oicTitle}
                                                                                                                                                             </td>
                                                                                                                                                             <td className="border-2 border-slate-400 px-3 py-1.5 text-slate-600">{oicOffice}</td>
                                                                                                                                                             <td className="border-2 border-slate-400 px-3 py-1.5 text-center font-normal">{oicDur.years} yrs., {oicDur.months} mos.</td>
@@ -242,7 +242,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                                         </table>
                                                                                                                         <table className="w-full text-xs border-collapse">
                                                                                                                             <thead>
-                                                                                                                                <tr><th colSpan={3} className="bg-[#08315F] text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Educational Attainment</th></tr>
+                                                                                                                                <tr><th colSpan={3} className="bg-brand-800 text-white font-bold py-2 border-2 border-slate-400 text-center uppercase tracking-widest text-[11px]">Educational Attainment</th></tr>
                                                                                                                             </thead>
                                                                                                                             <tbody className="text-slate-800">
                                                                                                                                 <tr>
@@ -266,7 +266,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                                     <div className="col-span-5 space-y-5 relative">
                                                                                                                         <div className="absolute -top-12 left-0 w-20">
                                                                                                                             <div className="bg-amber-500 text-white font-bold py-0.5 text-center text-[10px] uppercase tracking-widest">Age</div>
-                                                                                                                            <div className="border-2 border-amber-500 py-1 text-center font-bold text-base text-[#08315F] bg-white">{profile.age || '—'}</div>
+                                                                                                                            <div className="border-2 border-amber-500 py-1 text-center font-bold text-base text-brand-800 bg-white">{profile.age || '—'}</div>
                                                                                                                         </div>
                                                                                                                         <table className="w-full text-xs border-collapse mt-8">
                                                                                                                             <thead>
@@ -338,8 +338,8 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                 </div>
 
                                                                 <div className="flex items-center gap-3 mb-8">
-                                                                    <FiUser className="text-[#08315F]" size={24} />
-                                                                    <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Profile Summary</h2>
+                                                                    <FiUser className="text-brand-800" size={24} />
+                                                                    <h2 className="text-[21px] font-black text-brand-800 uppercase tracking-widest">Profile Summary</h2>
                                                                 </div>
 
                                                                 {/* Personal Information */}
@@ -392,7 +392,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                             <p className="text-[15px] text-slate-400 mb-1">Position Title</p>
                                                                             <div className="flex items-center gap-2">
                                                                                 <p className="text-[18px] font-black text-slate-800 uppercase">{profile.position_title || '—'}</p>
-                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[13.5px] font-black uppercase">OIC</span>}
+                                                                                {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-gold text-brand-800 text-[13.5px] font-black uppercase">OIC</span>}
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-start gap-2">
@@ -465,11 +465,11 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                             {/* EDUCATION */}
                                                             <div className="mb-10">
                                                                 <div className="flex items-center gap-4 mb-6 px-2">
-                                                                    <div className="w-12 h-12 bg-blue-50 text-[#0038A8] rounded-full flex items-center justify-center shadow-sm border-2 border-blue-100/50">
+                                                                    <div className="w-12 h-12 bg-blue-50 text-brand-700 rounded-full flex items-center justify-center shadow-sm border-2 border-blue-100/50">
                                                                         <FiAward size={22} />
                                                                     </div>
                                                                     <div>
-                                                                        <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest leading-tight">Education</h2>
+                                                                        <h2 className="text-[21px] font-black text-brand-800 uppercase tracking-widest leading-tight">Education</h2>
                                                                         <p className="text-[18px] font-medium text-slate-400 mt-0.5">Your academic background and qualifications</p>
                                                                     </div>
                                                                 </div>
@@ -479,7 +479,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                         (profile.highest_education || profile.education_program) ? (
                                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
                                                                                 <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                         <FiAward size={18} />
                                                                                     </div>
                                                                                     <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -488,7 +488,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                     </div>
                                                                                 </div>
                                                                                 <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                         <FiFileText size={18} />
                                                                                     </div>
                                                                                     <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -500,7 +500,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                 <div className="col-span-1 lg:col-span-2 border-t-2 border-slate-200 my-[-1rem] hidden lg:block" />
 
                                                                                 <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                         <FiBookOpen size={18} />
                                                                                     </div>
                                                                                     <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -509,7 +509,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                     </div>
                                                                                 </div>
                                                                                 <div className="flex gap-4 items-start">
-                                                                                    <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                    <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                         <FiCalendar size={18} />
                                                                                     </div>
                                                                                     <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -526,7 +526,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                             {profile.education_degrees.map((deg, idx) => (
                                                                                 <div key={idx} className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 relative">
                                                                                     <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                             <FiAward size={18} />
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -535,7 +535,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                             <FiFileText size={18} />
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -547,7 +547,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                     <div className="col-span-1 lg:col-span-2 border-t-2 border-slate-200 my-[-1rem] hidden lg:block" />
 
                                                                                     <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                             <FiBookOpen size={18} />
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -556,7 +556,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="flex gap-4 items-start">
-                                                                                        <div className="w-10 h-10 bg-blue-50 text-[#0038A8] rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
+                                                                                        <div className="w-10 h-10 bg-blue-50 text-brand-700 rounded-xl flex items-center justify-center shrink-0 border-2 border-blue-100/50">
                                                                                             <FiCalendar size={18} />
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1 min-w-0 mt-0.5">
@@ -570,22 +570,22 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                     )}
 
                                                                     {profile.other_courses && profile.other_courses.length > 0 && (
-                                                                        <div className="mt-8 bg-[#F8FAFC] rounded-2xl p-6 lg:p-8 border-2 border-slate-200">
+                                                                        <div className="mt-8 bg-brand-50 rounded-2xl p-6 lg:p-8 border-2 border-slate-200">
                                                                             <div className="flex items-center gap-3 mb-6">
-                                                                                <div className="w-8 h-8 bg-blue-100/70 text-[#004a99] rounded-full flex items-center justify-center shrink-0">
+                                                                                <div className="w-8 h-8 bg-blue-100/70 text-brand-700 rounded-full flex items-center justify-center shrink-0">
                                                                                     <FiLayers size={16} />
                                                                                 </div>
-                                                                                <h3 className="text-[16.5px] font-black text-[#004a99] uppercase tracking-widest">Other Courses</h3>
+                                                                                <h3 className="text-[16.5px] font-black text-brand-700 uppercase tracking-widest">Other Courses</h3>
                                                                             </div>
 
                                                                             <div className="space-y-4">
                                                                                 {profile.other_courses.map((course, idx) => (
                                                                                     <div key={idx} className={`flex items-start gap-5 ${idx !== profile.other_courses.length - 1 ? 'pb-4 border-b-2 border-dashed border-slate-200' : ''}`}>
-                                                                                        <div className="bg-blue-50/80 text-[#004a99] px-3 py-2 rounded-xl text-[16.5px] font-black shrink-0 min-w-[70px] text-center uppercase tracking-wider border-2 border-blue-100/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                                                                        <div className="bg-blue-50/80 text-brand-700 px-3 py-2 rounded-xl text-[16.5px] font-black shrink-0 min-w-[70px] text-center uppercase tracking-wider border-2 border-blue-100/50 shadow-[0_1px_2px_rgb(var(--rgb-heading)/0.02)]">
                                                                                             {course.course ? (course.course.length > 8 ? course.course.substring(0, 8) + '...' : course.course) + ':' : '—:'}
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-0.5 mt-1">
-                                                                                            <span className="text-[18px] font-black text-[#08315F]">
+                                                                                            <span className="text-[18px] font-black text-brand-800">
                                                                                                 {course.date_from ? new Date(course.date_from).toLocaleDateString() : '—'} to {course.date_to ? new Date(course.date_to).toLocaleDateString() : '—'}
                                                                                             </span>
                                                                                             {course.details && <span className="text-[16.5px] font-bold text-slate-500">{course.details}</span>}
@@ -600,8 +600,8 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                             {/* PERFORMANCE HISTORY */}
                                                             <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
                                                                 <div className="flex items-center gap-3 mb-6">
-                                                                    <FiBarChart2 className="text-[#08315F]" size={24} />
-                                                                    <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Performance History</h2>
+                                                                    <FiBarChart2 className="text-brand-800" size={24} />
+                                                                    <h2 className="text-[21px] font-black text-brand-800 uppercase tracking-widest">Performance History</h2>
                                                                 </div>
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -692,8 +692,8 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                             {/* DOCUMENTS */}
                                                             <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm p-8">
                                                                 <div className="flex items-center gap-3 mb-6">
-                                                                    <FiFileText className="text-[#08315F]" size={24} />
-                                                                    <h2 className="text-[21px] font-black text-[#08315F] uppercase tracking-widest">Documents</h2>
+                                                                    <FiFileText className="text-brand-800" size={24} />
+                                                                    <h2 className="text-[21px] font-black text-brand-800 uppercase tracking-widest">Documents</h2>
                                                                 </div>
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -760,10 +760,10 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                             {/* DATA PRIVACY & CERTIFICATION */}
                                                             <div className="mt-8">
                                                                 {/* ── Data Privacy & Certification ── */}
-                                                                <div className="bg-white rounded-[2.5rem] border-2 border-[#0038A8]/20 shadow-sm overflow-hidden">
+                                                                <div className="bg-white rounded-[2.5rem] border-2 border-brand-700/20 shadow-sm overflow-hidden">
 
                                                                     {/* Header */}
-                                                                    <div className="bg-[#08315F] px-8 py-6 flex items-center gap-4">
+                                                                    <div className="bg-brand-800 px-8 py-6 flex items-center gap-4">
                                                                         <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
                                                                             <FiShield size={22} className="text-white" />
                                                                         </div>
@@ -776,20 +776,20 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                     <div className="p-8 space-y-6">
                                                                         {/* DepEd DPA Notice */}
                                                                         <div className="bg-transparent rounded-[2rem] p-6 text-[16.5px] font-bold text-slate-600 leading-relaxed border-2 border-slate-200">
-                                                                            <p>Pursuant to <span className="text-[#08315F] font-black">Republic Act No. 10173</span> or <span className="text-[#08315F] font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
+                                                                            <p>Pursuant to <span className="text-brand-800 font-black">Republic Act No. 10173</span> or <span className="text-brand-800 font-black">Data Privacy Act of 2012</span>, the personal data collected shall be kept confidential and shall not be disclosed, divulged nor used beyond its intended purpose. It may not be reproduced in whole, or in part, nor may any of the information contained therein be disclosed without the prior notice and/or consent of DepEd.</p>
                                                                         </div>
 
                                                                         {/* Certification Checkboxes */}
                                                                         <div className="space-y-4">
                                                                             <button
                                                                                 onClick={() => setDpaConsent(v => !v)}
-                                                                                className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-[#F4F8FB] border-[#0038A8]' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
+                                                                                className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border-2 text-left transition-all ${dpaConsent ? 'bg-brand-50 border-brand-700' : 'bg-transparent border-slate-200 hover:border-slate-300'}`}
                                                                             >
-                                                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-[#08315F] border-[#0038A8]' : 'border-slate-300 bg-white'}`}>
+                                                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${dpaConsent ? 'bg-brand-800 border-brand-700' : 'border-slate-300 bg-white'}`}>
                                                                                     {dpaConsent && <FiCheckCircle size={14} className="text-white" />}
                                                                                 </div>
                                                                                 <p className="text-[16.5px] font-bold text-slate-700 leading-relaxed">
-                                                                                    I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-[#08315F] font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
+                                                                                    I have read and fully understood the Data Privacy Notice above. I hereby give my <span className="text-brand-800 font-black">informed consent</span> to the collection, processing, and use of my personal information by the Department of Education for the purposes stated herein, in compliance with the Data Privacy Act of 2012.
                                                                                 </p>
                                                                             </button>
 
@@ -814,7 +814,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                         <button
                                                                                             onClick={() => handleCertify(false)}
                                                                                             disabled={!dpaConsent || !truthConsent || certifying}
-                                                                                            className="flex-1 py-5 bg-[#08315F] text-white font-black text-[15px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                                                            className="flex-1 py-5 bg-brand-800 text-white font-black text-[15px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-brand-800 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                                                                         >
                                                                                             {certifying ? <FiLoader className="animate-spin" size={18} /> : <FiCheckCircle size={18} />}
                                                                                             {certifying ? 'Certifying...' : 'Certify — Profile is Up-to-Date'}
@@ -833,7 +833,7 @@ const SummaryTab = ({ applicationStatus, certified, certifying, completeness, da
                                                                                                 <button
                                                                                                     onClick={handleSubmitApplication}
                                                                                                     disabled={!dpaConsent || !truthConsent || saving}
-                                                                                                    className="flex-1 py-5 bg-[#08315F] text-white font-black text-[15px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-[#08315F] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
+                                                                                                    className="flex-1 py-5 bg-brand-800 text-white font-black text-[15px] uppercase tracking-widest rounded-full shadow-2xl shadow-blue-900/30 hover:bg-brand-800 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 border-2 border-white/20"
                                                                                                 >
                                                                                                     {saving ? <FiLoader className="animate-spin" size={18} /> : <FiArrowRight size={18} />}
                                                                                                     {saving ? 'Processing...' : 'Submit Final Application'}

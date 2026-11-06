@@ -9,13 +9,13 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                 {tab === 'performance' && (
                                                     <div className="space-y-6">
                                                         {/* Performance Section */}
-                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
-                                                            <SectionLabel color="#0038A8">IPCRF / OPCRF</SectionLabel>
+                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 shadow-none space-y-6">
+                                                            <SectionLabel color="var(--color-brand-700)">IPCRF / OPCRF</SectionLabel>
 
                                                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                                                 {/* Rating 1 */}
-                                                                <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border-2 border-[#0038A8]/10 space-y-4">
-                                                                    <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest">Latest Rating (1st)</p>
+                                                                <div className="p-6 bg-brand-800/5 rounded-[2rem] border-2 border-brand-700/10 space-y-4">
+                                                                    <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">Latest Rating (1st)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
                                                                             <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" className={inp} />
@@ -30,8 +30,8 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                 </div>
 
                                                                 {/* Rating 2 */}
-                                                                <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border-2 border-[#0038A8]/10 space-y-4">
-                                                                    <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest">Previous Rating (2nd)</p>
+                                                                <div className="p-6 bg-brand-800/5 rounded-[2rem] border-2 border-brand-700/10 space-y-4">
+                                                                    <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">Previous Rating (2nd)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
                                                                             <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_2} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_2', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_2', n.toString()); } }} placeholder="4.750" className={inp} />
@@ -46,8 +46,8 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                 </div>
 
                                                                 {/* Rating 3 */}
-                                                                <div className="p-6 bg-[#08315F]/5 rounded-[2rem] border-2 border-[#0038A8]/10 space-y-4">
-                                                                    <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest">Oldest Rating (3rd)</p>
+                                                                <div className="p-6 bg-brand-800/5 rounded-[2rem] border-2 border-brand-700/10 space-y-4">
+                                                                    <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">Oldest Rating (3rd)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
                                                                             <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_3} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_3', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_3', n.toString()); } }} placeholder="4.650" className={inp} />
@@ -62,9 +62,9 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="p-6 bg-[#F4F8FB]/30 rounded-[2rem] border-2 border-blue-100 space-y-5">
+                                                            <div className="p-6 bg-brand-50/30 rounded-[2rem] border-2 border-blue-100 space-y-5">
                                                                 <div className="flex items-center gap-3">
-                                                                    <p className="text-[15px] font-black text-[#075985] uppercase tracking-widest">CESPES Rating</p>
+                                                                    <p className="text-[15px] font-black text-brand-700 uppercase tracking-widest">CESPES Rating</p>
                                                                     <span className="text-[13.5px] font-bold text-blue-400 italic flex items-center gap-1"><FiInfo size={14} /> Career Executive Service Performance Evaluation System</span>
                                                                 </div>
 

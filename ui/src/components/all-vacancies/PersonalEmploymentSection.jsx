@@ -39,8 +39,8 @@ const PersonalEmploymentSection = ({
         <div className="bg-white border-2 border-slate-200 rounded-[24px] p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
-                    <FiUser className="text-[#08315F]" size={20} />
-                    <h3 className="text-base font-black text-[#08315F] uppercase tracking-wide">
+                    <FiUser className="text-brand-800" size={20} />
+                    <h3 className="text-base font-black text-brand-800 uppercase tracking-wide">
                         2. Personal Details & Current Employment
                     </h3>
                 </div>
@@ -72,7 +72,7 @@ const PersonalEmploymentSection = ({
                         value={personalData.surname || ''}
                         onChange={handleChange}
                         placeholder="DELA CRUZ"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
                         required
                     />
                 </div>
@@ -87,7 +87,7 @@ const PersonalEmploymentSection = ({
                         value={personalData.first_name || ''}
                         onChange={handleChange}
                         placeholder="JUAN"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
                         required
                     />
                 </div>
@@ -102,7 +102,7 @@ const PersonalEmploymentSection = ({
                         value={personalData.middle_name || ''}
                         onChange={handleChange}
                         placeholder="SANTOS"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
                     />
                 </div>
             </div>
@@ -119,7 +119,7 @@ const PersonalEmploymentSection = ({
                         max={new Date().toISOString().split('T')[0]}
                         value={personalData.date_of_birth || ''}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
                     />
                     <span className="text-[10px] text-slate-400 block mt-1">Cannot be a future date</span>
                 </div>
@@ -135,7 +135,7 @@ const PersonalEmploymentSection = ({
                         onChange={handleContactChange}
                         placeholder="0917-123-4567"
                         maxLength={13}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white shadow-sm font-mono tracking-wide"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm font-mono tracking-wide"
                         required
                     />
                     <span className="text-[10px] text-slate-400 block mt-1">11 digits (formatted with dashes)</span>
@@ -157,7 +157,7 @@ const PersonalEmploymentSection = ({
                         value={personalData.current_position || ''}
                         onChange={handleChange}
                         placeholder="e.g. Chief Education Supervisor"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
                         required
                     />
                 </div>
@@ -175,7 +175,7 @@ const PersonalEmploymentSection = ({
                         value={personalData.plantilla_office || ''}
                         onChange={handleChange}
                         placeholder="e.g. SDO-Pasig City or Regional Office IV-A"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
                         required
                     />
                 </div>

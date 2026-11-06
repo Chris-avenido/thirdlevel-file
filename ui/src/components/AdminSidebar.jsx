@@ -32,7 +32,7 @@ const AdminSidebar = () => {
             {/* Mobile Hamburger Button (Floating) */}
             <button
                 onClick={() => setIsMobileOpen(true)}
-                className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-[#08315F] rounded-full flex items-center justify-center text-white shadow-2xl z-[50] border-2 border-blue-400 hover:bg-blue-800 transition-colors"
+                className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-brand-800 rounded-full flex items-center justify-center text-white shadow-2xl z-[50] border-2 border-blue-400 hover:bg-blue-800 transition-colors"
             >
                 <FiMenu size={24} />
             </button>
@@ -49,7 +49,7 @@ const AdminSidebar = () => {
             <div
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-[#08315F] border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
+                className={`fixed top-0 h-screen inset-y-0 left-0 z-[100] flex shrink-0 bg-brand-800 border-r border-blue-900 flex-col pt-8 shadow-2xl transition-all duration-300 transform 
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
                 lg:translate-x-0 
                 ${sidebarCollapsed ? 'w-[320px] lg:w-[96px]' : 'w-[320px]'}`
@@ -68,7 +68,7 @@ const AdminSidebar = () => {
                 {/* LOGO */}
                 <div className={`px-6 mb-12 flex ${sidebarCollapsed ? 'lg:justify-center' : 'justify-start'}`}>
                     <div className="flex items-center gap-4 mb-3">
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#08315F] font-black text-xl shadow-inner border border-white/5 shrink-0 overflow-hidden">
+                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-brand-800 font-black text-xl shadow-inner border border-white/5 shrink-0 overflow-hidden">
                             <img src={newLogo} alt="Logo" className="w-8 h-8 object-contain" />
                         </div>
                         <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-32 opacity-100'}`}>
@@ -82,7 +82,7 @@ const AdminSidebar = () => {
                     <button
                         onClick={() => navigate('/home')}
                         title="Executive Dashboard"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/home' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/home' ? 'bg-white text-brand-800 shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
                     >
                         <FiGrid size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Executive Dashboard</span>
@@ -90,7 +90,7 @@ const AdminSidebar = () => {
                     <button
                         onClick={() => navigate('/officials-registry')}
                         title="Personnel Registry"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/officials-registry' && !location.search.includes('status=For%20Approval') && !location.search.includes('status=Applications') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/officials-registry' && !location.search.includes('status=For%20Approval') && !location.search.includes('status=Applications') ? 'bg-white text-brand-800 shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
                     >
                         <FiUsers size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Personnel Registry</span>
@@ -98,7 +98,7 @@ const AdminSidebar = () => {
                     <button
                         onClick={() => navigate('/officials-registry?status=For%20Approval')}
                         title="Pending Approvals"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.search.includes('status=For%20Approval') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.search.includes('status=For%20Approval') ? 'bg-white text-brand-800 shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
                     >
                         <FiCheckCircle size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Pending Approvals</span>
@@ -106,7 +106,7 @@ const AdminSidebar = () => {
                     <button
                         onClick={() => navigate('/officials-registry?status=Applications')}
                         title="TIMON Applications"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.search.includes('status=Applications') ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.search.includes('status=Applications') ? 'bg-white text-brand-800 shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
                     >
                         <FiBriefcase size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>TIMON Applications</span>
@@ -115,7 +115,7 @@ const AdminSidebar = () => {
                     <button
                         onClick={() => navigate('/settings')}
                         title="Account Settings"
-                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/settings' ? 'bg-white text-[#08315F] shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+                        className={`flex items-center gap-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${sidebarCollapsed ? 'lg:justify-center lg:px-0 px-5' : 'px-5'} ${location.pathname === '/settings' ? 'bg-white text-brand-800 shadow-lg' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
                     >
                         <FiSettings size={18} className="shrink-0" />
                         <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100'}`}>Settings</span>

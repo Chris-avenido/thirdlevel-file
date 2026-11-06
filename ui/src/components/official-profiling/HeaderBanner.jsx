@@ -5,8 +5,8 @@ import { apiUrl } from '../../utils/api';
 const HeaderBanner = ({ TLOid, applicationId, applicationStatus, completeness, fullName, handleEditToggle, isEditing, isTlo, logout, navigate, profile }) => {
   return (
     <>
-                <div className="bg-[#08315F] text-white relative overflow-hidden shadow-lg border-b-2 border-[#0038A8]/20 py-6 px-6 lg:px-8 shrink-0">
-                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-[#075985] rounded-[100%] opacity-90 pointer-events-none transform rotate-12 z-0"></div>
+                <div className="bg-brand-800 text-white relative overflow-hidden shadow-lg border-b-2 border-brand-700/20 py-6 px-6 lg:px-8 shrink-0">
+                    <div className="absolute -top-[100%] right-[-10%] w-[50%] h-[300%] bg-brand-700 rounded-[100%] opacity-90 pointer-events-none transform rotate-12 z-0"></div>
                     <div className="max-w-[1400px] mx-auto flex flex-col gap-6 relative z-10">
                         {/* Top Navigation Row */}
                         <div className="flex justify-between items-center w-full">
@@ -49,21 +49,21 @@ const HeaderBanner = ({ TLOid, applicationId, applicationStatus, completeness, f
                                             </>
                                         )}
                                     </div>
-                                    <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-400 rounded-full border-[2px] md:border-[2.5px] border-[#0a1e3f] shadow-sm" />
+                                    <div className="absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-emerald-400 rounded-full border-[2px] md:border-[2.5px] border-brand-900 shadow-sm" />
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2.5 flex-wrap">
                                         <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tight leading-none truncate">{fullName}</h1>
                                         {applicationStatus && (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-[#FCD116] text-[#1a3a6e] text-[12px] md:text-[13.5px] font-black uppercase tracking-wider rounded-full shadow-sm">
-                                                <span className="w-1 h-1 bg-[#1a3a6e] rounded-full" />
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gold text-brand-800 text-[12px] md:text-[13.5px] font-black uppercase tracking-wider rounded-full shadow-sm">
+                                                <span className="w-1 h-1 bg-brand-800 rounded-full" />
                                                 {applicationStatus === 'under_review' ? 'In Review' : applicationStatus === 'approved' ? 'Approved' : applicationStatus === 'disapproved' ? 'Denied' : 'Draft'}
                                             </span>
                                         )}
                                     </div>
                                     <p className="text-blue-200/80 text-[18px] md:text-[21px] font-medium mt-1 truncate flex items-center gap-2">
                                         <span>{profile.position_title || 'No position selected'}{(profile.designation && profile.designation !== profile.position_title) ? ` - ${profile.designation}` : ''}</span>
-                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-[#FCD116] text-[#08315F] text-[12px] font-black uppercase tracking-widest leading-none">OIC</span>}
+                                        {profile.is_oic && <span className="px-1.5 py-0.5 rounded bg-gold text-brand-800 text-[12px] font-black uppercase tracking-widest leading-none">OIC</span>}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-blue-300/60 text-[13.5px] md:text-[16.5px] font-medium">
                                         {TLOid && (
@@ -95,15 +95,15 @@ const HeaderBanner = ({ TLOid, applicationId, applicationStatus, completeness, f
 
                             {/* Right: Progress Card */}
                             <div className="shrink-0">
-                                <div className="w-40 bg-[#075985] border border-white/5 rounded-2xl p-3 shadow-lg flex flex-col justify-center">
+                                <div className="w-40 bg-brand-700 border border-white/5 rounded-2xl p-3 shadow-lg flex flex-col justify-center">
                                     <p className="text-slate-400 text-[12px] font-black uppercase tracking-widest leading-none">Progress</p>
                                     <div className="flex items-center gap-3 mt-1">
-                                        <p className="text-[#FCD116] font-black text-[27px] leading-none">{completeness}%</p>
+                                        <p className="text-gold font-black text-[27px] leading-none">{completeness}%</p>
                                         <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${completeness}%` }}
-                                                className="h-full bg-[#FCD116]"
+                                                className="h-full bg-gold"
                                             />
                                         </div>
                                     </div>

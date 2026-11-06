@@ -23,8 +23,8 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                             <div className="p-10">
                                                 <div className="flex justify-between items-start mb-8">
                                                     <div>
-                                                        <span className="text-[15px] font-black text-[#075985] uppercase tracking-widest mb-2 block">Administrative Action</span>
-                                                        <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tighter uppercase italic leading-none">
+                                                        <span className="text-[15px] font-black text-brand-700 uppercase tracking-widest mb-2 block">Administrative Action</span>
+                                                        <h2 className="text-[45px] font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tighter uppercase italic leading-none">
                                                             {adminAction === 'reassign'
                                                                 ? ((!actionOfficial?.first_name || actionOfficial?.first_name === 'VACANT') ? 'ASSIGN PERSONNEL' : 'REASSIGN OFFICIAL')
                                                                 : `${adminAction === 'vacate' ? 'VACATING' : `${adminAction.toUpperCase()}ING`} OFFICIAL`}
@@ -61,7 +61,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                                                             <div className="flex justify-between items-end mb-3">
                                                                                 <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest block mb-0">Search Personnel Without Position</label>
                                                                                 {user?.role === 'Central Office' && (
-                                                                                    <button onClick={() => setIsAddingPersonnel(true)} className="text-[15px] font-black text-[#08315F] hover:text-[#004A99] uppercase tracking-widest transition-colors">+ Add New</button>
+                                                                                    <button onClick={() => setIsAddingPersonnel(true)} className="text-[15px] font-black text-brand-800 hover:text-brand-700 uppercase tracking-widest transition-colors">+ Add New</button>
                                                                                 )}
                                                                             </div>
                                                                             <div className="relative">
@@ -151,7 +151,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                                             <ModernDatePicker
                                                                 value={effectivityDate}
                                                                 onChange={(val) => setEffectivityDate(val)}
-                                                                className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
+                                                                className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
                                                             />
                                                         </div>
                                                     )}
@@ -162,7 +162,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                                             <select
                                                                 value={vacateReason}
                                                                 onChange={(e) => setVacateReason(e.target.value)}
-                                                                className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
+                                                                className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
                                                             >
                                                                 <option value="">Select a reason...</option>
                                                                 <option value="Resignation">Resignation</option>
@@ -188,7 +188,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                                         <button
                                                             disabled={actionLoading}
                                                             onClick={handleAdminAction}
-                                                            className="flex-1 py-5 bg-[#08315F] text-white rounded-[1.5rem] font-black text-[16.5px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 border-2 border-transparent"
+                                                            className="flex-1 py-5 bg-brand-800 text-white rounded-[1.5rem] font-black text-[16.5px] uppercase tracking-[0.2em] shadow-xl shadow-blue-900/20 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 border-2 border-transparent"
                                                         >
                                                             {actionLoading ? 'Processing...' : `Confirm ${adminAction}`}
                                                         </button>

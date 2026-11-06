@@ -10,14 +10,14 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
     <>
                                                 {tab === 'personal' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 lg:p-10 space-y-8 shadow-none">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 lg:p-10 space-y-8 shadow-none">
                                                             <div>
                                                                 <SectionLabel>Personal Information</SectionLabel>
                                                                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
                                                                     {/* CSC ID Upload */}
                                                                     <div className="w-full lg:w-[150px] shrink-0">
                                                                         <Field label="CSC Format ID Picture">
-                                                                            <div className="relative group/upload w-full aspect-[3.5/4.5] max-w-[150px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-100 hover:border-[#0038A8] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
+                                                                            <div className="relative group/upload w-full aspect-[3.5/4.5] max-w-[150px] mx-auto lg:mx-0 rounded-2xl border-2 border-dashed border-slate-300 bg-transparent hover:bg-slate-100 hover:border-brand-700 transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
                                                                                 <input disabled={!isEditing}
                                                                                     type="file"
                                                                                     accept="image/*"
@@ -36,7 +36,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                         </div>
                                                                                     </>
                                                                                 ) : (
-                                                                                    <div className="flex flex-col items-center justify-center p-4 text-slate-400 group-hover/upload:text-[#08315F] transition-colors">
+                                                                                    <div className="flex flex-col items-center justify-center p-4 text-slate-400 group-hover/upload:text-brand-800 transition-colors">
                                                                                         <FiUpload size={24} className={uploadingDocs['photo'] ? 'animate-bounce' : 'mb-3'} />
                                                                                         <span className="text-[15px] font-black uppercase tracking-widest text-center leading-tight mt-1">
                                                                                             {uploadingDocs['photo'] ? 'Processing...' : 'Upload Photo'}
@@ -79,7 +79,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                         title={isSuffixNA ? "Click to enable Suffix entry" : "Click to mark Suffix as Not Applicable"}
                                                                                         className={`h-[38px] px-2.5 rounded-lg text-[15px] font-black uppercase tracking-wider transition-all border-2 shrink-0 flex items-center justify-center select-none ${
                                                                                             isSuffixNA
-                                                                                                ? 'bg-[#08315F] text-white border-[#08315F] shadow-sm'
+                                                                                                ? 'bg-brand-800 text-white border-brand-800 shadow-sm'
                                                                                                 : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-800'
                                                                                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                                                                                     >
@@ -210,7 +210,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                     type="button"
                                                                                     disabled={!isEditing}
                                                                                     onClick={() => setP('position_title', '')}
-                                                                                    className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
+                                                                                    className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-brand-800 hover:bg-slate-100 transition-colors"
                                                                                     title="Switch back to list selection"
                                                                                 >
                                                                                     <FiRotateCcw size={13} />
@@ -241,7 +241,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                         type="button"
                                                                                         disabled={!isEditing}
                                                                                         onClick={() => setP('designation', '')}
-                                                                                        className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-[#08315F] hover:bg-slate-100 transition-colors"
+                                                                                        className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-brand-800 hover:bg-slate-100 transition-colors"
                                                                                         title="Switch back to list selection"
                                                                                     >
                                                                                         <FiRotateCcw size={13} />
@@ -262,7 +262,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                     </Field>
                                                                     <Field label="Officer-in-Charge (OIC) Status">
                                                                         <div className="flex items-center justify-between px-3.5 py-1.5 rounded-lg border-2 border-slate-200 bg-slate-50/60 min-h-[38px] h-[38px]">
-                                                                            <span className={`text-[18px] font-bold ${profile.is_oic ? 'text-[#08315F]' : 'text-slate-500'}`}>
+                                                                            <span className={`text-[18px] font-bold ${profile.is_oic ? 'text-brand-800' : 'text-slate-500'}`}>
                                                                                 {profile.is_oic ? 'Officer-in-Charge (OIC)' : 'Regular Appointment'}
                                                                             </span>
                                                                             <button
@@ -275,7 +275,7 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                                         setP('designation', '');
                                                                                     }
                                                                                 }}
-                                                                                className={`w-11 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${profile.is_oic ? 'bg-[#08315F]' : 'bg-slate-300'}`}
+                                                                                className={`w-11 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none disabled:opacity-50 ${profile.is_oic ? 'bg-brand-800' : 'bg-slate-300'}`}
                                                                             >
                                                                                 <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-200 ${profile.is_oic ? 'translate-x-6' : 'translate-x-0'}`} />
                                                                             </button>

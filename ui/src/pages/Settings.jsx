@@ -77,7 +77,7 @@ const Settings = () => {
                     title: 'Success!',
                     text: 'Your settings have been updated.',
                     icon: 'success',
-                    confirmButtonColor: '#08315F'
+                    confirmButtonColor: 'var(--color-brand-800)'
                 });
                 
                 // Clear sensitive fields
@@ -119,7 +119,7 @@ const Settings = () => {
             
             <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
                 {/* TOP NAVIGATION BAR */}
-                <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
+                <header className="sticky top-0 z-50 bg-brand-800 backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
                             <FiSettings size={20} />
@@ -133,7 +133,7 @@ const Settings = () => {
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
                             <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">{user?.first_name} {user?.last_name}</span>
-                            <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">{user?.role}</span>
+                            <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">{user?.role}</span>
                         </div>
                     </div>
                 </header>
@@ -145,7 +145,7 @@ const Settings = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="mb-10"
                     >
-                        <h1 className="text-3xl font-black text-[#08315F] tracking-tight">Account Settings</h1>
+                        <h1 className="text-3xl font-black text-brand-800 tracking-tight">Account Settings</h1>
                         <p className="text-slate-500 font-medium mt-2">Update your personal information and security credentials.</p>
                     </motion.div>
 
@@ -153,7 +153,7 @@ const Settings = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-white rounded-[2rem] border-2 border-[#08315F] p-8 shadow-xl"
+                        className="bg-white rounded-[2rem] border-2 border-brand-800 p-8 shadow-xl"
                     >
                         <form onSubmit={handleSave} className="space-y-8">
                             
@@ -163,7 +163,7 @@ const Settings = () => {
                                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
                                         <FiUser size={20} />
                                     </div>
-                                    <h2 className="text-xl font-bold text-[#08315F]">Personal Information</h2>
+                                    <h2 className="text-xl font-bold text-brand-800">Personal Information</h2>
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -174,7 +174,7 @@ const Settings = () => {
                                             name="firstName"
                                             value={formData.firstName}
                                             onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                             placeholder="Enter first name"
                                         />
                                     </div>
@@ -185,7 +185,7 @@ const Settings = () => {
                                             name="lastName"
                                             value={formData.lastName}
                                             onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                             placeholder="Enter last name"
                                         />
                                     </div>
@@ -208,7 +208,7 @@ const Settings = () => {
                                     <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
                                         <FiLock size={20} />
                                     </div>
-                                    <h2 className="text-xl font-bold text-[#08315F]">Security Credentials</h2>
+                                    <h2 className="text-xl font-bold text-brand-800">Security Credentials</h2>
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -220,13 +220,13 @@ const Settings = () => {
                                                 name="password"
                                                 value={formData.password}
                                                 onChange={handleChange}
-                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                                 placeholder="Leave blank to keep current"
                                             />
                                             <button 
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#08315F] transition-colors"
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-800 transition-colors"
                                             >
                                                 {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                                             </button>
@@ -239,7 +239,7 @@ const Settings = () => {
                                             name="confirmPassword"
                                             value={formData.confirmPassword}
                                             onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                             placeholder="Confirm new password"
                                         />
                                     </div>
@@ -255,14 +255,14 @@ const Settings = () => {
                                                     const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                     handleChange({ target: { name: 'passcode', value: val } });
                                                 }}
-                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
+                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
                                                 placeholder="••••••"
                                                 maxLength={6}
                                             />
                                             <button 
                                                 type="button"
                                                 onClick={() => setShowPasscode(!showPasscode)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#08315F] transition-colors"
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-800 transition-colors"
                                             >
                                                 {showPasscode ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                                             </button>
@@ -278,7 +278,7 @@ const Settings = () => {
                                                 const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                 handleChange({ target: { name: 'confirmPasscode', value: val } });
                                             }}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-[#08315F] font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
+                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
                                             placeholder="••••••"
                                             maxLength={6}
                                         />
@@ -290,7 +290,7 @@ const Settings = () => {
                                 <button 
                                     type="submit"
                                     disabled={loading}
-                                    className="flex items-center gap-3 px-8 py-4 bg-[#08315F] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-blue-900 transition-colors shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-3 px-8 py-4 bg-brand-800 text-white rounded-xl font-bold uppercase tracking-widest hover:bg-blue-900 transition-colors shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
                                     <FiSave size={18} />
                                     {loading ? 'Saving Changes...' : 'Save Settings'}

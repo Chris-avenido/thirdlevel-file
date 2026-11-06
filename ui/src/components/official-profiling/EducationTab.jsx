@@ -26,8 +26,8 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                         };
 
                                                         return (
-                                                            <div className="relative p-6 bg-[#08315F]/5 rounded-[2rem] border-2 border-[#0038A8]/10 space-y-4 mb-6 group">
-                                                                <p className="text-[15px] font-black text-[#08315F] uppercase tracking-widest">{title}</p>
+                                                            <div className="relative p-6 bg-brand-800/5 rounded-[2rem] border-2 border-brand-700/10 space-y-4 mb-6 group">
+                                                                <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">{title}</p>
                                                                 {Array.from({ length: count }).map((_, idx) => (
                                                                     <div key={`${degField}-${idx}`} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
                                                                         <Field label="Degree / Course">
@@ -49,7 +49,7 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
 
                                                     return (
                                                         <div className="space-y-6">
-                                                            <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                            <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
                                                                 <div className="mb-6 flex justify-between items-center">
                                                                     <SectionLabel>Educational Attainment</SectionLabel>
                                                                     {isEditing && <div className="relative group/add-degree">
@@ -72,7 +72,7 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                     <SectionLabel>Other Educational / Professional Courses</SectionLabel>
                                                                     {isEditing && <button
                                                                         onClick={() => setProfile(p => ({ ...p, other_courses: [...(p.other_courses || []), { course: '', date_from: '', date_to: '', details: '' }] }))}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-[#0038A8] text-[15px] font-black uppercase tracking-wider rounded-lg hover:bg-[#0038A8] hover:text-white transition-all shadow-sm"
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-brand-700 text-[15px] font-black uppercase tracking-wider rounded-lg hover:bg-brand-700 hover:text-white transition-all shadow-sm"
                                                                     >
                                                                         <FiPlus size={14} /> Add Course
                                                                     </button>}

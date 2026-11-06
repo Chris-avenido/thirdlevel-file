@@ -10,7 +10,7 @@ export const SummaryRow = ({ label, value }) => (
 export const Field = ({ label, children, className = '' }) => (
     <div className={`flex flex-col justify-end gap-1.5 group h-full ${className}`}>
         {label && (
-            <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest transition-colors duration-200 group-focus-within:text-[#08315F] min-h-[26px] flex items-end">
+            <label className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest transition-colors duration-200 group-focus-within:text-brand-800 min-h-[26px] flex items-end">
                 {label}
             </label>
         )}
@@ -21,5 +21,5 @@ export const Field = ({ label, children, className = '' }) => (
 );
 
 export const SectionLabel = ({ children }) => (
-    <p className="text-[16.5px] font-black uppercase tracking-[0.05em] text-[#08315F] mb-4">{children}</p>
+    <p className="text-[16.5px] font-black uppercase tracking-[0.05em] text-brand-800 mb-4">{children}</p>
 );

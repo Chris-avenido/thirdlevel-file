@@ -1,3 +1,8 @@
+import { readFileSync } from 'node:fs';
+
+// Colors come from src/theme/tailwind-colors.json, generated from the InsightED tokens.
+const colors = JSON.parse(readFileSync(new URL('./src/theme/tailwind-colors.json', import.meta.url), 'utf8'));
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -6,13 +11,7 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        'deped-blue': '#0038A8',
-        'deped-red': '#CE1126',
-        'insight-navy': '#08315F',
-        'insight-blue': '#075985',
-        'insight-gold': '#FBBF24',
-      },
+      colors,
       fontFamily: {
         sans: ['var(--font-body)'],
         heading: ['var(--font-heading)'],

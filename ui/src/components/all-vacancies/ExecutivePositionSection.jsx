@@ -12,8 +12,8 @@ const ExecutivePositionSection = ({
         <div className="bg-white border-2 border-slate-200 rounded-[24px] p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
-                    <FiBriefcase className="text-[#08315F]" size={20} />
-                    <h3 className="text-base font-black text-[#08315F] uppercase tracking-wide">
+                    <FiBriefcase className="text-brand-800" size={20} />
+                    <h3 className="text-base font-black text-brand-800 uppercase tracking-wide">
                         1. Target Executive Designation & Region
                     </h3>
                 </div>
@@ -34,7 +34,7 @@ const ExecutivePositionSection = ({
                     <select
                         value={appliedPosition}
                         onChange={e => setAppliedPosition(e.target.value)}
-                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-12 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-[#08315F] transition-all cursor-pointer shadow-sm"
+                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-12 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-brand-800 transition-all cursor-pointer shadow-sm"
                     >
                         <option value="">Select target executive position...</option>
                         {EXECUTIVE_POSITIONS.map(pos => (
@@ -58,7 +58,7 @@ const ExecutivePositionSection = ({
                     <select
                         value={targetRegion}
                         onChange={e => setTargetRegion(e.target.value)}
-                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-12 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-[#08315F] transition-all cursor-pointer shadow-sm"
+                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-12 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-brand-800 transition-all cursor-pointer shadow-sm"
                     >
                         <option value="">Select target DepEd region...</option>
                         {DEPED_REGIONS.map(reg => (

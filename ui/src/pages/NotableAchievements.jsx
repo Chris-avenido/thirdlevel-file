@@ -137,8 +137,8 @@ const NotableAchievements = () => {
             text: `Do you want to delete achievement #${generateHash(index_number)}?`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#e11d48', // rose-600 to match the button
-            cancelButtonColor: '#64748b', // slate-500
+            confirmButtonColor: 'var(--color-danger-600)', // rose-600 to match the button
+            cancelButtonColor: 'var(--color-secondary)', // slate-500
             confirmButtonText: 'Yes, delete it'
         });
 
@@ -211,12 +211,12 @@ const NotableAchievements = () => {
 
     return (
         <PageTransition>
-            <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] flex-col lg:flex-row relative overflow-hidden">
+            <div className="flex h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-brand-800 flex-col lg:flex-row relative overflow-hidden">
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative">
                     
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0">
+                    <header className="sticky top-0 z-50 bg-brand-800 backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0">
                         <div className="flex items-center gap-4 text-white">
                             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
                                 <FiAward size={20} />
@@ -235,7 +235,7 @@ const NotableAchievements = () => {
                             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-all shadow-sm">
                                 <FiDownload size={14} /> Export Data
                             </button>
-                            <button onClick={handleOpenAdd} className="flex items-center gap-2 px-4 py-2 bg-white text-[#08315F] rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-50 shadow-md shadow-black/10 transition-all border border-white">
+                            <button onClick={handleOpenAdd} className="flex items-center gap-2 px-4 py-2 bg-white text-brand-800 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-50 shadow-md shadow-black/10 transition-all border border-white">
                                 <FiPlus size={14} /> Add Record
                             </button>
                         </div>
@@ -250,7 +250,7 @@ const NotableAchievements = () => {
                                     <select
                                         value={searchTerm}
                                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                                        className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-[#08315F] shadow-sm transition-all appearance-none cursor-pointer"
+                                        className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-brand-800 shadow-sm transition-all appearance-none cursor-pointer"
                                     >
                                         <option value="">All Achievements</option>
                                         {uniqueAchievements.map((ach, idx) => (
@@ -281,27 +281,27 @@ const NotableAchievements = () => {
                         <AnimatePresence mode="wait">
                             {loading ? (
                                 <div className="h-64 flex items-center justify-center">
-                                    <div className="w-12 h-12 border-4 border-[#08315F]/10 border-t-[#08315F] rounded-full animate-spin"></div>
+                                    <div className="w-12 h-12 border-4 border-brand-800/10 border-t-brand-800 rounded-full animate-spin"></div>
                                 </div>
                             ) : sortedRecords.length === 0 ? (
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
                                     <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6"><FiSearch size={40} /></div>
-                                    <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] uppercase italic tracking-tight">No Records Found</h3>
+                                    <h3 className="text-xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 uppercase italic tracking-tight">No Records Found</h3>
                                     <p className="text-slate-400 font-medium mt-2">Adjust your filters or add a new record.</p>
                                 </motion.div>
                             ) : (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-[#08315F]">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border-2 border-brand-800">
                                     <div className="w-full overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr className="bg-slate-50/50 border-b border-slate-100">
                                                     <th className="px-6 py-4 w-32">
-                                                        <button onClick={() => handleSort('index_number')} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors">
+                                                        <button onClick={() => handleSort('index_number')} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-brand-700 transition-colors">
                                                             No. {sortConfig.key === 'index_number' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
                                                         </button>
                                                     </th>
                                                     <th className="px-6 py-4">
-                                                        <button onClick={() => handleSort('achievement')} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#075985] transition-colors">
+                                                        <button onClick={() => handleSort('achievement')} className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-brand-700 transition-colors">
                                                             Achievement Details {sortConfig.key === 'achievement' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
                                                         </button>
                                                     </th>
@@ -312,14 +312,14 @@ const NotableAchievements = () => {
                                             </thead>
                                             <tbody className="divide-y divide-slate-50">
                                                 {pagedRecords.map((item) => (
-                                                    <motion.tr key={item.index_number} whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }} className="group transition-colors relative">
+                                                    <motion.tr key={item.index_number} whileHover={{ backgroundColor: 'rgb(var(--rgb-brand-50)/0.8)' }} className="group transition-colors relative">
                                                         <td className="px-6 py-4">
                                                             <div className="w-12 h-10 rounded-[1rem] bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center font-black text-blue-400 text-xs border border-white shadow-sm tracking-widest">
                                                                 {generateHash(item.index_number)}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <div className="font-['Plus_Jakarta_Sans'] font-black text-[#08315F] text-sm leading-none group-hover:text-[#08315F] transition-colors line-clamp-2">
+                                                            <div className="font-['Plus_Jakarta_Sans'] font-black text-brand-800 text-sm leading-none group-hover:text-brand-800 transition-colors line-clamp-2">
                                                                 {item.achievement}
                                                             </div>
                                                         </td>
@@ -352,14 +352,14 @@ const NotableAchievements = () => {
                                                 <button
                                                     key={page}
                                                     onClick={() => setCurrentPage(page)}
-                                                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-[10px] font-black border transition-all ${currentPage === page ? 'bg-[#08315F] text-white border-[#08315F]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
+                                                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-[10px] font-black border transition-all ${currentPage === page ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-200'}`}
                                                 >
                                                     {page}
                                                 </button>
                                             ) : (
                                                 <span key={page} className="w-8 h-8 flex items-center justify-center text-slate-400 font-black">...</span>
                                             )) : (
-                                                <button className="w-8 h-8 flex items-center justify-center rounded-lg text-[10px] font-black border transition-all bg-[#08315F] text-white border-[#08315F]">1</button>
+                                                <button className="w-8 h-8 flex items-center justify-center rounded-lg text-[10px] font-black border transition-all bg-brand-800 text-white border-brand-800">1</button>
                                             )}
                                             <button disabled={currentPage >= pageCount} onClick={() => setCurrentPage(p => Math.min(pageCount, p + 1))} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-slate-500 rounded-lg disabled:opacity-40 hover:bg-slate-50">
                                                 <FiChevronRight size={14} />
@@ -385,7 +385,7 @@ const NotableAchievements = () => {
                         >
                             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <div>
-                                    <h2 className="text-xl font-black text-[#08315F] uppercase tracking-tighter">{editMode === 'add' ? 'Add New Record' : 'Edit Record'}</h2>
+                                    <h2 className="text-xl font-black text-brand-800 uppercase tracking-tighter">{editMode === 'add' ? 'Add New Record' : 'Edit Record'}</h2>
                                 </div>
                                 <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-slate-400 hover:text-red-500 bg-white rounded-xl shadow-sm border border-slate-200 transition-all">
                                     <FiX size={18} />
@@ -400,14 +400,14 @@ const NotableAchievements = () => {
                                         onChange={e => setFormData({ ...formData, achievement: e.target.value })}
                                         rows={4}
                                         placeholder="Enter achievement details..."
-                                        className="w-full bg-white border border-slate-200 focus:border-[#08315F] rounded-xl py-3 px-4 text-xs font-bold text-slate-700 placeholder:text-slate-400 outline-none transition-all resize-none"
+                                        className="w-full bg-white border border-slate-200 focus:border-brand-800 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 placeholder:text-slate-400 outline-none transition-all resize-none"
                                     />
                                 </div>
                             </div>
 
                             <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
                                 <button onClick={() => setIsEditModalOpen(false)} className="px-5 py-2.5 bg-white text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all">Cancel</button>
-                                <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-[#08315F] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 hover:bg-[#075985] transition-all flex items-center gap-2">
+                                <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-brand-800 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 hover:bg-brand-700 transition-all flex items-center gap-2">
                                     {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiCheckCircle size={16} />}
                                     Save Record
                                 </button>

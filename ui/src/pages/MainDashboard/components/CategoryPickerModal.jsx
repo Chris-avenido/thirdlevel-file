@@ -34,7 +34,7 @@ const CategoryPickerModal = ({ isOpen, onClose, categories = [], selectedCategor
             maxHeight: '280px',
             overflowY: 'auto',
             border: '1px solid var(--mdb-line)',
-            borderRadius: '12px',
+            borderRadius: 'var(--radius-md)',
             padding: '12px',
             display: 'grid',
             gap: '10px',

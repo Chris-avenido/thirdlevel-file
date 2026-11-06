@@ -36,7 +36,7 @@ const OfficialsRegistry = () => {
 
                 <div
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-full bg-slate-50 border-2 border-slate-200 hover:border-[#08315F]/20 cursor-pointer rounded-2xl py-4 px-5 flex justify-between items-center transition-all group"
+                    className="w-full bg-slate-50 border-2 border-slate-200 hover:border-brand-800/20 cursor-pointer rounded-2xl py-4 px-5 flex justify-between items-center transition-all group"
                 >
                     <div className="flex flex-col">
                         <span className={`text-[21px] font-bold ${selectedOption ? 'text-slate-900' : 'text-slate-400'}`}>
@@ -46,7 +46,7 @@ const OfficialsRegistry = () => {
                             <span className="text-[15px] text-slate-400 font-bold">{selectedOption.sublabel}</span>
                         )}
                     </div>
-                    <FiChevronRight className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-[#075985]' : 'text-slate-300'}`} size={18} />
+                    <FiChevronRight className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-brand-700' : 'text-slate-300'}`} size={18} />
                 </div>
 
                 <AnimatePresence>
@@ -69,7 +69,7 @@ const OfficialsRegistry = () => {
                                             onChange={(e) => setSearch(e.target.value)}
                                             placeholder="Search options..."
                                             autoComplete="off"
-                                            className="w-full bg-white border-2 border-slate-200 focus:border-[#08315F]/20 rounded-xl py-3 pl-10 pr-4 text-[18px] font-bold text-slate-700 outline-none transition-all"
+                                            className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-xl py-3 pl-10 pr-4 text-[18px] font-bold text-slate-700 outline-none transition-all"
                                         />
                                     </div>
                                 </div>
@@ -83,7 +83,7 @@ const OfficialsRegistry = () => {
                                                     setIsOpen(false);
                                                     setSearch('');
                                                 }}
-                                                className={`px-5 py-4 cursor-pointer flex flex-col hover:bg-blue-50 transition-colors ${value === opt.value ? 'bg-blue-50/50 border-l-4 border-[#08315F]' : 'border-l-4 border-transparent'}`}
+                                                className={`px-5 py-4 cursor-pointer flex flex-col hover:bg-blue-50 transition-colors ${value === opt.value ? 'bg-blue-50/50 border-l-4 border-brand-800' : 'border-l-4 border-transparent'}`}
                                             >
                                                 <span className={`text-[18px] font-black uppercase tracking-tight ${value === opt.value ? 'text-blue-700' : 'text-slate-700'}`}>
                                                     {opt.label}
@@ -147,8 +147,8 @@ const OfficialsRegistry = () => {
                     }
                 },
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#08315F',
+                confirmButtonColor: 'var(--color-danger-600)',
+                cancelButtonColor: 'var(--color-brand-800)',
                 confirmButtonText: 'Confirm Reject'
             });
             if (!isConfirmed) return;
@@ -159,8 +159,8 @@ const OfficialsRegistry = () => {
                 text: 'Are you sure you want to approve this official registration? An official approval notification email will be sent to the official.',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#08315F',
-                cancelButtonColor: '#ef4444',
+                confirmButtonColor: 'var(--color-brand-800)',
+                cancelButtonColor: 'var(--color-danger-600)',
                 confirmButtonText: 'Yes, Approve!'
             });
             if (!result.isConfirmed) return;
@@ -170,8 +170,8 @@ const OfficialsRegistry = () => {
                 text: `Are you sure you want to ${action} this registration?`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#08315F',
-                cancelButtonColor: '#ef4444',
+                confirmButtonColor: 'var(--color-brand-800)',
+                cancelButtonColor: 'var(--color-danger-600)',
                 confirmButtonText: 'Yes, proceed!'
             });
             if (!result.isConfirmed) return;
@@ -212,8 +212,8 @@ const OfficialsRegistry = () => {
             text: confirmText,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#7c3aed',
-            cancelButtonColor: '#64748b',
+            confirmButtonColor: 'var(--color-brand-700)',
+            cancelButtonColor: 'var(--color-secondary)',
             confirmButtonText: targetStatus ? 'Yes, Mark as Test' : 'Yes, Remove Flag'
         });
 
@@ -654,7 +654,7 @@ const OfficialsRegistry = () => {
             case 'succeeded': return 'bg-cyan-50 text-cyan-600 border-cyan-100';
             case 'vacated':
             case 'vacant': return 'bg-rose-50 text-rose-600 border-rose-100';
-            default: return 'bg-blue-50 text-[#075985] border-blue-100';
+            default: return 'bg-blue-50 text-brand-700 border-blue-100';
         }
     };
 
@@ -791,8 +791,8 @@ const OfficialsRegistry = () => {
             text: 'Are you sure you want to cancel this scheduled action and restore the official to Active status?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#08315F',
-            cancelButtonColor: '#ef4444',
+            confirmButtonColor: 'var(--color-brand-800)',
+            cancelButtonColor: 'var(--color-danger-600)',
             confirmButtonText: 'Yes, cancel it!'
         });
         if (!result.isConfirmed) return;
@@ -1199,8 +1199,8 @@ const OfficialsRegistry = () => {
                     }
                 },
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#08315F',
+                confirmButtonColor: 'var(--color-danger-600)',
+                cancelButtonColor: 'var(--color-brand-800)',
                 confirmButtonText: 'Confirm Disapprove'
             });
             if (!isConfirmed) return;
@@ -1211,8 +1211,8 @@ const OfficialsRegistry = () => {
                 text: 'Are you sure you want to approve this application? An approval notification email will be sent to the official.',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#08315F',
-                cancelButtonColor: '#ef4444',
+                confirmButtonColor: 'var(--color-brand-800)',
+                cancelButtonColor: 'var(--color-danger-600)',
                 confirmButtonText: 'Yes, Approve Application!'
             });
             if (!result.isConfirmed) return;
@@ -1249,7 +1249,7 @@ const OfficialsRegistry = () => {
                 <AdminSidebar />
                 <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative bg-transparent">
                     {/* TOP NAVIGATION BAR */}
-                    <header className="sticky top-0 z-50 bg-[#08315F] backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
+                    <header className="sticky top-0 z-50 bg-brand-800 backdrop-blur-md border-b border-blue-900 px-8 py-4 flex items-center justify-between shadow-lg shadow-blue-900/20 shrink-0 w-full">
                         <div className="flex items-center gap-4 text-white">
                             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white shadow-inner">
                                 <FiUsers size={20} />
@@ -1269,7 +1269,7 @@ const OfficialsRegistry = () => {
                                 <span className="text-xs font-['Plus_Jakarta_Sans'] font-black text-white leading-none">
                                     {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'System Admin'}
                                 </span>
-                                <span className="text-[9px] font-bold text-[#FBBF24] uppercase tracking-widest mt-1">
+                                <span className="text-[9px] font-bold text-gold uppercase tracking-widest mt-1">
                                     {user?.role || 'Central Office'}
                                 </span>
                             </div>

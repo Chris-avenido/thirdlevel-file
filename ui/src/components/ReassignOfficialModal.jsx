@@ -148,7 +148,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
     return (
       <>
         {before}
-        <span className="bg-sky-200/80 text-[#075985] font-black rounded-[4px] px-0.5">{match}</span>
+        <span className="bg-sky-200/80 text-brand-700 font-black rounded-[4px] px-0.5">{match}</span>
         {after}
       </>
     );
@@ -173,9 +173,9 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
           placeholder={placeholder}
           className="w-full pl-4 pr-16 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400"
           style={{
-            background: '#ffffff',
-            border: isOpen ? '2px solid #075985' : '2px solid #e2e8f0',
-            boxShadow: isOpen ? '0 0 0 3px rgba(7,89,133,0.12)' : 'none'
+            background: 'var(--color-white)',
+            border: isOpen ? '2px solid var(--color-brand-700)' : '2px solid var(--color-muted)',
+            boxShadow: isOpen ? '0 0 0 3px rgb(var(--rgb-brand-700)/0.12)' : 'none'
           }}
         />
 
@@ -223,7 +223,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
             maxHeight: dropdownPos.maxHeight || 300,
             zIndex: 999999
           }}
-          className="flex flex-col bg-white rounded-[18px] border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgba(8,49,95,0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="flex flex-col bg-white rounded-[18px] border-2 border-sky-200 shadow-[0_20px_45px_-10px_rgb(var(--rgb-brand-800)/0.28)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header Category Filter Tabs */}
           <div className="flex items-center gap-1.5 p-2 bg-gradient-to-r from-sky-50 to-slate-50 border-b-2 border-sky-100 shrink-0">
@@ -232,7 +232,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('all'); }}
               className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'all'
-                  ? 'bg-[#075985] text-white shadow-sm'
+                  ? 'bg-brand-700 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
               }`}
             >
@@ -247,7 +247,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('regular'); }}
               className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'regular'
-                  ? 'bg-[#075985] text-white shadow-sm'
+                  ? 'bg-brand-700 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
               }`}
             >
@@ -262,7 +262,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
               onMouseDown={(e) => { e.preventDefault(); setFilterTab('oic'); }}
               className={`px-2.5 py-1 rounded-[10px] text-[16.5px] font-black transition-all flex items-center gap-1 ${
                 filterTab === 'oic'
-                  ? 'bg-[#075985] text-white shadow-sm'
+                  ? 'bg-brand-700 text-white shadow-sm'
                   : 'bg-white text-slate-600 hover:bg-sky-100/60 border-2 border-slate-200/60'
               }`}
             >
@@ -291,7 +291,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
                     onMouseEnter={() => setHighlightedIndex(idx)}
                     className={`flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-sky-100/80 text-[#075985] font-black'
+                        ? 'bg-sky-100/80 text-brand-700 font-black'
                         : isHighlighted
                         ? 'bg-sky-50/90 text-slate-800 font-bold'
                         : 'hover:bg-sky-50/50 text-slate-700 font-semibold'
@@ -311,7 +311,7 @@ const DesignationCombobox = ({ value, onChange, options = [], placeholder = 'e.g
                     </div>
 
                     {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-[#075985] text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="w-5 h-5 rounded-full bg-brand-700 text-white flex items-center justify-center shrink-0 shadow-sm">
                         <FiCheck size={14} strokeWidth={3} />
                       </div>
                     )}
@@ -603,7 +603,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
         icon: 'success',
         title: 'Official Reassigned',
         text: `${fullName(selected)} has been successfully reassigned to ${newDivision || selectedOffice || 'target office'}, ${newRegion}.`,
-        confirmButtonColor: '#075985'
+        confirmButtonColor: 'var(--color-brand-700)'
       });
       onRefresh();
       onClose();
@@ -612,7 +612,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
         icon: 'error',
         title: 'Reassignment Failed',
         text: err.message || 'An unexpected error occurred.',
-        confirmButtonColor: '#075985'
+        confirmButtonColor: 'var(--color-brand-700)'
       });
     } finally {
       setSubmitting(false);
@@ -625,14 +625,14 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(8,49,95,0.72)', backdropFilter: 'blur(6px)' }}
+      style={{ backgroundColor: 'rgb(var(--rgb-brand-800)/0.72)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="relative w-full max-w-xl flex flex-col rounded-[28px] shadow-2xl overflow-hidden"
         style={{
-          background: 'linear-gradient(160deg, #f0f9ff 0%, #ffffff 60%)',
-          border: '2px solid #bae6fd',
+          background: 'linear-gradient(160deg, var(--color-brand-50) 0%, var(--color-white) 60%)',
+          border: '2px solid var(--color-brand-300)',
           maxHeight: '92vh'
         }}
       >
@@ -640,14 +640,14 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
         <div
           className="flex items-center justify-between px-7 py-5"
           style={{
-            background: 'linear-gradient(135deg, #08315f 0%, #0c4a6e 100%)',
-            borderBottom: '2px solid rgba(255,255,255,0.15)'
+            background: 'linear-gradient(135deg, var(--color-brand-800) 0%, var(--color-brand-800) 100%)',
+            borderBottom: '2px solid rgb(var(--rgb-white)/0.15)'
           }}
         >
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner"
-              style={{ background: 'rgba(255,255,255,0.12)' }}
+              style={{ background: 'rgb(var(--rgb-white)/0.12)' }}
             >
               <FiArrowRight size={20} color="white" />
             </div>
@@ -663,7 +663,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-white/20"
-            style={{ background: 'rgba(255,255,255,0.1)' }}
+            style={{ background: 'rgb(var(--rgb-white)/0.1)' }}
           >
             <FiX size={18} color="white" />
           </button>
@@ -694,11 +694,11 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 onFocus={() => setDropdownOpen(true)}
                 onBlur={() => setTimeout(() => setDropdownOpen(false), 180)}
                 placeholder={loadingOfficials ? 'Loading officials…' : 'Search by name or email…'}
-                className="w-full pl-10 pr-8 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985]"
+                className="w-full pl-10 pr-8 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-brand-700"
                 style={{
-                  background: '#ffffff',
-                  border: '2px solid #bae6fd',
-                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)'
+                  background: 'var(--color-white)',
+                  border: '2px solid var(--color-brand-300)',
+                  boxShadow: 'var(--shadow-xs)'
                 }}
                 disabled={loadingOfficials}
               />
@@ -722,10 +722,10 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     left: dropdownPos.left,
                     width: dropdownPos.width,
                     zIndex: 99999,
-                    border: '2px solid #bae6fd',
+                    border: '2px solid var(--color-brand-300)',
                     background: 'white',
-                    borderRadius: '16px',
-                    boxShadow: '0 12px 36px -5px rgba(8,49,95,0.22)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-xl)',
                     overflow: 'hidden',
                     maxHeight: '240px',
                     overflowY: 'auto'
@@ -753,14 +753,14 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     left: dropdownPos.left,
                     width: dropdownPos.width,
                     zIndex: 99999,
-                    border: '2px solid #bae6fd',
+                    border: '2px solid var(--color-brand-300)',
                     background: 'white',
-                    borderRadius: '16px',
+                    borderRadius: 'var(--radius-md)',
                     padding: '12px 16px',
                     fontSize: '18px',
                     fontWeight: 600,
-                    color: '#94a3b8',
-                    boxShadow: '0 12px 36px -5px rgba(8,49,95,0.18)'
+                    color: 'var(--color-secondary)',
+                    boxShadow: 'var(--shadow-xl)'
                   }}
                 >
                   No active officials found for "{query}"
@@ -774,8 +774,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
             <section
               className="rounded-[18px] px-5 py-4 transition-all animate-in fade-in duration-150"
               style={{
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                border: '2px solid #bae6fd'
+                background: 'linear-gradient(135deg, var(--color-brand-50) 0%, var(--color-brand-100) 100%)',
+                border: '2px solid var(--color-brand-300)'
               }}
             >
               <div className="flex items-center justify-between mb-3">
@@ -812,8 +812,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     <select
                       value={selectedOffice}
                       onChange={(e) => handleSelectOffice(e.target.value)}
-                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
-                      style={{ background: '#f8fafc', border: '2px solid #e2e8f0' }}
+                      className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-brand-700"
+                      style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-muted)' }}
                     >
                       <option value="">Choose Office…</option>
                       {uniqueTargetOffices.map((off) => (
@@ -849,8 +849,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                       <select
                         value={selectedVacantItem}
                         onChange={(e) => handleSelectVacantPosition(e.target.value)}
-                        className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-[#075985]"
-                        style={{ background: '#f8fafc', border: '2px solid #bae6fd' }}
+                        className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-[14px] text-[19.5px] font-semibold text-slate-700 outline-none transition-all focus:border-brand-700"
+                        style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-brand-300)' }}
                       >
                         <option value="">Choose Vacant Position…</option>
                         {filteredVacantPositions.map((slot) => (
@@ -871,7 +871,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 {selectedVacantItem && (
                   <div
                     className="rounded-[14px] p-3.5 transition-all"
-                    style={{ background: '#f0fdf4', border: '2px solid #86efac' }}
+                    style={{ background: 'var(--color-success-50)', border: '2px solid var(--color-success-300)' }}
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[13.5px] font-black text-green-700 uppercase tracking-widest">
@@ -899,7 +899,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     value={toDate}
                     onChange={(val) => setToDate(val)}
                     placeholder="Select effective date"
-                    className="!rounded-[14px] !py-2.5 !px-3 !text-[19.5px] !font-semibold !bg-[#f8fafc] !border-2 !border-[#e2e8f0]"
+                    className="!rounded-[14px] !py-2.5 !px-3 !text-[19.5px] !font-semibold !bg-brand-50 !border-2 !border-muted"
                   />
                 </div>
 
@@ -913,8 +913,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                     value={justification}
                     onChange={(e) => setJustification(e.target.value)}
                     placeholder="Optional reassignment note or administrative justification..."
-                    className="w-full px-3.5 py-2 rounded-[14px] text-[19px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-[#075985] resize-none"
-                    style={{ background: '#ffffff', border: '2px solid #e2e8f0' }}
+                    className="w-full px-3.5 py-2 rounded-[14px] text-[19px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-brand-700 resize-none"
+                    style={{ background: 'var(--color-white)', border: '2px solid var(--color-muted)' }}
                   />
                 </div>
               </div>
@@ -941,8 +941,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 onClick={() => fileRef.current?.click()}
                 className="flex flex-col items-center justify-center gap-2 rounded-[18px] px-5 py-4 cursor-pointer transition-all hover:scale-[1.005]"
                 style={{
-                  border: file ? '2px solid #22c55e' : '2px dashed #bae6fd',
-                  background: file ? '#f0fdf4' : '#f0f9ff'
+                  border: file ? '2px solid var(--color-success-700)' : '2px dashed var(--color-brand-300)',
+                  background: file ? 'var(--color-success-50)' : 'var(--color-brand-50)'
                 }}
               >
                 {file ? (
@@ -979,12 +979,12 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
         {/* ── Footer ── */}
         <div
           className="flex items-center justify-end gap-3 px-7 py-4"
-          style={{ borderTop: '2px solid #e2e8f0', background: '#f8fafc' }}
+          style={{ borderTop: '2px solid var(--color-muted)', background: 'var(--color-brand-50)' }}
         >
           <button
             onClick={onClose}
             className="px-5 py-2.5 rounded-[14px] text-[18px] font-black text-slate-500 transition-colors hover:bg-slate-200/60"
-            style={{ background: '#f1f5f9', border: '2px solid #e2e8f0' }}
+            style={{ background: 'var(--color-brand-50)', border: '2px solid var(--color-muted)' }}
           >
             Cancel
           </button>
@@ -993,8 +993,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
             disabled={!canSubmit}
             className="flex items-center gap-2 px-6 py-2.5 rounded-[14px] text-[18px] font-black text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #075985 0%, #0c4a6e 100%)',
-              boxShadow: canSubmit ? '0 4px 14px rgba(7,89,133,0.35)' : 'none'
+              background: 'linear-gradient(135deg, var(--color-brand-700) 0%, var(--color-brand-800) 100%)',
+              boxShadow: canSubmit ? '0 4px 14px rgb(var(--rgb-brand-700)/0.35)' : 'none'
             }}
           >
             {submitting ? (

@@ -260,17 +260,17 @@ const Login = () => {
         <PageTransition>
             <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-transparent">
                 {/* DECORATIVE SHAPES */}
-                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#075985]/10 rounded-full blur-[100px] animate-blob"></div>
-                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FBBF24]/10 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
-                <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-[#08315F]/10 rounded-full blur-[80px] animate-blob animation-delay-4000"></div>
+                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-brand-700/10 rounded-full blur-[100px] animate-blob"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-gold/10 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
+                <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-brand-800/10 rounded-full blur-[80px] animate-blob animation-delay-4000"></div>
 
                 <div className="relative z-10 w-[90%] max-w-md">
-                    <div className="bg-white p-8 rounded-[22px] border-2 border-[#08315F] shadow-none transform transition-all hover:scale-[1.01] duration-500 relative">
+                    <div className="bg-white p-8 rounded-[22px] border-2 border-brand-800 shadow-none transform transition-all hover:scale-[1.01] duration-500 relative">
 
                         {/* BACK BUTTON */}
                         <button
                             onClick={() => navigate('/')}
-                            className="absolute top-6 left-6 p-2 rounded-xl bg-white/50 text-slate-400 hover:text-[#08315F] hover:bg-white transition-all shadow-sm border border-slate-100 group z-20"
+                            className="absolute top-6 left-6 p-2 rounded-xl bg-white/50 text-slate-400 hover:text-brand-800 hover:bg-white transition-all shadow-sm border border-slate-100 group z-20"
                         >
                             <FiArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
                         </button>
@@ -280,7 +280,7 @@ const Login = () => {
                             <div className="relative w-24 h-24 mx-auto mb-4 bg-white/50 rounded-2xl shadow-inner flex items-center justify-center p-2">
                                 <img src={logo} alt="InsightED Logo" className="w-full h-full object-contain drop-shadow-sm" />
                             </div>
-                            <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight">InsightED</h1>
+                            <h1 className="text-3xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight">InsightED</h1>
                             <p className="text-slate-500 text-sm mt-2 font-medium italic">Recruitment Hub</p>
                         </div>
 
@@ -304,7 +304,7 @@ const Login = () => {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Identity</label>
                                         <div className={`relative group transition-all duration-300 ${focusedInput === 'id' ? 'scale-[1.02]' : ''}`}>
-                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'id' ? 'text-[#08315F]' : 'text-slate-400'}`}>
+                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'id' ? 'text-brand-800' : 'text-slate-400'}`}>
                                                 <FiMail className="w-5 h-5" />
                                             </div>
                                             <input
@@ -315,7 +315,7 @@ const Login = () => {
                                                 onBlur={() => setFocusedInput(null)}
                                                 placeholder="Registered Email"
                                                 autoComplete="username"
-                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
+                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-brand-800 focus:ring-4 focus:ring-brand-800/5 transition-all shadow-sm"
                                                 required
                                             />
                                         </div>
@@ -326,14 +326,14 @@ const Login = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleModeChange('password')}
-                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'password' ? 'bg-white text-[#08315F] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'password' ? 'bg-white text-brand-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
                                             Password
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleModeChange('passcode')}
-                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'passcode' ? 'bg-white text-[#08315F] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${loginMode === 'passcode' ? 'bg-white text-brand-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                         >
                                             Passcode
                                         </button>
@@ -345,7 +345,7 @@ const Login = () => {
                                             {loginMode === 'password' ? 'Security Password' : '6-Digit Passcode'}
                                         </label>
                                         <div className={`relative group transition-all duration-300 ${focusedInput === 'secret' ? 'scale-[1.02]' : ''}`}>
-                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'secret' ? 'text-[#08315F]' : 'text-slate-400'}`}>
+                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'secret' ? 'text-brand-800' : 'text-slate-400'}`}>
                                                 <FiLock className="w-5 h-5" />
                                             </div>
                                             {loginMode === 'password' ? (
@@ -357,7 +357,7 @@ const Login = () => {
                                                     onBlur={() => setFocusedInput(null)}
                                                     placeholder="••••••••"
                                                     autoComplete="current-password"
-                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm"
+                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-brand-800 focus:ring-4 focus:ring-brand-800/5 transition-all shadow-sm"
                                                     required
                                                 />
                                             ) : (
@@ -379,14 +379,14 @@ const Login = () => {
                                                     pattern="[0-9]*"
                                                     readOnly
                                                     autoComplete="off"
-                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#08315F] focus:ring-4 focus:ring-[#08315F]/5 transition-all shadow-sm cursor-pointer"
+                                                    className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-brand-800 focus:ring-4 focus:ring-brand-800/5 transition-all shadow-sm cursor-pointer"
                                                     required
                                                 />
                                             )}
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#08315F] transition-colors p-1"
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-800 transition-colors p-1"
                                                 aria-label={showPassword ? "Hide secret" : "Show secret"}
                                             >
                                                 {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
@@ -399,7 +399,7 @@ const Login = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowForgotModal(true)}
-                                        className="text-[10px] font-black text-[#08315F] uppercase tracking-widest hover:text-blue-800 transition-colors"
+                                        className="text-[10px] font-black text-brand-800 uppercase tracking-widest hover:text-blue-800 transition-colors"
                                     >
                                         Forgot {loginMode === 'password' ? 'Password' : 'Passcode'}?
                                     </button>
@@ -444,7 +444,7 @@ const Login = () => {
                                     <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2 uppercase italic">Enter Passcode</h2>
                                     <div className="flex justify-center gap-3 mb-8 mt-6">
                                         {[...Array(6)].map((_, i) => (
-                                            <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${passcode.length > i ? 'bg-[#08315F] border-blue-600 scale-110' : 'bg-slate-200 border-transparent'}`} />
+                                            <div key={i} className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${passcode.length > i ? 'bg-brand-800 border-blue-600 scale-110' : 'bg-slate-200 border-transparent'}`} />
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-3 gap-6 w-full max-w-[260px] mx-auto">
@@ -479,7 +479,7 @@ const Login = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowDialpadModal(false)}
-                                    className="w-full bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs"
+                                    className="w-full bg-brand-800 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-widest text-xs"
                                 >
                                     Done
                                 </button>
@@ -493,7 +493,7 @@ const Login = () => {
                                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
                                 className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl text-center"
                             >
-                                <div className="w-20 h-20 bg-blue-50 text-[#08315F] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner"><FiKey className="w-10 h-10" /></div>
+                                <div className="w-20 h-20 bg-blue-50 text-brand-800 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner"><FiKey className="w-10 h-10" /></div>
                                 <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic mb-4">Reset Password</h2>
                                 <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">Enter your email address and we'll send you a link to reset your password.</p>
                                 
@@ -516,7 +516,7 @@ const Login = () => {
                                     <button 
                                         onClick={handleForgotPassword} 
                                         disabled={forgotLoading}
-                                        className="w-full bg-[#08315F] text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-[12px] uppercase tracking-widest disabled:opacity-70"
+                                        className="w-full bg-brand-800 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-[12px] uppercase tracking-widest disabled:opacity-70"
                                     >
                                         {forgotLoading ? 'Sending...' : 'Send Reset Link'}
                                     </button>

@@ -21,7 +21,7 @@ const Gate = () => {
     };
 
     return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#f8fafc] relative overflow-hidden px-6">
+        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-brand-50 relative overflow-hidden px-6">
             {/* Background Decor */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-50 rounded-full blur-[120px] opacity-70" />
@@ -34,12 +34,12 @@ const Gate = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center mb-16 relative z-10"
             >
-                <div className="inline-flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-100 rounded-full text-[#004A99] text-[10px] font-black uppercase tracking-widest mb-6">
+                <div className="inline-flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-100 rounded-full text-brand-700 text-[10px] font-black uppercase tracking-widest mb-6">
                     <ShieldCheck size={14} />
                     Secure Personnel Portal
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight italic">
-                    Third Level <span className="text-[#004A99] not-italic">Officials</span>
+                    Third Level <span className="text-brand-700 not-italic">Officials</span>
                 </h1>
                 <p className="text-slate-500 font-medium mt-3">Personnel Division • TLM Section Recruitment Hub</p>
             </motion.div>
@@ -60,13 +60,13 @@ const Gate = () => {
                             <LogIn size={32} />
                         </div>
                         <h3 className="text-3xl font-black text-slate-800 tracking-tight italic leading-none uppercase mb-2">
-                            I have an <span className="text-[#004A99] not-italic">Account</span>
+                            I have an <span className="text-brand-700 not-italic">Account</span>
                         </h3>
                         <p className="text-slate-500 text-sm font-medium leading-relaxed">
                             Already registered? Sign in to continue your profile updates or check your application status.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3 mt-8 text-[#004A99] font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
+                    <div className="flex items-center gap-3 mt-8 text-brand-700 font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
                         <span>Sign In Now</span>
                         <ArrowRight size={16} />
                     </div>
@@ -83,17 +83,17 @@ const Gate = () => {
                     className="cursor-pointer group bg-white rounded-[3rem] p-10 shadow-2xl shadow-blue-900/10 border border-slate-100 flex flex-col justify-between min-h-[360px] transition-all"
                 >
                     <div>
-                        <div className="w-16 h-16 rounded-2xl bg-[#004A99] text-white flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform">
+                        <div className="w-16 h-16 rounded-2xl bg-brand-700 text-white flex items-center justify-center shadow-lg mb-8 group-hover:scale-110 transition-transform">
                             <UserPlus size={32} />
                         </div>
                         <h3 className="text-3xl font-black text-slate-800 tracking-tight italic leading-none uppercase mb-2">
-                            New <span className="text-[#004A99] not-italic">Applicant</span>
+                            New <span className="text-brand-700 not-italic">Applicant</span>
                         </h3>
                         <p className="text-slate-500 text-sm font-medium leading-relaxed">
                             First time here? Initialize your professional profile to begin your career progression journey.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3 mt-8 text-[#004A99] font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
+                    <div className="flex items-center gap-3 mt-8 text-brand-700 font-black text-xs uppercase tracking-widest group-hover:gap-5 transition-all">
                         <span>Initialize Profile</span>
                         <ArrowRight size={16} />
                     </div>

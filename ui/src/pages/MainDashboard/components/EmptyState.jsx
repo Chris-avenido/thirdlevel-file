@@ -3,7 +3,7 @@ import { FiInbox } from 'react-icons/fi';
 
 const EmptyState = ({ message = "No official records match your criteria.", onReset }) => {
   return (
-    <div style={{ textAlign: 'center', padding: '48px 24px', background: 'white', borderRadius: '18px', border: '2px dashed var(--mdb-line)' }}>
+    <div style={{ textAlign: 'center', padding: '48px 24px', background: 'white', borderRadius: 'var(--radius-md)', border: '2px dashed var(--mdb-line)' }}>
       <FiInbox size={48} style={{ color: 'var(--mdb-muted)', marginBottom: '12px' }} />
       <h3 style={{ margin: 0, color: 'var(--mdb-navy)', fontFamily: 'var(--mdb-font-head)', fontWeight: 800 }}>
         No Data Found

@@ -196,7 +196,7 @@ const Register = () => {
             <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-transparent">
 
                 <div className="relative z-10 w-[95%] max-w-xl">
-                    <div className="bg-white border-2 border-[#08315F] shadow-none rounded-[22px] p-8 md:p-12">
+                    <div className="bg-white border-2 border-brand-800 shadow-none rounded-[22px] p-8 md:p-12">
 
                         {/* HEADER */}
                         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -204,17 +204,17 @@ const Register = () => {
                                 <div className="w-16 h-16 bg-white/50 rounded-2xl shadow-inner flex items-center justify-center p-2 mb-6">
                                     <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                                 </div>
-                                <h1 className="text-4xl font-['Plus_Jakarta_Sans'] font-black text-[#08315F] tracking-tight italic leading-none uppercase">
-                                    Join <span className="text-[#075985] not-italic">Registry</span>
+                                <h1 className="text-4xl font-['Plus_Jakarta_Sans'] font-black text-brand-800 tracking-tight italic leading-none uppercase">
+                                    Join <span className="text-brand-700 not-italic">Registry</span>
                                 </h1>
                                 <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-3 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-[#075985] animate-pulse"></span>
+                                    <span className="w-2 h-2 rounded-full bg-brand-700 animate-pulse"></span>
                                     Step {currentStep} of 3 • {currentStep === 1 ? 'Identity' : currentStep === 2 ? 'Verify' : 'Security'}
                                 </p>
                             </div>
                             <div className="flex gap-2">
                                 {[1, 2, 3].map(s => (
-                                    <div key={s} className={`h-1.5 w-12 rounded-full transition-all duration-500 ${currentStep >= s ? 'bg-[#08315F] w-16 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-slate-200'}`}></div>
+                                    <div key={s} className={`h-1.5 w-12 rounded-full transition-all duration-500 ${currentStep >= s ? 'bg-brand-800 w-16 shadow-[0_0_10px_rgb(var(--rgb-brand-700)/0.4)]' : 'bg-slate-200'}`}></div>
                                 ))}
                             </div>
                         </div>
@@ -227,15 +227,15 @@ const Register = () => {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
                                         <div className="relative group">
-                                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                            <input type="text" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} placeholder="Juan" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
+                                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
+                                            <input type="text" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} placeholder="Juan" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
                                         <div className="relative group">
-                                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                            <input type="text" value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} placeholder="Dela Cruz" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
+                                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
+                                            <input type="text" value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} placeholder="Dela Cruz" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
                                         </div>
                                     </div>
                                 </div>
@@ -247,7 +247,7 @@ const Register = () => {
                                             Swal.fire('Notice', "Please complete all fields.", 'info');
                                         }
                                     }}
-                                    className="w-full bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 group uppercase tracking-widest text-xs italic"
+                                    className="w-full bg-brand-800 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 group uppercase tracking-widest text-xs italic"
                                 >
                                     Continue to Contact Info
                                     <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
@@ -260,8 +260,8 @@ const Register = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                                 {isCO && (
                                     <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                                        <FiShield size={16} className="text-[#08315F] shrink-0" />
-                                        <p className="text-[10px] font-black text-[#08315F] uppercase tracking-widest">
+                                        <FiShield size={16} className="text-brand-800 shrink-0" />
+                                        <p className="text-[10px] font-black text-brand-800 uppercase tracking-widest">
                                             Central Office accounts must use an official @deped.gov.ph email.
                                         </p>
                                     </div>
@@ -271,7 +271,7 @@ const Register = () => {
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                     <div className="relative group">
                                         <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-[#08315F]'}`} />
+                                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-brand-800'}`} />
 
                                         {!isCO && masterlistCheckStatus === 'valid' && (
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
@@ -309,16 +309,16 @@ const Register = () => {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
                                         <div className="relative group">
-                                            <FiSmartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                            <input type="text" value={formData.contactNumber} onChange={handlePhoneChange} placeholder="09XXXXXXXXX" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
+                                            <FiSmartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
+                                            <input type="text" value={formData.contactNumber} onChange={handlePhoneChange} placeholder="09XXXXXXXXX" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
                                         </div>
                                     </div>
                                     {isCO && (
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Auth Code</label>
                                             <div className="relative group">
-                                                <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                                <input type="text" value={formData.auth_code} onChange={e => setFormData({...formData, auth_code: e.target.value})} placeholder="Enter Auth Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-[#08315F] transition-all shadow-sm" />
+                                                <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
+                                                <input type="text" value={formData.auth_code} onChange={e => setFormData({...formData, auth_code: e.target.value})} placeholder="Enter Auth Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
                                             </div>
                                         </div>
                                     )}
@@ -328,7 +328,7 @@ const Register = () => {
 
                                 <div className="flex gap-4 pt-4">
                                     <button onClick={() => setCurrentStep(1)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
-                                    <button onClick={handleFinalStep} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Final Step</button>
+                                    <button onClick={handleFinalStep} className="flex-[2] bg-brand-800 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Final Step</button>
                                 </div>
                             </div>
                         )}
@@ -340,21 +340,21 @@ const Register = () => {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
                                         <div className="relative group">
-                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                            <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] shadow-sm" />
+                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
+                                            <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 shadow-sm" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
                                         <div className="relative group">
-                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
-                                            <input type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] shadow-sm" />
+                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
+                                            <input type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 shadow-sm" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Passcode (For account recovery)</label>
                                         <div className="relative group">
-                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#075985] transition-colors" />
+                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
                                             <input 
                                                 type="text" 
                                                 maxLength={6}
@@ -365,7 +365,7 @@ const Register = () => {
                                                     setFormData({ ...formData, passcode: val });
                                                 }} 
                                                 placeholder="Enter 6-digit passcode" 
-                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-[#08315F] shadow-sm" 
+                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 shadow-sm" 
                                             />
                                         </div>
                                     </div>
@@ -373,7 +373,7 @@ const Register = () => {
                                 {error && <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold">{error}</div>}
                                 <div className="flex gap-4">
                                     <button onClick={() => setCurrentStep(2)} className="flex-1 bg-slate-100 text-slate-500 font-black py-5 rounded-2xl active:scale-95 transition-all text-xs uppercase italic tracking-widest">Back</button>
-                                    <button onClick={handleSubmit} disabled={loading} className="flex-[2] bg-[#08315F] text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 text-xs uppercase italic tracking-widest">
+                                    <button onClick={handleSubmit} disabled={loading} className="flex-[2] bg-brand-800 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 text-xs uppercase italic tracking-widest">
                                         Create Identity
                                         <FiCheckCircle className="w-5 h-5" />
                                     </button>
@@ -384,7 +384,7 @@ const Register = () => {
                         {/* FOOTER */}
                         <div className="mt-10 pt-8 border-t border-slate-100 text-center">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                Already have an account? <Link to={`/login${location.search}`} state={{ isCO, redirectTo: location.state?.redirectTo, returnUrl: location.state?.returnUrl }} className="text-[#075985] hover:text-blue-800 ml-1">Sign In Instead</Link>
+                                Already have an account? <Link to={`/login${location.search}`} state={{ isCO, redirectTo: location.state?.redirectTo, returnUrl: location.state?.returnUrl }} className="text-brand-700 hover:text-blue-800 ml-1">Sign In Instead</Link>
                             </p>
                         </div>
                     </div>

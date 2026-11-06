@@ -26,8 +26,8 @@ const EligibilitiesSection = ({
         <div className="bg-white border-2 border-slate-200 rounded-[24px] p-6 md:p-8 space-y-6 shadow-sm">
             <div className="border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2">
-                    <FiAward className="text-[#08315F]" size={20} />
-                    <h3 className="text-base font-black text-[#08315F] uppercase tracking-wide">
+                    <FiAward className="text-brand-800" size={20} />
+                    <h3 className="text-base font-black text-brand-800 uppercase tracking-wide">
                         4. Examination & CES Eligibilities
                     </h3>
                 </div>
@@ -49,7 +49,7 @@ const EligibilitiesSection = ({
                                 name="is_let_passer"
                                 checked={eligibilityData.is_let_passer === true}
                                 onChange={() => setEligibilityData(prev => ({ ...prev, is_let_passer: true }))}
-                                className="text-[#08315F] focus:ring-[#08315F]"
+                                className="text-brand-800 focus:ring-brand-800"
                             />
                             <span className="text-xs font-bold text-slate-800">Yes</span>
                         </label>
@@ -59,7 +59,7 @@ const EligibilitiesSection = ({
                                 name="is_let_passer"
                                 checked={eligibilityData.is_let_passer === false}
                                 onChange={() => setEligibilityData(prev => ({ ...prev, is_let_passer: false }))}
-                                className="text-[#08315F] focus:ring-[#08315F]"
+                                className="text-brand-800 focus:ring-brand-800"
                             />
                             <span className="text-xs font-bold text-slate-800">No</span>
                         </label>
@@ -77,7 +77,7 @@ const EligibilitiesSection = ({
                                 name="is_emt_passer"
                                 checked={eligibilityData.is_emt_passer === true}
                                 onChange={() => setEligibilityData(prev => ({ ...prev, is_emt_passer: true }))}
-                                className="text-[#08315F] focus:ring-[#08315F]"
+                                className="text-brand-800 focus:ring-brand-800"
                             />
                             <span className="text-xs font-bold text-slate-800">Yes</span>
                         </label>
@@ -87,7 +87,7 @@ const EligibilitiesSection = ({
                                 name="is_emt_passer"
                                 checked={eligibilityData.is_emt_passer === false}
                                 onChange={() => setEligibilityData(prev => ({ ...prev, is_emt_passer: false }))}
-                                className="text-[#08315F] focus:ring-[#08315F]"
+                                className="text-brand-800 focus:ring-brand-800"
                             />
                             <span className="text-xs font-bold text-slate-800">No</span>
                         </label>
@@ -105,7 +105,7 @@ const EligibilitiesSection = ({
                         name="ces_eligibility_stage"
                         value={eligibilityData.ces_eligibility_stage || 'Stage 1 (CES Written Examination)'}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-800 bg-white cursor-pointer shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-800 bg-white cursor-pointer shadow-sm"
                     >
                         {CES_STAGES.map(stage => (
                             <option key={stage} value={stage}>{stage}</option>
@@ -123,7 +123,7 @@ const EligibilitiesSection = ({
                         max={new Date().toISOString().split('T')[0]}
                         value={eligibilityData.ces_stage_date || ''}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
                     />
                     <span className="text-[10px] text-slate-400 block mt-1">Cannot be a future date</span>
                 </div>

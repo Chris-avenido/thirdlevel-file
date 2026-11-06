@@ -1498,8 +1498,8 @@ const OfficialProfiling = () => {
                 text: 'Are you sure you want to edit profile info?',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#eab308',
-                cancelButtonColor: '#64748b',
+                confirmButtonColor: 'var(--color-gold)',
+                cancelButtonColor: 'var(--color-secondary)',
                 confirmButtonText: 'Yes, edit profile'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -1590,7 +1590,7 @@ const OfficialProfiling = () => {
         return (
             <div className="min-h-screen flex items-center justify-center bg-transparent font-['Plus_Jakarta_Sans']">
                 <div className="flex flex-col items-center gap-6">
-                    <div className="w-14 h-14 border-[5px] border-[#0038A8] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-14 h-14 border-[5px] border-brand-700 border-t-transparent rounded-full animate-spin" />
                     <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px]">Loading Your Profile...</p>
                 </div>
             </div>
@@ -1601,7 +1601,7 @@ const OfficialProfiling = () => {
     // ── MAIN PROFILING FORM ──
     return (
         <PageTransition>
-            <div className="min-h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-[#08315F] relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+            <div className="min-h-screen bg-transparent font-['Plus_Jakarta_Sans'] text-brand-800 relative overflow-x-hidden lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
                 {/* Ambient Decorative Background Elements */}
 
                 {/* ── Mobile Sidebar Drawer ── */}
@@ -1694,7 +1694,7 @@ const OfficialProfiling = () => {
                                                 <button
                                                     onClick={handleResubmit}
                                                     disabled={saving}
-                                                    className="px-12 py-4 bg-[#FBBF24] text-white font-black text-[15px] uppercase tracking-widest rounded-full shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/35 hover:scale-[1.02] transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-4 border-2 border-amber-300"
+                                                    className="px-12 py-4 bg-gold text-white font-black text-[15px] uppercase tracking-widest rounded-full shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/35 hover:scale-[1.02] transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-4 border-2 border-amber-300"
                                                 >
                                                     {saving ? <FiLoader className="animate-spin" size={18} /> : <FiRefreshCw size={18} />}
                                                     {saving ? 'Submitting...' : 'Resubmit Application'}

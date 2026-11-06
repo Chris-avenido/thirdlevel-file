@@ -353,17 +353,17 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                     initial={{ opacity: 0, scale: 0.95, y: 15 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                    className="relative w-full max-w-4xl bg-white rounded-[28px] border-2 border-[#08315F] shadow-2xl overflow-hidden z-10 my-8 flex flex-col max-h-[92vh]"
+                    className="relative w-full max-w-4xl bg-white rounded-[28px] border-2 border-brand-800 shadow-2xl overflow-hidden z-10 my-8 flex flex-col max-h-[92vh]"
                 >
                     {/* Header */}
-                    <div className="bg-[#08315F] text-white p-6 sm:p-7 flex items-center justify-between shrink-0 border-b border-blue-900 relative">
+                    <div className="bg-brand-800 text-white p-6 sm:p-7 flex items-center justify-between shrink-0 border-b border-blue-900 relative">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-[#FCD116] font-black border border-white/10 shrink-0">
+                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-gold font-black border border-white/10 shrink-0">
                                 <FiBriefcase size={22} />
                             </div>
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FCD116]">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">
                                         TIMON Applications • Inspection & Deliberation
                                     </span>
                                     {applicant && (
@@ -394,7 +394,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                             onClick={() => setActiveTab('basic')}
                             className={`py-3.5 px-4 font-black text-xs uppercase tracking-wider border-b-2 flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
                                 activeTab === 'basic'
-                                    ? 'border-[#08315F] text-[#08315F] bg-white rounded-t-xl shadow-sm'
+                                    ? 'border-brand-800 text-brand-800 bg-white rounded-t-xl shadow-sm'
                                     : 'border-transparent text-slate-500 hover:text-slate-800'
                             }`}
                         >
@@ -406,7 +406,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                             onClick={() => setActiveTab('documents_qs')}
                             className={`py-3.5 px-4 font-black text-xs uppercase tracking-wider border-b-2 flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
                                 activeTab === 'documents_qs'
-                                    ? 'border-[#08315F] text-[#08315F] bg-white rounded-t-xl shadow-sm'
+                                    ? 'border-brand-800 text-brand-800 bg-white rounded-t-xl shadow-sm'
                                     : 'border-transparent text-slate-500 hover:text-slate-800'
                             }`}
                         >
@@ -418,7 +418,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                             onClick={() => setActiveTab('nsc_scoring')}
                             className={`py-3.5 px-4 font-black text-xs uppercase tracking-wider border-b-2 flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
                                 activeTab === 'nsc_scoring'
-                                    ? 'border-[#08315F] text-[#08315F] bg-white rounded-t-xl shadow-sm'
+                                    ? 'border-brand-800 text-brand-800 bg-white rounded-t-xl shadow-sm'
                                     : 'border-transparent text-slate-500 hover:text-slate-800'
                             }`}
                         >
@@ -430,7 +430,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                             onClick={() => setActiveTab('summary')}
                             className={`py-3.5 px-4 font-black text-xs uppercase tracking-wider border-b-2 flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
                                 activeTab === 'summary'
-                                    ? 'border-[#08315F] text-[#08315F] bg-white rounded-t-xl shadow-sm'
+                                    ? 'border-brand-800 text-brand-800 bg-white rounded-t-xl shadow-sm'
                                     : 'border-transparent text-slate-500 hover:text-slate-800'
                             }`}
                         >
@@ -442,7 +442,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                     <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
                         {loading ? (
                             <div className="py-24 text-center">
-                                <FiLoader className="animate-spin text-[#08315F] mx-auto mb-3" size={34} />
+                                <FiLoader className="animate-spin text-brand-800 mx-auto mb-3" size={34} />
                                 <p className="text-xs font-black uppercase tracking-widest text-slate-400">Loading Application Dossier...</p>
                             </div>
                         ) : !applicant ? (
@@ -457,8 +457,8 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         {/* Applicant Target & Position Card */}
                                         <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                                             <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
-                                                <FiUser className="text-[#08315F]" size={16} />
-                                                <h3 className="text-xs font-black text-[#08315F] uppercase tracking-widest">
+                                                <FiUser className="text-brand-800" size={16} />
+                                                <h3 className="text-xs font-black text-brand-800 uppercase tracking-widest">
                                                     Target Position & Regional Jurisdiction
                                                 </h3>
                                             </div>
@@ -467,7 +467,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                 <div>
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Applied Position</p>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="px-2.5 py-1 rounded-md bg-[#08315F] text-white text-xs font-black">
+                                                        <span className="px-2.5 py-1 rounded-md bg-brand-800 text-white text-xs font-black">
                                                             {applicant.applied_position}
                                                         </span>
                                                         <span className="text-xs font-bold text-slate-700 truncate">
@@ -479,7 +479,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                 <div>
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Region</p>
                                                     <div className="flex items-center gap-1.5 mt-1 text-slate-800 font-black text-sm">
-                                                        <FiMapPin className="text-[#0038A8] shrink-0" size={15} />
+                                                        <FiMapPin className="text-brand-700 shrink-0" size={15} />
                                                         <span className="truncate">{applicant.target_region}</span>
                                                     </div>
                                                 </div>
@@ -525,12 +525,12 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-4 shadow-sm">
                                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                                                 <div className="flex items-center gap-2">
-                                                    <FiShield className="text-[#08315F]" size={16} />
-                                                    <h3 className="text-xs font-black text-[#08315F] uppercase tracking-widest">
+                                                    <FiShield className="text-brand-800" size={16} />
+                                                    <h3 className="text-xs font-black text-brand-800 uppercase tracking-widest">
                                                         Statutory Legal & Integrity Disclosures (Civil Service Standard)
                                                     </h3>
                                                 </div>
-                                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-[#08315F] border border-blue-200">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-brand-800 border border-blue-200">
                                                     Verified Intake Questions
                                                 </span>
                                             </div>
@@ -577,8 +577,8 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                                                 <div className="flex items-center gap-2">
-                                                    <FiFileText className="text-[#08315F]" size={16} />
-                                                    <h3 className="text-xs font-black text-[#08315F] uppercase tracking-widest">
+                                                    <FiFileText className="text-brand-800" size={16} />
+                                                    <h3 className="text-xs font-black text-brand-800 uppercase tracking-widest">
                                                         Attached Documentary Evidence
                                                     </h3>
                                                 </div>
@@ -600,12 +600,12 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                             className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-white border-2 border-slate-100 hover:border-slate-200 transition-all gap-4 shadow-sm"
                                                         >
                                                             <div className="flex items-center gap-3 min-w-0">
-                                                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#08315F] flex items-center justify-center shrink-0">
+                                                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-brand-800 flex items-center justify-center shrink-0">
                                                                     <FiFileText size={18} />
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <div className="flex items-center gap-2">
-                                                                        <h4 className="text-xs font-black text-[#08315F] uppercase truncate">
+                                                                        <h4 className="text-xs font-black text-brand-800 uppercase truncate">
                                                                             {doc.file_name}
                                                                         </h4>
                                                                         <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
@@ -622,14 +622,14 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handlePreviewDocument(doc)}
-                                                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-[#08315F] hover:text-white text-[#08315F] text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                                                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-brand-800 hover:text-white text-brand-800 text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                                                                 >
                                                                     <FiEye size={14} /> Preview
                                                                 </button>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleDownloadDocument(doc)}
-                                                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#08315F] hover:bg-blue-900 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                                                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-800 hover:bg-blue-900 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer"
                                                                 >
                                                                     <FiDownload size={14} /> Download
                                                                 </button>
@@ -641,12 +641,12 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </div>
 
                                         {/* Qualification Standards (QS) Evaluation & Server-Derived Status */}
-                                        <div className="p-6 rounded-2xl bg-white border-2 border-[#08315F] space-y-5 shadow-sm">
+                                        <div className="p-6 rounded-2xl bg-white border-2 border-brand-800 space-y-5 shadow-sm">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
                                                 <div className="flex items-center gap-2">
-                                                    <FiCheckSquare className="text-[#08315F]" size={18} />
+                                                    <FiCheckSquare className="text-brand-800" size={18} />
                                                     <div>
-                                                        <h3 className="text-xs font-black text-[#08315F] uppercase tracking-widest">
+                                                        <h3 className="text-xs font-black text-brand-800 uppercase tracking-widest">
                                                             Qualification Standards (QS) Checklist
                                                         </h3>
                                                         <p className="text-[11px] font-medium text-slate-500">
@@ -810,7 +810,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                     type="button"
                                                     onClick={handleSaveQS}
                                                     disabled={savingQS}
-                                                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#08315F] hover:bg-blue-900 text-white font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                                                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-brand-800 hover:bg-blue-900 text-white font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                                                 >
                                                     {savingQS ? (
                                                         <>
@@ -831,10 +831,10 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                 {activeTab === 'nsc_scoring' && (
                                     <div className="space-y-6">
                                         {/* Top Banner: NSC Aggregated Overall Average */}
-                                        <div className="p-6 rounded-2xl bg-[#08315F] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
+                                        <div className="p-6 rounded-2xl bg-brand-800 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FCD116]">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">
                                                         National Screening Committee (NSC)
                                                     </span>
                                                 </div>
@@ -848,14 +848,14 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
 
                                             <div className="flex items-center gap-4 bg-white/10 p-3.5 rounded-2xl border border-white/10 shrink-0">
                                                 <div className="text-right">
-                                                    <p className="text-[10px] font-black uppercase tracking-wider text-[#FCD116]">
+                                                    <p className="text-[10px] font-black uppercase tracking-wider text-gold">
                                                         Overall Average Score
                                                     </p>
                                                     <p className="text-2xl font-black text-white">
                                                         {overallNSCAverage !== null && overallNSCAverage !== undefined ? overallNSCAverage : '—'} <span className="text-xs text-blue-200 font-semibold">/ 100</span>
                                                     </p>
                                                 </div>
-                                                <div className="w-12 h-12 rounded-xl bg-[#FCD116] text-[#08315F] flex items-center justify-center font-black">
+                                                <div className="w-12 h-12 rounded-xl bg-gold text-brand-800 flex items-center justify-center font-black">
                                                     <FiAward size={24} />
                                                 </div>
                                             </div>
@@ -864,7 +864,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         {/* Committee Member Tabs Selector */}
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between">
-                                                <h4 className="text-xs font-black text-[#08315F] uppercase tracking-wider flex items-center gap-1.5">
+                                                <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider flex items-center gap-1.5">
                                                     <FiSliders size={14} /> Committee Evaluators (5 Members)
                                                 </h4>
                                                 <span className="text-xs font-bold text-slate-400">
@@ -884,7 +884,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                             onClick={() => setActiveMemberIndex(idx)}
                                                             className={`p-3 rounded-xl border-2 text-left transition-all cursor-pointer ${
                                                                 isActive
-                                                                    ? 'border-[#08315F] bg-blue-50/60 shadow-sm'
+                                                                    ? 'border-brand-800 bg-blue-50/60 shadow-sm'
                                                                     : 'border-slate-200 bg-white hover:border-slate-300'
                                                             }`}
                                                         >
@@ -911,7 +911,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-5 shadow-sm">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
                                                 <div>
-                                                    <span className="text-[10px] font-black uppercase tracking-wider text-[#0038A8]">
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-brand-700">
                                                         Active Evaluator Form • Slot #{activeMemberIndex + 1}
                                                     </span>
                                                     <input
@@ -919,13 +919,13 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                         value={currentMember.evaluator_name}
                                                         onChange={e => handleMemberScoreChange('evaluator_name', e.target.value)}
                                                         placeholder="Evaluator Full Name / Title"
-                                                        className="block text-sm font-black text-slate-800 border-b border-dashed border-slate-300 focus:border-[#08315F] outline-none mt-0.5 pb-0.5 w-full sm:w-80"
+                                                        className="block text-sm font-black text-slate-800 border-b border-dashed border-slate-300 focus:border-brand-800 outline-none mt-0.5 pb-0.5 w-full sm:w-80"
                                                     />
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs font-bold text-slate-400">Member Weighted Score:</span>
-                                                    <span className="px-3.5 py-1.5 rounded-xl bg-[#08315F] text-[#FCD116] font-black text-xs">
+                                                    <span className="px-3.5 py-1.5 rounded-xl bg-brand-800 text-gold font-black text-xs">
                                                         {currentMemberTotal > 0 ? currentMemberTotal : '—'} / 100
                                                     </span>
                                                 </div>
@@ -945,7 +945,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                         value={currentMember.leadership}
                                                         onChange={e => handleMemberScoreChange('leadership', e.target.value)}
                                                         placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-sm font-bold text-slate-800 transition-all text-center"
+                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
                                                     />
                                                 </div>
 
@@ -961,7 +961,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                         value={currentMember.experience}
                                                         onChange={e => handleMemberScoreChange('experience', e.target.value)}
                                                         placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-sm font-bold text-slate-800 transition-all text-center"
+                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
                                                     />
                                                 </div>
 
@@ -977,7 +977,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                         value={currentMember.education}
                                                         onChange={e => handleMemberScoreChange('education', e.target.value)}
                                                         placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-sm font-bold text-slate-800 transition-all text-center"
+                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
                                                     />
                                                 </div>
 
@@ -993,7 +993,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                         value={currentMember.interview}
                                                         onChange={e => handleMemberScoreChange('interview', e.target.value)}
                                                         placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-sm font-bold text-slate-800 transition-all text-center"
+                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
                                                     />
                                                 </div>
                                             </div>
@@ -1008,7 +1008,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                     value={currentMember.notes}
                                                     onChange={e => handleMemberScoreChange('notes', e.target.value)}
                                                     placeholder="Enter notes, observations, or deliberation comments for this evaluator..."
-                                                    className="w-full p-3 rounded-xl border-2 border-slate-200 focus:border-[#08315F] outline-none text-xs font-semibold text-slate-800 resize-none transition-all"
+                                                    className="w-full p-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-semibold text-slate-800 resize-none transition-all"
                                                 />
                                             </div>
 
@@ -1018,7 +1018,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                     type="button"
                                                     onClick={() => handleSaveNSCMember(false)}
                                                     disabled={savingNSC}
-                                                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-[#08315F] hover:text-white text-[#08315F] font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                                                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-brand-800 hover:text-white text-brand-800 font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                                                 >
                                                     <FiSave size={14} /> Save This Member (#{activeMemberIndex + 1})
                                                 </button>
@@ -1026,7 +1026,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                     type="button"
                                                     onClick={() => handleSaveNSCMember(true)}
                                                     disabled={savingNSC}
-                                                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#08315F] hover:bg-blue-900 text-white font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                                                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-brand-800 hover:bg-blue-900 text-white font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                                                 >
                                                     {savingNSC ? (
                                                         <>
@@ -1043,7 +1043,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
 
                                         {/* Committee Evaluation Summary Matrix Table */}
                                         <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-3">
-                                            <h4 className="text-xs font-black text-[#08315F] uppercase tracking-wider flex items-center gap-1.5">
+                                            <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider flex items-center gap-1.5">
                                                 <FiList size={14} /> Summary Matrix of 5 Committee Evaluators
                                             </h4>
 
@@ -1065,14 +1065,14 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                             return (
                                                                 <tr key={m.evaluator_id} className="hover:bg-slate-50">
                                                                     <td className="py-2.5 px-3">
-                                                                        <span className="font-black text-[#08315F] mr-1.5">#{idx + 1}</span>
+                                                                        <span className="font-black text-brand-800 mr-1.5">#{idx + 1}</span>
                                                                         <span>{m.evaluator_name || `Member ${idx + 1}`}</span>
                                                                     </td>
                                                                     <td className="py-2.5 px-3 text-center text-slate-600">{m.leadership !== '' ? m.leadership : '—'}</td>
                                                                     <td className="py-2.5 px-3 text-center text-slate-600">{m.experience !== '' ? m.experience : '—'}</td>
                                                                     <td className="py-2.5 px-3 text-center text-slate-600">{m.education !== '' ? m.education : '—'}</td>
                                                                     <td className="py-2.5 px-3 text-center text-slate-600">{m.interview !== '' ? m.interview : '—'}</td>
-                                                                    <td className="py-2.5 px-3 text-right font-black text-[#08315F]">
+                                                                    <td className="py-2.5 px-3 text-right font-black text-brand-800">
                                                                         {t > 0 ? t : '—'}
                                                                     </td>
                                                                 </tr>
@@ -1080,12 +1080,12 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                         })}
                                                     </tbody>
                                                     <tfoot>
-                                                        <tr className="border-t-2 border-slate-200 bg-slate-50 font-black text-[#08315F]">
+                                                        <tr className="border-t-2 border-slate-200 bg-slate-50 font-black text-brand-800">
                                                             <td className="py-3 px-3 uppercase text-[10px] tracking-wider">Overall Committee Average</td>
                                                             <td colSpan="4" className="py-3 px-3 text-center text-slate-400 font-semibold text-[11px]">
                                                                 Aggregated server-side across all completed evaluators
                                                             </td>
-                                                            <td className="py-3 px-3 text-right text-sm text-[#0038A8]">
+                                                            <td className="py-3 px-3 text-right text-sm text-brand-700">
                                                                 {overallNSCAverage !== null && overallNSCAverage !== undefined ? overallNSCAverage : '—'}
                                                             </td>
                                                         </tr>
@@ -1103,8 +1103,8 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                                             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                                                 <div className="flex items-center gap-2">
-                                                    <FiClipboard className="text-[#08315F]" size={16} />
-                                                    <h3 className="text-xs font-black text-[#08315F] uppercase tracking-widest">
+                                                    <FiClipboard className="text-brand-800" size={16} />
+                                                    <h3 className="text-xs font-black text-brand-800 uppercase tracking-widest">
                                                         Candidate Rollup Summary & Executive Standing
                                                     </h3>
                                                 </div>
@@ -1116,7 +1116,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                                 <div>
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Candidate</p>
-                                                    <p className="text-sm font-black text-[#08315F] mt-0.5 truncate">{applicant.candidate_name}</p>
+                                                    <p className="text-sm font-black text-brand-800 mt-0.5 truncate">{applicant.candidate_name}</p>
                                                     <p className="text-[11px] font-medium text-slate-500">{applicant.email || '—'}</p>
                                                 </div>
                                                 <div>
@@ -1148,7 +1148,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">NSC Average Score</p>
-                                                    <p className="text-xl font-black text-[#0038A8] mt-0.5">
+                                                    <p className="text-xl font-black text-brand-700 mt-0.5">
                                                         {overallNSCAverage !== null && overallNSCAverage !== undefined ? `${overallNSCAverage} / 100` : '—'}
                                                     </p>
                                                 </div>
@@ -1160,8 +1160,8 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                             {/* Left: Qualification Standards (QS) Review */}
                                             <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-4 shadow-sm">
                                                 <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                                                    <FiCheckSquare className="text-[#08315F]" size={16} />
-                                                    <h4 className="text-xs font-black text-[#08315F] uppercase tracking-wider">
+                                                    <FiCheckSquare className="text-brand-800" size={16} />
+                                                    <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider">
                                                         Qualification Standards (QS) Rollup
                                                     </h4>
                                                 </div>
@@ -1205,8 +1205,8 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                             {/* Right: Statutory Disclosures Rollup */}
                                             <div className="p-6 rounded-2xl bg-white border-2 border-slate-200 space-y-4 shadow-sm">
                                                 <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                                                    <FiShield className="text-[#08315F]" size={16} />
-                                                    <h4 className="text-xs font-black text-[#08315F] uppercase tracking-wider">
+                                                    <FiShield className="text-brand-800" size={16} />
+                                                    <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider">
                                                         Statutory Integrity Disclosures
                                                     </h4>
                                                 </div>
@@ -1232,16 +1232,16 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                         </div>
 
                                         {/* Bottom: NSC Evaluation Committee Scores Breakdown */}
-                                        <div className="p-6 rounded-2xl bg-white border-2 border-[#08315F] space-y-4 shadow-sm">
+                                        <div className="p-6 rounded-2xl bg-white border-2 border-brand-800 space-y-4 shadow-sm">
                                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                                                 <div className="flex items-center gap-2">
-                                                    <FiAward className="text-[#08315F]" size={18} />
-                                                    <h4 className="text-xs font-black text-[#08315F] uppercase tracking-wider">
+                                                    <FiAward className="text-brand-800" size={18} />
+                                                    <h4 className="text-xs font-black text-brand-800 uppercase tracking-wider">
                                                         NSC Committee Evaluator Scores
                                                     </h4>
                                                 </div>
                                                 <div className="text-xs font-bold text-slate-600">
-                                                    Overall Deliberation Score: <span className="font-black text-[#0038A8] text-sm">{overallNSCAverage !== null && overallNSCAverage !== undefined ? overallNSCAverage : '—'}</span>
+                                                    Overall Deliberation Score: <span className="font-black text-brand-700 text-sm">{overallNSCAverage !== null && overallNSCAverage !== undefined ? overallNSCAverage : '—'}</span>
                                                 </div>
                                             </div>
 
@@ -1256,7 +1256,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                             <p className="text-xs font-black text-slate-800 truncate" title={m.evaluator_name}>
                                                                 {m.evaluator_name || `Member ${idx + 1}`}
                                                             </p>
-                                                            <p className="text-lg font-black text-[#08315F] mt-1">
+                                                            <p className="text-lg font-black text-brand-800 mt-1">
                                                                 {tot > 0 ? tot : '—'} <span className="text-[10px] text-slate-400 font-medium">/ 100</span>
                                                             </p>
                                                             {m.notes && (

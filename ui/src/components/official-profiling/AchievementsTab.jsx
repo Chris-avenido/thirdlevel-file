@@ -8,9 +8,9 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
     <>
                                                 {tab === 'achievements' && (
                                                     <div className="space-y-6">
-                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-8 shadow-none space-y-6">
+                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-8 shadow-none space-y-6">
                                                             <div className="flex items-center justify-between">
-                                                                <SectionLabel color="#FCD116">Notable Achievements (If Any)</SectionLabel>
+                                                                <SectionLabel color="var(--color-gold)">Notable Achievements (If Any)</SectionLabel>
                                                             </div>
 
                                                             {(() => {
@@ -64,7 +64,7 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                                                 disabled={!isEditing}
                                                                                                 value={valAch}
                                                                                                 onChange={e => updateAchievementEntry(idx, e.target.value, undefined)}
-                                                                                                className="w-full bg-white hover:bg-slate-100/30 border-2 border-slate-200/80 focus:border-[#0038A8] focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-sm cursor-pointer"
+                                                                                                className="w-full bg-white hover:bg-slate-100/30 border-2 border-slate-200/80 focus:border-brand-700 focus:bg-white focus:ring-4 focus:ring-blue-50/50 rounded-2xl py-4 px-5 text-[18px] font-semibold text-slate-800 outline-none transition-all shadow-sm cursor-pointer"
                                                                                             >
                                                                                                 <option value="">-- Select Achievement --</option>
                                                                                                 {notableAchievementsOptions.map((ach, i) => (
@@ -103,12 +103,12 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                         </div>
 
                                                         {/* Individual Accomplishments & Additional Awards */}
-                                                        <div className="bg-white border-2 border-[#08315F] rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
-                                                            <SectionLabel color="#0038A8">Additional Awards &amp; Notable Accomplishments</SectionLabel>
+                                                        <div className="bg-white border-2 border-brand-800 rounded-[22px] p-6 lg:p-8 space-y-5 shadow-none">
+                                                            <SectionLabel color="var(--color-brand-700)">Additional Awards &amp; Notable Accomplishments</SectionLabel>
 
-                                                            <div className="bg-[#F4F8FB]/40 rounded-[2rem] p-5 border-2 border-blue-100 flex items-center gap-3">
+                                                            <div className="bg-brand-50/40 rounded-[2rem] p-5 border-2 border-blue-100 flex items-center gap-3">
                                                                 <FiInfo size={16} className="text-blue-400 shrink-0" />
-                                                                <p className="text-[15px] font-bold text-[#075985]">List any additional awards, recognitions, or notable individual accomplishments (supports multiple awards with different years).</p>
+                                                                <p className="text-[15px] font-bold text-brand-700">List any additional awards, recognitions, or notable individual accomplishments (supports multiple awards with different years).</p>
                                                             </div>
 
                                                             <div className="space-y-3">
@@ -132,7 +132,7 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                                     setP('individual_accomplishments', newAccs);
                                                                                 }}
                                                                                 placeholder="Award / Recognition / Notable accomplishment title"
-                                                                                className="bg-white border-2 border-slate-200 focus:border-[#0038A8] focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
+                                                                                className="bg-white border-2 border-slate-200 focus:border-brand-700 focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
                                                                             />
                                                                             <div className="w-full md:w-44 shrink-0">
                                                                                 <YearInput disabled={!isEditing}
@@ -153,7 +153,7 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                                     const newAccs = (profile.individual_accomplishments || []).filter((_, i) => i !== idx);
                                                                                     setP('individual_accomplishments', newAccs);
                                                                                 }}
-                                                                                className="w-11 h-11 flex items-center justify-center shrink-0 bg-[#FBBF24]/10 text-[#FBBF24] rounded-xl hover:bg-[#FBBF24] hover:text-white transition-all"
+                                                                                className="w-11 h-11 flex items-center justify-center shrink-0 bg-gold/10 text-gold rounded-xl hover:bg-gold hover:text-white transition-all"
                                                                                 title="Remove Award"
                                                                             >
                                                                                 <FiTrash2 size={14} />
@@ -164,7 +164,7 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                 {isEditing && <button disabled={!isEditing}
                                                                     type="button"
                                                                     onClick={() => setP('individual_accomplishments', [...(profile.individual_accomplishments || []), { description: '', award_year: '' }])}
-                                                                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-black text-[15px] uppercase tracking-widest hover:border-[#0038A8] hover:text-[#08315F] transition-all flex items-center justify-center gap-2 mt-2"
+                                                                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-black text-[15px] uppercase tracking-widest hover:border-brand-700 hover:text-brand-800 transition-all flex items-center justify-center gap-2 mt-2"
                                                                 >
                                                                     <FiPlus size={14} /> Add Award / Notable Accomplishment
                                                                 </button>}
