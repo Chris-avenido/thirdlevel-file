@@ -919,7 +919,7 @@ const Home = () => {
                 {/* DROPDOWNS */}
                 <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">
                     {/* Region Dropdown */}
-                    <FloatingLabelInput as="select" label="All Regions" className="w-full xl:flex-1" value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion}>
+                    <FloatingLabelInput as="select" label="Region" className="w-full xl:flex-1" value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} title={filterRegion}>
                             <option value="All regions">All Regions</option>
                             {[...new Set(officials.map(getOfficialRegion).filter(Boolean))].sort().map(r => (
                                 <option key={r} value={r}>{r}</option>
@@ -927,14 +927,14 @@ const Home = () => {
                         </FloatingLabelInput>
 
                     {/* Level Dropdown */}
-                    <FloatingLabelInput as="select" label="All Levels" className="w-full xl:flex-1" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel}>
+                    <FloatingLabelInput as="select" label="Level" className="w-full xl:flex-1" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} title={filterLevel}>
                             <option value="All levels">All Levels</option>
                             <option value="Third Level">Third Level</option>
                             <option value="Division Chief">Division Chief</option>
                         </FloatingLabelInput>
 
                     {/* Office Dropdown */}
-                    <FloatingLabelInput as="select" label="All Offices" className="w-full xl:flex-1" value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice}>
+                    <FloatingLabelInput as="select" label="Office" className="w-full xl:flex-1" value={filterOffice} onChange={(e) => setFilterOffice(e.target.value)} title={filterOffice}>
                             <option value="All">All Offices</option>
                             {[...new Set(officials.map(o => o.office).filter(Boolean))].sort().map(o => (
                                 <option key={o} value={o}>{o}</option>

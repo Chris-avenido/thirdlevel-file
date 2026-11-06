@@ -248,7 +248,7 @@ const NotableAchievements = () => {
                             <div className="flex-1 max-w-xl flex items-center gap-3">
                                 <div className="relative flex-1">
                                     <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <FloatingLabelInput as="select" label="All Achievements" className="w-full" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}>
+                                    <FloatingLabelInput as="select" label="Achievement" className="w-full" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}>
                                         <option value="">All Achievements</option>
                                         {uniqueAchievements.map((ach, idx) => (
                                             <option key={idx} value={ach}>{ach}</option>

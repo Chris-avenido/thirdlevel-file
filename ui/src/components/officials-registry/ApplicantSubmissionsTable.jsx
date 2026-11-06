@@ -139,7 +139,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                             }} placeholder="Search candidate name or email..." />
 
                     {/* Position Filter */}
-                    <FloatingLabelInput as="select" label="All Applied Positions" className="w-full" value={positionFilter} onChange={e => {
+                    <FloatingLabelInput as="select" label="Applied Position" className="w-full" value={positionFilter} onChange={e => {
                                 setPositionFilter(e.target.value);
                                 setPagination(p => ({ ...p, page: 1 }));
                             }}>
@@ -151,7 +151,7 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                         </FloatingLabelInput>
 
                     {/* Target Region Filter */}
-                    <FloatingLabelInput as="select" label="All Target Regions" className="w-full" value={regionFilter} onChange={e => {
+                    <FloatingLabelInput as="select" label="Target Region" className="w-full" value={regionFilter} onChange={e => {
                                 setRegionFilter(e.target.value);
                                 setPagination(p => ({ ...p, page: 1 }));
                             }}>

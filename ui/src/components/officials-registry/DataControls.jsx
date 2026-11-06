@@ -11,7 +11,7 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                 {/* DROPDOWNS */}
                                 <div className="grid grid-cols-2 lg:grid-cols-5 xl:flex xl:flex-[4] gap-2">
                                     {/* Level Dropdown */}
-                                    <FloatingLabelInput as="select" label="All CO / RO / SDO" className="w-full xl:flex-1" value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter}>
+                                    <FloatingLabelInput as="select" label="Level" className="w-full xl:flex-1" value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} title={levelFilter}>
                                             <option value="All">All CO / RO / SDO</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Regional Office">Regional Office</option>
@@ -19,7 +19,7 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                         </FloatingLabelInput>
 
                                     {/* Region Dropdown */}
-                                    <FloatingLabelInput as="select" label="All Regions" className="w-full xl:flex-1" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter}>
+                                    <FloatingLabelInput as="select" label="Region" className="w-full xl:flex-1" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} title={regionFilter}>
                                             <option value="All">All Regions</option>
                                             <option value="Central Office">Central Office</option>
                                             <option value="Region I">Region I</option>
@@ -44,14 +44,14 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
 
                                     {/* Strand / Division Dropdown */}
                                     {levelFilter === 'Central Office' || regionFilter === 'Central Office' ? (
-                                        <FloatingLabelInput as="select" label="All Strands" className="w-full xl:flex-1" value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter}>
+                                        <FloatingLabelInput as="select" label="Strand" className="w-full xl:flex-1" value={strandFilter} onChange={(e) => setStrandFilter(e.target.value)} title={strandFilter === 'All' ? 'All Strands' : strandFilter}>
                                                 <option value="All">All Strands</option>
                                                 {strands.map(s => (
                                                     <option key={s} value={s}>{s}</option>
                                                 ))}
                                             </FloatingLabelInput>
                                     ) : (
-                                        <FloatingLabelInput as="select" label="All Divisions" className="w-full xl:flex-1" value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter}>
+                                        <FloatingLabelInput as="select" label="Division" className="w-full xl:flex-1" value={officeFilter} onChange={(e) => setOfficeFilter(e.target.value)} title={officeFilter === 'All' ? 'All Divisions' : officeFilter}>
                                                 <option value="All">All Divisions</option>
                                                 {dependentOffices.map(o => (
                                                     <option key={o} value={o}>{o}</option>
@@ -60,7 +60,7 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                     )}
 
                                     {/* Designation Dropdown */}
-                                    <FloatingLabelInput as="select" label="All Designations" className="w-full xl:flex-1" value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)}>
+                                    <FloatingLabelInput as="select" label="Designation" className="w-full xl:flex-1" value={designationFilter} onChange={(e) => setDesignationFilter(e.target.value)} title={designationFilter === 'All' ? 'All Designations' : expandAcronym(designationFilter)}>
                                             <option value="All">All Designations</option>
                                             {designations.map(d => (
                                                 <option key={d} value={d}>{expandAcronym(d)}</option>
@@ -68,7 +68,7 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
                                         </FloatingLabelInput>
 
                                     {/* Position Dropdown */}
-                                    <FloatingLabelInput as="select" label="All Positions" className="w-full xl:flex-1" value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter}>
+                                    <FloatingLabelInput as="select" label="Position" className="w-full xl:flex-1" value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} title={positionFilter}>
                                             <option value="All">All Positions</option>
                                             {tabPositions.map(p => (
                                                 <option key={p} value={p}>{p}</option>
@@ -115,7 +115,7 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
 
                             {/* BOTTOM ROW: SEARCH BAR & VIEW TOGGLES */}
                             <div className="flex items-center gap-2 w-full">
-                                <FloatingLabelInput label="Search by name, position, or office" icon={<FiSearch size={16} />} className="w-full" type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by name, position, or office..." />
+                                <FloatingLabelInput label="Search" icon={<FiSearch size={16} />} className="w-full" type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by name, position, or office..." />
                                 {/* VIEW TOGGLES */}
                                 <div className="flex items-center gap-2 shrink-0 px-1">
                                     <button
