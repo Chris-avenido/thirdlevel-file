@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import ModernDatePicker from './ModernDatePicker';
 import FloatingLabelInput from './forms/FloatingLabelInput.jsx';
+import FormErrorSummary from './forms/FormErrorSummary.jsx';
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 const isSuffixPlaceholder = (suffix) => {
@@ -369,6 +370,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
 
   // Submission
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [loadingOfficials, setLoadingOfficials] = useState(false);
 
   // Dropdown positioning for official search
@@ -564,10 +566,17 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
     !isSameAssignment &&
     !submitting;
 
+  const errors = {
+    target: isSameAssignment ? 'New assignment is identical to the current one. Please select a different target office or vacant position.' : '',
+    submit: submitError,
+  };
+  const summaryErrors = [errors.target, errors.submit].filter(Boolean);
+
   // ── Submit handler: Append-only Reassignment ──
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
+    setSubmitError('');
     try {
       const formData = new FormData();
       if (file) {
@@ -609,12 +618,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
       onRefresh();
       onClose();
     } catch (err) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Reassignment Failed',
-        text: err.message || 'An unexpected error occurred.',
-        confirmButtonColor: 'var(--color-brand-700)'
-      });
+      setSubmitError(`Reassignment failed: ${err.message || 'An unexpected error occurred.'}`);
     } finally {
       setSubmitting(false);
     }
@@ -910,14 +914,8 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
                 </div>
               </div>
 
-              {/* Same-assignment warning guard */}
-              {isSameAssignment && (
-                <div className="flex items-start gap-2.5 mt-3 px-4 py-3 rounded-[14px] bg-amber-50/90 border-2 border-amber-200">
-                  <FiAlertCircle size={18} className="text-amber-500 mt-0.5 shrink-0" />
-                  <p className="text-[17px] font-bold text-amber-800 leading-snug">
-                    New assignment is identical to the current one. Please select a different target office or vacant position.
-                  </p>
-                </div>
+              {errors.target && (
+                <p role="alert" className="mt-3 text-[13px] font-medium text-danger-700">{errors.target}</p>
               )}
             </section>
           )}
@@ -965,6 +963,10 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
               />
             </section>
           )}
+        </div>
+
+        <div className="px-7 pt-3">
+          <FormErrorSummary errors={summaryErrors} />
         </div>
 
         {/* ── Footer ── */}

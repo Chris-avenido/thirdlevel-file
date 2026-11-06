@@ -7,7 +7,7 @@ const FloatingLabelInput = forwardRef(function FloatingLabelInput(
     ref,
 ) {
     const autoId = useId();
-    const fieldId = id || autoId;
+    const fieldId = id || (rest.name ? `field-${rest.name}` : autoId);
     const errorId = `${fieldId}-error`;
     const isTextarea = Control === 'textarea';
     const showMark = required || requiredMark;

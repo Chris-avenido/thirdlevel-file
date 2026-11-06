@@ -4,6 +4,7 @@ import { formatContactNumber } from './constants';
 import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const PersonalEmploymentSection = ({
+    fieldErrors = [],
     personalData,
     setPersonalData
 }) => {
@@ -64,11 +65,11 @@ const PersonalEmploymentSection = ({
             {/* Name Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <FloatingLabelInput label="Surname [ALL CAPS]" className="w-full" inputClassName="uppercase" type="text" name="surname" value={personalData.surname || ''} onChange={handleChange} placeholder="DELA CRUZ" required />
+                    <FloatingLabelInput error={fieldErrors.find((er) => er.id === 'field-surname')?.message} label="Surname [ALL CAPS]" className="w-full" inputClassName="uppercase" type="text" name="surname" value={personalData.surname || ''} onChange={handleChange} placeholder="DELA CRUZ" required />
                 </div>
 
                 <div>
-                    <FloatingLabelInput label="First Name [ALL CAPS]" className="w-full" inputClassName="uppercase" type="text" name="first_name" value={personalData.first_name || ''} onChange={handleChange} placeholder="JUAN" required />
+                    <FloatingLabelInput error={fieldErrors.find((er) => er.id === 'field-first_name')?.message} label="First Name [ALL CAPS]" className="w-full" inputClassName="uppercase" type="text" name="first_name" value={personalData.first_name || ''} onChange={handleChange} placeholder="JUAN" required />
                 </div>
 
                 <div>
@@ -84,7 +85,7 @@ const PersonalEmploymentSection = ({
                 </div>
 
                 <div>
-                    <FloatingLabelInput label="Telephone / Contact Number" className="w-full" inputClassName="font-mono tracking-wide" type="tel" name="contact_number" value={personalData.contact_number || ''} onChange={handleContactChange} placeholder="0917-123-4567" maxLength={13} required />
+                    <FloatingLabelInput error={fieldErrors.find((er) => er.id === 'field-contact_number')?.message} label="Telephone / Contact Number" className="w-full" inputClassName="font-mono tracking-wide" type="tel" name="contact_number" value={personalData.contact_number || ''} onChange={handleContactChange} placeholder="0917-123-4567" maxLength={13} required />
                     <span className="text-[10px] text-slate-400 block mt-1">11 digits (formatted with dashes)</span>
                 </div>
             </div>
@@ -98,7 +99,7 @@ const PersonalEmploymentSection = ({
                     <span className="text-[11px] text-slate-500 block mb-2 font-medium">
                         [For other positions, do not abbreviate. e.g. Education Program Supervisor, Public Schools District Supervisor]
                     </span>
-                    <FloatingLabelInput label="e.g. Chief Education Supervisor" className="w-full" type="text" name="current_position" value={personalData.current_position || ''} onChange={handleChange} placeholder="e.g. Chief Education Supervisor" required />
+                    <FloatingLabelInput error={fieldErrors.find((er) => er.id === 'field-current_position')?.message} label="e.g. Chief Education Supervisor" className="w-full" type="text" name="current_position" value={personalData.current_position || ''} onChange={handleChange} placeholder="e.g. Chief Education Supervisor" required />
                 </div>
 
                 <div>
@@ -108,7 +109,7 @@ const PersonalEmploymentSection = ({
                     <span className="text-[11px] text-slate-500 block mb-2 font-medium">
                         [i.e. SDO-Pasig City; SDO-Cebu City; Regional Office; For non-DepEd, include Agency and Office Assignment]
                     </span>
-                    <FloatingLabelInput label="e.g. SDO-Pasig City or Regional Office IV-A" className="w-full" type="text" name="plantilla_office" value={personalData.plantilla_office || ''} onChange={handleChange} placeholder="e.g. SDO-Pasig City or Regional Office IV-A" required />
+                    <FloatingLabelInput error={fieldErrors.find((er) => er.id === 'field-plantilla_office')?.message} label="e.g. SDO-Pasig City or Regional Office IV-A" className="w-full" type="text" name="plantilla_office" value={personalData.plantilla_office || ''} onChange={handleChange} placeholder="e.g. SDO-Pasig City or Regional Office IV-A" required />
                 </div>
             </div>
         </div>

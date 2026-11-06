@@ -3,6 +3,7 @@ import { X as FiX, Check as FiCheck, User as FiUser, Envelope as FiMail, Briefca
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import FloatingLabelInput from './forms/FloatingLabelInput.jsx';
+import FormErrorSummary from './forms/FormErrorSummary.jsx';
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -38,6 +39,8 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
     regionDivisions: {}
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState([]);
+  const fieldError = (id) => errors.find((er) => er.id === id)?.message;
   const [emailStatus, setEmailStatus] = useState('idle'); // 'idle' | 'checking' | 'duplicate' | 'valid'
 
   useEffect(() => {
@@ -119,16 +122,18 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const normalizedEmail = formData.email.toLowerCase().trim();
+    const found = [];
     if (!normalizedEmail.endsWith('@deped.gov.ph')) {
-      Swal.fire('Error', 'Only @deped.gov.ph emails are allowed for DepEd Email.', 'error');
-      return;
+      found.push({ id: 'personnel-email', message: 'Only @deped.gov.ph emails are allowed for DepEd Email.' });
+    } else if (emailStatus === 'duplicate') {
+      found.push({ id: 'personnel-email', message: 'This email already exists in the masterlist.' });
     }
-    if (emailStatus === 'duplicate') {
-      Swal.fire('Error', 'This email already exists in the masterlist.', 'error');
-      return;
-    }
-    if (!formData.first_name || !formData.last_name || !formData.email) {
-      Swal.fire('Error', 'Please fill in all required fields.', 'error');
+    if (!formData.first_name) found.push({ id: 'personnel-first-name', message: 'First name is required.' });
+    if (!formData.last_name) found.push({ id: 'personnel-last-name', message: 'Last name is required.' });
+    if (!formData.email && !found.some((er) => er.id === 'personnel-email')) found.push({ id: 'personnel-email', message: 'DepEd email is required.' });
+    setErrors(found);
+    if (found.length > 0) {
+      document.getElementById(found[0].id)?.focus();
       return;
     }
 
@@ -190,15 +195,16 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
+          <FormErrorSummary errors={errors} />
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <FloatingLabelInput label="First Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" required value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} placeholder="JUAN" />
+              <FloatingLabelInput id="personnel-first-name" error={fieldError('personnel-first-name')} label="First Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" required value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} placeholder="JUAN" />
             </div>
             <div>
               <FloatingLabelInput label="Middle Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" value={formData.middle_name} onChange={(e) => setFormData({ ...formData, middle_name: e.target.value.toUpperCase() })} placeholder="SANTOS" />
             </div>
             <div>
-              <FloatingLabelInput label="Last Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" required value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} placeholder="DELA CRUZ" />
+              <FloatingLabelInput id="personnel-last-name" error={fieldError('personnel-last-name')} label="Last Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" required value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} placeholder="DELA CRUZ" />
             </div>
             <div>
               <FloatingLabelInput as="select" label="Region" className="w-full" value={formData.region} onChange={(e) => {
@@ -239,6 +245,8 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
             <div className="relative">
               <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
+                id="personnel-email"
+                aria-invalid={fieldError('personnel-email') ? 'true' : undefined}
                 type="email"
                 required
                 value={formData.email}

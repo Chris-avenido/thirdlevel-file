@@ -97,9 +97,7 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                                 <FiTrash2 size={12} />
                                                                             </button>}
                                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                                                                <Field label="Eligibility">
-                                                                                    <FloatingLabelInput label="e.g. Career Service Professional" disabled={!isEditing} type="text" value={elig.eligibility || elig.title || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value.toUpperCase(), title: undefined } : x) }))} placeholder="e.g. Career Service Professional" />
-                                                                                </Field>
+                                                                                <FloatingLabelInput label="Eligibility" disabled={!isEditing} type="text" value={elig.eligibility || elig.title || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value.toUpperCase(), title: undefined } : x) }))} placeholder="e.g. Career Service Professional" />
                                                                                 <Field label="Date of Examination / Conferment">
                                                                                     <ModernDatePicker disabled={!isEditing}
                                                                                         value={elig.date || ''}
@@ -107,12 +105,8 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                                         className={inp}
                                                                                     />
                                                                                 </Field>
-                                                                                <Field label="Rating">
-                                                                                    <FloatingLabelInput label="e.g. 85.50" disabled={!isEditing} type="text" value={elig.rating || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, rating: e.target.value } : x) }))} placeholder="e.g. 85.50" />
-                                                                                </Field>
-                                                                                <Field label="Place of Examination / Conferment">
-                                                                                    <FloatingLabelInput label="e.g. Manila" disabled={!isEditing} type="text" value={elig.place_of_assignment || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value.toUpperCase() } : x) }))} placeholder="e.g. Manila" />
-                                                                                </Field>
+                                                                                <FloatingLabelInput label="Rating" disabled={!isEditing} type="text" value={elig.rating || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, rating: e.target.value } : x) }))} placeholder="e.g. 85.50" />
+                                                                                <FloatingLabelInput label="Place of Examination / Conferment" disabled={!isEditing} type="text" value={elig.place_of_assignment || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value.toUpperCase() } : x) }))} placeholder="e.g. Manila" />
                                                                             </div>
                                                                         </div>
                                                                     ))}

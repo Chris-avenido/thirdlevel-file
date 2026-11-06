@@ -4,6 +4,7 @@ import { EXECUTIVE_POSITIONS, DEPED_REGIONS } from './constants';
 import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const ExecutivePositionSection = ({
+    fieldErrors = [],
     appliedPosition,
     setAppliedPosition,
     targetRegion,
@@ -25,7 +26,7 @@ const ExecutivePositionSection = ({
 
             {/* Target Executive Position Dropdown */}
             <div className="space-y-2">
-                <FloatingLabelInput as="select" label="Target Executive Position" requiredMark icon={<FiBriefcase size={18} />} className="w-full" value={appliedPosition} onChange={e => setAppliedPosition(e.target.value)}>
+                <FloatingLabelInput as="select" id="timon-position" error={fieldErrors.find((er) => er.id === 'timon-position')?.message} label="Target Executive Position" requiredMark icon={<FiBriefcase size={18} />} className="w-full" value={appliedPosition} onChange={e => setAppliedPosition(e.target.value)}>
                         <option value="">Select target executive position...</option>
                         {EXECUTIVE_POSITIONS.map(pos => (
                             <option key={pos.code} value={pos.code}>
@@ -37,7 +38,7 @@ const ExecutivePositionSection = ({
 
             {/* Target Region Dropdown */}
             <div className="space-y-2 pt-2">
-                <FloatingLabelInput as="select" label="Target DepEd Region" requiredMark icon={<FiMapPin size={18} />} className="w-full" value={targetRegion} onChange={e => setTargetRegion(e.target.value)}>
+                <FloatingLabelInput as="select" id="timon-region" error={fieldErrors.find((er) => er.id === 'timon-region')?.message} label="Target DepEd Region" requiredMark icon={<FiMapPin size={18} />} className="w-full" value={targetRegion} onChange={e => setTargetRegion(e.target.value)}>
                         <option value="">Select target DepEd region...</option>
                         {DEPED_REGIONS.map(reg => (
                             <option key={reg} value={reg}>

@@ -4,6 +4,7 @@ import { DESIGNATION_PRESETS } from './constants';
 import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const DesignationOICSection = ({
+    fieldErrors = [],
     designationData,
     setDesignationData
 }) => {
@@ -63,7 +64,7 @@ const DesignationOICSection = ({
 
                 {designationData.current_designation_preset === 'Other' && (
                     <div className="mt-3">
-                        <FloatingLabelInput label="Specify Designation" className="w-full" type="text" name="current_designation_custom" value={designationData.current_designation_custom || ''} onChange={handleChange} placeholder="Input full designation (do not abbreviate)" required />
+                        <FloatingLabelInput error={fieldErrors.find((er) => er.id === 'field-current_designation_custom')?.message} label="Specify Designation" className="w-full" type="text" name="current_designation_custom" value={designationData.current_designation_custom || ''} onChange={handleChange} placeholder="Input full designation (do not abbreviate)" required />
                     </div>
                 )}
             </div>

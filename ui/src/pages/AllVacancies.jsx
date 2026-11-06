@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import PageTransition from '../components/PageTransition';
 import { apiUrl } from '../utils/api';
 import Swal from 'sweetalert2';
+import FormErrorSummary from '../components/forms/FormErrorSummary.jsx';
 import {
     ExecutivePositionSection,
     PersonalEmploymentSection,
@@ -31,6 +32,7 @@ const AllVacancies = () => {
     });
 
     // Step 1: Executive Position & Region
+    const [errors, setErrors] = useState([]);
     const [appliedPosition, setAppliedPosition] = useState('');
     const [targetRegion, setTargetRegion] = useState('');
 
@@ -167,6 +169,11 @@ const AllVacancies = () => {
         }
     }, [user]);
 
+    // Clear stale profile errors once the applicant leaves the profile tab.
+    useEffect(() => {
+        if (errors.length > 0 && activeTab !== 'profile') setErrors([]);
+    }, [activeTab, errors.length]);
+
     const promptAuth = () => {
         Swal.fire({
             title: 'Authentication Required',
@@ -191,40 +198,21 @@ const AllVacancies = () => {
             return false;
         }
 
-        if (!appliedPosition) {
-            Swal.fire('Target Position Required', 'Please select one of the four executive designations (RD, ARD, SDS, ASDS).', 'warning');
+        const found = [];
+        if (!appliedPosition) found.push({ id: 'timon-position', message: 'Please select one of the four executive designations (RD, ARD, SDS, ASDS).' });
+        if (!targetRegion) found.push({ id: 'timon-region', message: 'Please select a target DepEd region for your application.' });
+        if (!personalData.surname) found.push({ id: 'field-surname', message: 'Please provide your Surname in ALL CAPS.' });
+        if (!personalData.first_name) found.push({ id: 'field-first_name', message: 'Please provide your First Name in ALL CAPS.' });
+        if (!personalData.contact_number) found.push({ id: 'field-contact_number', message: 'Please provide your 11-digit mobile/telephone contact number.' });
+        if (!personalData.current_position) found.push({ id: 'field-current_position', message: 'Please provide your current plantilla position title.' });
+        if (!personalData.plantilla_office) found.push({ id: 'field-plantilla_office', message: 'Please indicate your official SDO, Regional Office, or Agency station.' });
+        if (designationData.current_designation_preset === 'Other' && !designationData.current_designation_custom?.trim()) found.push({ id: 'field-current_designation_custom', message: 'Please specify your full designation in the text field provided.' });
+        setErrors(found);
+        if (found.length > 0) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return false;
         }
 
-        if (!targetRegion) {
-            Swal.fire('Target Region Required', 'Please select a target DepEd region for your application.', 'warning');
-            return false;
-        }
-
-        if (!personalData.surname || !personalData.first_name) {
-            Swal.fire('Name Required', 'Please provide both your Surname and First Name in ALL CAPS.', 'warning');
-            return false;
-        }
-
-        if (!personalData.contact_number) {
-            Swal.fire('Contact Number Required', 'Please provide your 11-digit mobile/telephone contact number.', 'warning');
-            return false;
-        }
-
-        if (!personalData.current_position) {
-            Swal.fire('Current Position Required', 'Please provide your current plantilla position title.', 'warning');
-            return false;
-        }
-
-        if (!personalData.plantilla_office) {
-            Swal.fire('Plantilla Office Required', 'Please indicate your official SDO, Regional Office, or Agency station.', 'warning');
-            return false;
-        }
-
-        if (designationData.current_designation_preset === 'Other' && !designationData.current_designation_custom?.trim()) {
-            Swal.fire('Custom Designation Required', 'Please specify your full designation in the text field provided.', 'warning');
-            return false;
-        }
 
         return true;
     };
@@ -606,8 +594,10 @@ const AllVacancies = () => {
                             {/* Tab 1: Profile & Designation */}
                             {activeTab === 'profile' && (
                                 <div className="space-y-8">
+                                    <FormErrorSummary errors={errors} />
                                     {/* Section 1: Executive Position & Target Region (Decoupled from database plantilla items) */}
                                     <ExecutivePositionSection
+                                        fieldErrors={errors}
                                         appliedPosition={appliedPosition}
                                         setAppliedPosition={setAppliedPosition}
                                         targetRegion={targetRegion}
@@ -616,12 +606,14 @@ const AllVacancies = () => {
 
                                     {/* Section 2: Personal Details & Current Employment */}
                                     <PersonalEmploymentSection
+                                        fieldErrors={errors}
                                         personalData={personalData}
                                         setPersonalData={setPersonalData}
                                     />
 
                                     {/* Section 3: Third Level Designation & OIC Assignment */}
                                     <DesignationOICSection
+                                        fieldErrors={errors}
                                         designationData={designationData}
                                         setDesignationData={setDesignationData}
                                     />

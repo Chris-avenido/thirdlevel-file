@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import AdminSidebar from '../components/AdminSidebar';
 import { apiUrl } from '../utils/api';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
+import FormErrorSummary from '../components/forms/FormErrorSummary.jsx';
 
 const Settings = () => {
     const { user, token, setUser, logout } = useAuth();
@@ -20,6 +21,8 @@ const Settings = () => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState([]);
+    const fieldError = (id) => errors.find((er) => er.id === id)?.message;
     const [showPassword, setShowPassword] = useState(false);
     const [showPasscode, setShowPasscode] = useState(false);
 
@@ -41,18 +44,19 @@ const Settings = () => {
     const handleSave = async (e) => {
         e.preventDefault();
 
+        const found = [];
         if (formData.password && formData.password !== formData.confirmPassword) {
-            Swal.fire('Error', 'Passwords do not match', 'error');
-            return;
+            found.push({ id: 'settings-confirm-password', message: 'Passwords do not match' });
         }
-
         if (formData.passcode && formData.passcode !== formData.confirmPasscode) {
-            Swal.fire('Error', 'Passcodes do not match', 'error');
-            return;
+            found.push({ id: 'settings-confirm-passcode', message: 'Passcodes do not match' });
         }
-
         if (formData.passcode && formData.passcode.length !== 6) {
-            Swal.fire('Error', 'Passcode must be exactly 6 digits', 'error');
+            found.push({ id: 'settings-passcode', message: 'Passcode must be exactly 6 digits' });
+        }
+        setErrors(found);
+        if (found.length > 0) {
+            document.getElementById(found[0].id)?.focus();
             return;
         }
 
@@ -157,6 +161,7 @@ const Settings = () => {
                         className="bg-white rounded-[2rem] border-2 border-brand-800 p-8 shadow-xl"
                     >
                         <form onSubmit={handleSave} className="space-y-8">
+                            <FormErrorSummary errors={errors} />
                             
                             {/* Personal Information */}
                             <div>
@@ -192,9 +197,8 @@ const Settings = () => {
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">New Password</label>
                                         <div className="relative">
-                                            <FloatingLabelInput label="Leave blank to keep current" className="w-full" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="Leave blank to keep current" />
+                                            <FloatingLabelInput id="settings-password" label="New Password" className="w-full" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="Leave blank to keep current" />
                                             <button 
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
@@ -205,13 +209,12 @@ const Settings = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <FloatingLabelInput label="Confirm Password" className="w-full" type={showPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm new password" />
+                                        <FloatingLabelInput id="settings-confirm-password" error={fieldError('settings-confirm-password')} label="Confirm Password" className="w-full" type={showPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm new password" />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">New Passcode (6-Digit)</label>
                                         <div className="relative">
-                                            <FloatingLabelInput label="••••••" className="w-full" inputClassName="font-mono tracking-widest" type={showPasscode ? "text" : "password"} name="passcode" value={formData.passcode} onChange={(e) => {
+                                            <FloatingLabelInput id="settings-passcode" error={fieldError('settings-passcode')} label="New Passcode (6-Digit)" className="w-full" inputClassName="font-mono tracking-widest" type={showPasscode ? "text" : "password"} name="passcode" value={formData.passcode} onChange={(e) => {
                                                     const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                     handleChange({ target: { name: 'passcode', value: val } });
                                                 }} placeholder="••••••" maxLength={6} />
@@ -225,7 +228,7 @@ const Settings = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <FloatingLabelInput label="Confirm Passcode" className="w-full" inputClassName="font-mono tracking-widest" type={showPasscode ? "text" : "password"} name="confirmPasscode" value={formData.confirmPasscode} onChange={(e) => {
+                                        <FloatingLabelInput id="settings-confirm-passcode" error={fieldError('settings-confirm-passcode')} label="Confirm Passcode" className="w-full" inputClassName="font-mono tracking-widest" type={showPasscode ? "text" : "password"} name="confirmPasscode" value={formData.confirmPasscode} onChange={(e) => {
                                                 const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                 handleChange({ target: { name: 'confirmPasscode', value: val } });
                                             }} placeholder="••••••" maxLength={6} />

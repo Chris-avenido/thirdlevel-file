@@ -31,9 +31,7 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                 <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">{title}</p>
                                                                 {Array.from({ length: count }).map((_, idx) => (
                                                                     <div key={`${degField}-${idx}`} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-                                                                        <Field label="Degree / Course">
-                                                                            <FloatingLabelInput label="e.g. Bachelor of Science in Nursing" disabled={!isEditing} type="text" value={degrees[idx] || ''} onChange={e => updateEntry(idx, 'deg', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" />
-                                                                        </Field>
+                                                                        <FloatingLabelInput label="Degree / Course" disabled={!isEditing} type="text" value={degrees[idx] || ''} onChange={e => updateEntry(idx, 'deg', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" />
                                                                         <Field label="Year Graduated">
                                                                             <YearInput disabled={!isEditing} value={years[idx] || ''} onChange={val => updateEntry(idx, 'yr', val)} min={prevMin > 0 ? prevMin + 1 : 1900} placeholder="YYYY" />
                                                                         </Field>
@@ -95,12 +93,8 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                                     <FiTrash2 size={14} />
                                                                                 </button>}
                                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-4">
-                                                                                    <Field label="Course Title">
-                                                                                        <FloatingLabelInput label="e.g. Executive Leadership Program" disabled={!isEditing} type="text" value={course.course || ''} onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, course: e.target.value } : x) }))} placeholder="e.g. Executive Leadership Program" />
-                                                                                    </Field>
-                                                                                    <Field label="Details">
-                                                                                        <FloatingLabelInput label="Sponsor, Location, etc." disabled={!isEditing} type="text" value={course.details || ''} onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))} placeholder="Sponsor, Location, etc." />
-                                                                                    </Field>
+                                                                                    <FloatingLabelInput label="Course Title" disabled={!isEditing} type="text" value={course.course || ''} onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, course: e.target.value } : x) }))} placeholder="e.g. Executive Leadership Program" />
+                                                                                    <FloatingLabelInput label="Details" disabled={!isEditing} type="text" value={course.details || ''} onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))} placeholder="Sponsor, Location, etc." />
                                                                                 </div>
                                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                                                     <Field label="Date From">

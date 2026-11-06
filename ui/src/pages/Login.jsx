@@ -9,6 +9,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import PinLogin from '../components/PinLogin';
 import Swal from 'sweetalert2';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
+import FormErrorSummary from '../components/forms/FormErrorSummary.jsx';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -28,6 +29,8 @@ const Login = () => {
     const [showBackPrompt, setShowBackPrompt] = useState(false);
     const [showDialpadModal, setShowDialpadModal] = useState(false);
     const [forgotEmail, setForgotEmail] = useState('');
+    const [errors, setErrors] = useState([]);
+    const fieldError = (id) => errors.find((er) => er.id === id)?.message;
     const [forgotLoading, setForgotLoading] = useState(false);
 
     // UI flows & Remembered user handling
@@ -128,13 +131,16 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         if (e) e.preventDefault();
+        setErrors([]);
         setLoading(true);
 
         try {
             const secret = loginMode === 'password' ? password : passcode;
             if (!secret) {
                 setLoading(false);
-                return Swal.fire('Error', `Please enter your ${loginMode === 'password' ? 'password' : 'passcode'}.`, 'error');
+                setErrors([{ id: 'login-secret', message: `Please enter your ${loginMode === 'password' ? 'password' : 'passcode'}.` }]);
+                document.getElementById('login-secret')?.focus();
+                return;
             }
 
             const data = await loginWithCredentials(loginId, secret, isCO);
@@ -289,6 +295,7 @@ const Login = () => {
                             />
                         ) : (
                             <form onSubmit={handleLogin} className="space-y-6">
+                                <FormErrorSummary errors={errors} />
                                 <div className="space-y-4">
                                     {/* IDENTIFIER */}
                                     <div className="space-y-2">
@@ -324,6 +331,8 @@ const Login = () => {
                                             </div>
                                             {loginMode === 'password' ? (
                                                 <input
+                                                    id="login-secret"
+                                                    aria-invalid={fieldError('login-secret') ? 'true' : undefined}
                                                     type={showPassword ? 'text' : 'password'}
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
@@ -336,6 +345,8 @@ const Login = () => {
                                                 />
                                             ) : (
                                                 <input
+                                                    id="login-secret"
+                                                    aria-invalid={fieldError('login-secret') ? 'true' : undefined}
                                                     type={showPassword ? 'text' : 'password'}
                                                     value={passcode}
                                                     onChange={(e) => {

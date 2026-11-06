@@ -9,6 +9,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { apiUrl } from '../utils/api';
 import Swal from 'sweetalert2';
 import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
+import FormErrorSummary from '../components/forms/FormErrorSummary.jsx';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -35,6 +36,8 @@ const Register = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [errors, setErrors] = useState([]);
+    const fieldError = (id) => errors.find((er) => er.id === id)?.message;
     const [success, setSuccess] = useState(false);
 
     const [masterlistCheckStatus, setMasterlistCheckStatus] = useState('idle'); // 'idle' | 'checking' | 'valid' | 'invalid'
@@ -95,16 +98,18 @@ const Register = () => {
 
 
     const handleFinalStep = async () => {
+        const found = [];
         if (!formData.email.toLowerCase().endsWith('@deped.gov.ph')) {
-            Swal.fire('Notice', 'Only @deped.gov.ph emails are allowed for registration.', 'warning');
-            return;
-        }
-        if (masterlistCheckStatus === 'already_registered') {
-            Swal.fire('Notice', 'This email is already registered for this portal. Please login instead.', 'warning');
-            return;
+            found.push({ id: 'register-email', message: 'Only @deped.gov.ph emails are allowed for registration.' });
+        } else if (masterlistCheckStatus === 'already_registered') {
+            found.push({ id: 'register-email', message: 'This email is already registered for this portal. Please login instead.' });
         }
         if (isCO && formData.auth_code !== 'nVxCpLrTqWmK') {
-            Swal.fire('Error', 'Invalid Authorization Code. Please ensure you have the correct code to register as an Administrator.', 'error');
+            found.push({ id: 'register-auth-code', message: 'Invalid Authorization Code. Please ensure you have the correct code to register as an Administrator.' });
+        }
+        setErrors(found);
+        if (found.length > 0) {
+            document.getElementById(found[0].id)?.focus();
             return;
         }
         setCurrentStep(3);
@@ -112,7 +117,12 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
-        if (formData.password !== formData.confirmPassword) return Swal.fire('Error', "Passwords do not match", 'error');
+        if (formData.password !== formData.confirmPassword) {
+            setErrors([{ id: 'register-confirm-password', message: 'Passwords do not match' }]);
+            document.getElementById('register-confirm-password')?.focus();
+            return;
+        }
+        setErrors([]);
 
         setLoading(true);
         try {
@@ -211,6 +221,8 @@ const Register = () => {
                         </div>
 
                         {/* STEP 1: IDENTITY */}
+                        <FormErrorSummary errors={errors} />
+
                         {/* STEP 1: IDENTITY */}
                         {currentStep === 1 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -254,7 +266,7 @@ const Register = () => {
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                     <div className="relative group">
                                         <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-brand-800'}`} />
+                                        <input id="register-email" aria-invalid={fieldError('register-email') ? 'true' : undefined} type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="example@gmail.com" className={`w-full bg-white border-2 rounded-2xl py-4 pl-12 pr-10 text-slate-800 font-bold focus:outline-none transition-all ${masterlistCheckStatus === 'valid' ? 'border-emerald-500 focus:border-emerald-600' : masterlistCheckStatus === 'invalid' ? 'border-red-400 focus:border-red-500' : 'border-slate-100 focus:border-brand-800'}`} />
 
                                         {!isCO && masterlistCheckStatus === 'valid' && (
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
@@ -294,7 +306,7 @@ const Register = () => {
                                     </div>
                                     {isCO && (
                                         <div className="space-y-2">
-                                            <FloatingLabelInput label="Auth Code" icon={<FiShield />} className="w-full" type="text" value={formData.auth_code} onChange={e => setFormData({...formData, auth_code: e.target.value})} placeholder="Enter Auth Code" />
+                                            <FloatingLabelInput id="register-auth-code" error={fieldError('register-auth-code')} label="Auth Code" icon={<FiShield />} className="w-full" type="text" value={formData.auth_code} onChange={e => setFormData({...formData, auth_code: e.target.value})} placeholder="Enter Auth Code" />
                                         </div>
                                     )}
                                 </div>
@@ -316,7 +328,7 @@ const Register = () => {
                                         <FloatingLabelInput label="New Password" icon={<FiLock />} className="w-full" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="••••••••" />
                                     </div>
                                     <div className="space-y-2">
-                                        <FloatingLabelInput label="Confirm Password" icon={<FiLock />} className="w-full" type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" />
+                                        <FloatingLabelInput id="register-confirm-password" error={fieldError('register-confirm-password')} label="Confirm Password" icon={<FiLock />} className="w-full" type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" />
                                     </div>
                                     <div className="space-y-2">
                                         <FloatingLabelInput label="Passcode (For account recovery)" icon={<FiLock />} className="w-full" type="text" maxLength={6} value={formData.passcode} onChange={(e) => {
