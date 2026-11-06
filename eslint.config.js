@@ -20,6 +20,8 @@ export default [
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [
+          // UI must not import API
+          { group: ['**/api/**', '../api/**', '../../api/**', '../../../api/**'], message: 'UI must not import API files.' },
           { group: ['lucide-react', 'lucide-react/*', '@tabler/icons-react', '@tabler/icons*', 'react-icons', 'react-icons/*', '@heroicons/*', '@fortawesome/*', '@mui/icons-material', '@mui/icons-material/*'], message: 'lib-banned: use @phosphor-icons/react (duotone via IconContext)' },
           { group: ['framer-motion', 'motion', 'motion/*', 'react-spring', '@react-spring/*', 'gsap', 'animejs', 'lottie-react', 'lottie-web', 'react-transition-group', '@formkit/auto-animate'], message: 'motion: use plain CSS transitions of 200ms or less' },
           { group: ['recharts', 'chart.js', 'react-chartjs-2', 'apexcharts', 'react-apexcharts', 'echarts', 'victory', '@nivo/*', 'highcharts', 'plotly.js'], message: 'lib-banned: chart library not approved' },
@@ -91,23 +93,6 @@ export default [
             {
               group: ['**/features/**', '../features/**', '../../features/**'],
               message: 'Shared kernel (config, utils, middleware, services) must not import features.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    // UI must not import API
-    files: ['ui/src/**/*.{js,jsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['**/api/**', '../api/**', '../../api/**', '../../../api/**'],
-              message: 'UI must not import API files.',
             },
           ],
         },
