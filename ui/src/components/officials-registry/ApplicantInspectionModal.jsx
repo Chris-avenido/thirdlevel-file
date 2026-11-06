@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from '../../utils/staticElements.jsx';
 import { X as FiX, User as FiUser, Briefcase as FiBriefcase, MapPin as FiMapPin, Calendar as FiCalendar, FileText as FiFileText, DownloadSimple as FiDownload, Eye as FiEye, Medal as FiAward, FloppyDisk as FiSave, CheckCircle as FiCheckCircle, Warning as FiAlertTriangle, SpinnerGap as FiLoader, Check as FiCheck, Clipboard as FiClipboard, Sliders as FiSliders, Shield as FiShield, CheckSquare as FiCheckSquare, List as FiList } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 import Swal from 'sweetalert2';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const POSITION_TITLES = {
     RD: 'Regional Director (RD)',
@@ -894,13 +895,7 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                                     <span className="text-[10px] font-black uppercase tracking-wider text-brand-700">
                                                         Active Evaluator Form • Slot #{activeMemberIndex + 1}
                                                     </span>
-                                                    <input
-                                                        type="text"
-                                                        value={currentMember.evaluator_name}
-                                                        onChange={e => handleMemberScoreChange('evaluator_name', e.target.value)}
-                                                        placeholder="Evaluator Full Name / Title"
-                                                        className="block text-sm font-black text-slate-800 border-b border-dashed border-slate-300 focus:border-brand-800 outline-none mt-0.5 pb-0.5 w-full sm:w-80"
-                                                    />
+                                                    <FloatingLabelInput label="Evaluator Full Name / Title" className="block mt-0.5 w-full sm:w-80" type="text" value={currentMember.evaluator_name} onChange={e => handleMemberScoreChange('evaluator_name', e.target.value)} placeholder="Evaluator Full Name / Title" />
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
@@ -914,82 +909,25 @@ const ApplicantInspectionModal = ({ isOpen, applicationId, onClose, token, onSco
                                             {/* Criteria Inputs */}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                                 <div className="space-y-1.5">
-                                                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                                                        Executive Leadership (35%)
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        step="0.5"
-                                                        value={currentMember.leadership}
-                                                        onChange={e => handleMemberScoreChange('leadership', e.target.value)}
-                                                        placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
-                                                    />
+                                                    <FloatingLabelInput label="Executive Leadership (35%)" className="w-full" inputClassName="text-center" type="number" min="0" max="100" step="0.5" value={currentMember.leadership} onChange={e => handleMemberScoreChange('leadership', e.target.value)} placeholder="0 - 100" />
                                                 </div>
 
                                                 <div className="space-y-1.5">
-                                                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                                                        Experience & Track Record (35%)
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        step="0.5"
-                                                        value={currentMember.experience}
-                                                        onChange={e => handleMemberScoreChange('experience', e.target.value)}
-                                                        placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
-                                                    />
+                                                    <FloatingLabelInput label="Experience & Track Record (35%)" className="w-full" inputClassName="text-center" type="number" min="0" max="100" step="0.5" value={currentMember.experience} onChange={e => handleMemberScoreChange('experience', e.target.value)} placeholder="0 - 100" />
                                                 </div>
 
                                                 <div className="space-y-1.5">
-                                                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                                                        Education & CES Rank (20%)
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        step="0.5"
-                                                        value={currentMember.education}
-                                                        onChange={e => handleMemberScoreChange('education', e.target.value)}
-                                                        placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
-                                                    />
+                                                    <FloatingLabelInput label="Education & CES Rank (20%)" className="w-full" inputClassName="text-center" type="number" min="0" max="100" step="0.5" value={currentMember.education} onChange={e => handleMemberScoreChange('education', e.target.value)} placeholder="0 - 100" />
                                                 </div>
 
                                                 <div className="space-y-1.5">
-                                                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                                                        Deliberation / Panel (10%)
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        step="0.5"
-                                                        value={currentMember.interview}
-                                                        onChange={e => handleMemberScoreChange('interview', e.target.value)}
-                                                        placeholder="0 - 100"
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-sm font-bold text-slate-800 transition-all text-center"
-                                                    />
+                                                    <FloatingLabelInput label="Deliberation / Panel (10%)" className="w-full" inputClassName="text-center" type="number" min="0" max="100" step="0.5" value={currentMember.interview} onChange={e => handleMemberScoreChange('interview', e.target.value)} placeholder="0 - 100" />
                                                 </div>
                                             </div>
 
                                             {/* Evaluator Notes */}
                                             <div className="space-y-1.5">
-                                                <label className="block text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                                                    Evaluator Remarks & Deliberation Notes
-                                                </label>
-                                                <textarea
-                                                    rows="2"
-                                                    value={currentMember.notes}
-                                                    onChange={e => handleMemberScoreChange('notes', e.target.value)}
-                                                    placeholder="Enter notes, observations, or deliberation comments for this evaluator..."
-                                                    className="w-full p-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-semibold text-slate-800 resize-none transition-all"
-                                                />
+                                                <FloatingLabelInput as="textarea" label="Evaluator Remarks & Deliberation Notes" className="w-full" rows="2" value={currentMember.notes} onChange={e => handleMemberScoreChange('notes', e.target.value)} placeholder="Enter notes, observations, or deliberation comments for this evaluator..." />
                                             </div>
 
                                             {/* Actions */}

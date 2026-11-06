@@ -2,6 +2,7 @@ import { Plus as FiPlus, Trash as FiTrash2 } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import { inp } from './constants';
 import { Field, SectionLabel } from './formParts';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
   return (
@@ -97,13 +98,7 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                             </button>}
                                                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                                                                                 <Field label="Eligibility">
-                                                                                    <input disabled={!isEditing}
-                                                                                        type="text"
-                                                                                        value={elig.eligibility || elig.title || ''}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value.toUpperCase(), title: undefined } : x) }))}
-                                                                                        placeholder="e.g. Career Service Professional"
-                                                                                        className={inp}
-                                                                                    />
+                                                                                    <FloatingLabelInput label="e.g. Career Service Professional" disabled={!isEditing} type="text" value={elig.eligibility || elig.title || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, eligibility: e.target.value.toUpperCase(), title: undefined } : x) }))} placeholder="e.g. Career Service Professional" />
                                                                                 </Field>
                                                                                 <Field label="Date of Examination / Conferment">
                                                                                     <ModernDatePicker disabled={!isEditing}
@@ -113,22 +108,10 @@ const EligibilityTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                                     />
                                                                                 </Field>
                                                                                 <Field label="Rating">
-                                                                                    <input disabled={!isEditing}
-                                                                                        type="text"
-                                                                                        value={elig.rating || ''}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, rating: e.target.value } : x) }))}
-                                                                                        placeholder="e.g. 85.50"
-                                                                                        className={inp}
-                                                                                    />
+                                                                                    <FloatingLabelInput label="e.g. 85.50" disabled={!isEditing} type="text" value={elig.rating || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, rating: e.target.value } : x) }))} placeholder="e.g. 85.50" />
                                                                                 </Field>
                                                                                 <Field label="Place of Examination / Conferment">
-                                                                                    <input disabled={!isEditing}
-                                                                                        type="text"
-                                                                                        value={elig.place_of_assignment || ''}
-                                                                                        onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value.toUpperCase() } : x) }))}
-                                                                                        placeholder="e.g. Manila"
-                                                                                        className={inp}
-                                                                                    />
+                                                                                    <FloatingLabelInput label="e.g. Manila" disabled={!isEditing} type="text" value={elig.place_of_assignment || ''} onChange={e => setProfile(p => ({ ...p, eligibilities: p.eligibilities.map((x, i) => i === idx ? { ...x, place_of_assignment: e.target.value.toUpperCase() } : x) }))} placeholder="e.g. Manila" />
                                                                                 </Field>
                                                                             </div>
                                                                         </div>

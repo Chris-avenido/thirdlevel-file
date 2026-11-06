@@ -13,6 +13,7 @@ import AnalyticsSection from './MainDashboard/components/AnalyticsSection';
 import './MainDashboard/MainDashboard.css';
 import { UserPlus as FiUserPlus, CloudArrowUp as FiUploadCloud, List as FiList, House as FiHome, SignOut as FiLogOut, Medal as FiAward, Clock as FiClock, MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, SquaresFour as FiGrid } from '@phosphor-icons/react';
 import { getOfficialRegion, getOfficialLevel, formatPositionTitle } from '../utils/officialsUtils';
+import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 
 // Text cleaning engine from MainDashboard
 const repairMojibake = (text) => {
@@ -913,16 +914,7 @@ const Home = () => {
             {/* FILTERS & SEARCH BAR */}
             <div className="mb-6 flex flex-col xl:flex-row items-stretch xl:items-center gap-2 bg-white border-[2px] border-brand-800 rounded-[24px] xl:rounded-full p-2 shadow-sm relative z-20 mt-[-24px] max-w-[1200px] mx-auto">
                 {/* SEARCH BAR */}
-                <div className="relative w-full xl:flex-[1.5] h-[38px] bg-brand-50 border border-brand-300 rounded-full focus-within:border-sky-400 transition-colors">
-                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-800/50" size={14} />
-                    <input
-                        type="text"
-                        value={filterSearch}
-                        onChange={(e) => setFilterSearch(e.target.value)}
-                        placeholder="Search name or email..."
-                        className="w-full h-full bg-transparent py-0 pl-10 pr-4 text-[11px] font-bold text-brand-800 outline-none placeholder:text-brand-800/50 transition-colors"
-                    />
-                </div>
+                <FloatingLabelInput label="Search name or email" icon={<FiSearch size={14} />} className="w-full" type="text" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="Search name or email..." />
 
                 {/* DROPDOWNS */}
                 <div className="grid grid-cols-1 md:grid-cols-3 xl:flex xl:flex-[2.5] gap-2">

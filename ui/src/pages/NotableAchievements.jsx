@@ -8,6 +8,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import NotableAchievementsModal from '../components/NotableAchievementsModal';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
+import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 
 const generateHash = (id) => {
     if (!id) return '';
@@ -394,14 +395,7 @@ const NotableAchievements = () => {
 
                             <div className="p-8 space-y-6">
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Achievement Details</label>
-                                    <textarea
-                                        value={formData.achievement}
-                                        onChange={e => setFormData({ ...formData, achievement: e.target.value })}
-                                        rows={4}
-                                        placeholder="Enter achievement details..."
-                                        className="w-full bg-white border border-slate-200 focus:border-brand-800 rounded-xl py-3 px-4 text-xs font-bold text-slate-700 placeholder:text-slate-400 outline-none transition-all resize-none"
-                                    />
+                                    <FloatingLabelInput as="textarea" label="Achievement Details" className="w-full" value={formData.achievement} onChange={e => setFormData({ ...formData, achievement: e.target.value })} rows={4} placeholder="Enter achievement details..." />
                                 </div>
                             </div>
 

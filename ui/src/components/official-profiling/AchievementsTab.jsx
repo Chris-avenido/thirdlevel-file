@@ -2,6 +2,7 @@ import { motion } from '../../utils/staticElements.jsx';
 import { Plus as FiPlus, Trash as FiTrash2, Info as FiInfo } from '@phosphor-icons/react';
 import YearInput from '../YearInput';
 import { Field, SectionLabel } from './formParts';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP, tab }) => {
   return (
@@ -119,21 +120,14 @@ const AchievementsTab = ({ isEditing, notableAchievementsOptions, profile, setP,
                                                                     const accId = typeof acc === 'object' && acc !== null ? acc.id : undefined;
                                                                     return (
                                                                         <motion.div key={accId || `acc-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row items-center gap-3 bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border-2 border-slate-200/50 transition-colors shadow-sm">
-                                                                            <input disabled={!isEditing}
-                                                                                type="text"
-                                                                                maxLength={150}
-                                                                                value={accText}
-                                                                                onChange={e => {
+                                                                            <FloatingLabelInput label="Award / Recognition / Notable accomplishment title" className="w-full" disabled={!isEditing} type="text" maxLength={150} value={accText} onChange={e => {
                                                                                     const newAccs = [...(profile.individual_accomplishments || [])];
                                                                                     const val = e.target.value;
                                                                                     newAccs[idx] = typeof acc === 'object' && acc !== null
                                                                                         ? { ...acc, description: val }
                                                                                         : { description: val, award_year: accYear };
                                                                                     setP('individual_accomplishments', newAccs);
-                                                                                }}
-                                                                                placeholder="Award / Recognition / Notable accomplishment title"
-                                                                                className="bg-white border-2 border-slate-200 focus:border-brand-700 focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm"
-                                                                            />
+                                                                                }} placeholder="Award / Recognition / Notable accomplishment title" />
                                                                             <div className="w-full md:w-44 shrink-0">
                                                                                 <YearInput disabled={!isEditing}
                                                                                     value={accYear}

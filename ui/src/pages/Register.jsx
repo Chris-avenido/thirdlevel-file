@@ -8,6 +8,7 @@ import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
 import { apiUrl } from '../utils/api';
 import Swal from 'sweetalert2';
+import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -215,18 +216,10 @@ const Register = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
-                                        <div className="relative group">
-                                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
-                                            <input type="text" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} placeholder="Juan" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
-                                        </div>
+                                        <FloatingLabelInput label="First Name" icon={<FiUser />} className="w-full" type="text" value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} placeholder="Juan" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
-                                        <div className="relative group">
-                                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
-                                            <input type="text" value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} placeholder="Dela Cruz" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
-                                        </div>
+                                        <FloatingLabelInput label="Last Name" icon={<FiUser />} className="w-full" type="text" value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} placeholder="Dela Cruz" />
                                     </div>
                                 </div>
                                 <button
@@ -297,19 +290,11 @@ const Register = () => {
                                 {/* Phone & Auth Code */}
                                 <div className={`grid gap-4 ${isCO ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
-                                        <div className="relative group">
-                                            <FiSmartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
-                                            <input type="text" value={formData.contactNumber} onChange={handlePhoneChange} placeholder="09XXXXXXXXX" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
-                                        </div>
+                                        <FloatingLabelInput label="Mobile Number" icon={<FiSmartphone />} className="w-full" type="text" value={formData.contactNumber} onChange={handlePhoneChange} placeholder="09XXXXXXXXX" />
                                     </div>
                                     {isCO && (
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Auth Code</label>
-                                            <div className="relative group">
-                                                <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
-                                                <input type="text" value={formData.auth_code} onChange={e => setFormData({...formData, auth_code: e.target.value})} placeholder="Enter Auth Code" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-slate-800 font-bold focus:outline-none focus:border-brand-800 transition-all shadow-sm" />
-                                            </div>
+                                            <FloatingLabelInput label="Auth Code" icon={<FiShield />} className="w-full" type="text" value={formData.auth_code} onChange={e => setFormData({...formData, auth_code: e.target.value})} placeholder="Enter Auth Code" />
                                         </div>
                                     )}
                                 </div>
@@ -328,36 +313,17 @@ const Register = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
-                                        <div className="relative group">
-                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
-                                            <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 shadow-sm" />
-                                        </div>
+                                        <FloatingLabelInput label="New Password" icon={<FiLock />} className="w-full" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="••••••••" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
-                                        <div className="relative group">
-                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
-                                            <input type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 shadow-sm" />
-                                        </div>
+                                        <FloatingLabelInput label="Confirm Password" icon={<FiLock />} className="w-full" type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Passcode (For account recovery)</label>
-                                        <div className="relative group">
-                                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-700 transition-colors" />
-                                            <input 
-                                                type="text" 
-                                                maxLength={6}
-                                                value={formData.passcode} 
-                                                onChange={(e) => {
+                                        <FloatingLabelInput label="Passcode (For account recovery)" icon={<FiLock />} className="w-full" type="text" maxLength={6} value={formData.passcode} onChange={(e) => {
                                                     const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                                                     e.target.value = val;
                                                     setFormData({ ...formData, passcode: val });
-                                                }} 
-                                                placeholder="Enter 6-digit passcode" 
-                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-800 font-bold focus:outline-none focus:border-brand-800 shadow-sm" 
-                                            />
-                                        </div>
+                                                }} placeholder="Enter 6-digit passcode" />
                                     </div>
                                 </div>
                                 {error && <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold">{error}</div>}

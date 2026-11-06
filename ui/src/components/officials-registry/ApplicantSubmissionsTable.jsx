@@ -3,6 +3,7 @@ import { motion } from '../../utils/staticElements.jsx';
 import { MagnifyingGlass as FiSearch, Briefcase as FiBriefcase, MapPin as FiMapPin, Calendar as FiCalendar, User as FiUser, CaretLeft as FiChevronLeft, CaretRight as FiChevronRight, ArrowsClockwise as FiRefreshCw, Sliders as FiSliders, Eye as FiEye, Medal as FiAward } from '@phosphor-icons/react';
 import { apiUrl } from '../../utils/api';
 import ApplicantInspectionModal from './ApplicantInspectionModal';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const POSITION_BADGES = {
     RD: { label: 'Regional Director', badge: 'bg-brand-800 text-gold border-brand-800' },
@@ -132,19 +133,10 @@ const ApplicantSubmissionsTable = ({ token, isCentralOffice = true }) => {
                 {/* Filters Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
                     {/* Search */}
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={e => {
+                    <FloatingLabelInput label="Search candidate name or email" icon={<FiSearch size={16} />} className="w-full" type="text" value={searchTerm} onChange={e => {
                                 setSearchTerm(e.target.value);
                                 setPagination(p => ({ ...p, page: 1 }));
-                            }}
-                            placeholder="Search candidate name or email..."
-                            className="w-full bg-white pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:border-brand-800 outline-none transition-colors"
-                        />
-                        <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    </div>
+                            }} placeholder="Search candidate name or email..." />
 
                     {/* Position Filter */}
                     <div className="relative">

@@ -3,6 +3,7 @@ import { Medal as FiAward, CaretLeft as FiChevronLeft, Plus as FiPlus, Trash as 
 import ModernDatePicker from '../ModernDatePicker';
 import { PREVIOUS_POSITION_OPTIONS } from './constants';
 import { SectionLabel } from './formParts';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const ExperienceTab = ({ handleAddPosition, handleRemovePosition, history, historyLoading, isEditing, prevPositions, profile, setPrevPositions, tab }) => {
   return (
@@ -103,19 +104,12 @@ const ExperienceTab = ({ handleAddPosition, handleRemovePosition, history, histo
                                                                                                 <option value="Others">Others</option>
                                                                                             </select>
                                                                                             {isPrevPosOthers && (
-                                                                                                <input disabled={!isEditing}
-                                                                                                    type="text"
-                                                                                                    value={pos.position_name === 'Others' ? '' : pos.position_name}
-                                                                                                    onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value.toUpperCase() || 'Others' } : x))}
-                                                                                                    placeholder="Type the position you held"
-                                                                                                    className="bg-white border-2 border-slate-200 focus:border-brand-700 rounded-xl px-3 py-2 text-[18px] font-semibold mt-2 w-full outline-none transition-all shadow-sm"
-                                                                                                    autoFocus
-                                                                                                />
+                                                                                                <FloatingLabelInput label="Type the position you held" className="mt-2 w-full" disabled={!isEditing} type="text" value={pos.position_name === 'Others' ? '' : pos.position_name} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, position_name: e.target.value.toUpperCase() || 'Others' } : x))} placeholder="Type the position you held" autoFocus />
                                                                                             )}
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                                             <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">Office / Division</span>
-                                                                                            <input disabled={!isEditing} type="text" value={pos.office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, office: e.target.value } : x))} placeholder="Office" className="bg-white border-2 border-slate-200 rounded-xl px-3 py-2 text-[18px] font-bold outline-none focus:border-brand-700 transition-all truncate min-w-0 shadow-sm" />
+                                                                                            <FloatingLabelInput label="Office" className="min-w-0" disabled={!isEditing} type="text" value={pos.office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, office: e.target.value } : x))} placeholder="Office" />
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-1.5 w-full">
                                                                                             <span className="text-[13.5px] font-black text-slate-400 uppercase tracking-widest xl:hidden">From Date</span>
@@ -162,19 +156,12 @@ const ExperienceTab = ({ handleAddPosition, handleRemovePosition, history, histo
                                                                                                             <option value="Others">Others</option>
                                                                                                         </select>
                                                                                                         {isOicPosOthers && (
-                                                                                                            <input disabled={!isEditing}
-                                                                                                                type="text"
-                                                                                                                value={oic.oic_position_name === 'Others' ? '' : oic.oic_position_name}
-                                                                                                                onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value.toUpperCase() || 'Others' } : o) } : x))}
-                                                                                                                placeholder="Type the position you held"
-                                                                                                                className="bg-white border-2 border-gold/50 focus:border-gold rounded-xl px-3 py-2 text-[18px] font-semibold mt-2 w-full outline-none transition-all shadow-sm"
-                                                                                                                autoFocus
-                                                                                                            />
+                                                                                                            <FloatingLabelInput label="Type the position you held" className="mt-2 w-full" disabled={!isEditing} type="text" value={oic.oic_position_name === 'Others' ? '' : oic.oic_position_name} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_position_name: e.target.value.toUpperCase() || 'Others' } : o) } : x))} placeholder="Type the position you held" autoFocus />
                                                                                                         )}
                                                                                                     </div>
                                                                                                     <div className="flex flex-col gap-1.5 w-full">
                                                                                                         <span className="text-[13.5px] font-black text-gold uppercase tracking-widest xl:hidden">OIC Office / Division</span>
-                                                                                                        <input disabled={!isEditing} type="text" value={oic.oic_office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_office: e.target.value } : o) } : x))} placeholder="OIC Office" className="bg-white border-2 border-gold/50 rounded-xl px-3 py-2 text-[18px] font-bold outline-none focus:border-gold transition-all truncate min-w-0 shadow-sm" />
+                                                                                                        <FloatingLabelInput label="OIC Office" className="min-w-0" disabled={!isEditing} type="text" value={oic.oic_office || ''} onChange={e => setPrevPositions(p => p.map((x, i) => i === idx ? { ...x, oic_positions: x.oic_positions.map((o, j) => j === oicIdx ? { ...o, oic_office: e.target.value } : o) } : x))} placeholder="OIC Office" />
                                                                                                     </div>
                                                                                                     <div className="flex flex-col gap-1.5 w-full">
                                                                                                         <span className="text-[13.5px] font-black text-gold uppercase tracking-widest xl:hidden">OIC From Date</span>

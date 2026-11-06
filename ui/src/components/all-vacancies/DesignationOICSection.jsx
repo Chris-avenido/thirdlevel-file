@@ -1,6 +1,7 @@
 import React from 'react';
 import { Briefcase as FiBriefcase } from '@phosphor-icons/react';
 import { DESIGNATION_PRESETS } from './constants';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const DesignationOICSection = ({
     designationData,
@@ -62,18 +63,7 @@ const DesignationOICSection = ({
 
                 {designationData.current_designation_preset === 'Other' && (
                     <div className="mt-3">
-                        <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1">
-                            Specify Designation <span className="text-rose-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="current_designation_custom"
-                            value={designationData.current_designation_custom || ''}
-                            onChange={handleChange}
-                            placeholder="Input full designation (do not abbreviate)"
-                            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
-                            required
-                        />
+                        <FloatingLabelInput label="Specify Designation" className="w-full" type="text" name="current_designation_custom" value={designationData.current_designation_custom || ''} onChange={handleChange} placeholder="Input full designation (do not abbreviate)" required />
                     </div>
                 )}
             </div>
@@ -86,14 +76,7 @@ const DesignationOICSection = ({
                 <span className="text-[11px] text-slate-500 block mb-2 font-medium">
                     [i.e. SDO-Pasig City; SDO-Cebu City; Regional Office; For non-DepEd, include Agency and Office Assignment]
                 </span>
-                <input
-                    type="text"
-                    name="assigned_oic_office"
-                    value={designationData.assigned_oic_office || ''}
-                    onChange={handleChange}
-                    placeholder="e.g. SDO-Manila (or leave blank if N/A)"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
-                />
+                <FloatingLabelInput label="e.g. SDO-Manila (or leave blank if N/A)" className="w-full" type="text" name="assigned_oic_office" value={designationData.assigned_oic_office || ''} onChange={handleChange} placeholder="e.g. SDO-Manila (or leave blank if N/A)" />
             </div>
         </div>
     );

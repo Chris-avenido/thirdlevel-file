@@ -1,6 +1,7 @@
 import React from 'react';
 import { User as FiUser, Info as FiInfo } from '@phosphor-icons/react';
 import { formatContactNumber } from './constants';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const PersonalEmploymentSection = ({
     personalData,
@@ -63,81 +64,27 @@ const PersonalEmploymentSection = ({
             {/* Name Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                        Surname [ALL CAPS] <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        name="surname"
-                        value={personalData.surname || ''}
-                        onChange={handleChange}
-                        placeholder="DELA CRUZ"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
-                        required
-                    />
+                    <FloatingLabelInput label="Surname [ALL CAPS]" className="w-full" inputClassName="uppercase" type="text" name="surname" value={personalData.surname || ''} onChange={handleChange} placeholder="DELA CRUZ" required />
                 </div>
 
                 <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                        First Name [ALL CAPS] <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        name="first_name"
-                        value={personalData.first_name || ''}
-                        onChange={handleChange}
-                        placeholder="JUAN"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
-                        required
-                    />
+                    <FloatingLabelInput label="First Name [ALL CAPS]" className="w-full" inputClassName="uppercase" type="text" name="first_name" value={personalData.first_name || ''} onChange={handleChange} placeholder="JUAN" required />
                 </div>
 
                 <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                        Middle Name [ALL CAPS]
-                    </label>
-                    <input
-                        type="text"
-                        name="middle_name"
-                        value={personalData.middle_name || ''}
-                        onChange={handleChange}
-                        placeholder="SANTOS"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white uppercase transition-all shadow-sm"
-                    />
+                    <FloatingLabelInput label="Middle Name [ALL CAPS]" className="w-full" inputClassName="uppercase" type="text" name="middle_name" value={personalData.middle_name || ''} onChange={handleChange} placeholder="SANTOS" />
                 </div>
             </div>
 
             {/* Date of Birth & Telephone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                        Date of Birth
-                    </label>
-                    <input
-                        type="date"
-                        name="date_of_birth"
-                        max={new Date().toISOString().split('T')[0]}
-                        value={personalData.date_of_birth || ''}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
-                    />
+                    <FloatingLabelInput label="Date of Birth" className="w-full" type="date" name="date_of_birth" max={new Date().toISOString().split('T')[0]} value={personalData.date_of_birth || ''} onChange={handleChange} />
                     <span className="text-[10px] text-slate-400 block mt-1">Cannot be a future date</span>
                 </div>
 
                 <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                        Telephone / Contact Number <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                        type="tel"
-                        name="contact_number"
-                        value={personalData.contact_number || ''}
-                        onChange={handleContactChange}
-                        placeholder="0917-123-4567"
-                        maxLength={13}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm font-mono tracking-wide"
-                        required
-                    />
+                    <FloatingLabelInput label="Telephone / Contact Number" className="w-full" inputClassName="font-mono tracking-wide" type="tel" name="contact_number" value={personalData.contact_number || ''} onChange={handleContactChange} placeholder="0917-123-4567" maxLength={13} required />
                     <span className="text-[10px] text-slate-400 block mt-1">11 digits (formatted with dashes)</span>
                 </div>
             </div>
@@ -151,15 +98,7 @@ const PersonalEmploymentSection = ({
                     <span className="text-[11px] text-slate-500 block mb-2 font-medium">
                         [For other positions, do not abbreviate. e.g. Education Program Supervisor, Public Schools District Supervisor]
                     </span>
-                    <input
-                        type="text"
-                        name="current_position"
-                        value={personalData.current_position || ''}
-                        onChange={handleChange}
-                        placeholder="e.g. Chief Education Supervisor"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
-                        required
-                    />
+                    <FloatingLabelInput label="e.g. Chief Education Supervisor" className="w-full" type="text" name="current_position" value={personalData.current_position || ''} onChange={handleChange} placeholder="e.g. Chief Education Supervisor" required />
                 </div>
 
                 <div>
@@ -169,15 +108,7 @@ const PersonalEmploymentSection = ({
                     <span className="text-[11px] text-slate-500 block mb-2 font-medium">
                         [i.e. SDO-Pasig City; SDO-Cebu City; Regional Office; For non-DepEd, include Agency and Office Assignment]
                     </span>
-                    <input
-                        type="text"
-                        name="plantilla_office"
-                        value={personalData.plantilla_office || ''}
-                        onChange={handleChange}
-                        placeholder="e.g. SDO-Pasig City or Regional Office IV-A"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
-                        required
-                    />
+                    <FloatingLabelInput label="e.g. SDO-Pasig City or Regional Office IV-A" className="w-full" type="text" name="plantilla_office" value={personalData.plantilla_office || ''} onChange={handleChange} placeholder="e.g. SDO-Pasig City or Regional Office IV-A" required />
                 </div>
             </div>
         </div>

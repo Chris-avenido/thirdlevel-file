@@ -1,6 +1,7 @@
 import React from 'react';
 import { Medal as FiAward } from '@phosphor-icons/react';
 import { CES_STAGES } from './constants';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const EligibilitiesSection = ({
     eligibilityData,
@@ -98,33 +99,15 @@ const EligibilitiesSection = ({
             {/* CES Eligibility Stage & Stage Date */}
             <div className="space-y-4 pt-2">
                 <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                        What is the highest stage of the Career Executive Service (CES) eligibility process that you have passed/completed? <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                        name="ces_eligibility_stage"
-                        value={eligibilityData.ces_eligibility_stage || 'Stage 1 (CES Written Examination)'}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-800 bg-white cursor-pointer shadow-sm"
-                    >
+                    <FloatingLabelInput as="select" label="What is the highest stage of the Career Executive Service (CES) eligibility process that you have passed/completed?" requiredMark className="w-full" name="ces_eligibility_stage" value={eligibilityData.ces_eligibility_stage || 'Stage 1 (CES Written Examination)'} onChange={handleChange}>
                         {CES_STAGES.map(stage => (
                             <option key={stage} value={stage}>{stage}</option>
                         ))}
-                    </select>
+                    </FloatingLabelInput>
                 </div>
 
                 <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                        Date Appointed/Conferred/Passed the CESO/CES eligibility process [Highest Stage]
-                    </label>
-                    <input
-                        type="date"
-                        name="ces_stage_date"
-                        max={new Date().toISOString().split('T')[0]}
-                        value={eligibilityData.ces_stage_date || ''}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-brand-800 outline-none text-xs font-bold text-slate-900 bg-white shadow-sm"
-                    />
+                    <FloatingLabelInput label="Date Appointed/Conferred/Passed the CESO/CES eligibility process [Highest Stage]" className="w-full" type="date" name="ces_stage_date" max={new Date().toISOString().split('T')[0]} value={eligibilityData.ces_stage_date || ''} onChange={handleChange} />
                     <span className="text-[10px] text-slate-400 block mt-1">Cannot be a future date</span>
                 </div>
             </div>

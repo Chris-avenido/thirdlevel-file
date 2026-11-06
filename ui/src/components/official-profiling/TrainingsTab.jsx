@@ -2,6 +2,7 @@ import { motion } from '../../utils/staticElements.jsx';
 import { Plus as FiPlus, Trash as FiTrash2, Info as FiInfo } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import { Field, SectionLabel } from './formParts';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const TrainingsTab = ({ handleAddTraining, handleRemoveTraining, handleTrainingDateChange, isEditing, profile, setTrainings, tab, trainings }) => {
   return (
@@ -32,7 +33,7 @@ const TrainingsTab = ({ handleAddTraining, handleRemoveTraining, handleTrainingD
                                                                 </div>
                                                                 {trainings.map((tr, idx) => (
                                                                     <motion.div key={tr.id || tr.training_id || `tr-${idx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_140px_140px_80px_80px_44px] gap-3 items-center bg-slate-50/40 hover:bg-transparent p-4 rounded-2xl border-2 border-slate-200/50 transition-colors shadow-sm">
-                                                                        <input disabled={!isEditing} type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))} placeholder="Training / Seminar name" className="bg-white border-2 border-slate-200 focus:border-brand-700 focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all min-w-0 shadow-sm" />
+                                                                        <FloatingLabelInput label="Training / Seminar name" className="min-w-0" disabled={!isEditing} type="text" value={tr.training_name || ''} onChange={e => setTrainings(t => t.map((x, i) => i === idx ? { ...x, training_name: e.target.value.toUpperCase() } : x))} placeholder="Training / Seminar name" />
                                                                         <div className="relative">
                                                                             <ModernDatePicker disabled={!isEditing} value={tr.date_from ? tr.date_from.split('T')[0] : (tr.date_completed ? tr.date_completed.split('T')[0] : '')} onChange={val => handleTrainingDateChange(idx, 'date_from', val)} className="bg-white border-2 border-slate-200 focus:border-brand-700 focus:ring-2 focus:ring-blue-50/50 rounded-xl px-3 py-2 text-[18px] font-semibold text-slate-800 outline-none transition-all w-full shadow-sm" />
                                                                         </div>
@@ -47,7 +48,7 @@ const TrainingsTab = ({ handleAddTraining, handleRemoveTraining, handleTrainingD
                                                                             <option value="4">4 hrs</option>
                                                                             <option value="2">2 hrs</option>
                                                                         </select>
-                                                                        <input disabled={!isEditing} type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" className="bg-white border-2 border-slate-200 rounded-xl px-3 py-2 text-[18px] font-bold outline-none focus:border-brand-700 transition-all min-w-0" />
+                                                                        <FloatingLabelInput label="Total" className="min-w-0" disabled={!isEditing} type="number" min="0" max="999" step="0.5" value={tr.hours || ''} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 999) v = '999'; setTrainings(t => t.map((x, i) => i === idx ? { ...x, hours: v } : x)); }} placeholder="Total" />
                                                                         {isEditing && <button onClick={() => handleRemoveTraining(idx)} className="w-11 h-11 flex items-center justify-center bg-gold/10 text-gold rounded-xl hover:bg-gold hover:text-white transition-all"><FiTrash2 size={14} /></button>}
                                                                     </motion.div>
                                                                 ))}

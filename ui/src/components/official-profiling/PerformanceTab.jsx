@@ -2,6 +2,7 @@ import { Info as FiInfo } from '@phosphor-icons/react';
 import ModernDatePicker from '../ModernDatePicker';
 import { inp } from './constants';
 import { Field, SectionLabel } from './formParts';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
   return (
@@ -18,7 +19,7 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                     <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">Latest Rating (1st)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
-                                                                            <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" className={inp} />
+                                                                            <FloatingLabelInput label="4.850" disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_1} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_1', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_1', n.toString()); } }} placeholder="4.850" />
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
@@ -34,7 +35,7 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                     <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">Previous Rating (2nd)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
-                                                                            <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_2} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_2', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_2', n.toString()); } }} placeholder="4.750" className={inp} />
+                                                                            <FloatingLabelInput label="4.750" disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_2} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_2', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_2', n.toString()); } }} placeholder="4.750" />
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
@@ -50,7 +51,7 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                     <p className="text-[15px] font-black text-brand-800 uppercase tracking-widest">Oldest Rating (3rd)</p>
                                                                     <div className="space-y-3">
                                                                         <Field label="Rating (Max 5.000)">
-                                                                            <input disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_3} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_3', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_3', n.toString()); } }} placeholder="4.650" className={inp} />
+                                                                            <FloatingLabelInput label="4.650" disabled={!isEditing} type="number" step="0.001" min="1.0" max="5.0" value={profile.performance_rating_3} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('performance_rating_3', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('performance_rating_3', n.toString()); } }} placeholder="4.650" />
                                                                         </Field>
                                                                         <Field label="Rating Period">
                                                                             <div className="relative">
@@ -73,17 +74,7 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                     <p className="text-[13.5px] font-black text-slate-500 uppercase tracking-widest">1st Semester</p>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                                         <Field label="CESPES Rating (1st)">
-                                                                            <input disabled={!isEditing}
-                                                                                type="number"
-                                                                                step="0.01"
-                                                                                min="1.0"
-                                                                                max="5.0"
-                                                                                value={profile.cespes_1_rating}
-                                                                                onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('cespes_1_rating', v); }}
-                                                                                onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('cespes_1_rating', n.toString()); } }}
-                                                                                placeholder="0.00"
-                                                                                className={inp}
-                                                                            />
+                                                                            <FloatingLabelInput label="0.00" disabled={!isEditing} type="number" step="0.01" min="1.0" max="5.0" value={profile.cespes_1_rating} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('cespes_1_rating', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('cespes_1_rating', n.toString()); } }} placeholder="0.00" />
                                                                         </Field>
                                                                         <Field label="Period (1st)">
                                                                             <div className="relative">
@@ -104,17 +95,7 @@ const PerformanceTab = ({ isEditing, profile, setP, tab }) => {
                                                                     <p className="text-[13.5px] font-black text-slate-500 uppercase tracking-widest">2nd Semester</p>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                                         <Field label="CESPES Rating (2nd)">
-                                                                            <input disabled={!isEditing}
-                                                                                type="number"
-                                                                                step="0.01"
-                                                                                min="1.0"
-                                                                                max="5.0"
-                                                                                value={profile.cespes_2_rating}
-                                                                                onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('cespes_2_rating', v); }}
-                                                                                onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('cespes_2_rating', n.toString()); } }}
-                                                                                placeholder="0.00"
-                                                                                className={inp}
-                                                                            />
+                                                                            <FloatingLabelInput label="0.00" disabled={!isEditing} type="number" step="0.01" min="1.0" max="5.0" value={profile.cespes_2_rating} onChange={e => { let v = e.target.value; if (v !== '' && Number(v) > 5) v = '5.0'; setP('cespes_2_rating', v); }} onBlur={e => { let v = e.target.value; if (v !== '') { let n = Number(v); if (n > 5) n = 5; if (n < 1) n = 1; setP('cespes_2_rating', n.toString()); } }} placeholder="0.00" />
                                                                         </Field>
                                                                         <Field label="Period (2nd)">
                                                                             <div className="relative">

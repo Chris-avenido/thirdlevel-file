@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../../utils/api';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const AddNewPersonnelForm = ({ onCancel, onSuccess, token }) => {
     const [newPersonnelData, setNewPersonnelData] = useState({ first_name: '', last_name: '', email: '', employee_number: '' });
@@ -38,21 +39,17 @@ const AddNewPersonnelForm = ({ onCancel, onSuccess, token }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">First Name <span className="text-red-500">*</span></label>
-                    <input type="text" autoComplete="off" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
+                    <FloatingLabelInput label="First Name" requiredMark className="w-full" type="text" autoComplete="off" value={newPersonnelData.first_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, first_name: e.target.value })} />
                 </div>
                 <div>
-                    <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Last Name <span className="text-red-500">*</span></label>
-                    <input type="text" autoComplete="off" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
+                    <FloatingLabelInput label="Last Name" requiredMark className="w-full" type="text" autoComplete="off" value={newPersonnelData.last_name} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, last_name: e.target.value })} />
                 </div>
             </div>
             <div>
-                <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Email Address <span className="text-red-500">*</span></label>
-                <input type="email" autoComplete="off" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
+                <FloatingLabelInput label="Email Address" requiredMark className="w-full" type="email" autoComplete="off" value={newPersonnelData.email} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, email: e.target.value })} />
             </div>
             <div>
-                <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Employee Number</label>
-                <input type="text" autoComplete="off" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-xl py-3 px-4 text-[18px] font-bold text-slate-700 outline-none transition-all" />
+                <FloatingLabelInput label="Employee Number" className="w-full" type="text" autoComplete="off" value={newPersonnelData.employee_number} onChange={(e) => setNewPersonnelData({ ...newPersonnelData, employee_number: e.target.value })} />
             </div>
             <button
                 onClick={handleAddPersonnel}

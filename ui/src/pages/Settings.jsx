@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
 import AdminSidebar from '../components/AdminSidebar';
 import { apiUrl } from '../utils/api';
+import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 
 const Settings = () => {
     const { user, token, setUser, logout } = useAuth();
@@ -168,35 +169,13 @@ const Settings = () => {
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">First Name</label>
-                                        <input 
-                                            type="text" 
-                                            name="firstName"
-                                            value={formData.firstName}
-                                            onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                                            placeholder="Enter first name"
-                                        />
+                                        <FloatingLabelInput label="First Name" className="w-full" type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Enter first name" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Last Name</label>
-                                        <input 
-                                            type="text" 
-                                            name="lastName"
-                                            value={formData.lastName}
-                                            onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                                            placeholder="Enter last name"
-                                        />
+                                        <FloatingLabelInput label="Last Name" className="w-full" type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Enter last name" />
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
-                                        <input 
-                                            type="email" 
-                                            value={user?.email || ''}
-                                            disabled
-                                            className="w-full px-5 py-4 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-bold cursor-not-allowed disabled:opacity-70"
-                                        />
+                                        <FloatingLabelInput label="Email Address" className="w-full" type="email" value={user?.email || ''} disabled />
                                         <p className="text-[10px] text-slate-400 font-medium ml-1 mt-1">Email address cannot be changed.</p>
                                     </div>
                                 </div>
@@ -215,14 +194,7 @@ const Settings = () => {
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">New Password</label>
                                         <div className="relative">
-                                            <input 
-                                                type={showPassword ? "text" : "password"} 
-                                                name="password"
-                                                value={formData.password}
-                                                onChange={handleChange}
-                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                                                placeholder="Leave blank to keep current"
-                                            />
+                                            <FloatingLabelInput label="Leave blank to keep current" className="w-full" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} placeholder="Leave blank to keep current" />
                                             <button 
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
@@ -233,32 +205,16 @@ const Settings = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Confirm Password</label>
-                                        <input 
-                                            type={showPassword ? "text" : "password"} 
-                                            name="confirmPassword"
-                                            value={formData.confirmPassword}
-                                            onChange={handleChange}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                                            placeholder="Confirm new password"
-                                        />
+                                        <FloatingLabelInput label="Confirm Password" className="w-full" type={showPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm new password" />
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">New Passcode (6-Digit)</label>
                                         <div className="relative">
-                                            <input 
-                                                type={showPasscode ? "text" : "password"} 
-                                                name="passcode"
-                                                value={formData.passcode}
-                                                onChange={(e) => {
+                                            <FloatingLabelInput label="••••••" className="w-full" inputClassName="font-mono tracking-widest" type={showPasscode ? "text" : "password"} name="passcode" value={formData.passcode} onChange={(e) => {
                                                     const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                     handleChange({ target: { name: 'passcode', value: val } });
-                                                }}
-                                                className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
-                                                placeholder="••••••"
-                                                maxLength={6}
-                                            />
+                                                }} placeholder="••••••" maxLength={6} />
                                             <button 
                                                 type="button"
                                                 onClick={() => setShowPasscode(!showPasscode)}
@@ -269,19 +225,10 @@ const Settings = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Confirm Passcode</label>
-                                        <input 
-                                            type={showPasscode ? "text" : "password"} 
-                                            name="confirmPasscode"
-                                            value={formData.confirmPasscode}
-                                            onChange={(e) => {
+                                        <FloatingLabelInput label="Confirm Passcode" className="w-full" inputClassName="font-mono tracking-widest" type={showPasscode ? "text" : "password"} name="confirmPasscode" value={formData.confirmPasscode} onChange={(e) => {
                                                 const val = e.target.value.replace(/\D/g, '').slice(0,6);
                                                 handleChange({ target: { name: 'confirmPasscode', value: val } });
-                                            }}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-brand-800 font-bold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono tracking-widest"
-                                            placeholder="••••••"
-                                            maxLength={6}
-                                        />
+                                            }} placeholder="••••••" maxLength={6} />
                                     </div>
                                 </div>
                             </div>

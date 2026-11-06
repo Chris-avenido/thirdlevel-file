@@ -3,6 +3,7 @@ import ModernDatePicker from '../ModernDatePicker';
 import YearInput from '../YearInput';
 import { inp } from './constants';
 import { Field, SectionLabel } from './formParts';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
   return (
@@ -31,7 +32,7 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                 {Array.from({ length: count }).map((_, idx) => (
                                                                     <div key={`${degField}-${idx}`} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
                                                                         <Field label="Degree / Course">
-                                                                            <input disabled={!isEditing} type="text" value={degrees[idx] || ''} onChange={e => updateEntry(idx, 'deg', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" className={inp} />
+                                                                            <FloatingLabelInput label="e.g. Bachelor of Science in Nursing" disabled={!isEditing} type="text" value={degrees[idx] || ''} onChange={e => updateEntry(idx, 'deg', e.target.value)} placeholder="e.g. Bachelor of Science in Nursing" />
                                                                         </Field>
                                                                         <Field label="Year Graduated">
                                                                             <YearInput disabled={!isEditing} value={years[idx] || ''} onChange={val => updateEntry(idx, 'yr', val)} min={prevMin > 0 ? prevMin + 1 : 1900} placeholder="YYYY" />
@@ -95,22 +96,10 @@ const EducationTab = ({ isEditing, profile, setP, setProfile, tab }) => {
                                                                                 </button>}
                                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-4">
                                                                                     <Field label="Course Title">
-                                                                                        <input disabled={!isEditing}
-                                                                                            type="text"
-                                                                                            value={course.course || ''}
-                                                                                            onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, course: e.target.value } : x) }))}
-                                                                                            placeholder="e.g. Executive Leadership Program"
-                                                                                            className={inp}
-                                                                                        />
+                                                                                        <FloatingLabelInput label="e.g. Executive Leadership Program" disabled={!isEditing} type="text" value={course.course || ''} onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, course: e.target.value } : x) }))} placeholder="e.g. Executive Leadership Program" />
                                                                                     </Field>
                                                                                     <Field label="Details">
-                                                                                        <input disabled={!isEditing}
-                                                                                            type="text"
-                                                                                            value={course.details || ''}
-                                                                                            onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))}
-                                                                                            placeholder="Sponsor, Location, etc."
-                                                                                            className={inp}
-                                                                                        />
+                                                                                        <FloatingLabelInput label="Sponsor, Location, etc." disabled={!isEditing} type="text" value={course.details || ''} onChange={e => setProfile(p => ({ ...p, other_courses: p.other_courses.map((x, i) => i === idx ? { ...x, details: e.target.value } : x) }))} placeholder="Sponsor, Location, etc." />
                                                                                     </Field>
                                                                                 </div>
                                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

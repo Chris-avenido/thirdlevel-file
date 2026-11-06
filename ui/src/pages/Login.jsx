@@ -8,6 +8,7 @@ import PageTransition from '../components/PageTransition';
 import LoadingScreen from '../components/LoadingScreen';
 import PinLogin from '../components/PinLogin';
 import Swal from 'sweetalert2';
+import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -291,23 +292,7 @@ const Login = () => {
                                 <div className="space-y-4">
                                     {/* IDENTIFIER */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Identity</label>
-                                        <div className={`relative group transition-all duration-300 ${focusedInput === 'id' ? 'scale-[1.02]' : ''}`}>
-                                            <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${focusedInput === 'id' ? 'text-brand-800' : 'text-slate-400'}`}>
-                                                <FiMail className="w-5 h-5" />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                value={loginId}
-                                                onChange={(e) => setLoginId(e.target.value)}
-                                                onFocus={() => setFocusedInput('id')}
-                                                onBlur={() => setFocusedInput(null)}
-                                                placeholder="Registered Email"
-                                                autoComplete="username"
-                                                className="w-full bg-white border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:outline-none focus:border-brand-800 focus:ring-4 focus:ring-brand-800/5 transition-all shadow-sm"
-                                                required
-                                            />
-                                        </div>
+                                        <FloatingLabelInput label="Account Identity" icon={<FiMail />} className="w-full" type="text" value={loginId} onChange={(e) => setLoginId(e.target.value)} onFocus={() => setFocusedInput('id')} onBlur={() => setFocusedInput(null)} placeholder="Registered Email" autoComplete="username" required />
                                     </div>
 
                                     {/* AUTH MODE TOGGLE */}
@@ -487,18 +472,7 @@ const Login = () => {
                                 <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">Enter your email address and we'll send you a link to reset your password.</p>
                                 
                                 <div className="mb-6 text-left">
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <FiMail className="h-5 w-5 text-slate-400" />
-                                        </div>
-                                        <input
-                                            type="email"
-                                            value={forgotEmail}
-                                            onChange={(e) => setForgotEmail(e.target.value)}
-                                            placeholder="Email address"
-                                            className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-all"
-                                        />
-                                    </div>
+                                    <FloatingLabelInput label="Email address" icon={<FiMail />} className="w-full" type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="Email address" />
                                 </div>
 
                                 <div className="space-y-3">

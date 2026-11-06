@@ -5,6 +5,7 @@ import ModernDatePicker from '../ModernDatePicker';
 import JustificationInput from './JustificationInput';
 import AddNewPersonnelForm from './AddNewPersonnelForm';
 import DebouncedSearchInput from './DebouncedSearchInput';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOfficials, adminAction, assigneeSlot, effectivityDate, fetchUnassignedPersonnel, filteredVacantSlots, handleAdminAction, handleCancelVacate, isAddingPersonnel, justification, selectedOffice, setAssigneeSlot, setEffectivityDate, setIsAddingPersonnel, setJustification, setSelectedOffice, setShowActionModal, setSuccessorSlot, setTargetSlot, setUnassignedSearch, setVacateReason, showActionModal, successorSlot, targetSlot, token, unassignedCacheRef, unassignedLoading, unassignedPersonnel, unassignedSearch, uniqueOffices, user, vacateReason }) => {
   return (
@@ -158,12 +159,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
 
                                                     {adminAction === 'vacate' && (
                                                         <div className="mb-4">
-                                                            <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Reason for Vacating</label>
-                                                            <select
-                                                                value={vacateReason}
-                                                                onChange={(e) => setVacateReason(e.target.value)}
-                                                                className="w-full bg-white border-2 border-slate-200 focus:border-brand-800/20 rounded-2xl py-4 px-5 text-[21px] font-bold text-slate-700 outline-none transition-all"
-                                                            >
+                                                            <FloatingLabelInput as="select" label="Reason for Vacating" className="w-full" value={vacateReason} onChange={(e) => setVacateReason(e.target.value)}>
                                                                 <option value="">Select a reason...</option>
                                                                 <option value="Resignation">Resignation</option>
                                                                 <option value="Retirement">Retirement</option>
@@ -171,7 +167,7 @@ const ActionModal = ({ SearchableSelect, actionLoading, actionOfficial, activeOf
                                                                 <option value="Promotion">Promotion</option>
                                                                 <option value="Demotion">Demotion</option>
                                                                 <option value="Dismissal">Dismissal</option>
-                                                            </select>
+                                                            </FloatingLabelInput>
                                                         </div>
                                                     )}
 

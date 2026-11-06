@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { House as FiHome, MapPin as FiMapPin, SquaresFour as FiGrid, Book as FiBook, ChartBar as FiBarChart2 } from '@phosphor-icons/react';
+import FloatingLabelInput from '../components/forms/FloatingLabelInput.jsx';
 
 const Dashboard = () => {
   const [activeNav, setActiveNav] = useState('Overview');
@@ -68,20 +69,16 @@ const Dashboard = () => {
         <div className="content-pad">
           <div className="filter-bar">
             <div className="filter-select-wrapper">
-              <label>Region</label>
-              <select><option>All Regions</option></select>
+              <FloatingLabelInput as="select" label="Region"><option>All Regions</option></FloatingLabelInput>
             </div>
             <div className="filter-select-wrapper">
-              <label>Division</label>
-              <select><option>All Divisions</option></select>
+              <FloatingLabelInput as="select" label="Division"><option>All Divisions</option></FloatingLabelInput>
             </div>
             <div className="filter-select-wrapper">
-              <label>Category</label>
-              <select><option>All Categories</option></select>
+              <FloatingLabelInput as="select" label="Category"><option>All Categories</option></FloatingLabelInput>
             </div>
             <div className="filter-select-wrapper">
-              <label>School Year</label>
-              <select><option>2026-2027</option></select>
+              <FloatingLabelInput as="select" label="School Year"><option>2026-2027</option></FloatingLabelInput>
             </div>
             <button className="apply-btn">Apply Filters</button>
           </div>

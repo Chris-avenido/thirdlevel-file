@@ -1,6 +1,7 @@
 import React from 'react';
 import { PencilSimple as FiEdit3 } from '@phosphor-icons/react';
 import { APPLICANT_EXAM_DATA } from '../../constants/applicantExamQuestions';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const ExamPartBEssays = ({ partBAnswers, setPartBAnswers }) => {
     const handleEssayChange = (essayId, text) => {
@@ -36,13 +37,7 @@ const ExamPartBEssays = ({ partBAnswers, setPartBAnswers }) => {
                         <p className="text-xs text-slate-700 font-semibold leading-relaxed">
                             {essay.prompt}
                         </p>
-                        <textarea
-                            rows={4}
-                            value={partBAnswers[essay.id] || ''}
-                            onChange={(e) => handleEssayChange(essay.id, e.target.value)}
-                            placeholder="Type your response here..."
-                            className="w-full bg-white p-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-brand-800 outline-none transition-colors resize-y"
-                        />
+                        <FloatingLabelInput as="textarea" label="Type your response here" className="w-full" rows={4} value={partBAnswers[essay.id] || ''} onChange={(e) => handleEssayChange(essay.id, e.target.value)} placeholder="Type your response here..." />
                     </div>
                 ))}
             </div>

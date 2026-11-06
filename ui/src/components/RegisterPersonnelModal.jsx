@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X as FiX, Check as FiCheck, User as FiUser, Envelope as FiMail, Briefcase as FiBriefcase } from '@phosphor-icons/react';
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
+import FloatingLabelInput from './forms/FloatingLabelInput.jsx';
 
 const THIRD_LEVEL_POSITIONS = [
   'Secretary',
@@ -191,51 +192,16 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[18px] font-bold text-slate-500 uppercase tracking-wide mb-2">First Name</label>
-              <div className="relative">
-                <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="text"
-                  required
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })}
-                  className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
-                  placeholder="JUAN"
-                />
-              </div>
+              <FloatingLabelInput label="First Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" required value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} placeholder="JUAN" />
             </div>
             <div>
-              <label className="block text-[18px] font-bold text-slate-500 uppercase tracking-wide mb-2">Middle Name</label>
-              <div className="relative">
-                <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="text"
-                  value={formData.middle_name}
-                  onChange={(e) => setFormData({ ...formData, middle_name: e.target.value.toUpperCase() })}
-                  className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
-                  placeholder="SANTOS"
-                />
-              </div>
+              <FloatingLabelInput label="Middle Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" value={formData.middle_name} onChange={(e) => setFormData({ ...formData, middle_name: e.target.value.toUpperCase() })} placeholder="SANTOS" />
             </div>
             <div>
-              <label className="block text-[18px] font-bold text-slate-500 uppercase tracking-wide mb-2">Last Name</label>
-              <div className="relative">
-                <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="text"
-                  required
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })}
-                  className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase"
-                  placeholder="DELA CRUZ"
-                />
-              </div>
+              <FloatingLabelInput label="Last Name" icon={<FiUser size={18} />} className="w-full" inputClassName="uppercase" type="text" required value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} placeholder="DELA CRUZ" />
             </div>
             <div>
-              <label className="block text-[18px] font-bold text-slate-500 uppercase tracking-wide mb-2">Region</label>
-              <select
-                value={formData.region}
-                onChange={(e) => {
+              <FloatingLabelInput as="select" label="Region" className="w-full" value={formData.region} onChange={(e) => {
                   const newRegion = e.target.value;
                   setFormData(prev => {
                     if (newRegion.toUpperCase() === 'CENTRAL OFFICE') {
@@ -254,26 +220,18 @@ const RegisterPersonnelModal = ({ isOpen, onClose, onSuccess, token }) => {
                       division: keepDivision ? prev.division : ''
                     };
                   });
-                }}
-                className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-              >
+                }}>
                 <option value="" disabled>Select Region</option>
                 {options.regions.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
-              </select>
+              </FloatingLabelInput>
             </div>
           </div>
 
           <div>
-            <label className="block text-[18px] font-bold text-slate-500 uppercase tracking-wide mb-2">Division</label>
-            <select
-              value={formData.division}
-              onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-              disabled={!formData.region}
-              className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-[21px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
-            >
+            <FloatingLabelInput as="select" label="Division" className="w-full" value={formData.division} onChange={(e) => setFormData({ ...formData, division: e.target.value })} disabled={!formData.region}>
               <option value="" disabled>Select Division</option>
               {availableDivisions.map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
-            </select>
+            </FloatingLabelInput>
           </div>
 
           <div>

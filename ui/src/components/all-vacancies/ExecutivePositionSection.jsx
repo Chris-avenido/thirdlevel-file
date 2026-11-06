@@ -1,6 +1,7 @@
 import React from 'react';
 import { Briefcase as FiBriefcase, MapPin as FiMapPin } from '@phosphor-icons/react';
 import { EXECUTIVE_POSITIONS, DEPED_REGIONS } from './constants';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const ExecutivePositionSection = ({
     appliedPosition,
@@ -24,50 +25,26 @@ const ExecutivePositionSection = ({
 
             {/* Target Executive Position Dropdown */}
             <div className="space-y-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
-                    Target Executive Position <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <FiBriefcase size={18} />
-                    </div>
-                    <select
-                        value={appliedPosition}
-                        onChange={e => setAppliedPosition(e.target.value)}
-                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-12 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-brand-800 transition-all cursor-pointer shadow-sm"
-                    >
+                <FloatingLabelInput as="select" label="Target Executive Position" requiredMark icon={<FiBriefcase size={18} />} className="w-full" value={appliedPosition} onChange={e => setAppliedPosition(e.target.value)}>
                         <option value="">Select target executive position...</option>
                         {EXECUTIVE_POSITIONS.map(pos => (
                             <option key={pos.code} value={pos.code}>
                                 {pos.title}
                             </option>
                         ))}
-                    </select>
-                </div>
+                    </FloatingLabelInput>
             </div>
 
             {/* Target Region Dropdown */}
             <div className="space-y-2 pt-2">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
-                    Target DepEd Region <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <FiMapPin size={18} />
-                    </div>
-                    <select
-                        value={targetRegion}
-                        onChange={e => setTargetRegion(e.target.value)}
-                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-12 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-brand-800 transition-all cursor-pointer shadow-sm"
-                    >
+                <FloatingLabelInput as="select" label="Target DepEd Region" requiredMark icon={<FiMapPin size={18} />} className="w-full" value={targetRegion} onChange={e => setTargetRegion(e.target.value)}>
                         <option value="">Select target DepEd region...</option>
                         {DEPED_REGIONS.map(reg => (
                             <option key={reg} value={reg}>
                                 {reg}
                             </option>
                         ))}
-                    </select>
-                </div>
+                    </FloatingLabelInput>
             </div>
         </div>
     );

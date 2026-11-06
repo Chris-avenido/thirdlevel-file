@@ -3,6 +3,7 @@ import { X as FiX, MagnifyingGlass as FiSearch, ArrowRight as FiArrowRight, Clou
 import Swal from 'sweetalert2';
 import { apiUrl } from '../utils/api';
 import ModernDatePicker from './ModernDatePicker';
+import FloatingLabelInput from './forms/FloatingLabelInput.jsx';
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 const isSuffixPlaceholder = (suffix) => {
@@ -905,17 +906,7 @@ const ReassignOfficialModal = ({ isOpen, onClose, onRefresh, token, initialOffic
 
                 {/* Justification / Remarks */}
                 <div>
-                  <label className="block text-[15px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                    Justification / Remarks
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={justification}
-                    onChange={(e) => setJustification(e.target.value)}
-                    placeholder="Optional reassignment note or administrative justification..."
-                    className="w-full px-3.5 py-2 rounded-[14px] text-[19px] font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-brand-700 resize-none"
-                    style={{ background: 'var(--color-white)', border: '2px solid var(--color-muted)' }}
-                  />
+                  <FloatingLabelInput as="textarea" label="Justification / Remarks" className="w-full" rows={2} value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Optional reassignment note or administrative justification..." style={{ background: 'var(--color-white)', border: '2px solid var(--color-muted)' }} />
                 </div>
               </div>
 

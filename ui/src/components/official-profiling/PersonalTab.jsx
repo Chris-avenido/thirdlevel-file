@@ -4,6 +4,7 @@ import ModernDatePicker from '../ModernDatePicker';
 import { inp, sel } from './constants';
 import { computeAge } from './helpers';
 import { Field, SectionLabel } from './formParts';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignationOthers, isEditing, isLocationLocked, isPositionOthers, isSuffixNA, profile, regionsList, setIsSuffixNA, setP, setProfile, setShowLocationUnlockModal, tab, unifiedList, uploadingDocs }) => {
   return (
@@ -293,15 +294,15 @@ const PersonalTab = ({ TLOid, availableDivisions, handleFileUpload, isDesignatio
                                                                 <SectionLabel>Contact Details</SectionLabel>
                                                                 <div className="space-y-4">
                                                                     <Field label="Permanent Address">
-                                                                        <input disabled={!isEditing} type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
+                                                                        <FloatingLabelInput label="House No., Street, Barangay, City/Municipality, Province" disabled={!isEditing} type="text" value={profile.permanent_address || ''} onChange={e => setP('permanent_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" />
                                                                     </Field>
                                                                     <Field label="Temporary Address">
-                                                                        <input disabled={!isEditing} type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" className={inp} />
+                                                                        <FloatingLabelInput label="House No., Street, Barangay, City/Municipality, Province" disabled={!isEditing} type="text" value={profile.temporary_address || ''} onChange={e => setP('temporary_address', e.target.value)} placeholder="House No., Street, Barangay, City/Municipality, Province" />
                                                                     </Field>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                                                        <Field label="Phone Number"><input disabled={!isEditing} type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. +63 912 345 6789" className={inp} /></Field>
-                                                                        <Field label="Alternative Email 1"><input disabled={!isEditing} type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" className={inp} /></Field>
-                                                                        <Field label="Alternative Email 2"><input disabled={!isEditing} type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" className={inp} /></Field>
+                                                                        <Field label="Phone Number"><FloatingLabelInput label="e.g. +63 912 345 6789" disabled={!isEditing} type="text" value={profile.alt_contact_details_1 || ''} onChange={e => { const val = e.target.value.replace(/\D/g, '').slice(0, 11); setP('alt_contact_details_1', val); }} placeholder="e.g. +63 912 345 6789" /></Field>
+                                                                        <Field label="Alternative Email 1"><FloatingLabelInput label="e.g. personal@gmail.com" disabled={!isEditing} type="email" value={profile.alt_email_1 || ''} onChange={e => setP('alt_email_1', e.target.value)} placeholder="e.g. personal@gmail.com" /></Field>
+                                                                        <Field label="Alternative Email 2"><FloatingLabelInput label="e.g. backup@yahoo.com" disabled={!isEditing} type="email" value={profile.alt_email_2 || ''} onChange={e => setP('alt_email_2', e.target.value)} placeholder="e.g. backup@yahoo.com" /></Field>
                                                                     </div>
                                                                 </div>
                                                             </div>

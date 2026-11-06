@@ -1,5 +1,6 @@
 import { MagnifyingGlass as FiSearch, CaretRight as FiChevronRight, SquaresFour as FiGrid, List as FiList, Stack as FiLayers } from '@phosphor-icons/react';
 import { expandAcronym } from '../../utils/officialsUtils';
+import FloatingLabelInput from '../forms/FloatingLabelInput.jsx';
 
 const DataControls = ({ dependentOffices, designationFilter, designations, levelFilter, officeFilter, oicOnly, positionFilter, regionFilter, searchTerm, setActiveTab, setDesignationFilter, setLevelFilter, setOfficeFilter, setOicOnly, setPositionFilter, setRegionFilter, setSearchTerm, setStatusTab, setStrandFilter, setTableFilters, setViewMode, strandFilter, strands, tabPositions, viewMode }) => {
   return (
@@ -132,16 +133,7 @@ const DataControls = ({ dependentOffices, designationFilter, designations, level
 
                             {/* BOTTOM ROW: SEARCH BAR & VIEW TOGGLES */}
                             <div className="flex items-center gap-2 w-full">
-                                <div className="relative flex-1 h-[44px]">
-                                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-800/50" size={16} />
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Search by name, position, or office..."
-                                        className="w-full h-full bg-brand-50 border-2 border-brand-300 rounded-full py-0 pl-11 pr-4 text-[16.5px] font-bold text-brand-800 outline-none focus:border-sky-400 placeholder:text-brand-800/50 transition-colors"
-                                    />
-                                </div>
+                                <FloatingLabelInput label="Search by name, position, or office" icon={<FiSearch size={16} />} className="w-full" type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by name, position, or office..." />
                                 {/* VIEW TOGGLES */}
                                 <div className="flex items-center gap-2 shrink-0 px-1">
                                     <button
